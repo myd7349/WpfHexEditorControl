@@ -93,6 +93,9 @@ public sealed class DiagramCanvas : Canvas
     // ── Undo manager (injected by ClassDiagramSplitHost) ─────────────────────
     private ClassDiagramUndoManager? _undoManager;
 
+    // ── Last right-click canvas position (diagram coordinates) ───────────────
+    private Point _lastMenuPoint;
+
     // ── Minimap ───────────────────────────────────────────────────────────────
     // Owned by ClassDiagramSplitHost (overlay canvas) — not a child of DiagramCanvas.
     internal readonly DiagramMinimapControl _minimap = new();
@@ -118,6 +121,8 @@ public sealed class DiagramCanvas : Canvas
     public event EventHandler<LayoutStrategyKind>?            LayoutStrategyRequested;
     public event EventHandler<ClassNode>?                     ZoomToNodeRequested;
     public event EventHandler?                                FitToContentRequested;
+    /// <summary>Fired when the user clicks "Properties" on a node's context menu.</summary>
+    public event EventHandler<ClassNode>?                     ShowPropertiesRequested;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -207,6 +212,7 @@ public sealed class DiagramCanvas : Canvas
     {
         _selectedIds.Clear();
         _primarySelected = null;
+        _layer.ClearPreSelection();
         _layer.ClearSelection();
         _layer.SetMultiSelection(_selectedIds);
         _layer.UpdateSelection(null, _hoveredNode?.Id);
@@ -246,6 +252,12 @@ public sealed class DiagramCanvas : Canvas
         double maxY = _doc.Classes.Max(n => n.Y + _layer.ComputeNodeHeight(n));
         return new Rect(minX - 40, minY - 40, maxX - minX + 80, maxY - minY + 80);
     }
+
+    /// <summary>
+    /// Highlights the given relationship arrow (accent pen, thicker stroke).
+    /// Pass null to clear the current highlight.
+    /// </summary>
+    public void HighlightRelationship(string? relId) => _layer.HighlightRelationship(relId);
 
     // ── Loaded ────────────────────────────────────────────────────────────────
 
@@ -593,6 +605,20 @@ public sealed class DiagramCanvas : Canvas
         else if (_isRubberBanding)
         {
             _layer.DrawRubberBand(_rubberStart, pt);
+
+            // Explorer-style: highlight nodes covered by the lasso in real-time
+            if (_doc is not null)
+            {
+                var lasso = DiagramVisualLayer.GetRubberBandRect(_rubberStart, pt);
+                var hits  = new HashSet<string>(StringComparer.Ordinal);
+                if (lasso.Width > 2 && lasso.Height > 2)
+                    foreach (var n in _doc.Classes)
+                    {
+                        var nb = new Rect(n.X, n.Y, n.Width, _layer.ComputeNodeHeight(n));
+                        if (lasso.IntersectsWith(nb)) hits.Add(n.Id);
+                    }
+                _layer.SetPreSelection(hits);
+            }
         }
         else
         {
@@ -700,6 +726,7 @@ public sealed class DiagramCanvas : Canvas
             Point end     = e.GetPosition(this);
             Rect selRect  = DiagramVisualLayer.GetRubberBandRect(_rubberStart, end);
             _layer.ClearRubberBand();
+            _layer.ClearPreSelection();
 
             if (_doc is not null && selRect.Width > 2 && selRect.Height > 2)
             {
@@ -747,6 +774,7 @@ public sealed class DiagramCanvas : Canvas
     /// </summary>
     internal void HandleEmptyAreaRightClick(Point pt)
     {
+        _lastMenuPoint = pt;
         var node = _layer.HitTestNode(pt);
         if (node is not null)
         {
@@ -944,7 +972,7 @@ public sealed class DiagramCanvas : Canvas
         var menu = StyledMenu();
         menu.Items.Add(MakeItem("\uE70F", "Rename…",              () => RenameNodeRequested?.Invoke(this, (node, null))));
         menu.Items.Add(MakeItem("\uE74D", "Delete",               () => DeleteNode(node)));
-        menu.Items.Add(MakeItem("\uE8C8", "Duplicate",            () => { }));
+        menu.Items.Add(MakeItem("\uE8C8", "Duplicate",            () => DuplicateNode(node)));
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE71E", "Zoom to This Node",    () => ZoomToNodeRequested?.Invoke(this, node)));
         menu.Items.Add(MakeItem("\uE16C", "Copy Name",            () => Clipboard.SetText(node.Name)));
@@ -969,14 +997,14 @@ public sealed class DiagramCanvas : Canvas
                 UpdateSelectAdornerPosition();
             }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MakeItem("\uE8D4", "Properties", () => { }));
+        menu.Items.Add(MakeItem("\uE8D4", "Properties", () => ShowPropertiesRequested?.Invoke(this, node)));
         return menu;
     }
 
     private ContextMenu BuildArrowContextMenu(ClassRelationship rel)
     {
         var menu = StyledMenu();
-        menu.Items.Add(MakeItem("\uE70F", "Edit Label",       () => { }));
+        menu.Items.Add(MakeItem("\uE70F", "Edit Label",       () => EditRelationshipLabel(rel)));
         menu.Items.Add(new Separator());
 
         var changeType = new MenuItem { Header = "Change Type" };
@@ -986,7 +1014,7 @@ public sealed class DiagramCanvas : Canvas
             changeType.Items.Add(MakeItem("\uE8AB", rk.ToString(), () => ChangeRelationshipType(rel, captured)));
         }
         menu.Items.Add(changeType);
-        menu.Items.Add(MakeItem("\uE7A8", "Reverse Direction", () => { }));
+        menu.Items.Add(MakeItem("\uE7A8", "Reverse Direction", () => ReverseRelationshipDirection(rel)));
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE74D", "Delete",            () => DeleteRelationship(rel)));
         return menu;
@@ -1008,10 +1036,10 @@ public sealed class DiagramCanvas : Canvas
                 _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
             }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MakeItem("\uE710", "Add Class",     () => { }));
-        menu.Items.Add(MakeItem("\uE710", "Add Interface", () => { }));
-        menu.Items.Add(MakeItem("\uE710", "Add Enum",      () => { }));
-        menu.Items.Add(MakeItem("\uE710", "Add Struct",    () => { }));
+        menu.Items.Add(MakeItem("\uE710", "Add Class",     () => AddNodeAtMenuPoint(ClassKind.Class)));
+        menu.Items.Add(MakeItem("\uE710", "Add Interface", () => AddNodeAtMenuPoint(ClassKind.Interface)));
+        menu.Items.Add(MakeItem("\uE710", "Add Enum",      () => AddNodeAtMenuPoint(ClassKind.Enum)));
+        menu.Items.Add(MakeItem("\uE710", "Add Struct",    () => AddNodeAtMenuPoint(ClassKind.Struct)));
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE8B3", "Select All",    () => SelectAll()));
         menu.Items.Add(new Separator());
@@ -1086,6 +1114,134 @@ public sealed class DiagramCanvas : Canvas
             Description: "Change relationship kind",
             UndoAction: () => { int i = doc.Relationships.IndexOf(newRel); if (i >= 0) { doc.Relationships[i] = rel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); } },
             RedoAction: () => { int i = doc.Relationships.IndexOf(rel);    if (i >= 0) { doc.Relationships[i] = newRel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); } }));
+    }
+
+    // ── Phase 1A — Duplicate node ────────────────────────────────────────────
+
+    private void DuplicateNode(ClassNode node)
+    {
+        if (_doc is null) return;
+        var doc  = _doc;
+        var copy = node.DeepClone();
+        copy.Id  = Guid.NewGuid().ToString();
+        copy.X  += 30;
+        copy.Y  += 30;
+        doc.Classes.Add(copy);
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Duplicate {node.Name}",
+            UndoAction: () => { doc.Classes.Remove(copy); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { doc.Classes.Add(copy);    _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
+        SelectSingleNode(copy);
+        RenameNodeRequested?.Invoke(this, (copy, null));
+    }
+
+    // ── Phase 1C — Edit relationship label (inline Popup TextBox) ───────────
+
+    private void EditRelationshipLabel(ClassRelationship rel)
+    {
+        if (_doc is null) return;
+        var doc = _doc;
+
+        var tb = new TextBox
+        {
+            Text   = rel.Label ?? string.Empty,
+            MinWidth  = 140,
+            Padding   = new Thickness(4),
+            BorderThickness = new Thickness(1)
+        };
+        tb.SetResourceReference(TextBox.BackgroundProperty, "DockBackgroundBrush");
+        tb.SetResourceReference(TextBox.ForegroundProperty, "DockForegroundBrush");
+
+        var popup = new Popup
+        {
+            Child              = new Border { Child = tb, Padding = new Thickness(2) },
+            Placement          = PlacementMode.Mouse,
+            AllowsTransparency = true,
+            IsOpen             = true,
+            StaysOpen          = true
+        };
+        tb.SelectAll();
+        tb.Focus();
+
+        void Commit()
+        {
+            if (!popup.IsOpen) return;
+            popup.IsOpen = false;
+            int idx = doc.Relationships.IndexOf(rel);
+            if (idx < 0) return;
+            string newLabel = tb.Text.Trim();
+            if ((rel.Label ?? string.Empty) == newLabel) return;
+            var newRel = rel with { Label = newLabel };
+            doc.Relationships[idx] = newRel;
+            _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+            _undoManager?.Push(new SingleClassDiagramUndoEntry(
+                Description: "Edit relationship label",
+                UndoAction: () =>
+                {
+                    int i = doc.Relationships.IndexOf(newRel);
+                    if (i >= 0) { doc.Relationships[i] = rel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+                },
+                RedoAction: () =>
+                {
+                    int i = doc.Relationships.IndexOf(rel);
+                    if (i >= 0) { doc.Relationships[i] = newRel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+                }));
+        }
+
+        tb.KeyDown   += (_, ke) => { if (ke.Key == Key.Return) { Commit(); ke.Handled = true; } if (ke.Key == Key.Escape) { popup.IsOpen = false; ke.Handled = true; } };
+        tb.LostFocus += (_, _)  => Commit();
+    }
+
+    // ── Phase 1D — Reverse relationship direction ────────────────────────────
+
+    private void ReverseRelationshipDirection(ClassRelationship rel)
+    {
+        if (_doc is null) return;
+        var doc = _doc;
+        int idx = doc.Relationships.IndexOf(rel);
+        if (idx < 0) return;
+        var newRel = rel with { SourceId = rel.TargetId, TargetId = rel.SourceId };
+        doc.Relationships[idx] = newRel;
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: "Reverse relationship direction",
+            UndoAction: () =>
+            {
+                int i = doc.Relationships.IndexOf(newRel);
+                if (i >= 0) { doc.Relationships[i] = rel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+            },
+            RedoAction: () =>
+            {
+                int i = doc.Relationships.IndexOf(rel);
+                if (i >= 0) { doc.Relationships[i] = newRel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+            }));
+    }
+
+    // ── Phase 1E — Add new node at canvas right-click position ───────────────
+
+    private void AddNodeAtMenuPoint(ClassKind kind)
+    {
+        if (_doc is null) return;
+        var doc = _doc;
+        string typeName = kind switch
+        {
+            ClassKind.Interface => "NewInterface",
+            ClassKind.Enum      => "NewEnum",
+            ClassKind.Struct    => "NewStruct",
+            _                   => "NewClass"
+        };
+        var node = new ClassNode { Name = typeName, Id = Guid.NewGuid().ToString(), Kind = kind };
+        node.X = Math.Max(0, _lastMenuPoint.X - node.Width / 2);
+        node.Y = Math.Max(0, _lastMenuPoint.Y - 40);
+        doc.Classes.Add(node);
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Add {kind} {typeName}",
+            UndoAction: () => { doc.Classes.Remove(node); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { doc.Classes.Add(node);    _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
+        SelectSingleNode(node);
+        RenameNodeRequested?.Invoke(this, (node, null));
     }
 
     // ── Context menu helpers (delegates to shared DiagramMenuHelpers) ─────────

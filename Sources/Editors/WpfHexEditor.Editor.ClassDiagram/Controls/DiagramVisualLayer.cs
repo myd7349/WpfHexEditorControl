@@ -81,6 +81,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // ── Multi-selection set (for border highlight on all selected nodes) ──────
     private HashSet<string> _multiSelectedIds = [];
 
+    // ── Pre-selection set (live rubber-band hover — Explorer-style) ───────────
+    private HashSet<string> _preSelectedIds = [];
+
     // ── Member hover + selection ──────────────────────────────────────────────
     private string? _hoveredMemberNodeId;
     private string? _hoveredMemberId;       // ClassMember.Name (unique within node)
@@ -90,6 +93,20 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // ── Collapsible sections ──────────────────────────────────────────────────
     // key: nodeId, value: set of collapsed section names ("Fields","Properties","Methods","Events")
     private readonly Dictionary<string, HashSet<string>> _collapsedSections = [];
+
+    // ── Highlighted relationship (set by Relationships panel selection) ─────
+    private string? _highlightedRelId;
+
+    /// <summary>
+    /// Highlights the relationship with the given source-id in the arrow layer (accent pen).
+    /// Pass null to clear the highlight.
+    /// </summary>
+    public void HighlightRelationship(string? relId)
+    {
+        if (_highlightedRelId == relId) return;
+        _highlightedRelId = relId;
+        RenderAllArrows();
+    }
 
     // ── Toggles (set by ClassDiagramSplitHost toolbar) ───────────────────────
     public bool ShowSwimLanes { get; set; } = false;
@@ -126,6 +143,28 @@ public sealed class DiagramVisualLayer : FrameworkElement
         if (_doc is null) return;
         foreach (var node in _doc.Classes.Where(n => toRepaint.Contains(n.Id)))
             RenderNode(node);
+    }
+
+    /// <summary>
+    /// Updates the live pre-selection set (Explorer-style rubber-band hover) and
+    /// re-renders all affected nodes in real-time. Nodes that were pre-selected but are
+    /// no longer in <paramref name="ids"/> revert to their normal appearance.
+    /// </summary>
+    public void SetPreSelection(HashSet<string> ids)
+    {
+        var toRepaint = new HashSet<string>(_preSelectedIds, StringComparer.Ordinal);
+        toRepaint.UnionWith(ids);
+        _preSelectedIds = new HashSet<string>(ids, StringComparer.Ordinal);
+        if (_doc is null) return;
+        foreach (var node in _doc.Classes.Where(n => toRepaint.Contains(n.Id)))
+            RenderNode(node);
+    }
+
+    /// <summary>Clears the live pre-selection set and reverts all pre-selected nodes.</summary>
+    public void ClearPreSelection()
+    {
+        if (_preSelectedIds.Count == 0) return;
+        SetPreSelection([]);
     }
 
     /// <summary>Draws selection rects for a set of nodes (multi-select).</summary>
@@ -178,10 +217,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
             Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
             Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
 
-        var fillBrush = new SolidColorBrush(Color.FromArgb(30, 0, 120, 215));
+        var fillBrush = new SolidColorBrush(Color.FromArgb(40, 0, 120, 215));
         fillBrush.Freeze();
-        var pen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 120, 215)), 1.0)
-            { DashStyle = new DashStyle([4, 4], 0) };
+        var pen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 120, 215)), 1.0);
         pen.Freeze();
 
         using var dc = _rubberBandVisual.RenderOpen();
@@ -476,9 +514,10 @@ public sealed class DiagramVisualLayer : FrameworkElement
     {
         if (!_nodeVisuals.TryGetValue(node.Id, out var dv)) return;
 
-        bool isSelected = node.Id == _selectedNodeId || _multiSelectedIds.Contains(node.Id);
-        bool isHovered  = node.Id == _hoveredNodeId;
-        bool isDimmed   = _focusedNodeIds is not null && !_focusedNodeIds.Contains(node.Id);
+        bool isSelected    = node.Id == _selectedNodeId || _multiSelectedIds.Contains(node.Id);
+        bool isPreSelected = !isSelected && _preSelectedIds.Contains(node.Id);
+        bool isHovered     = node.Id == _hoveredNodeId;
+        bool isDimmed      = _focusedNodeIds is not null && !_focusedNodeIds.Contains(node.Id);
 
         double width  = ComputeNodeWidth(node);
         double height = ComputeNodeHeight(node);
@@ -502,11 +541,13 @@ public sealed class DiagramVisualLayer : FrameworkElement
         Brush divBrush  = Res("CD_ClassBoxSectionDivider",   Color.FromRgb(70, 70, 90));
         Brush boxBorder = isSelected
             ? Res("CD_ClassBoxSelectedBorderBrush", Color.FromRgb(0, 120, 215))
-            : (isHovered
-                ? Res("CD_ClassBoxHoverBorderBrush", Color.FromRgb(110, 110, 150))
-                : Res("CD_ClassBoxBorderBrush", Color.FromRgb(80, 80, 100)));
+            : (isPreSelected
+                ? Res("CD_ClassBoxSelectedBorderBrush", Color.FromRgb(0, 120, 215))
+                : (isHovered
+                    ? Res("CD_ClassBoxHoverBorderBrush", Color.FromRgb(110, 110, 150))
+                    : Res("CD_ClassBoxBorderBrush", Color.FromRgb(80, 80, 100))));
 
-        double borderThk = isSelected ? 2.0 : 1.0;
+        double borderThk = isSelected ? 2.0 : (isPreSelected ? 1.5 : 1.0);
         var boxPen  = new Pen(boxBorder, borderThk);
         var divPen  = new Pen(divBrush, 0.5);
 
@@ -519,6 +560,14 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
         // Box background
         dc.DrawRoundedRectangle(boxBg, boxPen, boxRect, CornerRadius, CornerRadius);
+
+        // Explorer-style pre-selection overlay (rubber-band hover, live feedback)
+        if (isPreSelected)
+        {
+            var preBrush = new SolidColorBrush(Color.FromArgb(55, 0, 120, 215));
+            preBrush.Freeze();
+            dc.DrawRoundedRectangle(preBrush, null, boxRect, CornerRadius, CornerRadius);
+        }
 
         // B5 — Gradient header (top lighter → base color)
         Color headerBase = headerBg is SolidColorBrush scb ? scb.Color : Color.FromRgb(37, 40, 64);
@@ -769,8 +818,13 @@ public sealed class DiagramVisualLayer : FrameworkElement
             Point p1 = NearestEdgePoint(srcRect, tgtRect);
             Point p2 = NearestEdgePoint(tgtRect, srcRect);
 
-            Brush lineBrush = GetArrowBrush(rel.Kind);
-            var pen = new Pen(lineBrush, 1.5);
+            bool isHighlighted = _highlightedRelId is not null && rel.SourceId == _highlightedRelId;
+            Brush lineBrush = isHighlighted
+                ? (TryFindResource("CD_ClassBoxSelectedBorderBrush") as Brush
+                   ?? new SolidColorBrush(Color.FromRgb(0, 120, 215)))
+                : GetArrowBrush(rel.Kind);
+            double lineThickness = isHighlighted ? 2.5 : 1.5;
+            var pen = new Pen(lineBrush, lineThickness);
             if (rel.Kind == RelationshipKind.Dependency || rel.Kind == RelationshipKind.Realization)
                 pen.DashStyle = DashedStyle;
 
@@ -788,14 +842,14 @@ public sealed class DiagramVisualLayer : FrameworkElement
                 dc.DrawLine(pen, prev, p2);
                 // Arrow points at the last segment direction.
                 Point lastWp = new(wayPts[^1].X, wayPts[^1].Y);
-                DrawArrowHead(dc, lastWp, p2, rel.Kind, lineBrush, 1.5);
-                DrawTailDecoration(dc, p1, new Point(wayPts[0].X, wayPts[0].Y), rel.Kind, lineBrush, 1.5);
+                DrawArrowHead(dc, lastWp, p2, rel.Kind, lineBrush, lineThickness);
+                DrawTailDecoration(dc, p1, new Point(wayPts[0].X, wayPts[0].Y), rel.Kind, lineBrush, lineThickness);
             }
             else
             {
                 dc.DrawLine(pen, p1, p2);
-                DrawArrowHead(dc, p1, p2, rel.Kind, lineBrush, 1.5);
-                DrawTailDecoration(dc, p1, p2, rel.Kind, lineBrush, 1.5);
+                DrawArrowHead(dc, p1, p2, rel.Kind, lineBrush, lineThickness);
+                DrawTailDecoration(dc, p1, p2, rel.Kind, lineBrush, lineThickness);
             }
 
             DrawMultiplicity(dc, p1, p2, rel, lineBrush);
