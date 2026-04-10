@@ -1799,8 +1799,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 // Quick Info hover — dispatch after cursor state is settled
                 if (ShowQuickInfo && _hoverQuickInfoService is not null && !_isSelecting)
                     HandleQuickInfoHover(hoverPos, e.GetPosition(this));
-                else if (DiagnosticLogger is not null)
-                    DiagnosticLogger($"[QuickInfo] SKIP ShowQuickInfo={ShowQuickInfo} svc={_hoverQuickInfoService is not null} sel={_isSelecting}");
 
                 // End-of-block hint — show popup when cursor is on a region's closing line.
                 HandleEndBlockHintHover(hoverPos.Line);

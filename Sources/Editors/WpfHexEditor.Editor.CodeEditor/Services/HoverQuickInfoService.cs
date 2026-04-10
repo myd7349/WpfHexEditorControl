@@ -85,9 +85,6 @@ internal sealed class HoverQuickInfoService : IDisposable
     internal void SetDiagnostics(IReadOnlyList<ValidationError> snapshot)
         => _diagnostics = snapshot;
 
-    /// <summary>Optional logging sink wired by the host (e.g. OutputLogger.Info).</summary>
-    internal Action<string>? Logger { get; set; }
-
     internal void SetDebounceInterval(TimeSpan interval)
         => _debounce.Interval = interval;
 
@@ -142,7 +139,7 @@ internal sealed class HoverQuickInfoService : IDisposable
     private void OnDebounceTick(object? sender, EventArgs e)
     {
         _debounce.Stop();
-        Controls.CodeEditor.DiagnosticLogger?.Invoke($"[QuickInfo] DebounceTick fired, word='{_pendingWord}'");
+
         _ = ResolveAsync();
     }
 
@@ -170,28 +167,25 @@ internal sealed class HoverQuickInfoService : IDisposable
         var    lsp          = _lspClient;
         var    providers    = _providers;
 
-        Controls.CodeEditor.DiagnosticLogger?.Invoke($"[QuickInfo] ResolveAsync word='{word}' lsp={lsp?.GetType().Name ?? "null"}");
 
         try
         {
-            var log = Logger;
             var result = await Task.Run(
                 () => ComputeAsync(filePath, line, column, word, lineSnap, diagSnap,
-                                   lsp, providers, log, ct),
+                                   lsp, providers, ct),
                 ct).ConfigureAwait(true);   // resume on UI thread
 
-            Controls.CodeEditor.DiagnosticLogger?.Invoke($"[QuickInfo] ResolveAsync result={result is not null} cancelled={ct.IsCancellationRequested}");
 
             if (ct.IsCancellationRequested) return;
             QuickInfoResolved?.Invoke(this, result);
         }
         catch (OperationCanceledException)
         {
-            Controls.CodeEditor.DiagnosticLogger?.Invoke("[QuickInfo] ResolveAsync cancelled");
+
         }
         catch (Exception ex)
         {
-            Controls.CodeEditor.DiagnosticLogger?.Invoke($"[QuickInfo] ResolveAsync ERROR: {ex.Message}");
+
         }
     }
 
@@ -203,10 +197,9 @@ internal sealed class HoverQuickInfoService : IDisposable
         IReadOnlyList<ValidationError> diagnostics,
         ILspClient? lsp,
         IReadOnlyList<IQuickInfoProvider> providers,
-        Action<string>? logger,
         CancellationToken ct)
     {
-        void Log(string msg) => Controls.CodeEditor.DiagnosticLogger?.Invoke($"[QuickInfo] {msg}");
+        void Log(string msg) { }
         Log($"Resolve word='{word}' line={line} col={column} lsp={lsp?.GetType().Name ?? "null"} init={lsp?.IsInitialized}");
 
         // 1. Diagnostic overlay — instant, covers squigglies ──────────────────

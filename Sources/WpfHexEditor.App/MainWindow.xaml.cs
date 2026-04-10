@@ -613,8 +613,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Pre-create OutputPanel so OutputLogger.Register is called before any Info/Error calls
         _outputPanel = new OutputPanel();
 
-        // Wire CodeEditor diagnostic logger to OutputPanel for QuickInfo/hover debugging.
-        WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor.DiagnosticLogger = msg => OutputLogger.Info(msg);
+
 
         // Bootstrap DockPanelCornerRadius resources before any docking panels are created.
         // DynamicResource keys must exist in Application.Resources before templates resolve them.
