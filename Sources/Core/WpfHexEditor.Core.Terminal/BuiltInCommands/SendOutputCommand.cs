@@ -15,7 +15,7 @@ public sealed class SendOutputCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         var message = string.Join(" ", args);
-        context.IDE.Output.Info(message);
+        context.IDE().Output.Info(message);
         output.WriteLine($"[→ Output] {message}");
         return Task.FromResult(0);
     }

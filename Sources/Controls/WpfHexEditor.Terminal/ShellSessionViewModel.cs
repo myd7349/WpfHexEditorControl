@@ -79,6 +79,8 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
 
     // -- ITerminalContext implementation ------------------------------------------
 
+    public object? HostServices => _ideHostContext;
+    // Convenience typed accessors (IDE-specific, not part of ITerminalContext contract)
     public IIDEHostContext IDE => _ideHostContext;
     public IDocument? ActiveDocument => _ideHostContext.FocusContext.ActiveDocument;
     public IPanel? ActivePanel => _ideHostContext.FocusContext.ActivePanel;

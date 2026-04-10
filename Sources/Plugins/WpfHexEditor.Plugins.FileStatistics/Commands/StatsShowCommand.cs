@@ -26,7 +26,7 @@ internal sealed class StatsShowCommand(Func<FileStats?> getStats) : PluginTermin
         if (stats is null)
         {
             output.WriteWarning("No statistics available. Open a file in the Hex Editor first.");
-            ctx.IDE.UIRegistry.ShowPanel("WpfHexEditor.Plugins.FileStatistics.Panel.FileStatisticsPanel");
+            ctx.IDE().UIRegistry.ShowPanel("WpfHexEditor.Plugins.FileStatistics.Panel.FileStatisticsPanel");
             return Task.FromResult(0);
         }
 

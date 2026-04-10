@@ -23,7 +23,7 @@ internal sealed class ParsedExportCommand : PluginTerminalCommandBase
     protected override Task<int> ExecuteCoreAsync(
         string[] args, ITerminalOutput output, ITerminalContext ctx, CancellationToken ct)
     {
-        var svc = ctx.IDE.FormatParsing;
+        var svc = ctx.IDE().FormatParsing;
 
         if (svc is null || !svc.HasParsedFields)
         {

@@ -19,7 +19,7 @@ public sealed class ClearPanelCommand : ITerminalCommandProvider
         switch (args[0].ToLowerInvariant())
         {
             case "output":
-                context.IDE.Output.Clear();
+                context.IDE().Output.Clear();
                 output.WriteLine("Output panel cleared.");
                 break;
             case "terminal":

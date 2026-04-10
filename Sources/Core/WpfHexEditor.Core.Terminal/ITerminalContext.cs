@@ -8,3 +8,4 @@
 // ==========================================================
 
 global using ITerminalContext = WpfHexEditor.SDK.Contracts.Terminal.ITerminalContext;
+global using WpfHexEditor.SDK.Contracts.Terminal; // for TerminalContextExtensions.IDE()

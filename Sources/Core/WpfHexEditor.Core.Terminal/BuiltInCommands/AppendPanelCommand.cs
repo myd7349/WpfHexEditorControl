@@ -20,7 +20,7 @@ public sealed class AppendPanelCommand : ITerminalCommandProvider
         switch (args[0].ToLowerInvariant())
         {
             case "output":
-                context.IDE.Output.Info(text);
+                context.IDE().Output.Info(text);
                 break;
             default:
                 output.WriteWarning($"Unknown panel: '{args[0]}'. Supported: output.");

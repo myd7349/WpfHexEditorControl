@@ -18,7 +18,7 @@ public sealed class ListFilesCommand : ITerminalCommandProvider
             ? (Path.IsPathRooted(args[0]) ? args[0] : Path.Combine(context.WorkingDirectory, args[0]))
             : context.WorkingDirectory;
 
-        var files = context.IDE.SolutionExplorer.GetFilesInDirectory(dir);
+        var files = context.IDE().SolutionExplorer.GetFilesInDirectory(dir);
         if (files.Count == 0) { output.WriteLine($"(no files in {dir})"); return Task.FromResult(0); }
 
         foreach (var f in files) output.WriteLine(Path.GetFileName(f));

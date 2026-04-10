@@ -3,7 +3,7 @@
 // File: BuiltInCommands/RunCsharpCommand.cs
 // Description: Terminal command — compile and run a C# script via IScriptingService.
 // Architecture Notes:
-//     Uses context.IDE.Scripting (nullable).
+//     Uses context.IDE().Scripting (nullable).
 //     --inline "<code>" flag allows single-line code without a file.
 // ==========================================================
 
@@ -23,7 +23,7 @@ public sealed class RunCsharpCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var scripting = context.IDE.Scripting;
+        var scripting = context.IDE().Scripting;
         if (scripting is null)
         {
             output.WriteError("Scripting service not available.");
@@ -62,7 +62,7 @@ public sealed class RunCsharpCommand : ITerminalCommandProvider
         if (result.HasErrors)
         {
             output.WriteError($"Script failed ({result.Duration.TotalMilliseconds:F0}ms).");
-            foreach (var d in result.Diagnostics.Where(d => !d.IsWarning))
+            foreach (var d in ((IEnumerable<dynamic>)result.Diagnostics).Where((Func<dynamic, bool>)(d => !d.IsWarning)))
                 output.WriteError($"  ({d.Line},{d.Column}): {d.Message}");
             return result.Success ? 0 : 1;
         }

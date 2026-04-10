@@ -30,7 +30,7 @@ internal sealed class AsmLoadCommand(AssemblyExplorerPanel panel) : PluginTermin
         output.WriteInfo($"Loading {Path.GetFileName(path)}…");
         await panel.ViewModel.LoadAssemblyAsync(path, ct).ConfigureAwait(false);
         output.WriteInfo($"Loaded: {Path.GetFileName(path)}");
-        ctx.IDE.UIRegistry.ShowPanel("WpfHexEditor.Plugins.AssemblyExplorer.Panel.Main");
+        ctx.IDE().UIRegistry.ShowPanel("WpfHexEditor.Plugins.AssemblyExplorer.Panel.Main");
         return 0;
     }
 }

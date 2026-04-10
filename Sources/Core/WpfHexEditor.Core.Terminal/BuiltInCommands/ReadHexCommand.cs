@@ -23,7 +23,7 @@ public sealed class ReadHexCommand : ITerminalCommandProvider
         }
 
         int length = args.Length > 1 && int.TryParse(args[1], out var l) ? l : 16;
-        var bytes = context.IDE.HexEditor.ReadBytes(offset, length);
+        var bytes = context.IDE().HexEditor.ReadBytes(offset, length);
 
         if (bytes is null || bytes.Length == 0) { output.WriteWarning("No bytes read (no active hex editor?)."); return Task.FromResult(0); }
 

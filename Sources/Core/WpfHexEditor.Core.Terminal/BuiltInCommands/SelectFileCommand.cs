@@ -17,7 +17,7 @@ public sealed class SelectFileCommand : ITerminalCommandProvider
         if (args.Length == 0) { output.WriteError("Usage: " + Usage); return Task.FromResult(1); }
 
         var name = string.Join(" ", args);
-        var files = context.IDE.SolutionExplorer.GetSolutionFilePaths();
+        IEnumerable<string> files = context.IDE().SolutionExplorer.GetSolutionFilePaths();
         var match = files.FirstOrDefault(f =>
             string.Equals(Path.GetFileName(f), name, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(f, name, StringComparison.OrdinalIgnoreCase));

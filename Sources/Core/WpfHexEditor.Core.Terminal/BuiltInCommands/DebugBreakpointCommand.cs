@@ -19,7 +19,7 @@ public sealed class DebugBreakpointCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var dbg = context.IDE.Debugger;
+        var dbg = context.IDE().Debugger;
         if (dbg is null) { output.WriteError("Debugger not available."); return 1; }
 
         if (args.Length < 2)

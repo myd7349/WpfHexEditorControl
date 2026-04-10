@@ -14,7 +14,7 @@ public sealed class CloseSolutionCommand : ITerminalCommandProvider
 
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
-        await context.IDE.SolutionExplorer.CloseSolutionAsync(ct).ConfigureAwait(false);
+        await context.IDE().SolutionExplorer.CloseSolutionAsync(ct).ConfigureAwait(false);
         output.WriteLine("Solution closed.");
         return 0;
     }

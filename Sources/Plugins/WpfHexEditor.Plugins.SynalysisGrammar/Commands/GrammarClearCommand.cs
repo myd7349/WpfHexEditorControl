@@ -20,7 +20,7 @@ internal sealed class GrammarClearCommand : PluginTerminalCommandBase
     protected override Task<int> ExecuteCoreAsync(
         string[] args, ITerminalOutput output, ITerminalContext ctx, CancellationToken ct)
     {
-        ctx.IDE.HexEditor.ClearCustomBackgroundBlockByTag("synalysis:");
+        ctx.IDE().HexEditor.ClearCustomBackgroundBlockByTag("synalysis:");
         output.WriteInfo("Grammar overlay cleared.");
         return Task.FromResult(0);
     }

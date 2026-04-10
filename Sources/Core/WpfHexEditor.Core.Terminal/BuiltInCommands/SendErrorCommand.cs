@@ -15,7 +15,7 @@ public sealed class SendErrorCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         var message = string.Join(" ", args);
-        context.IDE.ErrorPanel.PostDiagnostic(WpfHexEditor.SDK.Contracts.Services.DiagnosticSeverity.Error, message, "Terminal");
+        ((dynamic)context.IDE().ErrorPanel).PostDiagnostic(0, message, "Terminal");
         output.WriteWarning($"[→ ErrorPanel] {message}");
         return Task.FromResult(0);
     }

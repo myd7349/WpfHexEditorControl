@@ -80,6 +80,10 @@
     <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.ResxEditor\WpfHexEditor.Editor.ResxEditor.csproj">
       <PrivateAssets>none</PrivateAssets>
     </ProjectReference>
+    <!-- Terminal contracts (zero-dep micro-assembly, transitive to plugins) -->
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.Terminal.Abstractions\WpfHexEditor.Core.Terminal.Abstractions.csproj">
+      <PrivateAssets>none</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

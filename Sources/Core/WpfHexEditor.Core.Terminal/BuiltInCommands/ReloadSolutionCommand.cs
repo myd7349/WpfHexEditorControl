@@ -14,7 +14,7 @@ public sealed class ReloadSolutionCommand : ITerminalCommandProvider
 
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
-        await context.IDE.SolutionExplorer.ReloadSolutionAsync(ct).ConfigureAwait(false);
+        await context.IDE().SolutionExplorer.ReloadSolutionAsync(ct).ConfigureAwait(false);
         output.WriteLine("Solution reloaded.");
         return 0;
     }

@@ -22,7 +22,7 @@ internal sealed class AsmSearchCommand : PluginTerminalCommandBase
     protected override Task<int> ExecuteCoreAsync(
         string[] args, ITerminalOutput output, ITerminalContext ctx, CancellationToken ct)
     {
-        ctx.IDE.UIRegistry.ShowPanel(SearchPanelUiId);
+        ctx.IDE().UIRegistry.ShowPanel(SearchPanelUiId);
 
         if (args.Length > 0)
             output.WriteInfo($"Search panel opened — type '{string.Join(" ", args)}' to filter results.");

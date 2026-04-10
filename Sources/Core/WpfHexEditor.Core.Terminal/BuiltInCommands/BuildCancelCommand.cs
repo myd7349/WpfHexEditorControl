@@ -19,7 +19,7 @@ public sealed class BuildCancelCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var build = context.IDE.BuildSystem;
+        var build = context.IDE().BuildSystem;
         if (build is null) { output.WriteError("Build system not available."); return Task.FromResult(1); }
 
         if (!build.HasActiveBuild)

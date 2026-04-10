@@ -21,7 +21,7 @@ public sealed class DiffCommand : ITerminalCommandProvider
     {
         if (args.Length < 2) { output.WriteError("Usage: " + Usage); return 1; }
 
-        var svc = context.IDE.DiffService;
+        var svc = context.IDE().DiffService;
         if (svc is null) { output.WriteError("Diff service not available (FileComparison plugin not loaded)."); return 1; }
 
         var left  = args[0];

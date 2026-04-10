@@ -19,7 +19,7 @@ public sealed class CleanCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var build = context.IDE.BuildSystem;
+        var build = context.IDE().BuildSystem;
         if (build is null) { output.WriteError("Build system not available."); return 1; }
         if (build.HasActiveBuild) { output.WriteError("A build is already in progress. Use build-cancel first."); return 1; }
 

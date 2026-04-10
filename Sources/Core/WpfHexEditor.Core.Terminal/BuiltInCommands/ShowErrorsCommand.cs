@@ -17,7 +17,7 @@ public sealed class ShowErrorsCommand : ITerminalCommandProvider
         var count = 20;
         if (args.Length > 0 && int.TryParse(args[0], out var n) && n > 0) count = n;
 
-        var errors = context.IDE.ErrorPanel.GetRecentErrors(count);
+        var errors = context.IDE().ErrorPanel.GetRecentErrors(count);
         if (errors.Count == 0) { output.WriteLine("(no error entries)"); return Task.FromResult(0); }
 
         foreach (var e in errors) output.WriteError(e);

@@ -4,7 +4,6 @@
 // Description: Terminal command — resume paused debugger execution.
 // ==========================================================
 
-using WpfHexEditor.SDK.Contracts.Services;
 
 namespace WpfHexEditor.Core.Terminal.BuiltInCommands;
 
@@ -21,7 +20,7 @@ public sealed class DebugContinueCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var dbg = context.IDE.Debugger;
+        var dbg = context.IDE().Debugger;
         if (dbg is null) { output.WriteError("Debugger not available."); return 1; }
 
         if (!dbg.IsPaused)

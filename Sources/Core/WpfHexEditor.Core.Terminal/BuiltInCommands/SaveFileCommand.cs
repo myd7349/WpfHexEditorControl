@@ -15,7 +15,7 @@ public sealed class SaveFileCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         var name = args.Length > 0 ? args[0] : null;
-        await context.IDE.SolutionExplorer.SaveFileAsync(name, ct).ConfigureAwait(false);
+        await context.IDE().SolutionExplorer.SaveFileAsync(name, ct).ConfigureAwait(false);
         output.WriteLine(name is null ? "Active file saved." : $"Saved: {name}");
         return 0;
     }

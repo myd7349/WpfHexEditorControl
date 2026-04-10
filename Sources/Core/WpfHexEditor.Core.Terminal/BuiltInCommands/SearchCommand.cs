@@ -21,8 +21,8 @@ public sealed class SearchCommand : ITerminalCommandProvider
 
         var results = mode switch
         {
-            "hex"  => context.IDE.HexEditor.SearchHex(value),
-            "text" => context.IDE.HexEditor.SearchText(value),
+            "hex"  => context.IDE().HexEditor.SearchHex(value),
+            "text" => context.IDE().HexEditor.SearchText(value),
             _      => null
         };
 

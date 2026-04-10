@@ -15,8 +15,8 @@ public sealed class StatusCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         output.WriteLine($"Working directory : {context.WorkingDirectory}");
-        output.WriteLine($"Active document   : {context.ActiveDocument?.FilePath ?? "(none)"}");
-        output.WriteLine($"Active panel      : {context.ActivePanel?.ContentId ?? "(none)"}");
+        output.WriteLine($"Active document   : {((dynamic)context.HostServices)?.FocusContext?.ActiveDocument?.FilePath ?? "(none)"}");
+        output.WriteLine($"Active panel      : {((dynamic)context.HostServices)?.FocusContext?.ActivePanel?.ContentId ?? "(none)"}");
         return Task.FromResult(0);
     }
 }

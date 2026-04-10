@@ -16,7 +16,7 @@ public sealed class SaveAsCommand : ITerminalCommandProvider
     {
         if (args.Length == 0) { output.WriteError("Usage: " + Usage); return 1; }
         var path = Path.IsPathRooted(args[0]) ? args[0] : Path.Combine(context.WorkingDirectory, args[0]);
-        await context.IDE.SolutionExplorer.SaveFileAsync(path, ct).ConfigureAwait(false);
+        await context.IDE().SolutionExplorer.SaveFileAsync(path, ct).ConfigureAwait(false);
         output.WriteLine($"Saved as: {path}");
         return 0;
     }

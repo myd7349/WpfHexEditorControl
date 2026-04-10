@@ -11,7 +11,6 @@
 //     then fallback to full unload/load cycle).
 // ==========================================================
 
-using WpfHexEditor.SDK.Events;
 
 namespace WpfHexEditor.Core.Terminal.BuiltInCommands;
 
@@ -44,10 +43,12 @@ public sealed class PluginReloadCommand : ITerminalCommandProvider
 
         output.WriteInfo($"[PluginHost] Requesting reload of '{pluginId}'…");
 
-        context.IDE.EventBus.Publish(new PluginReloadRequestedEvent
-        {
-            PluginId = pluginId,
-        });
+        // Dynamic dispatch — avoids SDK.Events dependency.
+        dynamic eb = context.IDE().EventBus;
+        dynamic evt = Activator.CreateInstance(
+            eb.GetType().Assembly.GetType("WpfHexEditor.SDK.Events.PluginReloadRequestedEvent"))!;
+        evt.PluginId = pluginId;
+        eb.Publish(evt);
 
         return Task.FromResult(0);
     }

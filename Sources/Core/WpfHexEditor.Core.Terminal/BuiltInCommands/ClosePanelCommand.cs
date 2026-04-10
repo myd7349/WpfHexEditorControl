@@ -15,7 +15,7 @@ public sealed class ClosePanelCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         if (args.Length == 0) { output.WriteError("Usage: " + Usage); return Task.FromResult(1); }
-        context.IDE.UIRegistry.HidePanel(args[0]);
+        context.IDE().UIRegistry.HidePanel(args[0]);
         output.WriteLine($"Panel closed: {args[0]}");
         return Task.FromResult(0);
     }

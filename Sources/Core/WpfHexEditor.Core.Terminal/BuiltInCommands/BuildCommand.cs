@@ -4,7 +4,6 @@
 // Description: Terminal command — build the active solution or a specific project.
 // ==========================================================
 
-using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.Core.Terminal.BuiltInCommands;
 
@@ -21,20 +20,20 @@ public sealed class BuildCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var build = context.IDE.BuildSystem;
+        var build = context.IDE().BuildSystem;
         if (build is null) { output.WriteError("Build system not available."); return 1; }
         if (build.HasActiveBuild) { output.WriteError("A build is already in progress. Use build-cancel first."); return 1; }
 
         output.WriteInfo(args.Length > 0 ? $"Building project '{args[0]}'..." : "Building solution...");
 
-        BuildResult result = args.Length > 0
+        dynamic result = args.Length > 0
             ? await build.BuildProjectAsync(args[0], ct).ConfigureAwait(false)
             : await build.BuildSolutionAsync(ct).ConfigureAwait(false);
 
         return PrintBuildResult(result, output);
     }
 
-    internal static int PrintBuildResult(BuildResult result, ITerminalOutput output)
+    internal static int PrintBuildResult(dynamic result, ITerminalOutput output)
     {
         if (result.IsSuccess)
         {

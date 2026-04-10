@@ -15,7 +15,7 @@ public sealed class TogglePanelCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         if (args.Length == 0) { output.WriteError("Usage: " + Usage); return Task.FromResult(1); }
-        context.IDE.UIRegistry.TogglePanel(args[0]);
+        context.IDE().UIRegistry.TogglePanel(args[0]);
         output.WriteLine($"Panel toggled: {args[0]}");
         return Task.FromResult(0);
     }

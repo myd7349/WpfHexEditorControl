@@ -22,7 +22,7 @@ internal sealed class LspCallHierarchyCommand : PluginTerminalCommandBase
     protected override Task<int> ExecuteCoreAsync(
         string[] args, ITerminalOutput output, ITerminalContext ctx, CancellationToken ct)
     {
-        ctx.IDE.UIRegistry.ShowPanel(PanelUiId);
+        ctx.IDE().UIRegistry.ShowPanel(PanelUiId);
         output.WriteInfo("Call Hierarchy panel opened. Trigger with Shift+Alt+H on a symbol.");
         return Task.FromResult(0);
     }

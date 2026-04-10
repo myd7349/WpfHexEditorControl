@@ -12,7 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Plugins\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
+    <!-- Terminal contracts only — no SDK dependency -->
+    <ProjectReference Include="..\WpfHexEditor.Core.Terminal.Abstractions\WpfHexEditor.Core.Terminal.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

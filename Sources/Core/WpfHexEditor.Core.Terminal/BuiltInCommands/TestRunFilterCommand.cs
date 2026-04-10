@@ -22,7 +22,7 @@ public sealed class TestRunFilterCommand : ITerminalCommandProvider
     {
         if (args.Length == 0) { output.WriteError("Usage: " + Usage); return 1; }
 
-        var runner = context.IDE.TestRunner;
+        var runner = context.IDE().TestRunner;
         if (runner is null) { output.WriteError("Unit testing service not available (plugin not loaded)."); return 1; }
         if (runner.IsRunning) { output.WriteError("A test run is already in progress."); return 1; }
 

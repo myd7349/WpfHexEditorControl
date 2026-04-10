@@ -19,7 +19,7 @@ public sealed class DebugStatusCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var dbg = context.IDE.Debugger;
+        var dbg = context.IDE().Debugger;
         if (dbg is null)
         {
             output.WriteWarning("Debugger not available (plugin not loaded or no active session).");

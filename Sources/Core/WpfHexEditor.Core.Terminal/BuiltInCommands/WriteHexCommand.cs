@@ -37,7 +37,7 @@ public sealed class WriteHexCommand : ITerminalCommandProvider
             bytes.Add(b);
         }
 
-        context.IDE.HexEditor.WriteBytes(offset, bytes.ToArray());
+        context.IDE().HexEditor.WriteBytes(offset, bytes.ToArray());
         output.WriteLine($"Written {bytes.Count} byte(s) at offset 0x{offset:X}.");
         return Task.FromResult(0);
     }

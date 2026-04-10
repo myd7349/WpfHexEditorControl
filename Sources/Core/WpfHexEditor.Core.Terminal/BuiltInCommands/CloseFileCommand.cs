@@ -15,7 +15,7 @@ public sealed class CloseFileCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         var name = args.Length > 0 ? args[0] : null;
-        await context.IDE.SolutionExplorer.CloseFileAsync(name, ct).ConfigureAwait(false);
+        await context.IDE().SolutionExplorer.CloseFileAsync(name, ct).ConfigureAwait(false);
         output.WriteLine(name is null ? "Active file closed." : $"Closed: {name}");
         return 0;
     }

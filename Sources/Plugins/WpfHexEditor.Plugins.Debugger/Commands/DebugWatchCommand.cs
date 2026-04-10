@@ -20,7 +20,7 @@ internal sealed class DebugWatchCommand : PluginTerminalCommandBase
     protected override Task<int> ExecuteCoreAsync(
         string[] args, ITerminalOutput output, ITerminalContext ctx, CancellationToken ct)
     {
-        ctx.IDE.UIRegistry.ShowPanel("panel-dbg-watch");
+        ctx.IDE().UIRegistry.ShowPanel("panel-dbg-watch");
 
         if (args.Length > 0)
             output.WriteInfo($"Watch panel opened — add expression: {string.Join(" ", args)}");

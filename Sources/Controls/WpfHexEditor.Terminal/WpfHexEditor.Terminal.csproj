@@ -52,6 +52,10 @@
   <ItemGroup>
     <!-- Bundled into the package -->
     <ProjectReference Include="..\..\Core\WpfHexEditor.Core.Terminal\WpfHexEditor.Core.Terminal.csproj" PrivateAssets="all" />
+    <!-- IDE integration (compile-time only, not bundled in NuGet) -->
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core\WpfHexEditor.Core.csproj" />
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.Events\WpfHexEditor.Core.Events.csproj" />
+    <ProjectReference Include="..\..\Plugins\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
   </ItemGroup>
 
   <!-- Bundle dependency DLLs + XML docs into the NuGet package -->

@@ -19,7 +19,7 @@ public sealed class BuildStatusCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var build = context.IDE.BuildSystem;
+        var build = context.IDE().BuildSystem;
         if (build is null)
         {
             output.WriteWarning("Build system not available (no solution loaded or plugin disabled).");
@@ -28,7 +28,7 @@ public sealed class BuildStatusCommand : ITerminalCommandProvider
 
         output.WriteInfo(build.HasActiveBuild ? "Build: RUNNING" : "Build: IDLE");
 
-        var errors = context.IDE.ErrorPanel.GetRecentErrors(5);
+        var errors = context.IDE().ErrorPanel.GetRecentErrors(5);
         if (errors.Count == 0)
         {
             output.WriteLine("No recent errors.");

@@ -17,7 +17,7 @@ public sealed class ShowLogsCommand : ITerminalCommandProvider
         var count = 20;
         if (args.Length > 0 && int.TryParse(args[0], out var n) && n > 0) count = n;
 
-        var lines = context.IDE.Output.GetRecentLines(count);
+        var lines = context.IDE().Output.GetRecentLines(count);
         if (lines.Count == 0) { output.WriteLine("(no log entries)"); return Task.FromResult(0); }
 
         foreach (var line in lines) output.WriteLine(line);

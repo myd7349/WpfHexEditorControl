@@ -19,7 +19,7 @@ public sealed class TestRunCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var runner = context.IDE.TestRunner;
+        var runner = context.IDE().TestRunner;
         if (runner is null) { output.WriteError("Unit testing service not available (plugin not loaded)."); return 1; }
         if (runner.IsRunning) { output.WriteError("A test run is already in progress."); return 1; }
 
@@ -29,7 +29,7 @@ public sealed class TestRunCommand : ITerminalCommandProvider
         return PrintSummary(summary, output);
     }
 
-    internal static int PrintSummary(SDK.Contracts.Services.TestRunSummary s, ITerminalOutput output)
+    internal static int PrintSummary(dynamic s, ITerminalOutput output)
     {
         if (s.WasCancelled)
         {

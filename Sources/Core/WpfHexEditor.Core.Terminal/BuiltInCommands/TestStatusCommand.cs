@@ -19,7 +19,7 @@ public sealed class TestStatusCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output,
         ITerminalContext context, CancellationToken ct)
     {
-        var runner = context.IDE.TestRunner;
+        var runner = context.IDE().TestRunner;
         if (runner is null)
         {
             output.WriteWarning("Unit testing service not available (UnitTesting plugin not loaded).");

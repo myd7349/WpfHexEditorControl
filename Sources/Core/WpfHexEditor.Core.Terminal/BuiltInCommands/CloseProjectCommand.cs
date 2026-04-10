@@ -15,7 +15,7 @@ public sealed class CloseProjectCommand : ITerminalCommandProvider
     public async Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
         if (args.Length == 0) { output.WriteError("Usage: " + Usage); return 1; }
-        await context.IDE.SolutionExplorer.CloseProjectAsync(string.Join(" ", args), ct).ConfigureAwait(false);
+        await context.IDE().SolutionExplorer.CloseProjectAsync(string.Join(" ", args), ct).ConfigureAwait(false);
         output.WriteLine($"Closed project: {string.Join(" ", args)}");
         return 0;
     }

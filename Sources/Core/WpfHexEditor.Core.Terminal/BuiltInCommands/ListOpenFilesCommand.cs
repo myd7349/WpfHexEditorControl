@@ -14,7 +14,7 @@ public sealed class ListOpenFilesCommand : ITerminalCommandProvider
 
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct)
     {
-        var files = context.IDE.SolutionExplorer.GetOpenFilePaths();
+        var files = context.IDE().SolutionExplorer.GetOpenFilePaths();
         if (files.Count == 0) { output.WriteLine("(no open files)"); return Task.FromResult(0); }
         foreach (var f in files) output.WriteLine($"  {f}");
         return Task.FromResult(0);
