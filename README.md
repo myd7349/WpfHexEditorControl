@@ -100,7 +100,7 @@ All controls are **independently reusable** — no IDE required.
 | **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfCodeEditor?label=WpfCodeEditor)](https://www.nuget.org/packages/WpfCodeEditor/) | Advanced source editor — 400+ languages, LSP 3.17, folding, multi-caret, minimap, split view, inline hints |
 | **[Docking](Sources/Docking/WpfHexEditor.Docking.Wpf/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfDocking?label=WpfDocking)](https://www.nuget.org/packages/WpfDocking/) | VS Code-style docking — panels, documents, drag-and-drop, 16 themes, layout persistence |
 | **[Color Picker](Sources/WpfHexEditor.ColorPicker/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfColorPicker?label=WpfColorPicker)](https://www.nuget.org/packages/WpfColorPicker/) | HSV wheel, RGB/HSL sliders, hex input, palettes, eyedropper, opacity support |
-| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | *coming soon* | Multi-tab shell emulator — cmd/PowerShell/bash, 39 built-in commands, macros, scripting |
+| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfTerminal?label=WpfTerminal)](https://www.nuget.org/packages/WpfTerminal/) | Multi-tab shell emulator — cmd/PowerShell/bash, 39 built-in commands, macros, scripting |
 | **[HexBox](Sources/WpfHexEditor.HexBox/README.md)** | — | Lightweight single-value hex input field — drop-in TextBox replacement |
 | **[ProgressBar](Sources/WpfHexEditor.ProgressBar/README.md)** | — | Animated progress indicator — determinate/indeterminate modes, themeable |
 
@@ -110,6 +110,7 @@ dotnet add package WPFHexaEditor      # Hex editor control
 dotnet add package WpfCodeEditor      # Code editor control
 dotnet add package WpfDocking         # Docking framework
 dotnet add package WpfColorPicker     # Color picker control
+dotnet add package WpfTerminal        # Terminal control
 ```
 
 > All packages target **.NET 8.0-windows**, bundle their dependencies (zero external NuGet deps), and include XML IntelliSense + SourceLink.
