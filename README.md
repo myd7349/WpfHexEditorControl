@@ -92,34 +92,27 @@ Every editor is a standalone `IDocumentEditor` plugin — reusable outside the I
 
 All controls are **independently reusable** — no IDE required.
 
-### 📦 NuGet Packages
+### 📦 UI Controls & NuGet Packages
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| [![WPFHexaEditor](https://img.shields.io/nuget/v/WPFHexaEditor?label=WPFHexaEditor)](https://www.nuget.org/packages/WPFHexaEditor/) | 3.0.2 | Full-featured WPF hex editor — binary editing, 400+ format detection, search, undo/redo. Zero dependencies. |
-| [![WpfCodeEditor](https://img.shields.io/nuget/v/WpfCodeEditor?label=WpfCodeEditor)](https://www.nuget.org/packages/WpfCodeEditor/) | 0.9.6.2 | Advanced WPF code editor — 400+ languages, LSP, folding, multi-caret, minimap, split view. Zero dependencies. |
-| [![WpfDocking](https://img.shields.io/nuget/v/WpfDocking?label=WpfDocking)](https://www.nuget.org/packages/WpfDocking/) | 0.9.5.1 | VS Code-style docking framework — panels, documents, drag-and-drop, themes, layout persistence. Zero dependencies. |
-| [![WpfColorPicker](https://img.shields.io/nuget/v/WpfColorPicker?label=WpfColorPicker)](https://www.nuget.org/packages/WpfColorPicker/) | 2.0.1 | Modern color picker — HSV wheel, RGB/HSL sliders, hex input, palettes, eyedropper. Zero dependencies. |
+| Control | NuGet | Description |
+|---------|-------|-------------|
+| **[Hex Editor](Sources/WpfHexEditor.HexEditor/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WPFHexaEditor?label=WPFHexaEditor)](https://www.nuget.org/packages/WPFHexaEditor/) | Full-featured binary editor — insert/overwrite modes, 400+ format auto-detection, multi-mode search, bookmarks, TBL encoding, block undo/redo |
+| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfCodeEditor?label=WpfCodeEditor)](https://www.nuget.org/packages/WpfCodeEditor/) | Advanced source editor — 400+ languages, LSP 3.17, folding, multi-caret, minimap, split view, inline hints |
+| **[Docking](Sources/Docking/WpfHexEditor.Docking.Wpf/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfDocking?label=WpfDocking)](https://www.nuget.org/packages/WpfDocking/) | VS Code-style docking — panels, documents, drag-and-drop, 16 themes, layout persistence |
+| **[Color Picker](Sources/WpfHexEditor.ColorPicker/README.md)** | [![NuGet](https://img.shields.io/nuget/v/WpfColorPicker?label=WpfColorPicker)](https://www.nuget.org/packages/WpfColorPicker/) | HSV wheel, RGB/HSL sliders, hex input, palettes, eyedropper, opacity support |
+| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | *coming soon* | Multi-tab shell emulator — cmd/PowerShell/bash, 39 built-in commands, macros, scripting |
+| **[HexBox](Sources/WpfHexEditor.HexBox/README.md)** | — | Lightweight single-value hex input field — drop-in TextBox replacement |
+| **[ProgressBar](Sources/WpfHexEditor.ProgressBar/README.md)** | — | Animated progress indicator — determinate/indeterminate modes, themeable |
 
 ```bash
 # Install via .NET CLI
-dotnet add package WPFHexaEditor
-dotnet add package WpfCodeEditor
-dotnet add package WpfDocking
-dotnet add package WpfColorPicker
+dotnet add package WPFHexaEditor      # Hex editor control
+dotnet add package WpfCodeEditor      # Code editor control
+dotnet add package WpfDocking         # Docking framework
+dotnet add package WpfColorPicker     # Color picker control
 ```
 
-### UI Controls
-
-| Control | Progress | Description |
-|---------|----------|-------------|
-| **[HexEditor](Sources/WpfHexEditor.HexEditor/README.md)** | ~70% | Full-featured hex editor control — insert/overwrite modes, 400+ format auto-detection, multi-mode search, bookmarks, TBL encoding, block undo/redo, MVVM architecture with 16 injectable services |
-| **[HexBox](Sources/WpfHexEditor.HexBox/README.md)** | ~70% | Lightweight single-value hex input field — drop-in replacement for TextBox, zero external dependencies |
-| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/README.md)** | ~90% | RGB/HSV/hex color picker with eyedropper, alpha channel, and recent colors palette |
-| **[BarChart](Sources/WpfHexEditor.BarChart/README.md)** | ~80% | Byte-frequency bar chart for binary analysis — dual-target net48 + net8.0-windows |
-| **[ProgressBar](Sources/WpfHexEditor.ProgressBar/README.md)** | ~85% | Animated progress and loading indicator — determinate/indeterminate modes, themeable |
-| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | ~65% | Integrated terminal emulator — multi-tab shell sessions, ANSI color support, command history, plugin-extensible via `ITerminalService` |
-| **[Shell](Sources/WpfHexEditor.Shell/README.md)** | ~60% | 100% in-house VS-style docking engine — float/dock/auto-hide/pin, colored tabs, 16 built-in themes, layout undo/redo, serializable workspace state |
+> All packages target **.NET 8.0-windows**, bundle their dependencies (zero external NuGet deps), and include XML IntelliSense + SourceLink.
 
 ### Libraries
 
