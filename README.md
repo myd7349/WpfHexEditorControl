@@ -92,6 +92,23 @@ Every editor is a standalone `IDocumentEditor` plugin — reusable outside the I
 
 All controls are **independently reusable** — no IDE required.
 
+### 📦 NuGet Packages
+
+| Package | Version | Description |
+|---------|---------|-------------|
+| [![WPFHexaEditor](https://img.shields.io/nuget/v/WPFHexaEditor?label=WPFHexaEditor)](https://www.nuget.org/packages/WPFHexaEditor/) | 3.0.2 | Full-featured WPF hex editor — binary editing, 400+ format detection, search, undo/redo. Zero dependencies. |
+| [![WpfCodeEditor](https://img.shields.io/nuget/v/WpfCodeEditor?label=WpfCodeEditor)](https://www.nuget.org/packages/WpfCodeEditor/) | 0.9.6.2 | Advanced WPF code editor — 400+ languages, LSP, folding, multi-caret, minimap, split view. Zero dependencies. |
+| [![WpfDocking](https://img.shields.io/nuget/v/WpfDocking?label=WpfDocking)](https://www.nuget.org/packages/WpfDocking/) | 0.9.5.1 | VS Code-style docking framework — panels, documents, drag-and-drop, themes, layout persistence. Zero dependencies. |
+| [![WpfColorPicker](https://img.shields.io/nuget/v/WpfColorPicker?label=WpfColorPicker)](https://www.nuget.org/packages/WpfColorPicker/) | 2.0.1 | Modern color picker — HSV wheel, RGB/HSL sliders, hex input, palettes, eyedropper. Zero dependencies. |
+
+```bash
+# Install via .NET CLI
+dotnet add package WPFHexaEditor
+dotnet add package WpfCodeEditor
+dotnet add package WpfDocking
+dotnet add package WpfColorPicker
+```
+
 ### UI Controls
 
 | Control | Progress | Description |
@@ -215,7 +232,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 </Window>
 ```
 
-> **[Complete Tutorial →](docs/GETTING_STARTED.md)** · NuGet packaging planned (#109)
+> **[Complete Tutorial →](docs/GETTING_STARTED.md)** · **[NuGet Packages available](#-nuget-packages)** — HexEditor, CodeEditor, Docking, ColorPicker
 
 ---
 
