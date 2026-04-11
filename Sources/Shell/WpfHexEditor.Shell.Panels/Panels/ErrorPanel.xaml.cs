@@ -80,6 +80,12 @@ public partial class ErrorPanel : UserControl, IErrorPanel
     /// </summary>
     public event EventHandler<DiagnosticEntry>? OpenInTextEditorRequested;
 
+    /// <summary>
+    /// Raised when any severity toggle (Errors/Warnings/Messages) changes state.
+    /// The host can persist the current toggle values via <see cref="CaptureFilterSettings"/>.
+    /// </summary>
+    public event EventHandler? FilterTogglesChanged;
+
     private ToolbarOverflowManager? _overflowManager;
 
     // -- Ctor -----------------------------------------------------------------
@@ -283,21 +289,28 @@ public partial class ErrorPanel : UserControl, IErrorPanel
     {
         ErrorToggle.IsChecked = !(ErrorToggle.IsChecked == true);
         ApplyFilter();
+        FilterTogglesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnOvfWarningToggle(object sender, RoutedEventArgs e)
     {
         WarningToggle.IsChecked = !(WarningToggle.IsChecked == true);
         ApplyFilter();
+        FilterTogglesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnOvfMessageToggle(object sender, RoutedEventArgs e)
     {
         MessageToggle.IsChecked = !(MessageToggle.IsChecked == true);
         ApplyFilter();
+        FilterTogglesChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnFilterChanged(object sender, RoutedEventArgs e) => ApplyFilter();
+    private void OnFilterChanged(object sender, RoutedEventArgs e)
+    {
+        ApplyFilter();
+        FilterTogglesChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
 
@@ -431,6 +444,29 @@ public partial class ErrorPanel : UserControl, IErrorPanel
         };
         if (ScopeCombo.SelectedIndex != idx)
             ScopeCombo.SelectedIndex = idx;
+    }
+
+    // -- Settings persistence --------------------------------------------------
+
+    /// <summary>
+    /// Applies persisted toggle states. Call once after construction.
+    /// </summary>
+    public void ApplyFilterSettings(bool showErrors, bool showWarnings, bool showMessages)
+    {
+        ErrorToggle.IsChecked   = showErrors;
+        WarningToggle.IsChecked = showWarnings;
+        MessageToggle.IsChecked = showMessages;
+        ApplyFilter();
+    }
+
+    /// <summary>
+    /// Captures the current toggle states into the provided out parameters.
+    /// </summary>
+    public void CaptureFilterSettings(out bool showErrors, out bool showWarnings, out bool showMessages)
+    {
+        showErrors   = ErrorToggle.IsChecked == true;
+        showWarnings = WarningToggle.IsChecked == true;
+        showMessages = MessageToggle.IsChecked == true;
     }
 
     // -- Nested ViewModel -----------------------------------------------------
