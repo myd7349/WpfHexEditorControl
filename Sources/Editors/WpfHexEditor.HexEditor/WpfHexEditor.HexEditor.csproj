@@ -13,9 +13,9 @@
 
     <!-- NuGet package metadata -->
     <PackageId>WPFHexaEditor</PackageId>
-    <Version>3.0.2</Version>
-    <AssemblyVersion>3.0.2.0</AssemblyVersion>
-    <FileVersion>3.0.2</FileVersion>
+    <Version>3.0.3</Version>
+    <AssemblyVersion>3.0.3.0</AssemblyVersion>
+    <FileVersion>3.0.3</FileVersion>
     <Authors>Derek Tremblay</Authors>
     <Company>Derek Tremblay (derektremblay666@gmail.com)</Company>
     <Product>WpfHexEditorControl</Product>
@@ -77,6 +77,20 @@
       <!-- Bundle matching XML IntelliSense docs alongside each DLL -->
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget','ProjectReference')-&gt;'%(RootDir)%(Directory)%(Filename).xml')"
                             Condition="Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Satellite assemblies (culture-specific .resources.dll) from bundled project references.
+    ReferenceCopyLocalPaths does not reliably propagate DestinationSubDirectory across PrivateAssets
+    project references, so we glob the build output directly.
+    %(RecursiveDir) gives the culture folder (e.g. "fr-FR\") which becomes the in-package sub-path
+    so NuGet places files at lib/net8.0-windows/fr-FR/WpfHexEditor.Core.resources.dll, etc.
+  -->
+  <Target Name="IncludeSatelliteAssembliesInPackage" AfterTargets="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(OutputPath)**\*.resources.dll"
+                              PackagePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
   </Target>
 
