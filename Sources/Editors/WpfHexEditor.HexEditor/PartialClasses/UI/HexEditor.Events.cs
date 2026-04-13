@@ -145,6 +145,49 @@ namespace WpfHexEditor.HexEditor
         }
 
         /// <summary>
+        /// Window-level PreviewMouseMove handler (tunneling) — fires even when the mouse
+        /// has left the HexViewport area or when the WindowChrome/docking system has
+        /// stolen the mouse capture. Continues auto-scroll during cross-boundary drags.
+        /// </summary>
+        private void OnWindowPreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_viewModel == null || !_isMouseDown || e.LeftButton != MouseButtonState.Pressed)
+            {
+                if (_isMouseDown) StopAutoScroll();
+                return;
+            }
+
+            // Translate mouse position to HexViewport coordinates
+            Point mousePos = e.GetPosition(HexViewport);
+            _lastMousePosition = mousePos;
+
+            double viewportHeight = HexViewport.ActualHeight;
+
+            if (mousePos.Y < AutoScrollEdgeThreshold)
+                StartAutoScroll(-1);
+            else if (mousePos.Y > viewportHeight - AutoScrollEdgeThreshold)
+                StartAutoScroll(1);
+            else
+                StopAutoScroll();
+        }
+
+        /// <summary>
+        /// Window-level PreviewMouseUp handler — ends the drag if the mouse button is
+        /// released outside the HexViewport (e.g. over the title bar or another panel).
+        /// </summary>
+        private void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left && _isMouseDown)
+            {
+                _isMouseDown = false;
+                _isOffsetLineDrag = false;
+                if (HexViewport.IsMouseCaptured)
+                    HexViewport.ReleaseMouseCapture();
+                StopAutoScroll();
+            }
+        }
+
+        /// <summary>
         /// Helper method to find the virtual position at mouse coordinates
         /// Uses HexViewport's precise hit-testing with actual measured dimensions
         /// </summary>
