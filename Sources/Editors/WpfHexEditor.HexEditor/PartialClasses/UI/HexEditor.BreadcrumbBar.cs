@@ -23,6 +23,8 @@ public partial class HexEditor
 {
     private HexBreadcrumbBar? _breadcrumbBar;
     private CustomBackgroundBlock? _bcLastBlock;
+    private bool _bcLastBlockWasNull;   // disambiguates null from "not yet set"
+    private bool _bcUpdating;           // re-entrancy guard
     private List<FormatNavigationBookmark>? _bcCachedBookmarks;
     private List<BreadcrumbSection>? _bcSections;
 
@@ -82,32 +84,44 @@ public partial class HexEditor
     {
         if (_breadcrumbBar is not null) return;
 
-        _breadcrumbBar = new HexBreadcrumbBar();
-        _breadcrumbBar.NavigateRequested += OnBreadcrumbNavigate;
+        // The breadcrumb bar is already declared in the XAML template (x:Name="BreadcrumbBar").
+        // Re-use that instance instead of injecting a second one into the grid at runtime,
+        // which would produce a duplicate empty row above the real bar.
+        _breadcrumbBar = this.FindName("BreadcrumbBar") as HexBreadcrumbBar;
+        if (_breadcrumbBar is null) return;
 
-        if (Content is Grid rootGrid)
-        {
-            rootGrid.RowDefinitions.Insert(0, new RowDefinition { Height = GridLength.Auto });
-            foreach (UIElement child in rootGrid.Children)
-                Grid.SetRow(child, Grid.GetRow(child) + 1);
-            Grid.SetRow(_breadcrumbBar, 0);
-            Grid.SetColumnSpan(_breadcrumbBar, rootGrid.ColumnDefinitions.Count > 0
-                ? rootGrid.ColumnDefinitions.Count : 1);
-            rootGrid.Children.Add(_breadcrumbBar);
-        }
+        _breadcrumbBar.NavigateRequested += OnBreadcrumbNavigate;
     }
 
     private void OnBreadcrumbNavigate(object? sender, BreadcrumbNavigateEventArgs e)
     {
-        SetPosition(e.Offset);
-        if (e.Length > 0 && e.Length <= 256)
-            SelectionStop = e.Offset + e.Length - 1;
+        // Suppress breadcrumb rebuilds while we're programmatically moving the cursor.
+        // Without this guard, SetPosition fires OnSelectionChanged → UpdateBreadcrumb,
+        // then the SelectionStop assignment fires it again — causing a double rebuild and
+        // potential re-entrancy inside RenderPathSegments.
+        _bcUpdating = true;
+        try
+        {
+            SetPosition(e.Offset);
+            if (e.Length > 0 && e.Length <= 256)
+                SelectionStop = e.Offset + e.Length - 1;
+        }
+        finally
+        {
+            _bcUpdating = false;
+        }
+
+        // Single rebuild after both position and selection are committed.
+        _bcLastBlock = null;
+        _bcLastBlockWasNull = false;
+        UpdateBreadcrumb();
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
 
     internal void UpdateBreadcrumb()
     {
+        if (_bcUpdating) return;
         if (_breadcrumbBar is null || _breadcrumbBar.Visibility != Visibility.Visible) return;
 
         var offset = SelectionStart >= 0 ? SelectionStart : 0;
@@ -116,8 +130,16 @@ public partial class HexEditor
         _breadcrumbBar.UpdateOffsetOnly(offset, selLen);
 
         var block = _customBackgroundService.GetBlockAt(offset);
-        if (block == _bcLastBlock && _bcLastBlock != null) return;
+
+        // Early-exit when the cursor is still inside the same block.
+        // _bcLastBlockWasNull tracks the previous null state so that "null block → null block"
+        // (cursor moving through untagged bytes) also triggers the early exit instead of
+        // rebuilding the segment list on every keystroke / mouse move.
+        bool blockIsNull = block is null;
+        if (block == _bcLastBlock && blockIsNull == _bcLastBlockWasNull) return;
+
         _bcLastBlock = block;
+        _bcLastBlockWasNull = blockIsNull;
 
         // Ensure section index
         if (_bcSections == null)
@@ -154,6 +176,7 @@ public partial class HexEditor
     internal void ResetBreadcrumbCache()
     {
         _bcLastBlock = null;
+        _bcLastBlockWasNull = false;
         _bcCachedBookmarks = null;
         _bcSections = null; // force rebuild on next update
     }
