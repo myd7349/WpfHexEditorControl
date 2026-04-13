@@ -21,6 +21,7 @@
 // ==========================================================
 
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Web.WebView2.Core;
@@ -96,6 +97,7 @@ public sealed partial class MarkdownPreviewPane : UserControl
     {
         InitializeComponent();
         Loaded           += OnLoaded;
+        SizeChanged      += (_, e) => InvalidateWebViewSize(e.NewSize.Width, e.NewSize.Height);
         IsVisibleChanged += (_, e) =>
         {
             if (_webViewHost != null)
@@ -115,6 +117,54 @@ public sealed partial class MarkdownPreviewPane : UserControl
             _ctxFullscreen.Header = isFullscreen ? "Exit Fullscreen" : "Fullscreen";
     }
 
+    /// <summary>
+    /// Forces the WebView2 HWND and all its Win32 children to match the given WPF logical size.
+    /// WPF measure/arrange passes do not propagate to HwndHost-derived Win32 children after
+    /// layout changes (splitter drag, view mode switch, fullscreen exit) — SetWindowPos is required.
+    /// </summary>
+    public void InvalidateWebViewSize(double width, double height)
+    {
+        if (_webView is null) return;
+
+        // WindowsFormsHost (HwndHost) is the root Win32 anchor managed by WPF layout.
+        // Resize it first so WPF's own HWND slot matches.
+        var hostHwnd = _webViewHost.Handle;
+        if (hostHwnd == IntPtr.Zero) return;
+
+        // Convert WPF logical pixels → physical pixels via the DPI transform.
+        var source = PresentationSource.FromVisual(this);
+        var scaleX = source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        var scaleY = source?.CompositionTarget?.TransformToDevice.M22 ?? 1.0;
+
+        var w = (int)Math.Max(width  * scaleX, 1);
+        var h = (int)Math.Max(height * scaleY, 1);
+
+        // Resize WindowsFormsHost HWND, then walk the entire child chain:
+        // WindowsFormsHost → WinForms container → WebView2 WinForms → browser child HWNDs
+        ResizeHwndTree(hostHwnd, w, h);
+    }
+
+    private static void ResizeHwndTree(IntPtr hwnd, int w, int h)
+    {
+        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, SWP_NOZORDER | SWP_NOMOVE);
+        var child = GetWindow(hwnd, GW_CHILD);
+        while (child != IntPtr.Zero)
+        {
+            ResizeHwndTree(child, w, h);
+            child = GetWindow(child, GW_HWNDNEXT);
+        }
+    }
+
+    /// <summary>
+    /// Deferred overload: schedules a resize after the current WPF layout pass completes
+    /// so ActualWidth/ActualHeight are up-to-date.
+    /// </summary>
+    public void InvalidateWebViewSize()
+    {
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render,
+            () => InvalidateWebViewSize(ActualWidth, ActualHeight));
+    }
+
     private ContextMenu BuildContextMenu()
     {
         var menu = new ContextMenu();
@@ -126,7 +176,7 @@ public sealed partial class MarkdownPreviewPane : UserControl
         AddMenuItem(menu, "Split View",    "Ctrl+2",         OnCtxSplitView);
         AddMenuItem(menu, "Preview Only",  "Ctrl+3",         OnCtxPreviewOnly);
         AddSeparator(menu);
-        _ctxFullscreen = AddMenuItem(menu, "Fullscreen",     "F11",            OnCtxToggleFullscreen);
+        _ctxFullscreen = AddMenuItem(menu, "Fullscreen",     "",               OnCtxToggleFullscreen);
 
         // ACTIONS group
         AddSeparator(menu);
@@ -177,6 +227,19 @@ public sealed partial class MarkdownPreviewPane : UserControl
     public bool IsWebViewReady => _isInitialized;
 
     /// <summary>
+    /// Forces the next <see cref="RenderAsync"/> call to do a full shell reload
+    /// (Navigate + OnNavigationCompleted), which re-applies zoom and content.
+    /// Use after reparenting to guarantee <see cref="SetZoom"/> is applied via JS.
+    /// </summary>
+    public void InvalidateShell()
+    {
+        _shellReady      = false;
+        _shellIsDark     = null;   // null forces needsShellReload = true on next RenderAsync
+        _shellHasMermaid = null;
+    }
+
+
+    /// <summary>
     /// Executes a JavaScript expression and returns the result as a string.
     /// JSON-encoded string results are unquoted automatically.
     /// Returns <see langword="null"/> if not initialized or on error.
@@ -214,8 +277,10 @@ public sealed partial class MarkdownPreviewPane : UserControl
                 browserExecutableFolder: null,
                 userDataFolder: userDataFolder);
 
-            // Create the WinForms control on the UI thread and host it
-            _webView = new WinFormsWebView2();
+            // Create the WinForms control on the UI thread and host it.
+            // Dock = Fill is mandatory so the WinForms control fills its WindowsFormsHost
+            // cell automatically — without it the HWND keeps its default size (300×150).
+            _webView = new WinFormsWebView2 { Dock = System.Windows.Forms.DockStyle.Fill };
             _webViewHost.Child = _webView;
 
             await _webView.EnsureCoreWebView2Async(env);
@@ -401,9 +466,8 @@ public sealed partial class MarkdownPreviewPane : UserControl
         await _webView!.CoreWebView2.ExecuteScriptAsync(
             $"window.updateMarkdown(\"{escaped}\");");
 
-        // Restore zoom level after shell reload
-        if (_currentZoom != 1.0)
-            SetZoom(_currentZoom);
+        // Always restore zoom after shell reload (even 1.0 to reset any leftover value)
+        SetZoom(_currentZoom);
     }
 
     // --- Context menu handlers --------------------------------------------
@@ -452,4 +516,20 @@ public sealed partial class MarkdownPreviewPane : UserControl
 
     private void OnCtxCopyText(object sender, RoutedEventArgs e)
         => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.CopyText);
+
+    // --- Win32 P/Invoke ---------------------------------------------------
+
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOMOVE   = 0x0002;
+    private const uint GW_CHILD     = 5;
+    private const uint GW_HWNDNEXT  = 2;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd, IntPtr hWndInsertAfter,
+        int x, int y, int cx, int cy,
+        uint uFlags);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
 }

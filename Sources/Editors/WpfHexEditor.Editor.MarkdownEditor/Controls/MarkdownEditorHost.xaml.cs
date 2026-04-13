@@ -197,7 +197,6 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
         CommandBindings.Add(new CommandBinding(MdCommands.ToggleWordWrap,   (_, _) => SetWordWrap(!_wordWrap)));
         CommandBindings.Add(new CommandBinding(MdCommands.ToggleFullscreen, (_, _) => ToggleFullscreen()));
-        InputBindings.Add(new KeyBinding(MdCommands.ToggleFullscreen, new KeyGesture(Key.F11)));
 
         // Wire splitter drag-complete for ratio persistence
         _splitter.DragCompleted += OnSplitterDragCompleted;
@@ -681,6 +680,10 @@ public sealed partial class MarkdownEditorHost : UserControl,
                     showEditor, showPreview, isSplit);
                 break;
         }
+
+        // Force the WebView2 HWND to match the new layout slot via SetWindowPos.
+        // WPF arrange passes do not propagate to Win32 children after grid rebuilds.
+        _preview.InvalidateWebViewSize();
     }
 
     private void BuildHorizontalLayout(bool editorFirst,
@@ -899,7 +902,7 @@ public sealed partial class MarkdownEditorHost : UserControl,
         _podFullscreen = new EditorToolbarItem
         {
             Icon      = "\uE740", Label   = "Fullscreen",
-            Tooltip   = "Toggle fullscreen preview (F11)",
+            Tooltip   = "Toggle fullscreen preview",
             IsToggle  = true,     IsChecked = false,
             Command   = new RelayCmd(ToggleFullscreen),
         };
@@ -1099,26 +1102,48 @@ public sealed partial class MarkdownEditorHost : UserControl,
         else               OpenFullscreen();
     }
 
+    // Zoom level captured when entering fullscreen — restored on exit
+    private double _zoomBeforeFullscreen = 1.0;
+
+    // Win32 VK codes needed for the low-level keyboard hook
+    private const int WM_KEYDOWN = 0x0100;
+    private const int VK_ESCAPE  = 0x1B;
+
+    private System.Windows.Interop.HwndSourceHook? _fullscreenHook;
+
     private void OpenFullscreen()
     {
-        _isFullscreen = true;
+        _zoomBeforeFullscreen  = _previewZoom;   // capture BEFORE setting _isFullscreen
+        _isFullscreen          = true;
 
         // Detach _preview from the split grid before reparenting
         _rootGrid.Children.Remove(_preview);
 
-        // Resolve the active screen from the parent WPF Window
+        // Resolve the active screen — use WorkingArea so the window is on one screen only.
+        // Screen.Bounds is in physical pixels; Window.Left/Top/Width/Height are WPF DIPs.
+        // We must convert using the DPI of the parent window.
         var parentWin = Window.GetWindow(this);
         System.Windows.Forms.Screen screen;
+        double dpiScale = 1.0;
+
         if (parentWin is not null)
         {
-            var hwnd = new System.Windows.Interop.WindowInteropHelper(parentWin).Handle;
-            screen   = System.Windows.Forms.Screen.FromHandle(hwnd);
+            var helper = new System.Windows.Interop.WindowInteropHelper(parentWin);
+            var hwnd   = helper.Handle;
+            screen     = System.Windows.Forms.Screen.FromHandle(hwnd);
+
+            // PresentationSource gives the WPF→physical pixel transform
+            var source = System.Windows.Interop.HwndSource.FromHwnd(hwnd);
+            if (source?.CompositionTarget is not null)
+                dpiScale = source.CompositionTarget.TransformToDevice.M11;
         }
         else
         {
             screen = System.Windows.Forms.Screen.PrimaryScreen!;
         }
 
+        // Convert physical pixel bounds to WPF DIPs
+        var b = screen.Bounds;
         _fullscreenWindow = new Window
         {
             WindowStyle        = WindowStyle.None,
@@ -1126,22 +1151,35 @@ public sealed partial class MarkdownEditorHost : UserControl,
             AllowsTransparency = false,
             Background         = System.Windows.Media.Brushes.Black,
             ShowInTaskbar      = false,
-            Left               = screen.Bounds.Left,
-            Top                = screen.Bounds.Top,
-            Width              = screen.Bounds.Width,
-            Height             = screen.Bounds.Height,
+            Left               = b.Left   / dpiScale,
+            Top                = b.Top    / dpiScale,
+            Width              = b.Width  / dpiScale,
+            Height             = b.Height / dpiScale,
             Content            = _preview,
             Topmost            = true,
         };
 
-        _fullscreenWindow.KeyDown += (_, e) =>
+        // Window.KeyDown never fires when the embedded WebView2 HWND owns focus.
+        // Use a low-level WndProc hook on the fullscreen Window's own HWND instead.
+        _fullscreenWindow.SourceInitialized += (_, _) =>
         {
-            if (e.Key == Key.Escape || e.Key == Key.F11)
-                CloseFullscreen();
+            var fsSource = (System.Windows.Interop.HwndSource)
+                System.Windows.Interop.HwndSource.FromVisual(_fullscreenWindow)!;
+
+            _fullscreenHook = (hwnd, msg, wParam, lParam, ref handled) =>
+            {
+                if (msg == WM_KEYDOWN && wParam.ToInt32() == VK_ESCAPE)
+                {
+                    handled = true;
+                    Dispatcher.BeginInvoke(CloseFullscreen);
+                }
+                return IntPtr.Zero;
+            };
+            fsSource.AddHook(_fullscreenHook);
         };
+
         _fullscreenWindow.Closed += (_, _) =>
         {
-            // User closed the window via OS (Alt+F4) — ensure clean state
             if (_isFullscreen) CloseFullscreen();
         };
 
@@ -1158,14 +1196,43 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
         if (_fullscreenWindow is not null)
         {
+            // Remove the WndProc hook before closing
+            if (_fullscreenHook is not null)
+            {
+                var fsSource = System.Windows.Interop.HwndSource.FromVisual(_fullscreenWindow)
+                    as System.Windows.Interop.HwndSource;
+                fsSource?.RemoveHook(_fullscreenHook);
+                _fullscreenHook = null;
+            }
+
             // Detach _preview BEFORE closing so WPF doesn't destroy it
             _fullscreenWindow.Content = null;
             _fullscreenWindow.Close();
             _fullscreenWindow = null;
         }
 
-        // Restore _preview into the split grid
+        // Clear any locally-set size values retained from the fullscreen Window
+        _preview.ClearValue(WidthProperty);
+        _preview.ClearValue(HeightProperty);
+        _preview.ClearValue(HorizontalAlignmentProperty);
+        _preview.ClearValue(VerticalAlignmentProperty);
+
+        // Rebuild the grid immediately so _preview is back in the visual tree
         UpdateGridLayout();
+
+        // Defer the measure/layout pass: WPF needs one dispatcher cycle to fully
+        // detach _preview from the closed Window before it can measure it correctly.
+        var zoomToRestore = _zoomBeforeFullscreen;
+        Dispatcher.BeginInvoke(() =>
+        {
+            _rootGrid.InvalidateMeasure();
+            _rootGrid.UpdateLayout();
+
+            _preview.SetZoom(zoomToRestore);
+            _preview.InvalidateShell();
+            _ = ForceRefreshAsync();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+
         SyncFullscreenState();
     }
 
