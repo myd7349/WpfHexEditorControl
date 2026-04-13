@@ -169,40 +169,56 @@ public sealed partial class MarkdownPreviewPane : UserControl
     {
         var menu = new ContextMenu();
         menu.SetResourceReference(StyleProperty, "MD_ContextMenuStyle");
+        menu.SetResourceReference(ItemsControl.ItemContainerStyleProperty, "MD_MenuItemStyle");
 
         // VIEW group
         AddGroupHeader(menu, "VIEW");
-        AddMenuItem(menu, "Source Only",   "Ctrl+1",         OnCtxSourceOnly);
-        AddMenuItem(menu, "Split View",    "Ctrl+2",         OnCtxSplitView);
-        AddMenuItem(menu, "Preview Only",  "Ctrl+3",         OnCtxPreviewOnly);
+        AddMenuItem(menu, "Source Only",   "Ctrl+1",         OnCtxSourceOnly,      "\uE8A5");
+        AddMenuItem(menu, "Split View",    "Ctrl+2",         OnCtxSplitView,       "\uE8A9");
+        AddMenuItem(menu, "Preview Only",  "Ctrl+3",         OnCtxPreviewOnly,     "\uE890");
         AddSeparator(menu);
-        _ctxFullscreen = AddMenuItem(menu, "Fullscreen",     "",               OnCtxToggleFullscreen);
+        _ctxFullscreen = AddMenuItem(menu, "Fullscreen",     "",                   OnCtxToggleFullscreen, "\uE740");
 
         // ACTIONS group
         AddSeparator(menu);
         AddGroupHeader(menu, "ACTIONS");
-        AddMenuItem(menu, "Refresh Preview",  "F9",           OnCtxRefresh);
-        AddMenuItem(menu, "Cycle Layout",     "Ctrl+Shift+L", OnCtxCycleLayout);
+        AddMenuItem(menu, "Refresh Preview",  "F9",           OnCtxRefresh,        "\uE72C");
+        AddMenuItem(menu, "Cycle Layout",     "Ctrl+Shift+L", OnCtxCycleLayout,    "\uE7C4");
 
         // ZOOM group
         AddSeparator(menu);
         AddGroupHeader(menu, "ZOOM");
-        AddMenuItem(menu, "Zoom In",   "Ctrl++", OnCtxZoomIn);
-        AddMenuItem(menu, "Zoom Out",  "Ctrl+-", OnCtxZoomOut);
-        AddMenuItem(menu, "Reset Zoom","Ctrl+0", OnCtxZoomReset);
+        AddMenuItem(menu, "Zoom In",   "Ctrl++", OnCtxZoomIn,   "\uE8A3");
+        AddMenuItem(menu, "Zoom Out",  "Ctrl+-", OnCtxZoomOut,  "\uE71F");
+        AddMenuItem(menu, "Reset Zoom","Ctrl+0", OnCtxZoomReset,"\uE9A6");
 
         // EDIT group
         AddSeparator(menu);
         AddGroupHeader(menu, "EDIT");
-        AddMenuItem(menu, "Copy",      "Ctrl+C", OnCtxCopyText);
+        AddMenuItem(menu, "Copy",      "Ctrl+C", OnCtxCopyText, "\uE8C8");
 
         return menu;
     }
 
-    private static MenuItem AddMenuItem(ContextMenu menu, string header, string gesture, RoutedEventHandler handler)
+    private static MenuItem AddMenuItem(ContextMenu menu, string header, string gesture,
+        RoutedEventHandler handler, string? mdl2Glyph = null)
     {
         var item = new MenuItem { Header = header, InputGestureText = gesture };
+        item.SetResourceReference(StyleProperty, "MD_MenuItemStyle");
         item.Click += handler;
+        if (mdl2Glyph is not null)
+        {
+            var icon = new TextBlock
+            {
+                Text       = mdl2Glyph,
+                FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+                FontSize   = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Center,
+            };
+            icon.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "DockMenuForegroundBrush");
+            item.Icon = icon;
+        }
         menu.Items.Add(item);
         return item;
     }

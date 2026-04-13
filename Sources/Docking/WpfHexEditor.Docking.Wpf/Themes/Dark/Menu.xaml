@@ -220,15 +220,41 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ContextMenu}">
-                    <Border Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="1"
-                            Padding="0,2"
-                            SnapsToDevicePixels="True"
-                            Grid.IsSharedSizeScope="True">
-                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
-                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                    </Border>
+                    <!-- Outer margin reserves room for the drop shadow -->
+                    <Grid Margin="6">
+                        <!-- Layer 1: shadow backing -->
+                        <Border CornerRadius="4"
+                                Background="{TemplateBinding Background}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="10"
+                                                  ShadowDepth="0" Opacity="0.45"/>
+                            </Border.Effect>
+                        </Border>
+                        <!-- Layer 2: clipped content with accent band -->
+                        <Border CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Accent band -->
+                                <Border Grid.Column="0"
+                                        Background="{DynamicResource AccentBrush}"
+                                        CornerRadius="4,0,0,4"/>
+                                <!-- Items -->
+                                <Grid Grid.Column="1" Grid.IsSharedSizeScope="True">
+                                    <ItemsPresenter Margin="0,2"
+                                                    KeyboardNavigation.DirectionalNavigation="Cycle"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

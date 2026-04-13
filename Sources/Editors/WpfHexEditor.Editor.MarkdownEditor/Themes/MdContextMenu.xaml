@@ -73,7 +73,8 @@ Architecture Notes:
                                         Background="{DynamicResource AccentBrush}"
                                         CornerRadius="4,0,0,4"/>
 
-                                <!-- Items -->
+                                <!-- Items — SharedSizeScope must wrap ItemsPresenter so
+                                     MenuItemIconGroup / MenuItemIGTGroup align across all rows -->
                                 <Grid Grid.Column="1" Grid.IsSharedSizeScope="True">
                                     <ItemsPresenter Margin="0,2"
                                                     KeyboardNavigation.DirectionalNavigation="Cycle"
@@ -86,6 +87,15 @@ Architecture Notes:
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- ===================================================================
+         MD_MenuItemStyle
+         Implicit MenuItem style for the MD context menu — inherits the
+         global DockDarkMenuItemStyle so the icon column (MenuItemIconGroup)
+         and hover highlight are consistent with the rest of the IDE.
+         =================================================================== -->
+    <Style x:Key="MD_MenuItemStyle" TargetType="{x:Type MenuItem}"
+           BasedOn="{StaticResource DockDarkMenuItemStyle}"/>
 
     <!-- ===================================================================
          MD_GroupHeaderStyle
