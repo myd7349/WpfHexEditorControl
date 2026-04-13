@@ -220,5 +220,17 @@ namespace WpfHexEditor.Sample.HexEditor.Properties {
                 this["SettingsVersion"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Auto")]
+        public string PreferredCopyMode {
+            get {
+                return ((string)(this["PreferredCopyMode"]));
+            }
+            set {
+                this["PreferredCopyMode"] = value;
+            }
+        }
     }
 }

@@ -74,19 +74,36 @@ public sealed class ContextInjector
 
     private ContextBlock? ResolveErrors()
     {
-        // TODO: wire to IErrorPanelService when available
-        return new ContextBlock("Build Errors", "(Error panel integration pending)", ContextKind.Errors);
+        var errors = _context.ErrorPanel.GetRecentErrors(10);
+        if (errors.Count == 0) return null;
+
+        var content = string.Join(Environment.NewLine, errors);
+        return new ContextBlock("Build Errors", content, ContextKind.Errors);
     }
 
     private ContextBlock? ResolveSolution()
     {
-        // TODO: wire to ISolutionExplorerService.GetSolutionFilePaths()
-        return new ContextBlock("Solution Structure", "(Solution tree integration pending)", ContextKind.Solution);
+        if (!_context.SolutionExplorer.HasActiveSolution) return null;
+
+        var paths = _context.SolutionExplorer.GetSolutionFilePaths();
+        if (paths.Count == 0) return null;
+
+        var name = _context.SolutionExplorer.ActiveSolutionName ?? "Solution";
+        var content = string.Join(Environment.NewLine, paths);
+        return new ContextBlock($"Solution: {name}", content, ContextKind.Solution);
     }
 
     private ContextBlock? ResolveHex()
     {
-        // TODO: wire to IHexEditorService
-        return new ContextBlock("Hex Selection", "(Hex editor integration pending)", ContextKind.Hex);
+        if (!_context.HexEditor.IsActive) return null;
+
+        var bytes = _context.HexEditor.GetSelectedBytes();
+        if (bytes.Length == 0) return null;
+
+        var hex = BitConverter.ToString(bytes).Replace("-", " ");
+        return new ContextBlock(
+            $"Hex Selection (offset 0x{_context.HexEditor.SelectionStart:X}, {bytes.Length} bytes)",
+            hex,
+            ContextKind.Hex);
     }
 }

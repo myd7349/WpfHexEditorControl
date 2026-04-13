@@ -281,8 +281,11 @@ namespace WpfHexEditor.Sample.HexEditor.Views.Dialogs
 
             CopyModeListView.ItemsSource = copyModes;
 
-            // Select current copy mode (default to Auto if not set)
-            var currentMode = CopyPasteMode.Auto; // TODO: Load from settings
+            // Select current copy mode (loaded from user settings, default Auto)
+            var savedMode = Properties.Settings.Default.PreferredCopyMode;
+            var currentMode = Enum.TryParse<CopyPasteMode>(savedMode, out var parsedMode)
+                ? parsedMode
+                : CopyPasteMode.Auto;
             System.Diagnostics.Debug.WriteLine($"[OptionsDialog.LoadCopyModes] Current Copy Mode: {currentMode}");
 
             var currentModeInfo = copyModes.FirstOrDefault(m => m.Mode == currentMode) ?? copyModes.First();
@@ -316,7 +319,8 @@ namespace WpfHexEditor.Sample.HexEditor.Views.Dialogs
 
                     SelectedCopyMode = selected.Mode;
 
-                    // TODO: Persist the setting
+                    Properties.Settings.Default.PreferredCopyMode = selected.Mode.ToString();
+                    Properties.Settings.Default.Save();
                     System.Diagnostics.Debug.WriteLine($"[OptionsDialog.CopyModeListView_SelectionChanged] Copy mode changed instantly! UI updated in real-time.");
                 }
             }
