@@ -1486,8 +1486,16 @@ internal sealed class TextViewport : FrameworkElement
         // Feature A: extend rectangular selection.
         if (_isRectSelecting && e.LeftButton == MouseButtonState.Pressed)
         {
-            var rectPos          = e.GetPosition(this);
-            var (mLine, mCol)    = HitTestPosition(rectPos);
+            var rectPos = e.GetPosition(this);
+
+            // Auto-scroll when mouse is above or below the viewport.
+            if (rectPos.Y < 0)
+                FirstVisibleLine = Math.Max(0, _firstVisibleLine - 1);
+            else if (rectPos.Y > ActualHeight)
+                FirstVisibleLine = _firstVisibleLine + 1;
+
+            var clampedRectPos   = new Point(rectPos.X, Math.Clamp(rectPos.Y, 0, ActualHeight - 1));
+            var (mLine, mCol)    = HitTestPosition(clampedRectPos);
             _rectSelection.Extend(mLine, mCol);
 
             long rectNow = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -1532,6 +1540,13 @@ internal sealed class TextViewport : FrameworkElement
 
         if (!_isDragging || e.LeftButton != MouseButtonState.Pressed) return;
 
+        // Auto-scroll when mouse is above or below the viewport (before throttle gate).
+        var rawPos = e.GetPosition(this);
+        if (rawPos.Y < 0)
+            FirstVisibleLine = Math.Max(0, _firstVisibleLine - 1);
+        else if (rawPos.Y > ActualHeight)
+            FirstVisibleLine = _firstVisibleLine + 1;
+
         // 60 Hz gate: skip if last drag-render was < 16.7 ms ago (P1-TE-02)
         long now = System.Diagnostics.Stopwatch.GetTimestamp();
         if (now - _lastDragRenderTick < DragThrottleTicks) return;
@@ -1544,7 +1559,7 @@ internal sealed class TextViewport : FrameworkElement
             _vm.SelectionAnchorColumn = _vm.CaretColumn;
         }
 
-        var pos          = e.GetPosition(this);
+        var pos          = new Point(rawPos.X, Math.Clamp(rawPos.Y, 0, ActualHeight - 1));
         var (line, col)  = HitTestPosition(pos);
 
         // Guard: skip if caret cell is unchanged (mouse within same character).

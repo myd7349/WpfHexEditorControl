@@ -76,11 +76,6 @@ namespace WpfHexEditor.HexEditor
 
                 // Capture mouse for drag operation
                 HexViewport.CaptureMouse();
-
-                // Start polling timer — direction determined via Win32 GetCursorPos each tick,
-                // independent of WPF event routing and ancestor ClipToBounds restrictions.
-                if (!_autoScrollTimer.IsEnabled)
-                    _autoScrollTimer.Start();
             }
 
             e.Handled = true;
@@ -94,6 +89,16 @@ namespace WpfHexEditor.HexEditor
             Point mousePos = e.GetPosition(HexViewport);
             _lastMousePosition = mousePos;
 
+            // Auto-scroll when mouse is outside the viewport bounds.
+            // OnMouseMove continues to fire via mouse capture even when outside bounds.
+            double viewportHeight = HexViewport.ActualHeight;
+            if (mousePos.Y < 0)
+                StartAutoScroll(-1);
+            else if (mousePos.Y > viewportHeight)
+                StartAutoScroll(1);
+            else
+                StopAutoScroll();
+
             // Offset line drag: selection is handled by HexViewport events.
             if (_isOffsetLineDrag)
             {
@@ -101,9 +106,9 @@ namespace WpfHexEditor.HexEditor
                 return;
             }
 
-            // Update selection during drag. Auto-scroll direction is determined by the polling
-            // timer (Win32 GetCursorPos) — independent of MouseMove routing.
-            var hitResult = HexViewport.HitTestByteWithArea(mousePos);
+            // Clamp Y to viewport bounds for hit-testing.
+            var clampedPos = new Point(mousePos.X, Math.Clamp(mousePos.Y, 0, viewportHeight - 1));
+            var hitResult = HexViewport.HitTestByteWithArea(clampedPos);
             if (hitResult.Position.HasValue)
             {
                 var position = new VirtualPosition(hitResult.Position.Value);

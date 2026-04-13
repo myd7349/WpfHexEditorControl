@@ -111,10 +111,16 @@ public class TabOverflowButton : Button
         }
         else if (OverflowPanel is not null)
         {
+            // Use Hidden (not Collapsed) so the button always reserves its column width.
+            // Collapsed → column width = 0 → panel gets full width → all tabs appear to
+            // fit → HasOverflow stays false → chicken-and-egg: button never appears until
+            // a manual resize forces a second measure with the real constraint.
+            // Hidden → column always reserves the button width → panel gets the correct
+            // constrained width from the first pass → overflow is detected on load.
             var binding = new Binding(nameof(TabOverflowPanel.HasOverflow))
             {
                 Source = OverflowPanel,
-                Converter = new BooleanToVisibilityConverter()
+                Converter = new BoolToHiddenVisibilityConverter()
             };
             SetBinding(VisibilityProperty, binding);
         }
@@ -276,4 +282,21 @@ public class TabOverflowButton : Button
         }
         return "Tab";
     }
+}
+
+/// <summary>
+/// Converts a <see cref="bool"/> to <see cref="Visibility"/>:
+/// <see langword="true"/> → <see cref="Visibility.Visible"/>,
+/// <see langword="false"/> → <see cref="Visibility.Hidden"/> (not Collapsed).
+/// Using Hidden keeps the element's layout slot so its parent column always
+/// reserves the button width, preventing the chicken-and-egg overflow detection
+/// problem that occurs when Collapsed collapses the column on first measure.
+/// </summary>
+internal sealed class BoolToHiddenVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => value is true ? Visibility.Visible : Visibility.Hidden;
+
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => value is Visibility.Visible;
 }

@@ -109,11 +109,12 @@ public sealed partial class MarkdownEditorHost : UserControl,
     // Preview zoom (1.0 = 100 %) — persisted across sessions
     private double _previewZoom = 1.0;
 
-    // --- Toolbar ----------------------------------------------------------
-    private readonly ObservableCollection<EditorToolbarItem> _toolbarItems = new();
+    // Fullscreen state — not persisted (transient UI mode)
+    private bool _isFullscreen;
+    private EditorToolbarItem? _podFullscreen;
 
-    // Toolbar built flag — prevents double-build on Unloaded/Loaded cycles
-    private bool _toolbarBuilt;
+    // --- Toolbar ----------------------------------------------------------
+    private ObservableCollection<EditorToolbarItem>? _toolbarItems;
 
     // Toolbar items that need runtime updates
     private EditorToolbarItem? _podView;
@@ -194,22 +195,12 @@ public sealed partial class MarkdownEditorHost : UserControl,
         InputBindings.Add(new KeyBinding(MdCommands.CycleLayout,    new KeyGesture(Key.L,  ModifierKeys.Control | ModifierKeys.Shift)));
         InputBindings.Add(new KeyBinding(MdCommands.ToggleWordWrap, new KeyGesture(Key.Z,  ModifierKeys.Alt)));
 
-        CommandBindings.Add(new CommandBinding(MdCommands.ToggleWordWrap, (_, _) => SetWordWrap(!_wordWrap)));
+        CommandBindings.Add(new CommandBinding(MdCommands.ToggleWordWrap,   (_, _) => SetWordWrap(!_wordWrap)));
+        CommandBindings.Add(new CommandBinding(MdCommands.ToggleFullscreen, (_, _) => ToggleFullscreen()));
+        InputBindings.Add(new KeyBinding(MdCommands.ToggleFullscreen, new KeyGesture(Key.F11)));
 
         // Wire splitter drag-complete for ratio persistence
         _splitter.DragCompleted += OnSplitterDragCompleted;
-
-        // Force WebView2 HWND re-arrange when the host is resized (maximize / restore /
-        // docking resize). Pass the preview's new size explicitly because at the time
-        // SizeChanged fires on the host, _preview.ActualWidth/Height may not yet reflect
-        // the new layout (WPF arrange hasn't propagated to children yet).
-        SizeChanged += (_, e) =>
-        {
-            // Compute preview width from split ratio; full height minus any splitter.
-            var pw = _preview.ActualWidth  > 0 ? _preview.ActualWidth  : e.NewSize.Width  * (1 - _splitRatio);
-            var ph = _preview.ActualHeight > 0 ? _preview.ActualHeight : e.NewSize.Height;
-            _preview.InvalidateWebViewSize(pw, ph);
-        };
 
         // Wire Ctrl+scroll on the preview pane for zoom
         _preview.PreviewMouseWheel += OnPreviewPaneMouseWheel;
@@ -220,16 +211,6 @@ public sealed partial class MarkdownEditorHost : UserControl,
         Loaded += async (_, _) =>
         {
             _isDark = DetectDarkTheme();
-
-            // Build toolbar items here (not in constructor) so the IDE shell has already
-            // subscribed to ToolbarItems.CollectionChanged — each Add fires an event the
-            // shell can receive. Guard prevents double-build on Unloaded/Loaded cycles.
-            if (!_toolbarBuilt)
-            {
-                BuildToolbarItems();
-                _toolbarBuilt = true;
-            }
-
             await _preview.InitializeAsync();
         };
     }
@@ -381,7 +362,8 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
     // --- IEditorToolbarContributor ----------------------------------------
 
-    public ObservableCollection<EditorToolbarItem> ToolbarItems => _toolbarItems;
+    public ObservableCollection<EditorToolbarItem> ToolbarItems
+        => _toolbarItems ??= BuildToolbarItems();
 
     // --- IStatusBarContributor --------------------------------------------
 
@@ -399,6 +381,9 @@ public sealed partial class MarkdownEditorHost : UserControl,
         add    => _editorSearch.SearchResultsChanged += value;
         remove => _editorSearch.SearchResultsChanged -= value;
     }
+    /// <summary>Opens (or focuses) the inner TextEditor's inline Find/Replace overlay.</summary>
+    public void ShowFindBar() => _editor.ShowSearch();
+
     public void Find(string query, SearchTargetOptions options = default) => _editorSearch.Find(query, options);
     public void FindNext()       => _editorSearch.FindNext();
     public void FindPrevious()   => _editorSearch.FindPrevious();
@@ -411,6 +396,14 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Escape exits fullscreen
+        if (e.Key == Key.Escape && _isFullscreen)
+        {
+            e.Handled = true;
+            ToggleFullscreen();
+            return;
+        }
+
         // Only intercept Ctrl+V and only when the clipboard contains image data.
         if (e.Key != Key.V || (Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
         if (!Clipboard.ContainsImage()) return;
@@ -511,7 +504,20 @@ public sealed partial class MarkdownEditorHost : UserControl,
             case MdPreviewContextAction.PreviewOnly:      SetViewMode(MdViewMode.PreviewOnly);   break;
             case MdPreviewContextAction.Refresh:          _ = ForceRefreshAsync();               break;
             case MdPreviewContextAction.CycleLayout:      CycleSplitLayout();                    break;
+            case MdPreviewContextAction.ToggleFullscreen: ToggleFullscreen();                    break;
+            case MdPreviewContextAction.ZoomIn:           SetPreviewZoom(_previewZoom + 0.1);    break;
+            case MdPreviewContextAction.ZoomOut:          SetPreviewZoom(_previewZoom - 0.1);    break;
+            case MdPreviewContextAction.ZoomReset:        SetPreviewZoom(1.0);                   break;
+            case MdPreviewContextAction.CopyText:         _ = CopyPreviewTextAsync();            break;
         }
+    }
+
+    private async Task CopyPreviewTextAsync()
+    {
+        if (!_preview.IsWebViewReady) return;
+        var text = await _preview.ExecuteScriptAndGetStringAsync("document.body.innerText");
+        if (!string.IsNullOrEmpty(text))
+            Clipboard.SetText(text);
     }
 
     // --- Context menu (source editor) -------------------------------------
@@ -624,6 +630,10 @@ public sealed partial class MarkdownEditorHost : UserControl,
     /// </summary>
     private void UpdateGridLayout()
     {
+        // While fullscreen Window owns _preview, do not touch the grid layout.
+        // CloseFullscreen() will call UpdateGridLayout() again after detaching _preview.
+        if (_isFullscreen) return;
+
         _rootGrid.Children.Clear();
         _rootGrid.ColumnDefinitions.Clear();
         _rootGrid.RowDefinitions.Clear();
@@ -809,7 +819,7 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
     // --- Toolbar helpers --------------------------------------------------
 
-    private void BuildToolbarItems()
+    private ObservableCollection<EditorToolbarItem> BuildToolbarItems()
     {
         // View mode dropdown
         var viewItems = new ObservableCollection<EditorToolbarItem>
@@ -885,17 +895,32 @@ public sealed partial class MarkdownEditorHost : UserControl,
             DropdownItems = formatItems,
         };
 
-        _toolbarItems.Add(_podView);
-        _toolbarItems.Add(_podLayout);
-        _toolbarItems.Add(sep);
-        _toolbarItems.Add(podInsert);
-        _toolbarItems.Add(podFormat);
-        _toolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
-        _toolbarItems.Add(_podWrap);
-        _toolbarItems.Add(podRefresh);
+        // Fullscreen toggle button
+        _podFullscreen = new EditorToolbarItem
+        {
+            Icon      = "\uE740", Label   = "Fullscreen",
+            Tooltip   = "Toggle fullscreen preview (F11)",
+            IsToggle  = true,     IsChecked = false,
+            Command   = new RelayCmd(ToggleFullscreen),
+        };
+
+        var items = new ObservableCollection<EditorToolbarItem>
+        {
+            _podView,
+            _podLayout,
+            sep,
+            podInsert,
+            podFormat,
+            new EditorToolbarItem { IsSeparator = true },
+            _podWrap,
+            podRefresh,
+            _podFullscreen,
+        };
 
         SyncViewModeToToolbar();
         SyncLayoutToToolbar();
+
+        return items;
     }
 
     private void SyncViewModeToToolbar()
@@ -1064,6 +1089,93 @@ public sealed partial class MarkdownEditorHost : UserControl,
         _preview.SetZoom(_previewZoom);
     }
 
+    // --- Fullscreen (dedicated borderless Window on active screen) -----------
+
+    private Window? _fullscreenWindow;
+
+    private void ToggleFullscreen()
+    {
+        if (_isFullscreen) CloseFullscreen();
+        else               OpenFullscreen();
+    }
+
+    private void OpenFullscreen()
+    {
+        _isFullscreen = true;
+
+        // Detach _preview from the split grid before reparenting
+        _rootGrid.Children.Remove(_preview);
+
+        // Resolve the active screen from the parent WPF Window
+        var parentWin = Window.GetWindow(this);
+        System.Windows.Forms.Screen screen;
+        if (parentWin is not null)
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(parentWin).Handle;
+            screen   = System.Windows.Forms.Screen.FromHandle(hwnd);
+        }
+        else
+        {
+            screen = System.Windows.Forms.Screen.PrimaryScreen!;
+        }
+
+        _fullscreenWindow = new Window
+        {
+            WindowStyle        = WindowStyle.None,
+            ResizeMode         = ResizeMode.NoResize,
+            AllowsTransparency = false,
+            Background         = System.Windows.Media.Brushes.Black,
+            ShowInTaskbar      = false,
+            Left               = screen.Bounds.Left,
+            Top                = screen.Bounds.Top,
+            Width              = screen.Bounds.Width,
+            Height             = screen.Bounds.Height,
+            Content            = _preview,
+            Topmost            = true,
+        };
+
+        _fullscreenWindow.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape || e.Key == Key.F11)
+                CloseFullscreen();
+        };
+        _fullscreenWindow.Closed += (_, _) =>
+        {
+            // User closed the window via OS (Alt+F4) — ensure clean state
+            if (_isFullscreen) CloseFullscreen();
+        };
+
+        if (_viewMode == MdViewMode.SourceOnly)
+            _ = ForceRefreshAsync();
+
+        _fullscreenWindow.Show();
+        SyncFullscreenState();
+    }
+
+    private void CloseFullscreen()
+    {
+        _isFullscreen = false;
+
+        if (_fullscreenWindow is not null)
+        {
+            // Detach _preview BEFORE closing so WPF doesn't destroy it
+            _fullscreenWindow.Content = null;
+            _fullscreenWindow.Close();
+            _fullscreenWindow = null;
+        }
+
+        // Restore _preview into the split grid
+        UpdateGridLayout();
+        SyncFullscreenState();
+    }
+
+    private void SyncFullscreenState()
+    {
+        if (_podFullscreen is not null)
+            _podFullscreen.IsChecked = _isFullscreen;
+        _preview.SyncFullscreenMenuItem(_isFullscreen);
+    }
+
     // ─── Minimal RelayCommand (avoids dependency on full RelayCommand impl) ──
     private sealed class RelayCmd : ICommand
     {
@@ -1091,6 +1203,7 @@ public sealed partial class MarkdownEditorHost : UserControl,
         public static readonly RoutedCommand SplitView      = new(nameof(SplitView),      typeof(MarkdownEditorHost));
         public static readonly RoutedCommand PreviewOnly    = new(nameof(PreviewOnly),    typeof(MarkdownEditorHost));
         public static readonly RoutedCommand CycleLayout    = new(nameof(CycleLayout),    typeof(MarkdownEditorHost));
-        public static readonly RoutedCommand ToggleWordWrap = new(nameof(ToggleWordWrap), typeof(MarkdownEditorHost));
+        public static readonly RoutedCommand ToggleWordWrap    = new(nameof(ToggleWordWrap),    typeof(MarkdownEditorHost));
+        public static readonly RoutedCommand ToggleFullscreen  = new(nameof(ToggleFullscreen),  typeof(MarkdownEditorHost));
     }
 }

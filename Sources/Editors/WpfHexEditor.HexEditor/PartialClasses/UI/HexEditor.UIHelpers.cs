@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -70,45 +69,13 @@ namespace WpfHexEditor.HexEditor
         /// Auto-scroll timer tick - scroll viewport and update selection
         /// Optimized to reduce redundant updates
         /// </summary>
-        [DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out POINT lpPoint);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT { public int X; public int Y; }
-
-        /// <summary>
-        /// Returns the mouse position relative to HexViewport using Win32 GetCursorPos.
-        /// Works regardless of WPF mouse capture or ancestor ClipToBounds restrictions.
-        /// </summary>
-        private Point GetMousePositionRelativeToViewport()
-        {
-            if (!GetCursorPos(out var pt)) return new Point(0, 0);
-            var screen = new Point(pt.X, pt.Y);
-            return HexViewport.PointFromScreen(screen);
-        }
-
         private void AutoScrollTimer_Tick(object sender, EventArgs e)
         {
-            if (_viewModel == null || !_isMouseDown)
+            if (_viewModel == null || !_isMouseDown || _autoScrollDirection == 0)
             {
                 StopAutoScroll();
                 return;
             }
-
-            // Poll mouse position via Win32 — independent of WPF routing and ClipToBounds.
-            var mousePos = GetMousePositionRelativeToViewport();
-            _lastMousePosition = mousePos;
-            double viewportHeight = HexViewport.ActualHeight;
-
-            if (mousePos.Y < 0)
-                _autoScrollDirection = -1;
-            else if (mousePos.Y > viewportHeight)
-                _autoScrollDirection = 1;
-            else
-                _autoScrollDirection = 0;
-
-            if (_autoScrollDirection == 0)
-                return;
 
             // Calculate new scroll position (scroll multiple lines per tick for faster auto-scroll)
             long newScrollPos = _viewModel.ScrollPosition + (_autoScrollDirection * AutoScrollSpeed);
@@ -159,8 +126,11 @@ namespace WpfHexEditor.HexEditor
                     }
                     else
                     {
-                        // Normal byte drag: use hit-test position
-                        var hitResult = HexViewport.HitTestByteWithArea(_lastMousePosition);
+                        // Normal byte drag: use hit-test position.
+                        // Clamp mouse Y to viewport bounds so HitTestByteWithArea can resolve a position.
+                        double clampedY = Math.Clamp(_lastMousePosition.Y, 0, HexViewport.ActualHeight - 1);
+                        var clampedHitPos = new Point(_lastMousePosition.X, clampedY);
+                        var hitResult = HexViewport.HitTestByteWithArea(clampedHitPos);
                         if (hitResult.Position.HasValue)
                         {
                             var position = new VirtualPosition(hitResult.Position.Value);

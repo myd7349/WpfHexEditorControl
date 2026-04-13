@@ -1154,7 +1154,8 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IBufferAw
     // Quick Search Bar — show / hide + keyboard hook
     // -----------------------------------------------------------------------
 
-    private void ShowSearch()
+    /// <summary>Opens (or focuses) the inline Find/Replace overlay.</summary>
+    public void ShowSearch()
     {
         if (QuickSearchBarOverlay.Visibility == Visibility.Visible)
         {

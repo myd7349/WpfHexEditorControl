@@ -1669,6 +1669,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Jitter guard: don't re-dispatch unless the text position actually changed.
             if (hoverPos == _lastHoverTextPos) return;
+
+            // Cancel any in-flight semantic-tokens fetch so it does not block the LSP
+            // channel and delay the hover (textDocument/hover) response.
+            _semanticTokensLayer.CancelFetch();
             _lastHoverTextPos = hoverPos;
             _lastHoverPixel   = pixelPos;
 

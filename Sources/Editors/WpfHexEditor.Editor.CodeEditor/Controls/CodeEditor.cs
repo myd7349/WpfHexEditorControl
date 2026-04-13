@@ -14,7 +14,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -3245,18 +3244,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// during a drag-selection. Scrolls the viewport and extends the selection
         /// to the clamped text position matching the mouse location.
         /// </summary>
-        [DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out Win32Point lpPoint);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct Win32Point { public int X; public int Y; }
-
-        private Point GetMousePositionRelativeToSelf()
-        {
-            if (!GetCursorPos(out var pt)) return _lastMousePosition;
-            return PointFromScreen(new Point(pt.X, pt.Y));
-        }
-
         private void AutoScrollTimer_Tick(object sender, EventArgs e)
         {
             if (!_isSelecting && !_isRectSelecting)
@@ -3265,10 +3252,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
-            // Poll mouse position via Win32 — independent of WPF routing and ClipToBounds.
-            var sampledPos = GetMousePositionRelativeToSelf();
-            _lastMousePosition = sampledPos;
-            double mouseY = sampledPos.Y;
+            double mouseY = _lastMousePosition.Y;
 
             // Scroll speed uses the same MouseWheelSpeed DP as the wheel handler so
             // the auto-scroll rate is consistent with the user's wheel preference.
