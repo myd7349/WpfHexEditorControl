@@ -1643,6 +1643,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _cursorLine   = textPos.Line;
                 _cursorColumn = textPos.Column;
                 CaptureMouse();
+                if (!_autoScrollTimer.IsEnabled) _autoScrollTimer.Start();
                 InvalidateVisual();
                 NotifyCaretMovedIfChanged();
                 e.Handled = true;
@@ -1845,8 +1846,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Feature A: extend rectangular selection during Alt+drag.
             if (_isRectSelecting && e.LeftButton == MouseButtonState.Pressed)
             {
-                var pos     = e.GetPosition(this);
-                var textPos = PixelToTextPosition(pos);
+                var pos = e.GetPosition(this);
+                int speedLines = MouseWheelSpeed == MouseWheelSpeed.System
+                    ? SystemParameters.WheelScrollLines : (int)MouseWheelSpeed;
+                if (pos.Y < 0)
+                    ScrollVertical(-Math.Clamp(1.0 + (-pos.Y) / 80.0, 1.0, speedLines) * _lineHeight);
+                else if (pos.Y > ActualHeight)
+                    ScrollVertical(Math.Clamp(1.0 + (pos.Y - ActualHeight) / 80.0, 1.0, speedLines) * _lineHeight);
+                var clampedPos = new Point(pos.X, Math.Clamp(pos.Y, 0, ActualHeight - 1));
+                var textPos = PixelToTextPosition(clampedPos);
                 _rectSelection.Extend(textPos);
                 _cursorLine   = textPos.Line;
                 _cursorColumn = textPos.Column;
@@ -1896,19 +1904,28 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 var pos = e.GetPosition(this);
                 _lastMousePosition = pos;
 
-                // Start or stop the auto-scroll timer based on whether the mouse
-                // is outside the visible viewport bounds.
-                bool outsideBounds = pos.Y < 0 || pos.Y > ActualHeight;
-                if (outsideBounds && !_autoScrollTimer.IsEnabled)
-                    _autoScrollTimer.Start();
-                else if (!outsideBounds && _autoScrollTimer.IsEnabled)
-                    _autoScrollTimer.Stop();
+                // Auto-scroll when mouse is outside the viewport bounds.
+                // OnMouseMove continues to fire via mouse capture even outside bounds,
+                // so we scroll directly here — no timer needed.
+                int speedLines = MouseWheelSpeed == MouseWheelSpeed.System
+                    ? SystemParameters.WheelScrollLines
+                    : (int)MouseWheelSpeed;
+                if (pos.Y < 0)
+                {
+                    double lines = Math.Clamp(1.0 + (-pos.Y) / 80.0, 1.0, speedLines);
+                    ScrollVertical(-lines * _lineHeight);
+                }
+                else if (pos.Y > ActualHeight)
+                {
+                    double lines = Math.Clamp(1.0 + (pos.Y - ActualHeight) / 80.0, 1.0, speedLines);
+                    ScrollVertical(lines * _lineHeight);
+                }
 
-                var textPos = PixelToTextPosition(pos);
+                // Clamp Y to viewport for hit-testing (so selection extends to edge, not beyond).
+                var clampedPos = new Point(pos.X, Math.Clamp(pos.Y, 0, ActualHeight - 1));
+                var textPos = PixelToTextPosition(clampedPos);
 
                 // Guard: skip re-render if the selection endpoint hasn't moved to a new cell.
-                // Mouse-move events can fire at 200–1000 Hz; many will resolve to the same
-                // text position and would trigger a full OnRender() for nothing.
                 if (textPos == _selection.End) return;
 
                 _selection.End = textPos;

@@ -259,6 +259,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private readonly Services.InlineHintsService                                                                                              _inlineHintsService  = new();
         private readonly Layers.LspInlayHintsLayer                                                                                                 _lspInlayHintsLayer  = new();
         private readonly Layers.LspDeclarationHintsLayer                                                                                                   _lspDeclarationHintsLayer    = new();
+        private readonly Layers.LspSemanticTokensLayer                                                                                                     _semanticTokensLayer         = new();
         private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds Kind, bool IsRoslyn)> _hintsData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds, bool)>();
         private          int                                                                                                                   _visibleHintsCount = 0;
         /// <summary>Cumulative hint count before each line: _hintsCumulative[i] = number of visible hints on lines 0..i-1.</summary>
@@ -1064,6 +1065,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             get => (bool)GetValue(ShowLspDeclarationHintsProperty);
             set => SetValue(ShowLspDeclarationHintsProperty, value);
+        }
+
+        public static readonly DependencyProperty EnableSemanticHighlightingProperty =
+            DependencyProperty.Register(nameof(EnableSemanticHighlighting), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    (o, e) =>
+                    {
+                        var ce      = (CodeEditor)o;
+                        var enabled = (bool)e.NewValue;
+                        ce._semanticTokensLayer.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                        ce._semanticTokensLayer.SetLspClient(enabled ? ce._lspClient : null);
+                    }));
+
+        [Category("Features")]
+        [DisplayName("Semantic Highlighting")]
+        [Description("Overlays LSP semantic token colors above syntactic highlighting (requires Roslyn LSP). whfmt coloring is unchanged when disabled or when no LSP is active.")]
+        public bool EnableSemanticHighlighting
+        {
+            get => (bool)GetValue(EnableSemanticHighlightingProperty);
+            set => SetValue(EnableSemanticHighlightingProperty, value);
         }
 
         public static readonly DependencyProperty InlineHintsVisibleKindsProperty =
@@ -2691,6 +2713,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Added before caret so caret composites on top.
             _scrollBarChildren.Add(_lspInlayHintsLayer);
             _scrollBarChildren.Add(_lspDeclarationHintsLayer);
+            _scrollBarChildren.Add(_semanticTokensLayer);
 
             // Caret visual is always last so it composites on top of all content.
             _scrollBarChildren.Add(_caretVisual);
@@ -3002,7 +3025,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 { SyntaxTokenKind.Identifier, "CE_Identifier" },
                 { SyntaxTokenKind.Operator,   "CE_Operator"   },
                 { SyntaxTokenKind.Bracket,    "CE_Bracket"    },
-                { SyntaxTokenKind.Attribute,  "CE_Attribute"  },
+                { SyntaxTokenKind.Attribute,   "CE_Attribute"   },
+                { SyntaxTokenKind.ControlFlow, "CE_ControlFlow" },
             };
 
         /// <summary>
@@ -3222,7 +3246,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private void AutoScrollTimer_Tick(object sender, EventArgs e)
         {
-            if (!_isSelecting)
+            if (!_isSelecting && !_isRectSelecting)
             {
                 _autoScrollTimer.Stop();
                 return;

@@ -29,7 +29,7 @@
     <!--
         The actual grid layout (rows/columns, splitter position and direction)
         is built and rebuilt entirely in code-behind via UpdateGridLayout().
-        This XAML only provides the named root Grid container.
+        Fullscreen mode creates a dedicated borderless Window on the active screen.
     -->
     <Grid x:Name="_rootGrid" />
 

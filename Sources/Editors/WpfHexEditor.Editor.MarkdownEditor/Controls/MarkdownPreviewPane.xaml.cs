@@ -10,18 +10,22 @@
 //     and link-click forwarding to the host.
 //
 // Architecture Notes:
-//     - Wraps Microsoft.Web.WebView2.Wpf.WebView2
-//     - All rendering calls are async; the host must await them
+//     - Wraps Microsoft.Web.WebView2.WinForms.WebView2 inside a WindowsFormsHost.
+//       This lets WPF layout manage HWND sizing automatically — no manual
+//       Bounds/NotifyParentWindowPositionChanged calls required.
+//     - All rendering calls are async; the host must await them.
 //     - Uses an isolated user-data folder under %TEMP% to avoid
-//       session pollution across multiple editor instances
+//       session pollution across multiple editor instances.
 //     - If the WebView2 runtime is absent the fallback overlay is shown
-//       instead of throwing
+//       instead of throwing.
 // ==========================================================
 
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Web.WebView2.Core;
+using WinFormsWebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 using WpfHexEditor.Editor.MarkdownEditor.Core.Services;
 
 namespace WpfHexEditor.Editor.MarkdownEditor.Controls;
@@ -34,16 +38,27 @@ public enum MdPreviewContextAction
     PreviewOnly,
     Refresh,
     CycleLayout,
+    ToggleFullscreen,
+    ZoomIn,
+    ZoomOut,
+    ZoomReset,
+    CopyText,
 }
 
 /// <summary>
 /// WebView2-backed control that renders GitHub-Flavored Markdown as HTML.
+/// Uses the WinForms WebView2 control inside a WindowsFormsHost so that
+/// WPF layout manages HWND resize automatically.
 /// </summary>
 public sealed partial class MarkdownPreviewPane : UserControl
 {
+    // WinForms WebView2 — created in InitializeAsync and hosted via _webViewHost
+    private WinFormsWebView2? _webView;
+
     // --- State ------------------------------------------------------------
 
     private bool   _isInitialized;
+    private bool   _isInitializing;
     private string _pendingMarkdown = string.Empty;
     private bool   _pendingIsDark;
     private bool   _pendingHasMermaidInit = true;   // used before initialization only
@@ -73,15 +88,191 @@ public sealed partial class MarkdownPreviewPane : UserControl
     /// </summary>
     public event EventHandler<MdPreviewContextAction>? PreviewContextMenuAction;
 
+    // Fullscreen menu item — kept as field so the host can update its header
+    private MenuItem? _ctxFullscreen;
+
     // --- Construction -----------------------------------------------------
 
     public MarkdownPreviewPane()
     {
         InitializeComponent();
-        Loaded += OnLoaded;
+        Loaded           += OnLoaded;
+        SizeChanged      += (_, e) => InvalidateWebViewSize(e.NewSize.Width, e.NewSize.Height);
+        IsVisibleChanged += (_, e) =>
+        {
+            if (_webViewHost != null)
+                _webViewHost.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Hidden;
+        };
+
+        ContextMenu = BuildContextMenu();
+    }
+
+    /// <summary>
+    /// Updates the Fullscreen menu item header to reflect current state.
+    /// Called by <see cref="MarkdownEditorHost"/> when fullscreen state changes.
+    /// </summary>
+    public void SyncFullscreenMenuItem(bool isFullscreen)
+    {
+        if (_ctxFullscreen is not null)
+            _ctxFullscreen.Header = isFullscreen ? "Exit Fullscreen" : "Fullscreen";
+    }
+
+    /// <summary>
+    /// Forces the WebView2 HWND and all its Win32 children to match the given WPF logical size.
+    /// WPF measure/arrange passes do not propagate to HwndHost-derived Win32 children after
+    /// layout changes (splitter drag, view mode switch, fullscreen exit) — SetWindowPos is required.
+    /// </summary>
+    public void InvalidateWebViewSize(double width, double height)
+    {
+        if (_webView is null) return;
+
+        // WindowsFormsHost (HwndHost) is the root Win32 anchor managed by WPF layout.
+        // Resize it first so WPF's own HWND slot matches.
+        var hostHwnd = _webViewHost.Handle;
+        if (hostHwnd == IntPtr.Zero) return;
+
+        // Convert WPF logical pixels → physical pixels via the DPI transform.
+        var source = PresentationSource.FromVisual(this);
+        var scaleX = source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        var scaleY = source?.CompositionTarget?.TransformToDevice.M22 ?? 1.0;
+
+        var w = (int)Math.Max(width  * scaleX, 1);
+        var h = (int)Math.Max(height * scaleY, 1);
+
+        // Resize WindowsFormsHost HWND, then walk the entire child chain:
+        // WindowsFormsHost → WinForms container → WebView2 WinForms → browser child HWNDs
+        ResizeHwndTree(hostHwnd, w, h);
+    }
+
+    private static void ResizeHwndTree(IntPtr hwnd, int w, int h)
+    {
+        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, w, h, SWP_NOZORDER | SWP_NOMOVE);
+        var child = GetWindow(hwnd, GW_CHILD);
+        while (child != IntPtr.Zero)
+        {
+            ResizeHwndTree(child, w, h);
+            child = GetWindow(child, GW_HWNDNEXT);
+        }
+    }
+
+    /// <summary>
+    /// Deferred overload: schedules a resize after the current WPF layout pass completes
+    /// so ActualWidth/ActualHeight are up-to-date.
+    /// </summary>
+    public void InvalidateWebViewSize()
+    {
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render,
+            () => InvalidateWebViewSize(ActualWidth, ActualHeight));
+    }
+
+    private ContextMenu BuildContextMenu()
+    {
+        var menu = new ContextMenu();
+        menu.SetResourceReference(StyleProperty, "MD_ContextMenuStyle");
+        menu.SetResourceReference(ItemsControl.ItemContainerStyleProperty, "MD_MenuItemStyle");
+
+        // VIEW group
+        AddGroupHeader(menu, "VIEW");
+        AddMenuItem(menu, "Source Only",   "Ctrl+1",         OnCtxSourceOnly,      "\uE8A5");
+        AddMenuItem(menu, "Split View",    "Ctrl+2",         OnCtxSplitView,       "\uE8A9");
+        AddMenuItem(menu, "Preview Only",  "Ctrl+3",         OnCtxPreviewOnly,     "\uE890");
+        AddSeparator(menu);
+        _ctxFullscreen = AddMenuItem(menu, "Fullscreen",     "",                   OnCtxToggleFullscreen, "\uE740");
+
+        // ACTIONS group
+        AddSeparator(menu);
+        AddGroupHeader(menu, "ACTIONS");
+        AddMenuItem(menu, "Refresh Preview",  "F9",           OnCtxRefresh,        "\uE72C");
+        AddMenuItem(menu, "Cycle Layout",     "Ctrl+Shift+L", OnCtxCycleLayout,    "\uE7C4");
+
+        // ZOOM group
+        AddSeparator(menu);
+        AddGroupHeader(menu, "ZOOM");
+        AddMenuItem(menu, "Zoom In",   "Ctrl++", OnCtxZoomIn,   "\uE8A3");
+        AddMenuItem(menu, "Zoom Out",  "Ctrl+-", OnCtxZoomOut,  "\uE71F");
+        AddMenuItem(menu, "Reset Zoom","Ctrl+0", OnCtxZoomReset,"\uE9A6");
+
+        // EDIT group
+        AddSeparator(menu);
+        AddGroupHeader(menu, "EDIT");
+        AddMenuItem(menu, "Copy",      "Ctrl+C", OnCtxCopyText, "\uE8C8");
+
+        return menu;
+    }
+
+    private static MenuItem AddMenuItem(ContextMenu menu, string header, string gesture,
+        RoutedEventHandler handler, string? mdl2Glyph = null)
+    {
+        var item = new MenuItem { Header = header, InputGestureText = gesture };
+        item.SetResourceReference(StyleProperty, "MD_MenuItemStyle");
+        item.Click += handler;
+        if (mdl2Glyph is not null)
+        {
+            var icon = new TextBlock
+            {
+                Text       = mdl2Glyph,
+                FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+                FontSize   = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Center,
+            };
+            icon.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "DockMenuForegroundBrush");
+            item.Icon = icon;
+        }
+        menu.Items.Add(item);
+        return item;
+    }
+
+    private static void AddGroupHeader(ContextMenu menu, string header)
+    {
+        var item = new MenuItem { Header = header };
+        item.SetResourceReference(StyleProperty, "MD_GroupHeaderStyle");
+        menu.Items.Add(item);
+    }
+
+    private static void AddSeparator(ContextMenu menu)
+    {
+        var sep = new Separator();
+        sep.SetResourceReference(StyleProperty, "MD_GroupSeparatorStyle");
+        menu.Items.Add(sep);
     }
 
     // --- Public API -------------------------------------------------------
+
+    /// <summary>Gets whether WebView2 initialization has completed successfully.</summary>
+    public bool IsWebViewReady => _isInitialized;
+
+    /// <summary>
+    /// Forces the next <see cref="RenderAsync"/> call to do a full shell reload
+    /// (Navigate + OnNavigationCompleted), which re-applies zoom and content.
+    /// Use after reparenting to guarantee <see cref="SetZoom"/> is applied via JS.
+    /// </summary>
+    public void InvalidateShell()
+    {
+        _shellReady      = false;
+        _shellIsDark     = null;   // null forces needsShellReload = true on next RenderAsync
+        _shellHasMermaid = null;
+    }
+
+
+    /// <summary>
+    /// Executes a JavaScript expression and returns the result as a string.
+    /// JSON-encoded string results are unquoted automatically.
+    /// Returns <see langword="null"/> if not initialized or on error.
+    /// </summary>
+    public async Task<string?> ExecuteScriptAndGetStringAsync(string script)
+    {
+        if (!_isInitialized || !_shellReady || _webView is null) return null;
+        try
+        {
+            var raw = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+            // WebView2 returns JSON-encoded strings — strip surrounding quotes
+            if (raw is { Length: >= 2 } && raw[0] == '"' && raw[^1] == '"')
+                raw = System.Text.Json.JsonSerializer.Deserialize<string>(raw);
+            return raw;
+        }
+        catch { return null; }
+    }
 
     /// <summary>
     /// Initializes the WebView2 environment (idempotent — safe to call multiple times).
@@ -89,7 +280,8 @@ public sealed partial class MarkdownPreviewPane : UserControl
     /// </summary>
     public async Task InitializeAsync()
     {
-        if (_isInitialized) return;
+        if (_isInitialized || _isInitializing) return;
+        _isInitializing = true;
 
         try
         {
@@ -101,20 +293,38 @@ public sealed partial class MarkdownPreviewPane : UserControl
                 browserExecutableFolder: null,
                 userDataFolder: userDataFolder);
 
+            // Create the WinForms control on the UI thread and host it.
+            // Dock = Fill is mandatory so the WinForms control fills its WindowsFormsHost
+            // cell automatically — without it the HWND keeps its default size (300×150).
+            _webView = new WinFormsWebView2 { Dock = System.Windows.Forms.DockStyle.Fill };
+            _webViewHost.Child = _webView;
+
             await _webView.EnsureCoreWebView2Async(env);
 
-            _webView.CoreWebView2.WebMessageReceived    += OnWebMessageReceived;
+            _webView.CoreWebView2.WebMessageReceived   += OnWebMessageReceived;
             _webView.CoreWebView2.NavigationCompleted  += OnNavigationCompleted;
 
             // Disable default context menu and DevTools (cleaner UX)
             _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+
+            // Inject a persistent script that intercepts right-click and posts a message
+            // back to C# — WindowsFormsHost swallows WPF right-click events so this is
+            // the only reliable way to show a WPF ContextMenu over the WebView2 surface.
+            await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("""
+                document.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    window.chrome.webview.postMessage(
+                        JSON.stringify({ type: 'contextmenu', x: e.screenX, y: e.screenY })
+                    );
+                }, true);
+                """);
             _webView.CoreWebView2.Settings.AreDevToolsEnabled            = false;
             _webView.CoreWebView2.Settings.IsStatusBarEnabled            = false;
 
             _isInitialized = true;
 
-            // Show WebView2, hide loading overlay
-            _webView.Visibility       = Visibility.Visible;
+            // Show WebView2 host, hide loading overlay
+            _webViewHost.Visibility    = Visibility.Visible;
             _loadingOverlay.Visibility = Visibility.Collapsed;
 
             // Render any content that arrived before initialization completed
@@ -145,9 +355,9 @@ public sealed partial class MarkdownPreviewPane : UserControl
         if (!_isInitialized)
         {
             // Queue for later; InitializeAsync will pick it up
-            _pendingMarkdown         = markdownText;
-            _pendingIsDark           = isDarkTheme;
-            _pendingHasMermaidInit   = hasMermaid;
+            _pendingMarkdown       = markdownText;
+            _pendingIsDark         = isDarkTheme;
+            _pendingHasMermaidInit = hasMermaid;
             return;
         }
 
@@ -173,7 +383,7 @@ public sealed partial class MarkdownPreviewPane : UserControl
             await File.WriteAllTextAsync(shellFile, shellHtml, System.Text.Encoding.UTF8);
             if (stamp != _renderStamp) return;
 
-            _webView.CoreWebView2.Navigate(new Uri(shellFile).AbsoluteUri);
+            _webView!.CoreWebView2.Navigate(new Uri(shellFile).AbsoluteUri);
             // Content injection happens in OnNavigationCompleted
             return;
         }
@@ -189,7 +399,7 @@ public sealed partial class MarkdownPreviewPane : UserControl
         var escaped = await Task.Run(() =>
             MarkdownRenderService.EscapeMarkdownForJs(markdownText));
         if (stamp != _renderStamp) return;
-        await _webView.CoreWebView2.ExecuteScriptAsync(
+        await _webView!.CoreWebView2.ExecuteScriptAsync(
             $"window.updateMarkdown(\"{escaped}\");");
     }
 
@@ -218,16 +428,32 @@ public sealed partial class MarkdownPreviewPane : UserControl
             var raw = e.TryGetWebMessageAsString();
             if (string.IsNullOrEmpty(raw)) return;
 
-            // Expect: { "type": "link", "href": "..." }
             using var doc = System.Text.Json.JsonDocument.Parse(raw);
             var root = doc.RootElement;
-            if (root.TryGetProperty("type", out var typeProp) &&
-                typeProp.GetString() == "link" &&
-                root.TryGetProperty("href", out var hrefProp))
+            if (!root.TryGetProperty("type", out var typeProp)) return;
+
+            switch (typeProp.GetString())
             {
-                var href = hrefProp.GetString();
-                if (!string.IsNullOrEmpty(href))
-                    LinkClicked?.Invoke(this, href);
+                case "link":
+                    if (root.TryGetProperty("href", out var hrefProp))
+                    {
+                        var href = hrefProp.GetString();
+                        if (!string.IsNullOrEmpty(href))
+                            LinkClicked?.Invoke(this, href);
+                    }
+                    break;
+
+                case "contextmenu":
+                    // WindowsFormsHost eats WPF right-clicks — open the WPF ContextMenu
+                    // at the screen position reported by JS.
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        if (ContextMenu is null) return;
+                        ContextMenu.PlacementTarget = this;
+                        ContextMenu.Placement       = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+                        ContextMenu.IsOpen          = true;
+                    });
+                    break;
             }
         }
         catch
@@ -253,12 +479,11 @@ public sealed partial class MarkdownPreviewPane : UserControl
 
         var escaped = await Task.Run(() =>
             MarkdownRenderService.EscapeMarkdownForJs(md));
-        await _webView.CoreWebView2.ExecuteScriptAsync(
+        await _webView!.CoreWebView2.ExecuteScriptAsync(
             $"window.updateMarkdown(\"{escaped}\");");
 
-        // Restore zoom level after shell reload
-        if (_currentZoom != 1.0)
-            SetZoom(_currentZoom);
+        // Always restore zoom after shell reload (even 1.0 to reset any leftover value)
+        SetZoom(_currentZoom);
     }
 
     // --- Context menu handlers --------------------------------------------
@@ -274,7 +499,7 @@ public sealed partial class MarkdownPreviewPane : UserControl
         if (!_isInitialized || !_shellReady) return;
         var pct = (_currentZoom * 100).ToString("F0",
             System.Globalization.CultureInfo.InvariantCulture);
-        _webView.CoreWebView2.ExecuteScriptAsync(
+        _webView!.CoreWebView2.ExecuteScriptAsync(
             $"document.body.style.zoom='{pct}%';");
     }
 
@@ -292,4 +517,35 @@ public sealed partial class MarkdownPreviewPane : UserControl
 
     private void OnCtxCycleLayout(object sender, RoutedEventArgs e)
         => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.CycleLayout);
+
+    private void OnCtxToggleFullscreen(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.ToggleFullscreen);
+
+    private void OnCtxZoomIn(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.ZoomIn);
+
+    private void OnCtxZoomOut(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.ZoomOut);
+
+    private void OnCtxZoomReset(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.ZoomReset);
+
+    private void OnCtxCopyText(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.CopyText);
+
+    // --- Win32 P/Invoke ---------------------------------------------------
+
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOMOVE   = 0x0002;
+    private const uint GW_CHILD     = 5;
+    private const uint GW_HWNDNEXT  = 2;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd, IntPtr hWndInsertAfter,
+        int x, int y, int cx, int cy,
+        uint uFlags);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
 }

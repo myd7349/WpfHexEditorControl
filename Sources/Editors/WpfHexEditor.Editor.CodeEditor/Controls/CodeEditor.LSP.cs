@@ -239,9 +239,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 client as WpfHexEditor.Editor.Core.LSP.IReferenceCountProvider,
                 _inlineHintsSource);
 
-            // Forward LSP client to overlay layers (inlay hints + declaration hints).
+            // Forward LSP client to overlay layers (inlay hints, declaration hints, semantic tokens).
             _lspInlayHintsLayer.SetLspClient(client);
             _lspDeclarationHintsLayer.SetLspClient(client);
+            _semanticTokensLayer.SetLspClient(EnableSemanticHighlighting ? client : null);
 
             // Propagate var/lambda hint options to the client if it supports them.
             if (client is WpfHexEditor.Editor.Core.LSP.IInlineHintsOptionsClient hintsClient)
@@ -1668,6 +1669,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Jitter guard: don't re-dispatch unless the text position actually changed.
             if (hoverPos == _lastHoverTextPos) return;
+
+            // Cancel any in-flight semantic-tokens fetch so it does not block the LSP
+            // channel and delay the hover (textDocument/hover) response.
+            _semanticTokensLayer.CancelFetch();
             _lastHoverTextPos = hoverPos;
             _lastHoverPixel   = pixelPos;
 

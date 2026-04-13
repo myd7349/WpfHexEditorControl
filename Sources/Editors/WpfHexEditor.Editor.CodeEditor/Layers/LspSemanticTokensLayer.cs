@@ -97,6 +97,13 @@ public sealed class LspSemanticTokensLayer : FrameworkElement
         if (client is null) ClearTokens();
     }
 
+    /// <summary>
+    /// Cancels any in-flight <c>textDocument/semanticTokens/full</c> request.
+    /// Call this before dispatching time-sensitive LSP requests (e.g. hover, completion)
+    /// so the semantic-tokens fetch does not block the LSP channel.
+    /// </summary>
+    public void CancelFetch() => _cts?.Cancel();
+
     /// <summary>Updates the visible range and metrics, then requests a refresh.</summary>
     public void SetContext(string? filePath,
                            int firstLine, int lastLine,
@@ -117,7 +124,10 @@ public sealed class LspSemanticTokensLayer : FrameworkElement
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        RenderTokens();
+        // Do NOT render here — RenderTokens is called after the debounce resolves fresh data.
+        // Calling RenderTokens from ArrangeOverride causes TryFindResource traversals during
+        // layout, which can trigger WPF composition updates that invalidate the QuickInfoPopup
+        // placement and suppress hover tooltips.
         return finalSize;
     }
 

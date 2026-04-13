@@ -84,49 +84,38 @@ namespace WpfHexEditor.HexEditor
         private void Content_MouseMove(object sender, MouseEventArgs e)
         {
             if (_viewModel == null || !_isMouseDown || e.LeftButton != MouseButtonState.Pressed)
-            {
-                StopAutoScroll();
                 return;
-            }
 
             Point mousePos = e.GetPosition(HexViewport);
             _lastMousePosition = mousePos;
 
-            // Offset line drag: selection is handled by HexViewport events,
-            // but we still need to track mouse position for auto-scroll
-            if (!_isOffsetLineDrag)
-            {
-                // Phase 4: Use HexViewport's HitTestByteWithArea (same as mouseover - guaranteed consistent!)
-                var hitResult = HexViewport.HitTestByteWithArea(mousePos);
-                if (hitResult.Position.HasValue)
-                {
-                    var position = new VirtualPosition(hitResult.Position.Value);
-                    // Update selection range during drag
-                    _viewModel.SetSelectionRange(_mouseDownPosition, position);
-
-                    // Notify plugins (e.g. DataInspector) — DP callbacks are not triggered here.
-                    OnSelectionStartChanged(EventArgs.Empty);
-                    OnSelectionStopChanged(EventArgs.Empty);
-                }
-            }
-
-            // Check if mouse is near the top or bottom edge for auto-scroll
+            // Auto-scroll when mouse is outside the viewport bounds.
+            // OnMouseMove continues to fire via mouse capture even when outside bounds.
             double viewportHeight = HexViewport.ActualHeight;
-
-            if (mousePos.Y < AutoScrollEdgeThreshold)
-            {
-                // Near top edge - scroll up
+            if (mousePos.Y < 0)
                 StartAutoScroll(-1);
-            }
-            else if (mousePos.Y > viewportHeight - AutoScrollEdgeThreshold)
-            {
-                // Near bottom edge - scroll down
+            else if (mousePos.Y > viewportHeight)
                 StartAutoScroll(1);
-            }
             else
-            {
-                // In the middle - stop auto-scroll
                 StopAutoScroll();
+
+            // Offset line drag: selection is handled by HexViewport events.
+            if (_isOffsetLineDrag)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            // Clamp Y to viewport bounds for hit-testing.
+            // Minimum is 2 (HexViewport.TopMargin): HitTestByteWithArea returns null for y < TopMargin.
+            var clampedPos = new Point(mousePos.X, Math.Clamp(mousePos.Y, 2.0, viewportHeight - 1));
+            var hitResult = HexViewport.HitTestByteWithArea(clampedPos);
+            if (hitResult.Position.HasValue)
+            {
+                var position = new VirtualPosition(hitResult.Position.Value);
+                _viewModel.SetSelectionRange(_mouseDownPosition, position);
+                OnSelectionStartChanged(EventArgs.Empty);
+                OnSelectionStopChanged(EventArgs.Empty);
             }
 
             e.Handled = true;
@@ -157,18 +146,52 @@ namespace WpfHexEditor.HexEditor
                 return;
             }
 
-            // Translate mouse position to HexViewport coordinates
+            // Translate mouse position to HexViewport coordinates.
             Point mousePos = e.GetPosition(HexViewport);
             _lastMousePosition = mousePos;
 
             double viewportHeight = HexViewport.ActualHeight;
 
-            if (mousePos.Y < AutoScrollEdgeThreshold)
-                StartAutoScroll(-1);
-            else if (mousePos.Y > viewportHeight - AutoScrollEdgeThreshold)
-                StartAutoScroll(1);
-            else
+            // Only act when the mouse is OUTSIDE the viewport — Content_MouseMove handles the inside.
+            if (mousePos.Y >= 0 && mousePos.Y <= viewportHeight)
+            {
                 StopAutoScroll();
+                return;
+            }
+
+            // Direct scroll + selection update (same pattern as CodeEditor.OnMouseMove).
+            // No timer needed: this tunneling event fires continuously from the Window.
+            int direction = mousePos.Y < 0 ? -1 : 1;
+            long newScrollPos = _viewModel.ScrollPosition + (direction * AutoScrollSpeed);
+            long maxScroll    = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines);
+            newScrollPos      = Math.Max(0, Math.Min(newScrollPos, maxScroll));
+
+            _viewModel.BeginUpdate();
+            try
+            {
+                _viewModel.ScrollPosition = newScrollPos;
+
+                // Hit-test at the nearest viewport edge to extend the selection.
+                double clampedY   = direction < 0 ? 2.0 : viewportHeight - 1;
+                var clampedPos    = new Point(mousePos.X, clampedY);
+                var hitResult     = HexViewport.HitTestByteWithArea(clampedPos);
+                if (hitResult.Position.HasValue)
+                {
+                    var position = new VirtualPosition(hitResult.Position.Value);
+                    if (position != _lastAutoScrollPosition)
+                    {
+                        _viewModel.SetSelectionRange(_mouseDownPosition, position);
+                        _lastAutoScrollPosition = position;
+                    }
+                }
+            }
+            finally
+            {
+                _viewModel.EndUpdate();
+            }
+
+            OnSelectionStartChanged(EventArgs.Empty);
+            OnSelectionStopChanged(EventArgs.Empty);
         }
 
         /// <summary>
@@ -837,7 +860,13 @@ namespace WpfHexEditor.HexEditor
             }
         }
 
-        /// <summary>
+        private static void OnPreloadByteInEditorModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor hex && (hex.Stream != null || hex.FileName != null))
+                hex.Dispatcher.BeginInvoke(new Action(() => hex.UpdateVisibleLines()),
+                    System.Windows.Threading.DispatcherPriority.Render);
+        }
+
         /// <summary>
         /// Handle BaseGrid size changes to adjust visible lines (exact V1 approach)
         /// </summary>

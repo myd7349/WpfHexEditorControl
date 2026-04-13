@@ -4523,6 +4523,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (target is TblEditorControl tbl)
         { tbl.ShowSearch(); return; }
 
+        if (target is WpfHexEditor.Editor.MarkdownEditor.Controls.MarkdownEditorHost mde)
+        { mde.ShowFindBar(); return; }
+
         if (target is CodeEditorControl json && _codeEditorBars.TryGetValue(json, out var bar))
         {
             if (bar.Visibility == Visibility.Visible)

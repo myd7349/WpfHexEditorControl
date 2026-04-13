@@ -215,6 +215,12 @@ namespace WpfHexEditor.HexEditor.Controls
         private bool _isMouseDown = false;
         private long? _dragStartPosition = null;
 
+        /// <summary>
+        /// True while a left-button drag is in progress (MouseDown → MouseUp).
+        /// Used by HexEditor's auto-scroll timer to detect active drag state.
+        /// </summary>
+        internal bool IsMouseDown => _isMouseDown;
+
         // Offset column line-selection drag support
         private bool _isOffsetDrag = false;
         private int _offsetDragStartLineIndex = -1;
@@ -3431,7 +3437,6 @@ namespace WpfHexEditor.HexEditor.Controls
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
-
             // End drag selection
             if (_isMouseDown)
             {

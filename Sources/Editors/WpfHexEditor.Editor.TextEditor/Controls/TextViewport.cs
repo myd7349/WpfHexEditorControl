@@ -1486,8 +1486,17 @@ internal sealed class TextViewport : FrameworkElement
         // Feature A: extend rectangular selection.
         if (_isRectSelecting && e.LeftButton == MouseButtonState.Pressed)
         {
-            var rectPos          = e.GetPosition(this);
-            var (mLine, mCol)    = HitTestPosition(rectPos);
+            var rectPos = e.GetPosition(this);
+
+            // Auto-scroll: raise event so the parent ScrollViewer scrolls (FirstVisibleLine
+            // is driven by ScrollChanged — setting it directly would be immediately overridden).
+            if (rectPos.Y < 0)
+                DragScrollRequested?.Invoke(this, -1);
+            else if (rectPos.Y > ActualHeight)
+                DragScrollRequested?.Invoke(this, 1);
+
+            var clampedRectPos   = new Point(rectPos.X, Math.Clamp(rectPos.Y, 0, ActualHeight - 1));
+            var (mLine, mCol)    = HitTestPosition(clampedRectPos);
             _rectSelection.Extend(mLine, mCol);
 
             long rectNow = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -1532,6 +1541,14 @@ internal sealed class TextViewport : FrameworkElement
 
         if (!_isDragging || e.LeftButton != MouseButtonState.Pressed) return;
 
+        // Auto-scroll: raise event so the parent ScrollViewer scrolls (FirstVisibleLine
+        // is driven by ScrollChanged — setting it directly would be immediately overridden).
+        var rawPos = e.GetPosition(this);
+        if (rawPos.Y < 0)
+            DragScrollRequested?.Invoke(this, -1);
+        else if (rawPos.Y > ActualHeight)
+            DragScrollRequested?.Invoke(this, 1);
+
         // 60 Hz gate: skip if last drag-render was < 16.7 ms ago (P1-TE-02)
         long now = System.Diagnostics.Stopwatch.GetTimestamp();
         if (now - _lastDragRenderTick < DragThrottleTicks) return;
@@ -1544,7 +1561,7 @@ internal sealed class TextViewport : FrameworkElement
             _vm.SelectionAnchorColumn = _vm.CaretColumn;
         }
 
-        var pos          = e.GetPosition(this);
+        var pos          = new Point(rawPos.X, Math.Clamp(rawPos.Y, 0, ActualHeight - 1));
         var (line, col)  = HitTestPosition(pos);
 
         // Guard: skip if caret cell is unchanged (mouse within same character).
@@ -2074,6 +2091,41 @@ internal sealed class TextViewport : FrameworkElement
 
     /// <summary>Raised when <see cref="ZoomLevel"/> changes (for status-bar display).</summary>
     public event EventHandler<double>? ZoomLevelChanged;
+
+    /// <summary>True while a left-button drag-selection (normal or rectangular) is active.</summary>
+    public bool IsDraggingSelection => _isDragging || _isRectSelecting;
+
+    /// <summary>
+    /// Extends the selection endpoint to the top or bottom visible edge.
+    /// Called by the parent after a programmatic scroll so the selection tracks the new scroll position.
+    /// <paramref name="direction"/> is -1 (scrolled up → top edge) or +1 (scrolled down → bottom edge).
+    /// <paramref name="visibleHeight"/> is the ScrollViewer's ViewportHeight (the true visible area height).
+    /// </summary>
+    internal void ExtendSelectionToEdge(int direction, double visibleHeight)
+    {
+        if (_vm is null || !_isDragging) return;
+
+        // HitTestPosition uses visible-area Y (0 = top of visible area).
+        double edgeY = direction < 0 ? 0 : visibleHeight - 1;
+        var edgePos  = new Point(LineNumberColumnWidth, edgeY);
+        var (line, col) = HitTestPosition(edgePos);
+
+        if (line == _vm.CaretLine && col == _vm.CaretColumn) return;
+
+        _suppressVmNotify = true;
+        _vm.CaretLine   = line;
+        _vm.CaretColumn = col;
+        _suppressVmNotify = false;
+
+        UpdateBackground();
+        DrawCursor();
+    }
+
+    /// <summary>
+    /// Raised during a drag-selection when the mouse exits the viewport bounds and the
+    /// parent ScrollViewer should scroll. The argument is the line delta (-1 = up, +1 = down).
+    /// </summary>
+    public event EventHandler<int>? DragScrollRequested;
 
     // ─────────────────────────────────────────────────────────────────────────
 

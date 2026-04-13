@@ -126,8 +126,11 @@ namespace WpfHexEditor.HexEditor
                     }
                     else
                     {
-                        // Normal byte drag: use hit-test position
-                        var hitResult = HexViewport.HitTestByteWithArea(_lastMousePosition);
+                        // Normal byte drag: use hit-test position.
+                        // Minimum Y is 2 (HexViewport.TopMargin): HitTestByteWithArea returns null for y < TopMargin.
+                        double clampedY = Math.Clamp(_lastMousePosition.Y, 2.0, HexViewport.ActualHeight - 1);
+                        var clampedHitPos = new Point(_lastMousePosition.X, clampedY);
+                        var hitResult = HexViewport.HitTestByteWithArea(clampedHitPos);
                         if (hitResult.Position.HasValue)
                         {
                             var position = new VirtualPosition(hitResult.Position.Value);
