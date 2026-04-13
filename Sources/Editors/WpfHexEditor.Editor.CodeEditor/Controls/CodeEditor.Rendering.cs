@@ -782,7 +782,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 _wordHighlightTrackedLine = _cursorLine;
                 _wordHighlightTrackedCol  = _cursorColumn;
-                ScheduleWordHighlightUpdate();
+                // Only arm the debounce timer when it is not already counting down.
+                // LSP diagnostic bursts cause InvalidateVisual() at > 4 Hz; without this guard,
+                // ScheduleWordHighlightUpdate() would perpetually reset the 250ms countdown and
+                // word highlights would never update while diagnostics are streaming.
+                if (_wordHighlightTimer is { IsEnabled: false })
+                    ScheduleWordHighlightUpdate();
             }
 
 

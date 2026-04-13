@@ -1976,28 +1976,79 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
         }
 
+        /// <summary>
+        /// Window-level PreviewMouseMove handler (tunneling) — fires even when the mouse
+        /// has left the CodeEditor area or when the WindowChrome/docking system has
+        /// stolen the mouse capture. Continues auto-scroll during cross-boundary drags.
+        /// </summary>
+        private void OnWindowPreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isSelecting && !_isRectSelecting) return;
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                _autoScrollTimer.Stop();
+                return;
+            }
+
+            // Translate mouse position to CodeEditor coordinates
+            var pos = e.GetPosition(this);
+            _lastMousePosition = pos;
+
+            bool outsideBounds = pos.Y < 0 || pos.Y > ActualHeight;
+            if (outsideBounds && !_autoScrollTimer.IsEnabled)
+                _autoScrollTimer.Start();
+            else if (!outsideBounds && _autoScrollTimer.IsEnabled)
+                _autoScrollTimer.Stop();
+        }
+
+        /// <summary>
+        /// Window-level PreviewMouseUp handler — ends the drag if the mouse button is
+        /// released outside the CodeEditor (e.g. over the title bar or another panel).
+        /// </summary>
+        private void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left) return;
+
+            if (_isRectSelecting)
+            {
+                _isRectSelecting = false;
+                _autoScrollTimer.Stop();
+                if (IsMouseCaptured) ReleaseMouseCapture();
+                return;
+            }
+
+            if (_isSelecting)
+            {
+                _isSelecting = false;
+                _autoScrollTimer.Stop();
+                if (IsMouseCaptured) ReleaseMouseCapture();
+            }
+        }
+
         protected override void OnGotFocus(RoutedEventArgs e)
         {
             base.OnGotFocus(e);
 
-            // Start caret blinking when focused
-            if (_caretTimer != null && CaretBlinkRate > 0)
+            // Start caret blinking when focused.
+            // Guard: only restart when the timer is not already running — the IDE docking
+            // system fires OnGotFocus 2-3x per tab activation (initial Focus() + deferred
+            // DispatcherPriority.Input calls). Redundant Stop/Start would delay the first
+            // blink tick and block the dispatcher with O(layout-tree) work.
+            if (_caretTimer != null)
             {
                 _caretVisible = true;
-                _caretTimer.Stop();
-                _caretTimer.Start();
-            }
-            else if (_caretTimer != null)
-            {
-                // If blink rate is 0 (always visible), ensure caret is shown
-                _caretVisible = true;
+                if (CaretBlinkRate > 0 && !_caretTimer.IsEnabled)
+                {
+                    _caretTimer.Stop();
+                    _caretTimer.Start();
+                }
             }
 
-            // Force immediate repaint to show caret and active selection
+            // Queue a repaint to show caret and active selection.
+            // UpdateLayout() is intentionally NOT called here — it is O(layout-tree) and
+            // redundant: EnsureCursorVisible() handles scroll on cursor moves, and the
+            // caret is rendered via DrawingVisual (no layout pass required).
             InvalidateVisual();
-
-            // Force update layout to ensure cursor is visible immediately
-            UpdateLayout();
         }
 
         protected override void OnLostFocus(RoutedEventArgs e)

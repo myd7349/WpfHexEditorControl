@@ -2589,7 +2589,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             InitializeContextMenu();
 
             // Initialize caret blink timer
-            _caretTimer = new System.Windows.Threading.DispatcherTimer();
+            // Render priority (7) keeps the blink tick above Background LSP diagnostic work (4)
+            // so the caret fires reliably even during Roslyn workspace init bursts.
+            _caretTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render);
             _caretTimer.Tick += CaretTimer_Tick;
             UpdateCaretBlinkTimer();
 
@@ -2694,7 +2696,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _scrollBarChildren.Add(_caretVisual);
 
             // Debounce timer: update word highlights 250 ms after the caret stops moving.
-            _wordHighlightTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            // Input priority (5) keeps the tick above Background LSP diagnostic dispatches (4)
+            // so frequent diagnostic-driven renders don't starve the word highlight update.
+            _wordHighlightTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(250) };
             _wordHighlightTimer.Tick += (_, _) => { _wordHighlightTimer.Stop(); UpdateWordHighlights(); };
 
             // Attach InlineHints service to the initial document.
@@ -2718,7 +2722,32 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _endBlockHintTimer.Tick += OnEndBlockHintTimerTick;
 
             // Apply theme resource bindings when connected to the visual tree
-            Loaded += (_, _) => ApplyThemeResourceBindings();
+            Loaded += (_, _) =>
+            {
+                ApplyThemeResourceBindings();
+
+                // Wire window-level mouse handlers so auto-scroll continues when the mouse
+                // leaves the CodeEditor boundary (e.g. into docking tabs or the title bar).
+                // Mouse.AddPreviewMouseMoveHandler uses tunneling — fires even when another
+                // element has mouse capture, which is more reliable than relying solely on
+                // CaptureMouse() across docking/WindowChrome containers.
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    Mouse.AddPreviewMouseMoveHandler(window, OnWindowPreviewMouseMove);
+                    Mouse.AddPreviewMouseUpHandler(window, OnWindowPreviewMouseUp);
+                }
+            };
+
+            Unloaded += (_, _) =>
+            {
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    Mouse.RemovePreviewMouseMoveHandler(window, OnWindowPreviewMouseMove);
+                    Mouse.RemovePreviewMouseUpHandler(window, OnWindowPreviewMouseUp);
+                }
+            };
         }
 
         private void OnLensDataRefreshed(object? sender, EventArgs e)
