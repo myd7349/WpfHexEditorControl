@@ -329,7 +329,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     _signatureHelpPopup.PlacementTarget = this;
                     _signatureHelpPopup.PlacementRectangle = GetCaretDisplayRect();
                     _signatureHelpPopup.Show(result, this, GetCaretDisplayRect());
-                });
+                }, System.Windows.Threading.DispatcherPriority.Background);
             }
             catch (Exception ex)
             {
@@ -388,7 +388,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 await Dispatcher.InvokeAsync(() =>
                 {
                     _signatureHelpPopup?.UpdateActiveParameter(result.ActiveParameterIndex);
-                });
+                }, System.Windows.Threading.DispatcherPriority.Background);
             }
             catch { /* swallow */ }
         }
@@ -479,7 +479,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         _lightbulbLine = newLine;
                         InvalidateVisual();
                     }
-                });
+                }, System.Windows.Threading.DispatcherPriority.Background);
             }
             catch { /* ignore — never crash for a gutter glyph */ }
         }
@@ -820,7 +820,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
                 _diagnosticsRenderPending = false;
                 InvalidateVisual();
-            }, System.Windows.Threading.DispatcherPriority.Normal);
+            // Background priority keeps diagnostics below the Render priority (7) so LSP
+            // burst-init does not block frame rendering during Roslyn workspace startup.
+            }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // -- Find All References (LSP) ------------------------------------
@@ -1676,9 +1678,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 : string.Empty;
             var (word, _) = GetWordAt(lineText, hoverPos.Column);
 
+
             if (string.IsNullOrEmpty(word))
             {
-                _hoverQuickInfoService.Cancel();
+                // Mouse crossed whitespace between tokens — don't hide the popup or
+                // cancel pending resolve. The popup's own grace timer (200ms) handles
+                // auto-hide when the mouse truly leaves the symbol area.
                 return;
             }
 
@@ -1836,12 +1841,31 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             switch (e.Command)
             {
                 case "GoToDefinition":
-                    if (_hoveredSymbolZone.HasValue)
-                        _ = NavigateToDefinitionAsync(_hoveredSymbolZone.Value);
+                    // Build a SymbolHitZone from the last hovered position (not _hoveredSymbolZone
+                    // which is only set during Ctrl+hover, not normal QuickInfo hover).
+                    var pos = _lastHoverTextPos;
+                    if (pos.Line >= 0 && _document is not null
+                        && pos.Line < _document.Lines.Count)
+                    {
+                        var lt = _document.Lines[pos.Line].Text ?? string.Empty;
+                        var (w, sc) = GetWordAt(lt, pos.Column);
+                        if (!string.IsNullOrEmpty(w))
+                        {
+                            var zone = new SymbolHitZone(pos.Line, sc, sc + w.Length, w,
+                                string.Empty, 0, 0, false);
+                            _ = NavigateToDefinitionAsync(zone);
+                        }
+                    }
                     break;
 
                 case "FindAllReferences":
-                    _ = FindAllReferencesAsync();
+                    if (_lastHoverTextPos.Line >= 0 && _document is not null
+                        && _lastHoverTextPos.Line < _document.Lines.Count)
+                    {
+                        var refLt = _document.Lines[_lastHoverTextPos.Line].Text ?? string.Empty;
+                        var (refW, _) = GetWordAt(refLt, _lastHoverTextPos.Column);
+                        _ = FindAllReferencesAsync(_lastHoverTextPos.Line, refW);
+                    }
                     break;
             }
         }

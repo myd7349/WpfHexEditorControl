@@ -145,6 +145,28 @@ namespace WpfHexEditor.HexEditor
             {
                 RefreshColumnHeader();
                 ApplyThemeFromResources();
+
+                // Wire window-level mouse handlers so auto-scroll continues when the mouse
+                // leaves the HexViewport boundary (e.g. into docking tabs or the title bar).
+                // Mouse.AddPreviewMouseMoveHandler uses tunneling — it fires even when another
+                // element has mouse capture, which is more reliable than relying solely on
+                // HexViewport.CaptureMouse() across docking/WindowChrome containers.
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    Mouse.AddPreviewMouseMoveHandler(window, OnWindowPreviewMouseMove);
+                    Mouse.AddPreviewMouseUpHandler(window, OnWindowPreviewMouseUp);
+                }
+            };
+
+            this.Unloaded += (s, e) =>
+            {
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    Mouse.RemovePreviewMouseMoveHandler(window, OnWindowPreviewMouseMove);
+                    Mouse.RemovePreviewMouseUpHandler(window, OnWindowPreviewMouseUp);
+                }
             };
 
             // Subscribe to right-click event for context menu

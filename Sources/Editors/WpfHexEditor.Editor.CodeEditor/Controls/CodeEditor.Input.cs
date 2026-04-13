@@ -60,14 +60,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Reset caret blink on keypress
             ResetCaretBlink();
 
-            // Block editing input when read-only (navigation keys still allowed below)
+            // Block text-modification keys when read-only.
+            // Navigation, selection (Shift+arrows), copy, and all read-only commands pass through.
             if (IsReadOnly)
             {
-                bool isNavigationOrCopy = e.Key is Key.Left or Key.Right or Key.Up or Key.Down
-                    or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.Escape
-                    || (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
-                    || (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) != 0);
-                if (!isNavigationOrCopy) { e.Handled = true; return; }
+                bool isModification =
+                    e.Key is Key.Back or Key.Delete or Key.Enter or Key.Return or Key.Tab
+                    || (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+                    || (e.Key == Key.X && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+                    || (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+                    || (e.Key == Key.Y && (Keyboard.Modifiers & ModifierKeys.Control) != 0);
+                if (isModification) { e.Handled = true; return; }
             }
 
             bool ctrlPressed  = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
@@ -101,6 +104,24 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     e.Handled = true;
                     _inlinePeekHost.ScrollDown();
                     return;
+                }
+            }
+
+            // SmartComplete keyboard routing — popup is non-focusable (focus stays in editor).
+            // Intercept navigation/commit/dismiss keys and forward to the popup.
+            if (_smartCompletePopup is { IsOpen: true } && !ctrlPressed && !altPressed && !shiftPressed)
+            {
+                switch (e.Key)
+                {
+                    case Key.Up:       if (_smartCompletePopup.NavigateUp())       { e.Handled = true; return; } break;
+                    case Key.Down:     if (_smartCompletePopup.NavigateDown())     { e.Handled = true; return; } break;
+                    case Key.PageUp:   if (_smartCompletePopup.NavigatePageUp())   { e.Handled = true; return; } break;
+                    case Key.PageDown: if (_smartCompletePopup.NavigatePageDown()) { e.Handled = true; return; } break;
+                    case Key.Home:     if (_smartCompletePopup.NavigateHome())     { e.Handled = true; return; } break;
+                    case Key.End:      if (_smartCompletePopup.NavigateEnd())      { e.Handled = true; return; } break;
+                    case Key.Enter:
+                    case Key.Tab:      if (_smartCompletePopup.CommitIfOpen())     { e.Handled = true; return; } break;
+                    case Key.Escape:   if (_smartCompletePopup.CloseIfOpen())      { e.Handled = true; return; } break;
                 }
             }
 
@@ -540,6 +561,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
             base.OnTextInput(e);
+            if (IsReadOnly) return;
 
             // Reset caret blink on text input
             ResetCaretBlink();
@@ -569,6 +591,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         InvalidateVisual();
                         continue;
                     }
+
+                    if (!_selection.IsEmpty)
+                        DeleteSelection();
 
                     InsertChar(ch);
 
@@ -661,6 +686,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Schedule lightbulb check whenever the cursor line changes
             ScheduleLightbulbCheck();
+
+            // Notify word highlight — keyboard navigation skips OnRender (DrawingVisual caret),
+            // so the cursor-change detector in OnRender never fires for pure arrow-key moves.
+            NotifyCursorMoved();
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
@@ -1117,12 +1146,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void InsertChar(char ch)
         {
+            if (IsReadOnly) return;
             _document.InsertChar(_cursorLine, _cursorColumn, ch);
             _cursorColumn++;
         }
 
         private void InsertNewLine()
         {
+            if (IsReadOnly) return;
             if (!_selection.IsEmpty)
                 DeleteSelection();
 
@@ -1135,6 +1166,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void InsertTab()
         {
+            if (IsReadOnly) return;
             // Insert spaces for tab (respects IndentSize)
             int spacesToInsert = _document.IndentSize - (_cursorColumn % _document.IndentSize);
             for (int i = 0; i < spacesToInsert; i++)
@@ -1271,6 +1303,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void DeleteCharBefore()
         {
+            if (IsReadOnly) return;
             if (_cursorColumn > 0)
             {
                 // SmartBackspace: Delete by indent level if on leading whitespace
@@ -1332,6 +1365,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void DeleteCharAfter()
         {
+            if (IsReadOnly) return;
             var currentLine = _document.Lines[_cursorLine];
 
             if (_cursorColumn < currentLine.Length)
@@ -1942,28 +1976,79 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
         }
 
+        /// <summary>
+        /// Window-level PreviewMouseMove handler (tunneling) — fires even when the mouse
+        /// has left the CodeEditor area or when the WindowChrome/docking system has
+        /// stolen the mouse capture. Continues auto-scroll during cross-boundary drags.
+        /// </summary>
+        private void OnWindowPreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isSelecting && !_isRectSelecting) return;
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                _autoScrollTimer.Stop();
+                return;
+            }
+
+            // Translate mouse position to CodeEditor coordinates
+            var pos = e.GetPosition(this);
+            _lastMousePosition = pos;
+
+            bool outsideBounds = pos.Y < 0 || pos.Y > ActualHeight;
+            if (outsideBounds && !_autoScrollTimer.IsEnabled)
+                _autoScrollTimer.Start();
+            else if (!outsideBounds && _autoScrollTimer.IsEnabled)
+                _autoScrollTimer.Stop();
+        }
+
+        /// <summary>
+        /// Window-level PreviewMouseUp handler — ends the drag if the mouse button is
+        /// released outside the CodeEditor (e.g. over the title bar or another panel).
+        /// </summary>
+        private void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left) return;
+
+            if (_isRectSelecting)
+            {
+                _isRectSelecting = false;
+                _autoScrollTimer.Stop();
+                if (IsMouseCaptured) ReleaseMouseCapture();
+                return;
+            }
+
+            if (_isSelecting)
+            {
+                _isSelecting = false;
+                _autoScrollTimer.Stop();
+                if (IsMouseCaptured) ReleaseMouseCapture();
+            }
+        }
+
         protected override void OnGotFocus(RoutedEventArgs e)
         {
             base.OnGotFocus(e);
 
-            // Start caret blinking when focused
-            if (_caretTimer != null && CaretBlinkRate > 0)
+            // Start caret blinking when focused.
+            // Guard: only restart when the timer is not already running — the IDE docking
+            // system fires OnGotFocus 2-3x per tab activation (initial Focus() + deferred
+            // DispatcherPriority.Input calls). Redundant Stop/Start would delay the first
+            // blink tick and block the dispatcher with O(layout-tree) work.
+            if (_caretTimer != null)
             {
                 _caretVisible = true;
-                _caretTimer.Stop();
-                _caretTimer.Start();
-            }
-            else if (_caretTimer != null)
-            {
-                // If blink rate is 0 (always visible), ensure caret is shown
-                _caretVisible = true;
+                if (CaretBlinkRate > 0 && !_caretTimer.IsEnabled)
+                {
+                    _caretTimer.Stop();
+                    _caretTimer.Start();
+                }
             }
 
-            // Force immediate repaint to show caret and active selection
+            // Queue a repaint to show caret and active selection.
+            // UpdateLayout() is intentionally NOT called here — it is O(layout-tree) and
+            // redundant: EnsureCursorVisible() handles scroll on cursor moves, and the
+            // caret is rendered via DrawingVisual (no layout pass required).
             InvalidateVisual();
-
-            // Force update layout to ensure cursor is visible immediately
-            UpdateLayout();
         }
 
         protected override void OnLostFocus(RoutedEventArgs e)
@@ -2278,6 +2363,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void DeleteSelection()
         {
+            if (IsReadOnly) return;
             if (_selection.IsEmpty)
                 return;
 

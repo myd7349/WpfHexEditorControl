@@ -782,7 +782,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 _wordHighlightTrackedLine = _cursorLine;
                 _wordHighlightTrackedCol  = _cursorColumn;
-                ScheduleWordHighlightUpdate();
+                // Only arm the debounce timer when it is not already counting down.
+                // LSP diagnostic bursts cause InvalidateVisual() at > 4 Hz; without this guard,
+                // ScheduleWordHighlightUpdate() would perpetually reset the 250ms countdown and
+                // word highlights would never update while diagnostics are streaming.
+                if (_wordHighlightTimer is { IsEnabled: false })
+                    ScheduleWordHighlightUpdate();
             }
 
 
@@ -809,9 +814,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Push updated viewport context to LSP overlay layers (debounced internally).
             if (ShowLspInlayHints)
-                _lspInlayHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight);
+                _lspInlayHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, _horizontalScrollOffset);
             if (ShowLspDeclarationHints)
-                _lspDeclarationHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, BuildVisibleSourceLines());
+                _lspDeclarationHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, BuildVisibleSourceLines(), _horizontalScrollOffset);
 
             // Sticky scroll header: refresh only when the true scroll-line changes.
             // Guard: never call InvalidateArrange() unconditionally inside OnRender —
@@ -1261,10 +1266,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _inlinePeekHost.Render(peekW);
             }
 
-            // LSP overlay layers: fill the full content area so their DrawingVisual children
-            // are clipped to the same bounds as the editor text area.
-            _lspInlayHintsLayer.Arrange(new Rect(0, 0, contentW, contentH));
-            _lspDeclarationHintsLayer.Arrange(new Rect(0, 0, contentW, contentH));
+            // LSP overlay layers: arrange at the text area origin so their local (0,0)
+            // corresponds to where the first character of the first visible line is drawn.
+            double hintLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            double hintTop  = TopMargin;
+            _lspInlayHintsLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
+            _lspDeclarationHintsLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
 
             UpdateScrollBars(contentW, contentH);
             return finalSize;
@@ -2233,6 +2240,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
             }
 
+            // Sync tracked position BEFORE InvalidateRegion so the cursor-change detector
+            // in OnRender(Overlays fast-path) sees a stable position and does not
+            // reschedule a second 250ms cycle (feedback loop fix).
+            _wordHighlightTrackedLine = _cursorLine;
+            _wordHighlightTrackedCol  = _cursorColumn;
+
             // Word highlights changed — only the overlay layer needs redrawing.
             InvalidateRegion(RenderDirtyFlags.Overlays);
 
@@ -2836,8 +2849,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double leftEdge = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
 
             // OPT-PERF-03: use _validationByLine index — O(viewport) instead of O(all errors).
+            var lineCount = _document?.Lines.Count ?? 0;
             for (int i = _firstVisibleLine; i <= _lastVisibleLine; i++)
             {
+                if (i >= lineCount) break;
                 if (!_validationByLine.TryGetValue(i, out var lineErrors)) continue;
                 foreach (var error in lineErrors)
                 {

@@ -98,14 +98,22 @@ internal sealed class HoverQuickInfoService : IDisposable
         string filePath, int line, int column, string word,
         IReadOnlyList<CodeLine> lineSnapshot)
     {
+        bool sameWord = string.Equals(word, _pendingWord, StringComparison.Ordinal)
+                     && string.Equals(filePath, _pendingFilePath, StringComparison.Ordinal);
+
         _pendingFilePath = filePath;
         _pendingLine     = line;
         _pendingColumn   = column;
         _pendingWord     = word;
         _lineSnapshot    = lineSnapshot;
 
-        _debounce.Stop();
-        _debounce.Start();
+        // Skip if already resolving for the same word.
+        if (sameWord) return;
+
+        // Cancel any previous in-flight request, then wait 500ms (VS-standard hover delay)
+        // before resolving. Uses Task.Delay instead of DispatcherTimer (which was unreliable).
+        CancelPending();
+        _ = DelayedResolveAsync();
     }
 
     /// <summary>Cancels any pending debounce + in-flight request and fires null result.</summary>
@@ -130,6 +138,7 @@ internal sealed class HoverQuickInfoService : IDisposable
     private void OnDebounceTick(object? sender, EventArgs e)
     {
         _debounce.Stop();
+
         _ = ResolveAsync();
     }
 
@@ -142,9 +151,21 @@ internal sealed class HoverQuickInfoService : IDisposable
         _cts = new CancellationTokenSource();
     }
 
+    private async Task DelayedResolveAsync()
+    {
+        var ct = _cts.Token;
+        try
+        {
+            // VS-standard ~500ms hover dwell delay before showing QuickInfo.
+            await Task.Delay(500, ct).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) { return; }
+
+        await ResolveAsync().ConfigureAwait(true);
+    }
+
     private async Task ResolveAsync()
     {
-        CancelPending();
         var ct = _cts.Token;
 
         // Capture all state on the UI thread before going background
@@ -157,6 +178,7 @@ internal sealed class HoverQuickInfoService : IDisposable
         var    lsp          = _lspClient;
         var    providers    = _providers;
 
+
         try
         {
             var result = await Task.Run(
@@ -164,10 +186,18 @@ internal sealed class HoverQuickInfoService : IDisposable
                                    lsp, providers, ct),
                 ct).ConfigureAwait(true);   // resume on UI thread
 
+
             if (ct.IsCancellationRequested) return;
             QuickInfoResolved?.Invoke(this, result);
         }
-        catch (OperationCanceledException) { /* rapid mouse movement */ }
+        catch (OperationCanceledException)
+        {
+
+        }
+        catch (Exception ex)
+        {
+
+        }
     }
 
     // ── Background computation (Task.Run thread — no WPF objects) ────────────
@@ -180,8 +210,12 @@ internal sealed class HoverQuickInfoService : IDisposable
         IReadOnlyList<IQuickInfoProvider> providers,
         CancellationToken ct)
     {
+        void Log(string msg) { }
+        Log($"Resolve word='{word}' line={line} col={column} lsp={lsp?.GetType().Name ?? "null"} init={lsp?.IsInitialized}");
+
         // 1. Diagnostic overlay — instant, covers squigglies ──────────────────
         var diagResult = TryBuildDiagnosticInfo(diagnostics, line, column, word);
+        Log($"Step1 diag={diagResult is not null}");
 
         // 2. LSP hover — most authoritative source ─────────────────────────────
         if (lsp?.IsInitialized == true)
@@ -191,20 +225,27 @@ internal sealed class HoverQuickInfoService : IDisposable
 
             try
             {
+                Log("Step2 LSP HoverAsync...");
                 var hover = await lsp.HoverAsync(filePath, line, column, linked.Token)
                                      .ConfigureAwait(false);
+                Log($"Step2 LSP hover={hover is not null}");
                 if (hover is not null)
                     return MergeDiagnostic(BuildFromLsp(hover, word), diagResult);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                // LSP timeout — fall through to next source
+                Log("Step2 LSP timeout");
             }
+        }
+        else
+        {
+            Log("Step2 LSP skipped (null or not initialized)");
         }
 
         ct.ThrowIfCancellationRequested();
 
         // 3. Plugin contributors ──────────────────────────────────────────────
+        Log($"Step3 providers.Count={providers.Count}");
         foreach (var provider in providers)
         {
             var pluginResult = await provider
@@ -212,17 +253,22 @@ internal sealed class HoverQuickInfoService : IDisposable
                 .ConfigureAwait(false);
 
             if (pluginResult is not null)
+            {
+                Log($"Step3 provider hit: {provider.GetType().Name}");
                 return MergeDiagnostic(pluginResult, diagResult);
+            }
         }
 
         ct.ThrowIfCancellationRequested();
 
         // 4. Local fallback — CodeStructureParser ─────────────────────────────
         var local = ComputeLocalFallback(word, line, lines);
+        Log($"Step4 local={local is not null}");
         if (local is not null)
             return MergeDiagnostic(local, diagResult);
 
         // 5. Return diagnostic-only result if we have one, otherwise nothing ──
+        Log($"Step5 final diagOnly={diagResult is not null}");
         return diagResult;
     }
 

@@ -613,6 +613,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Pre-create OutputPanel so OutputLogger.Register is called before any Info/Error calls
         _outputPanel = new OutputPanel();
 
+
+
         // Bootstrap DockPanelCornerRadius resources before any docking panels are created.
         // DynamicResource keys must exist in Application.Resources before templates resolve them.
         Application.Current.Resources["DockPanelCornerRadius"]      = new System.Windows.CornerRadius(4);
@@ -1724,6 +1726,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _errorPanel.EntryNavigationRequested  += OnErrorEntryNavigation;
             _errorPanel.OpenInTextEditorRequested += OnOpenInTextEditorRequested;
 
+            // Restore persisted filter toggles
+            var epSettings = AppSettingsService.Instance.Current.ErrorPanel;
+            _errorPanel.ApplyFilterSettings(epSettings.ShowErrors, epSettings.ShowWarnings, epSettings.ShowMessages);
+            _errorPanel.FilterTogglesChanged += OnErrorPanelFilterTogglesChanged;
+
             // Register solution manager as a permanent diagnostic source if it implements IDiagnosticSource
             if (_solutionManager is IDiagnosticSource sm)
                 _errorPanel.AddSource(sm);
@@ -1744,6 +1751,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             .Cast<string>()
             .ToList();
         _errorPanel.SetOpenDocuments(paths);
+    }
+
+    private void OnErrorPanelFilterTogglesChanged(object? sender, EventArgs e)
+    {
+        if (_errorPanel is null) return;
+        _errorPanel.CaptureFilterSettings(out var errors, out var warnings, out var messages);
+        var s = AppSettingsService.Instance.Current.ErrorPanel;
+        s.ShowErrors   = errors;
+        s.ShowWarnings = warnings;
+        s.ShowMessages = messages;
+        AppSettingsService.Instance.Save();
     }
 
     private void OnErrorEntryNavigation(object? sender, DiagnosticEntry e)

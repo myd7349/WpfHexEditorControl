@@ -169,6 +169,11 @@ public sealed class AppSettings
     /// <summary>Plugin Marketplace preferences (GitHub token, auto-update check).</summary>
     public MarketplaceSettings Marketplace { get; set; } = new();
 
+    // -- Error Panel --------------------------------------------------------------
+
+    /// <summary>Error List panel filter toggle persistence.</summary>
+    public ErrorPanelSettings ErrorPanel { get; set; } = new();
+
     // -- Document Structure -------------------------------------------------------
 
     /// <summary>Document Structure panel preferences (max depth, etc.).</summary>
@@ -761,6 +766,9 @@ public sealed class CodeEditorDefaultSettings
     /// <summary>Automatically format the document on Ctrl+S save.</summary>
     public bool FormatOnSave { get; set; } = false;
 
+    /// <summary>Highlight all occurrences of the word under the caret with subtle boxes and scroll-bar tick marks.</summary>
+    public bool EnableWordHighlight { get; set; } = true;
+
     // -- Formatting overrides (null = use .whfmt language default) ----------------
 
     /// <summary>Override whfmt trimTrailingWhitespace. Null = inherit language default.</summary>
@@ -1332,6 +1340,18 @@ public sealed class DocumentSettings
 /// <summary>
 /// Document Structure panel preferences.
 /// </summary>
+public sealed class ErrorPanelSettings
+{
+    /// <summary>Whether the Errors toggle is checked.</summary>
+    public bool ShowErrors { get; set; } = true;
+
+    /// <summary>Whether the Warnings toggle is checked.</summary>
+    public bool ShowWarnings { get; set; } = true;
+
+    /// <summary>Whether the Messages toggle is checked.</summary>
+    public bool ShowMessages { get; set; } = true;
+}
+
 public sealed class DocumentStructureSettings
 {
     /// <summary>

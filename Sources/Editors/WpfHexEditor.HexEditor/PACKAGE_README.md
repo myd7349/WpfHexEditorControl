@@ -1,4 +1,4 @@
-# WpfHexEditorControl
+# WPFHexaEditor
 
 A full-featured WPF hex editor UserControl for .NET 8. Successor to [WPFHexaEditor](https://www.nuget.org/packages/WPFHexaEditor/).
 
@@ -11,8 +11,19 @@ A full-featured WPF hex editor UserControl for .NET 8. Successor to [WPFHexaEdit
 ```
 
 ```
-dotnet add package WpfHexEditorControl
+dotnet add package WPFHexaEditor
 ```
+
+## What's New in 3.0.3
+
+- **Fix**: `AllowCustomBackgroundBlock` dependency property is now obsolete and has no effect. Custom background blocks render automatically when blocks are added via `AddCustomBackgroundBlock()`. Use `AddCustomBackgroundBlock()` / `ClearCustomBackgroundBlock()` as the sole control point.
+- **Localization**: 18 satellite assemblies now bundled in the package (ar-SA, de-DE, es-ES, fr-FR, ja-JP, zh-CN, and 12 more). No separate install required.
+
+## What's New in 3.0.2
+
+- Column ruler support
+- Scroll marker panel improvements
+- Format detection performance improvements
 
 ## What's New in 3.0.0 (since WPFHexaEditor 2.1.7)
 
@@ -52,16 +63,20 @@ dotnet add package WpfHexEditorControl
 
 ## Included Assemblies
 
+All bundled inside the package — zero external NuGet dependencies:
+
 | Assembly | Purpose |
 |----------|---------|
 | WpfHexEditor.HexEditor | HexEditor UserControl (main entry point) |
 | WpfHexEditor.Core | Byte providers, format detection, search, undo/redo |
 | WpfHexEditor.Core.BinaryAnalysis | Cross-platform binary analysis (no WPF dependency) |
-| WpfHexEditor.Core.Definitions | 300+ embedded format definitions (.whfmt) |
+| WpfHexEditor.Core.Definitions | 400+ embedded format definitions (.whfmt) |
 | WpfHexEditor.Editor.Core | Shared editor abstractions |
 | WpfHexEditor.ColorPicker | Color picker control for settings |
 | WpfHexEditor.HexBox | Hex display control |
 | WpfHexEditor.ProgressBar | Progress bar control |
+
+**Localizations**: ar-SA, de-DE, es-419, es-ES, fr-CA, fr-FR, hi-IN, it-IT, ja-JP, ko-KR, nl-NL, pl-PL, pt-BR, pt-PT, ru-RU, sv-SE, tr-TR, zh-CN
 
 ## License
 
@@ -69,5 +84,5 @@ GNU Affero General Public License v3.0 (AGPL-3.0)
 
 ## Links
 
-- [GitHub Repository](https://github.com/abbaye/WpfHexEditorControl)
-- [Report Issues](https://github.com/abbaye/WpfHexEditorControl/issues)
+- [GitHub Repository](https://github.com/abbaye/WpfHexEditorIDE)
+- [Report Issues](https://github.com/abbaye/WpfHexEditorIDE/issues)
