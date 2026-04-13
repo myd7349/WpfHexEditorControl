@@ -316,11 +316,9 @@ internal sealed class InlineHintsService : IDisposable
             // Count in the current in-memory document.
             int count = CountWholeWordOccurrences(lines, symbol, ct);
 
-            // TODO: Count references from decompiled external assemblies (referenced NuGet/GAC/project
-            //       dependencies). Requires an IDecompilerService scan per referenced assembly,
-            //       filtering by symbol name, and summing across all resolved assembly sources.
-            //       Candidate approach: reuse AssemblyAnalysisEngine (CSharpSkeletonEmitter) +
-            //       a per-assembly WorkspaceFileCache bucket keyed by assembly identity.
+            // ADR-004: External assembly ref-counting deferred (post Phase 6).
+            // Requires IDecompilerService + per-assembly WorkspaceFileCache bucket keyed by assembly identity.
+            // Unblock when AssemblyAnalysisEngine (CSharpSkeletonEmitter) is stable.
 
             // Count across all solution files of the same extension, skipping the
             // current file (already counted above via in-memory lines).
