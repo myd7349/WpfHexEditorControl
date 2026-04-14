@@ -47,8 +47,9 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
 
     // -- Lazy cache ------------------------------------------------------------
 
-    private IReadOnlyList<EmbeddedFormatEntry>? _entries;
-    private IReadOnlyList<string>?              _categories;
+    private volatile IReadOnlyList<EmbeddedFormatEntry>? _entries;
+    private volatile IReadOnlyList<string>?              _categories;
+    private readonly object _entriesLock = new();
 
     /// <summary>
     /// Thread-safe cache: embedded resource key → raw JSON text.
@@ -67,41 +68,49 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
     /// <inheritdoc/>
     public IReadOnlyList<EmbeddedFormatEntry> GetAll()
     {
+        // Fast path: already populated (volatile read — no lock needed).
         if (_entries is not null) return _entries;
 
-        var list = new List<EmbeddedFormatEntry>();
-        foreach (var key in DefinitionsAssembly.GetManifestResourceNames())
+        lock (_entriesLock)
         {
-            if (!key.Contains("FormatDefinitions")) continue;
-            var isWhfmt   = key.EndsWith(".whfmt");
-            var isGrammar = key.EndsWith(".grammar");
-            if (!isWhfmt && !isGrammar) continue;
+            // Second check inside the lock: another thread may have populated while we waited.
+            if (_entries is not null) return _entries;
 
-            try
+            var list = new List<EmbeddedFormatEntry>();
+            foreach (var key in DefinitionsAssembly.GetManifestResourceNames())
             {
-                EmbeddedFormatEntry? entry = isGrammar
-                    ? LoadGrammarHeader(key)
-                    : LoadHeader(key);
-                if (entry is not null) list.Add(entry);
+                if (!key.Contains("FormatDefinitions")) continue;
+                var isWhfmt   = key.EndsWith(".whfmt");
+                var isGrammar = key.EndsWith(".grammar");
+                if (!isWhfmt && !isGrammar) continue;
+
+                try
+                {
+                    EmbeddedFormatEntry? entry = isGrammar
+                        ? LoadGrammarHeader(key)
+                        : LoadHeader(key);
+                    if (entry is not null) list.Add(entry);
+                }
+                catch
+                {
+                    // Skip malformed resources
+                }
             }
-            catch
+
+            list.Sort((a, b) =>
             {
-                // Skip malformed resources
-            }
+                var cat = string.Compare(a.Category, b.Category, StringComparison.OrdinalIgnoreCase);
+                return cat != 0 ? cat : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+            });
+
+            // Assign categories before entries so readers never see entries without categories.
+            _categories = list.Select(e => e.Category)
+                              .Distinct(StringComparer.OrdinalIgnoreCase)
+                              .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+                              .ToList();
+            _entries = list;
+            return _entries;
         }
-
-        list.Sort((a, b) =>
-        {
-            var cat = string.Compare(a.Category, b.Category, StringComparison.OrdinalIgnoreCase);
-            return cat != 0 ? cat : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-        });
-
-        _entries    = list;
-        _categories = list.Select(e => e.Category)
-                          .Distinct(StringComparer.OrdinalIgnoreCase)
-                          .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
-                          .ToList();
-        return _entries;
     }
 
     /// <inheritdoc/>

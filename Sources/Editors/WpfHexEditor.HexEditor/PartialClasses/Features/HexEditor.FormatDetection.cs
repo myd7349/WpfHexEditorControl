@@ -346,10 +346,14 @@ namespace WpfHexEditor.HexEditor
             (FormatDefinition Format, string Category)[] parsed;
             lock (s_parsedFormatsLock)
             {
-                if (s_parsedEmbeddedFormats is null)
+                // Populate if not yet done, OR if a previous attempt produced an empty array
+                // (which can happen when GetAll() was called during startup before the fix — now
+                // GetAll() itself is thread-safe, but this guard keeps the cache self-healing).
+                if (s_parsedEmbeddedFormats is null || s_parsedEmbeddedFormats.Length == 0)
                 {
-                    var list = new System.Collections.Generic.List<(FormatDefinition, string)>();
-                    foreach (var entry in EmbeddedFormatCatalog.Instance.GetAll())
+                    var allEntries = EmbeddedFormatCatalog.Instance.GetAll();
+                    var list = new System.Collections.Generic.List<(FormatDefinition, string)>(allEntries.Count);
+                    foreach (var entry in allEntries)
                     {
                         try
                         {
@@ -370,9 +374,11 @@ namespace WpfHexEditor.HexEditor
                             System.Diagnostics.Debug.WriteLine($"[FormatDetection] Error loading {entry.ResourceKey}: {ex.Message}");
                         }
                     }
-                    s_parsedEmbeddedFormats = list.ToArray();
+                    // Only commit to the static cache when we got a meaningful result.
+                    if (list.Count > 0)
+                        s_parsedEmbeddedFormats = list.ToArray();
                 }
-                parsed = s_parsedEmbeddedFormats;
+                parsed = s_parsedEmbeddedFormats ?? [];
             }
 
             // ── Step 2: register cached definitions in this instance's service ─
