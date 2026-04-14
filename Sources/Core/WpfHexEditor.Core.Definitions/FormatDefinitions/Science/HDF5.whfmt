@@ -6,7 +6,7 @@
     ".h5",
     ".hdf5"
   ],
-  "description": "Hierarchical Data Format version 5 (HDF5) is a versatile, self-describing binary data format developed by The HDF Group. It organizes data in a hierarchical, POSIX-like structure of groups and datasets with arbitrary metadata attributes. HDF5 is widely adopted by NASA, CERN, NCSA, and climate modelling centers for storing large multidimensional arrays, tables, and time-series. The format supports chunked storage, compression (gzip, szip, LZF), parallel I/O via MPI, and multiple data types. The 8-byte magic signature '\x89HDF\r\n\x1a\n' uniquely identifies HDF5 files. Supersedes HDF4.",
+  "description": "Hierarchical Data Format version 5 (HDF5) is a versatile, self-describing binary data format developed by The HDF Group. It organizes data in a hierarchical, POSIX-like structure of groups and datasets with arbitrary metadata attributes. HDF5 is widely adopted by NASA, CERN, NCSA, and climate modelling centers for storing large multidimensional arrays, tables, and time-series. The format supports chunked storage, compression (gzip, szip, LZF), parallel I/O via MPI, and multiple data types. The 8-byte magic signature (0x89 0x48 0x44 0x46 0x0D 0x0A 0x1A 0x0A) uniquely identifies HDF5 files. Supersedes HDF4.",
   "category": "Science",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",

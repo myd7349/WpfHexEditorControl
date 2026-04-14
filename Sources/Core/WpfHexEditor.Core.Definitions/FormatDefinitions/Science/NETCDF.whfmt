@@ -6,7 +6,7 @@
     ".nc",
     ".netcdf"
   ],
-  "description": "Network Common Data Form (NetCDF) is a self-describing, machine-independent binary data format created by Unidata for storing array-oriented scientific data. Classic NetCDF-3 files begin with the 4-byte magic 'CDF\x01' (version 1) or 'CDF\x02' (version 2, 64-bit offsets). The format organizes data into named dimensions, variables, and attributes in a header section, followed by variable data. Widely used in atmospheric sciences, oceanography, and climate modelling. NetCDF-4 uses an HDF5 container. The format is endorsed by CF Conventions for geoscience interoperability.",
+  "description": "Network Common Data Form (NetCDF) is a self-describing, machine-independent binary data format created by Unidata for storing array-oriented scientific data. Classic NetCDF-3 files begin with the 4-byte magic (0x43 0x44 0x46 0x01) (version 1) or (0x43 0x44 0x46 0x02) (version 2, 64-bit offsets). The format organizes data into named dimensions, variables, and attributes in a header section, followed by variable data. Widely used in atmospheric sciences, oceanography, and climate modelling. NetCDF-4 uses an HDF5 container. The format is endorsed by CF Conventions for geoscience interoperability.",
   "category": "Science",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",

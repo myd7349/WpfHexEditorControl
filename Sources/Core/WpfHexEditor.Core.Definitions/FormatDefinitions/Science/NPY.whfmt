@@ -5,7 +5,7 @@
   "extensions": [
     ".npy"
   ],
-  "description": "NumPy .npy is the standard binary serialization format for a single NumPy ndarray. The format begins with a 6-byte magic '\x93NUMPY', followed by a 1-byte major version (1 or 2), a 1-byte minor version (0), a 2-byte (v1) or 4-byte (v2) little-endian header length, and a Python-literal dictionary describing the array dtype, C/F memory order, and shape tuple. The data follows immediately after the header, padded to 64-byte alignment. The format is platform-independent and supports all NumPy dtypes including structured arrays. .npz files are zip archives of multiple .npy files, each named by variable.",
+  "description": "NumPy .npy is the standard binary serialization format for a single NumPy ndarray. The format begins with a 6-byte magic (0x93 + ASCII 'NUMPY'), followed by a 1-byte major version (1 or 2), a 1-byte minor version (0), a 2-byte (v1) or 4-byte (v2) little-endian header length, and a Python-literal dictionary describing the array dtype, C/F memory order, and shape tuple. The data follows immediately after the header, padded to 64-byte alignment. The format is platform-independent and supports all NumPy dtypes including structured arrays. .npz files are zip archives of multiple .npy files, each named by variable.",
   "category": "Science",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
