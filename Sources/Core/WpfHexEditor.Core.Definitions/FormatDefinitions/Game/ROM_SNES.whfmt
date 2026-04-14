@@ -1,49 +1,69 @@
-/* ============================================================
-   Format:    Super Nintendo ROM
-   Category:  Game
-   Ext:       .smc, .sfc
-   Editor:    hex-editor
-   Desc:      Super Nintendo Entertainment System ROM (HiROM internal header at $FFB0-$FFFF)
-   Variables: currentOffset, gameTitle, romLayout, romType, romSize, ramSize, regionCode, developerId, version, checksumComplement, checksum, nativeModeVectors, emulationModeVectors, checksumTotal, formattedSize
-   Detection: signature=33 @ offset 65498
-   Updated:   2026-03-01
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Super Nintendo ROM",
-  "version": "3.2",
+  "version": "3.24",
   "extensions": [
     ".smc",
-    ".sfc"
+    ".sfc",
+    ".fig",
+    ".swc"
   ],
-  "description": "Super Nintendo Entertainment System ROM (HiROM internal header at $FFB0-$FFFF)",
+  "description": "Super Nintendo Entertainment System (SNES) ROM files. .smc and .fig files may include a 512-byte copier header prepended by Super Magicom or FIG hardware (detectable when file_size mod 1024 == 512). .sfc files are headerless (standard format). The internal ROM header (64 bytes) is at $FFB0-$FFFF in HiROM layout (file offset 0xFFB0 = 65456 for headered .sfc, or 0x101B0 = 65968 for .smc with 512B copier header). HiROM header fields: game title (21B ASCII at $FFB0), map mode (1B at $FFD5), cartridge type (1B at $FFD6), ROM size log2-KB (1B at $FFD7), SRAM size log2-KB (1B at $FFD8), region code (1B at $FFD9), developer ID (1B at $FFDA — 0x33=extended header), ROM version (1B at $FFDB), checksum complement (2B LE at $FFDC), checksum (2B LE at $FFDE). Checksum + complement must equal 0xFFFF.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "SNES Internal ROM Header Specification",
-      "SNESdev Wiki ROM Header Documentation",
-      "Super Nintendo Software Specification"
+      "SNES Internal ROM Header Specification — SNESdev Wiki"
     ],
     "WebLinks": [
       "https://snes.nesdev.org/wiki/ROM_header",
       "https://sneslab.net/wiki/SNES_ROM_Header",
-      "https://wiki.superfamicom.org/writing-the-header",
-      "https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_memory_map"
+      "https://wiki.superfamicom.org/writing-the-header"
     ]
   },
   "detection": {
-    "signature": "33",
-    "offset": 65498,
+    "signatures": [
+      {
+        "value": "33",
+        "offset": 65498,
+        "label": "0x33 at $FFDA — HiROM developer ID (headerless .sfc)",
+        "weight": 0.8
+      },
+      {
+        "value": "33",
+        "offset": 66010,
+        "label": "0x33 at $FFDA+512 — HiROM developer ID (.smc with 512B copier header)",
+        "weight": 0.8
+      },
+      {
+        "value": "33",
+        "offset": 33210,
+        "label": "0x33 at $81BA — LoROM developer ID (headerless .sfc)",
+        "weight": 0.6
+      },
+      {
+        "value": "33",
+        "offset": 33722,
+        "label": "0x33 at $81BA+512 — LoROM developer ID (.smc with 512B copier header)",
+        "weight": 0.6
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.6,
     "required": false,
+    "Strength": "Weak",
+    "EntropyHint": {
+      "min": 5.0,
+      "max": 7.5
+    },
     "validation": {
-      "min_file_size": 32768,
-      "max_signature_offset": 1024
+      "minFileSize": 32768,
+      "maxSignatureOffset": 66100,
+      "note": "SNES ROMs have no fixed magic bytes. Detection uses the developer ID byte 0x33 at HiROM ($FFDA) or LoROM ($81BA) header positions. For .smc files with 512-byte copier header (file_size % 1024 == 512), add 512 to all offsets. Minimum 32KB."
     }
   },
   "variables": {
-    "currentOffset": 0,
     "gameTitle": "",
     "romLayout": 0,
     "romType": 0,
@@ -51,29 +71,24 @@
     "ramSize": 0,
     "regionCode": 0,
     "developerId": 0,
-    "version": 0,
+    "romVersion": 0,
     "checksumComplement": 0,
     "checksum": 0,
     "nativeModeVectors": "",
-    "emulationModeVectors": "",
     "checksumTotal": 0,
     "formattedSize": ""
-  },
-  "functions": {
-    "validateFieldRange(romLayout, 32, 37)": "Validate ROM layout mode (0x20-0x25)",
-    "validateFieldRange(regionCode, 0, 13)": "Validate region code (0x00-0x0D)"
   },
   "blocks": [
     {
       "type": "field",
       "name": "Game Title",
-      "offset": 65472,
+      "offset": 65456,
       "length": 21,
       "color": "#4ECDC4",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "ascii",
       "storeAs": "gameTitle",
-      "description": "Internal game title (21 ASCII chars, space-padded)"
+      "description": "Internal game title as 21 ASCII bytes space-padded, at $FFB0-$FFC4 in HiROM layout (file offset 65456 for headered .sfc; 65968 for .smc with 512B copier header). The title is set by the developer and may differ from the retail box title. Japanese ROMs often use katakana or romaji. This offset covers headered .sfc files — for .smc add 512."
     },
     {
       "type": "field",
@@ -81,25 +96,19 @@
       "offset": 65493,
       "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
       "storeAs": "romLayout",
-      "description": "0x20=LoROM | 0x21=HiROM | 0x22=LoROM+S-DD1 | 0x23=LoROM+SA-1 | 0x25=ExHiROM | +0x10=FastROM",
-      "validationRules": {
-        "allowedValues": [
-          32,
-          33,
-          34,
-          35,
-          36,
-          37,
-          48,
-          49,
-          50,
-          51,
-          52,
-          53
-        ]
+      "description": "ROM memory mapping mode byte at $FFD5 (file offset 65477 for .sfc; 65989 for .smc+512). Bits 0-4 define the mapping type; bit 5 sets FastROM (3.58MHz). 0x20=LoROM (32KB banks), 0x21=HiROM (64KB banks), 0x22=LoROM+S-DD1, 0x23=LoROM+SA-1, 0x25=ExHiROM (96KB/64KB banks for 32Mbit+ ROMs). Add 0x10 for FastROM variant.",
+      "valueMap": {
+        "32": "0x20 — LoROM (SlowROM, 2.68MHz)",
+        "33": "0x21 — HiROM (SlowROM, 2.68MHz)",
+        "34": "0x22 — LoROM + S-DD1",
+        "35": "0x23 — LoROM + SA-1",
+        "37": "0x25 — ExHiROM (32Mbit+)",
+        "48": "0x30 — LoROM FastROM",
+        "49": "0x31 — HiROM FastROM",
+        "53": "0x35 — ExHiROM FastROM"
       }
     },
     {
@@ -108,10 +117,21 @@
       "offset": 65494,
       "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
       "storeAs": "romType",
-      "description": "0x00=ROM | 0x01=ROM+RAM | 0x02=ROM+RAM+Battery | 0x03=ROM+DSP | 0x04=ROM+DSP+RAM | 0x05=ROM+DSP+RAM+Batt"
+      "description": "Cartridge hardware type byte at $FFD6 (file offset 65478 for .sfc; 65990 for .smc+512). Lower nibble: 0=ROM only, 1=ROM+RAM, 2=ROM+SRAM+Battery (save game). Upper nibble coprocessor: 0=none, 1=DSP, 2=SuperFX, 3=OBC1, 4=SA-1.",
+      "valueMap": {
+        "0": "0x00 — ROM only",
+        "1": "0x01 — ROM + RAM",
+        "2": "0x02 — ROM + SRAM + Battery",
+        "3": "0x03 — ROM + DSP",
+        "5": "0x05 — ROM + DSP + SRAM + Battery",
+        "19": "0x13 — ROM + SuperFX",
+        "20": "0x14 — ROM + SuperFX + Battery",
+        "32": "0x20 — ROM + SA-1",
+        "34": "0x22 — ROM + SA-1 + SRAM + Battery"
+      }
     },
     {
       "type": "field",
@@ -119,11 +139,10 @@
       "offset": 65495,
       "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
       "storeAs": "romSize",
-      "mappedValueStoreAs": "formattedSize",
-      "description": "ROM size as 2^N KB: 0x07=128KB, 0x08=256KB, 0x09=512KB, 0x0A=1MB, 0x0B=2MB, 0x0C=4MB",
+      "description": "ROM size as 2^N kilobytes at $FFD7 (file offset 65479 for .sfc; 65991 for .smc+512). Common values: 7=128KB, 8=256KB, 9=512KB, 10=1MB, 11=2MB, 12=4MB.",
       "valueMap": {
         "6": "64 KB",
         "7": "128 KB",
@@ -141,10 +160,20 @@
       "offset": 65496,
       "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
       "storeAs": "ramSize",
-      "description": "Save RAM: 0x00=none, 0x01=2KB, 0x02=4KB, 0x03=8KB, 0x05=32KB"
+      "description": "Battery-backed SRAM size as 2^N kilobytes at $FFD8 (file offset 65480 for .sfc; 65992 for .smc+512). Value 0x00 = no SRAM. Emulators save SRAM to .srm files with same basename as ROM.",
+      "valueMap": {
+        "0": "No SRAM",
+        "1": "2 KB",
+        "2": "4 KB",
+        "3": "8 KB",
+        "4": "16 KB",
+        "5": "32 KB",
+        "6": "64 KB",
+        "7": "128 KB"
+      }
     },
     {
       "type": "field",
@@ -152,10 +181,19 @@
       "offset": 65497,
       "length": 1,
       "color": "#C7CEEA",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
       "storeAs": "regionCode",
-      "description": "0x00=Japan | 0x01=USA/Canada | 0x02=Europe/Oceania | 0x03=Sweden | 0x06=France | 0x09=Germany | 0x0D=Korea"
+      "description": "Region/country code at $FFD9 (file offset 65481 for .sfc; 65993 for .smc+512). Determines TV standard: Japan/USA=NTSC 60Hz, Europe=PAL 50Hz.",
+      "valueMap": {
+        "0": "Japan (NTSC, 60Hz)",
+        "1": "North America / USA (NTSC, 60Hz)",
+        "2": "Europe (PAL, 50Hz)",
+        "6": "France (PAL)",
+        "9": "Germany (PAL)",
+        "10": "Italy (PAL)",
+        "13": "South Korea (NTSC)"
+      }
     },
     {
       "type": "field",
@@ -163,21 +201,21 @@
       "offset": 65498,
       "length": 1,
       "color": "#C7CEEA",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
       "storeAs": "developerId",
-      "description": "0x33=Extended header (post-1994) | 0x01=Nintendo | Other=Legacy licensee code"
+      "description": "Developer/licensee code at $FFDA (file offset 65482 for .sfc; 65994 for .smc+512). Value 0x33 signals extended header at $FFB0-$FFBF (2-char maker code + 4-char game code). 0x01=Nintendo internal."
     },
     {
       "type": "field",
-      "name": "Mask ROM Version",
+      "name": "ROM Version",
       "offset": 65499,
       "length": 1,
       "color": "#C7CEEA",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint8",
-      "storeAs": "version",
-      "description": "ROM revision number (0x00 = first release, 0x01 = Rev.A, etc.)"
+      "storeAs": "romVersion",
+      "description": "Mask ROM version number at $FFDB (file offset 65483 for .sfc; 65995 for .smc+512). 0x00 = first release, 0x01 = Rev.A, etc."
     },
     {
       "type": "field",
@@ -185,10 +223,11 @@
       "offset": 65500,
       "length": 2,
       "color": "#FF6B9D",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint16",
+      "endianness": "little",
       "storeAs": "checksumComplement",
-      "description": "Bitwise NOT of checksum - pair must equal 0xFFFF"
+      "description": "Bitwise complement (NOT) of the ROM checksum as uint16 LE at $FFDC (file offset 65484 for .sfc; 65996 for .smc+512). checksum XOR checksumComplement must = 0xFFFF."
     },
     {
       "type": "field",
@@ -196,21 +235,11 @@
       "offset": 65502,
       "length": 2,
       "color": "#FF6B9D",
-      "opacity": 0.3,
+      "opacity": 0.35,
       "valueType": "uint16",
+      "endianness": "little",
       "storeAs": "checksum",
-      "description": "16-bit unsigned sum of all ROM bytes (mod 0x10000)"
-    },
-    {
-      "type": "field",
-      "name": "Native Mode Vectors",
-      "offset": 65504,
-      "length": 32,
-      "color": "#B8B8FF",
-      "opacity": 0.3,
-      "valueType": "bytes",
-      "storeAs": "nativeModeVectors",
-      "description": "65816 native vectors: COP($FFE4), BRK($FFE6), ABORT($FFE8), NMI($FFEA), RESET($FFEC), IRQ($FFEE)"
+      "description": "16-bit sum of all ROM bytes mod 0x10000 at $FFDE (file offset 65486 for .sfc; 65998 for .smc+512). checksum + checksumComplement must = 0xFFFF (65535)."
     },
     {
       "type": "computeFromVariables",
@@ -219,63 +248,198 @@
     },
     {
       "type": "metadata",
-      "name": "Checksum Validation",
-      "variable": "checksumTotal",
-      "description": "Checksum + Complement (must equal 65535 / 0xFFFF)"
+      "name": "Title",
+      "variable": "gameTitle",
+      "description": "Internal 21-char game title from ROM header"
     },
     {
       "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable ROM size"
+      "name": "Layout",
+      "variable": "romLayout",
+      "description": "ROM mapping mode (LoROM/HiROM/ExHiROM)"
+    },
+    {
+      "type": "metadata",
+      "name": "Region",
+      "variable": "regionCode",
+      "description": "Region code (0=Japan, 1=USA, 2=Europe)"
+    },
+    {
+      "type": "metadata",
+      "name": "Checksum Valid",
+      "variable": "checksumTotal",
+      "description": "Checksum + Complement (must equal 65535 / 0xFFFF)"
     }
   ],
-  "software": [
-    "Snes9x",
-    "ZSNES",
-    "bsnes/higan",
-    "RetroArch",
-    "Mesen-S"
+  "assertions": [
+    {
+      "name": "Checksum pair valid",
+      "expression": "checksumTotal == 65535",
+      "severity": "warning",
+      "message": "Checksum + complement != 0xFFFF — ROM is modified/patched, or offsets are wrong (check for 512B SMC copier header)"
+    },
+    {
+      "name": "ROM layout plausible",
+      "expression": "romLayout >= 32 && romLayout <= 55",
+      "severity": "warning",
+      "message": "ROM layout byte out of expected range — may be reading wrong offset (copier header offset mismatch?)"
+    }
   ],
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
-  "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
-  ],
-  "TechnicalDetails": {
-    "Platform": "SNES",
-    "primary_extension": ".smc",
-    "defined_fields": 13
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "SMC Copier Header (.smc)",
+        "offset": 0,
+        "icon": "",
+        "color": "#888888"
+      },
+      {
+        "name": "SNES ROM Start (.sfc = offset 0 / .smc = offset 512)",
+        "offset": 0,
+        "icon": "",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "HiROM Header (.sfc)",
+        "offset": 65456,
+        "icon": "",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "HiROM Header (.smc+512)",
+        "offset": 65968,
+        "icon": "",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "Checksum Fields (.sfc)",
+        "offset": 65500,
+        "icon": "",
+        "color": "#FF6B9D"
+      }
+    ]
   },
-  "QualityMetrics": {
-    "CompletenessScore": 66,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 13,
-    "ValidationRules": 3,
-    "LastUpdated": "2026-03-01"
+  "inspector": {
+    "badge": "romLayout",
+    "primaryField": "gameTitle",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ROM Identity",
+        "icon": "",
+        "fields": [
+          "gameTitle",
+          "romLayout",
+          "romType",
+          "regionCode",
+          "developerId",
+          "romVersion"
+        ]
+      },
+      {
+        "title": "ROM Specifications",
+        "icon": "",
+        "fields": [
+          "romSize",
+          "ramSize"
+        ]
+      },
+      {
+        "title": "Integrity",
+        "icon": "",
+        "fields": [
+          "checksum",
+          "checksumComplement",
+          "checksumTotal"
+        ]
+      }
+    ]
   },
+  "exportTemplates": [
+    {
+      "name": "SNES ROM Header (JSON)",
+      "format": "json",
+      "fields": [
+        "gameTitle",
+        "romLayout",
+        "romType",
+        "romSize",
+        "ramSize",
+        "regionCode",
+        "developerId",
+        "romVersion",
+        "checksum",
+        "checksumComplement"
+      ]
+    }
+  ],
   "forensic": {
     "category": "game",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Checksum mismatch (patched ROM)",
+        "condition": "checksumTotal != 65535",
+        "severity": "info",
+        "description": "Checksum mismatch — ROM has been patched, hacked, or has a trainer. Also triggers if SMC copier header shifts offsets by 512 bytes."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "Super Nintendo Entertainment System ROM (HiROM internal header at $FFB0-$FFFF)",
+    "analysisContext": "SNES ROM: no fixed magic bytes. HiROM header at $FFB0 = file offset 65456 (headered .sfc) or 65968 (.smc + 512B copier header). SMC copier header present when: file_size % 1024 == 512. Header fields: title(21B)+mapMode($FFD5)+cartType($FFD6)+romSize($FFD7, log2KB)+ramSize($FFD8, log2KB)+region($FFD9)+devId($FFDA, 0x33=extended)+ver($FFDB)+checksumComp(2B LE $FFDC)+checksum(2B LE $FFDE). Checksum+complement=0xFFFF. SRAM saved as .srm (raw SRAM dump, same basename).",
     "suggestedInspections": [
-      "Validate Super Nintendo ROM container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
+      "Check file_size % 1024: if 512 -> 512B SMC copier header present, add 512 to all offsets",
+      "Game title at offset 65456 (.sfc) or 65968 (.smc with header), 21 ASCII bytes",
+      "Map mode at $FFD5: 0x20=LoROM, 0x21=HiROM, 0x25=ExHiROM",
+      "Checksum at $FFDE + complement at $FFDC must sum to 0xFFFF — mismatch = patched ROM"
     ]
+  },
+  "software": [
+    "Snes9x (saves SRAM as .srm alongside ROM)",
+    "bsnes/higan (high-accuracy, same .srm naming)",
+    "RetroArch (bsnes/snes9x cores)",
+    "Mesen-S (debugging and accuracy)",
+    "SNESROMInfo (ROM header viewer)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [
+      ".smc",
+      ".sfc",
+      ".fig",
+      ".swc"
+    ],
+    "relatedFormats": [
+      "PATCH_IPS",
+      "PATCH_BPS",
+      "PATCH_UPS",
+      "ROM_SNES_SRM"
+    ],
+    "note": ".smc/.fig = ROM possibly with 512B copier header (file_size % 1024 == 512 confirms it). .sfc = headerless (canonical format). SRAM -> .srm files (same basename). IPS/BPS/UPS patches target headered or headerless ROMs separately — most patches target headered .smc."
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "SNES game emulation and preservation",
+    "ROM hacking and fan translation",
+    "Applying IPS/BPS/UPS patches",
+    "ROM header analysis and region identification"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 14,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-14",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary SNES ROM (no fixed magic — header at HiROM $FFB0 or LoROM $7FB0)",
+    "CopierHeader": ".smc/.fig: 512B copier header when file_size % 1024 == 512 — add 512 to all offsets",
+    "HeaderOffset": "HiROM: $FFB0 = 65456 (.sfc) / 65968 (.smc); LoROM: $7FB0 = 32688 (.sfc) / 33200 (.smc)",
+    "Checksum": "uint16 sum of all bytes mod 0x10000; checksum + complement = 0xFFFF",
+    "SRAM": "Battery SRAM -> .srm (raw dump, same basename as ROM)"
   }
 }

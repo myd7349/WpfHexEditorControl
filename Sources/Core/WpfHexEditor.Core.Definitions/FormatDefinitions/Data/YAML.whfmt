@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    YAML (Binary)
-   Category:  Data
-   Ext:       .yaml, .yml
-   Editor:    code-editor
-   Desc:      YAML Ain't Markup Language data serialization
-   Variables: currentOffset, machineType, sectionCount, timestamp, entryPoint
-   Detection: signature=00 @ offset 0
-   Updated:   2026-03-22
-   ============================================================ */
 {
   "diffMode": "semantic",
   "formatName": "YAML (Binary)",
-  "version": "2.0",
+  "version": "2.4",
   "extensions": [
     ".yaml",
     ".yml"
@@ -29,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "YAML magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -77,7 +76,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".yaml",
@@ -101,11 +100,11 @@
     "CI/CD"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-22",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": false
   },
@@ -180,7 +179,10 @@
       "useTabs": false,
       "trimTrailingWhitespace": true,
       "insertFinalNewline": true,
-      "supportedRules": ["trimTrailingWhitespace", "insertFinalNewline"]
+      "supportedRules": [
+        "trimTrailingWhitespace",
+        "insertFinalNewline"
+      ]
     },
     "foldingRules": {
       "indentBased": true,

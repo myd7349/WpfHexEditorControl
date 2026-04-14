@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    WebAssembly Binary
-   Category:  Programming
-   Ext:       .wasm
-   Editor:    hex-editor
-   Desc:      WebAssembly binary format
-   Variables: currentOffset, version, sections, functions, imports, exports, memory, tables, wasmMagic
-   Detection: signature=0061736D @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "WebAssembly Binary",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".wasm"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "0061736D",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "0061736D",
+        "offset": 0,
+        "label": "WASM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "readUInt32LE": "Read 32-bit little-endian for magic and version",
@@ -103,7 +102,7 @@
     "Wasmer",
     "Wasmtime"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "w3c_standard": true,
     "portable": true,
     "complements": "JavaScript",
@@ -126,13 +125,38 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 2,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "inspector": {
+    "badge": "wasmMagic",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "WebAssembly Binary",
+        "icon": "",
+        "fields": [
+          "wasmMagic",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "WebAssembly Binary Header (JSON)",
+      "format": "json",
+      "fields": [
+        "wasmMagic",
+        "version"
+      ]
+    }
+  ]
 }

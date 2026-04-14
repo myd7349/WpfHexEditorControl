@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Windows Prefetch File
-   Category:  System
-   Ext:       .pf
-   Editor:    hex-editor
-   Desc:      Windows Prefetch file for application optimization
-   Variables: currentOffset, timestamp, size, version, type, signature
-   Detection: signature=11000000534346 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Windows Prefetch File",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".pf"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "11000000534346",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "11000000534346",
+        "offset": 0,
+        "label": "PREFETCH magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -90,7 +89,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "System",
     "extensions": [
       ".pf"
@@ -110,11 +109,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -135,5 +134,38 @@
       "Check timestamp sequence for gaps or chronological anomalies",
       "Inspect event severity levels and source identifiers"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "version",
+    "primaryField": "signature",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Windows Prefetch File",
+        "icon": "",
+        "fields": [
+          "version",
+          "signature"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Windows Prefetch File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "version",
+        "signature"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "version != 0",
+      "severity": "warning",
+      "message": "PREFETCH magic field is zero — possible detection failure"
+    }
+  ]
 }

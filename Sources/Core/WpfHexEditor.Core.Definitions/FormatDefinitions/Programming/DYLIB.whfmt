@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    macOS Dynamic Library
-   Category:  Programming
-   Ext:       .dylib
-   Editor:    hex-editor
-   Desc:      macOS Dynamic Library using Mach-O (Mach Object) file format for dynamic linking
-   Variables: fileCount, totalSize, compressionMethod, headerCRC, machOMagic32Bit, formattedSize
-   Detection: signature=FEEDFACE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "macOS Dynamic Library",
-  "version": "1.13",
+  "version": "1.16",
   "extensions": [
     ".dylib"
   ],
@@ -30,13 +20,22 @@
     ]
   },
   "detection": {
-    "signature": "FEEDFACE",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "FEEDFACE",
+        "offset": 0,
+        "label": "DYLIB magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "fileCount": 0,
@@ -115,7 +114,7 @@
     "iOS",
     "Dynamic linker"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "apple_format": true,
     "mach_o_based": true,
     "equivalent_to": "DLL (Windows) / SO (Linux)"
@@ -137,11 +136,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 8,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -163,5 +162,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "machOMagic32Bit",
+    "primaryField": "machOMagic32Bit",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "macOS Dynamic Library",
+        "icon": "",
+        "fields": [
+          "machOMagic32Bit"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "macOS Dynamic Library Header (JSON)",
+      "format": "json",
+      "fields": [
+        "machOMagic32Bit"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "machOMagic32Bit != 0",
+      "severity": "warning",
+      "message": "DYLIB magic field is zero — possible detection failure"
+    }
+  ]
 }

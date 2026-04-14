@@ -1,0 +1,140 @@
+{
+  "diffMode": "binary",
+  "formatName": "SNES Save RAM",
+  "version": "1.0",
+  "extensions": [
+    ".srm",
+    ".sav"
+  ],
+  "description": "SNES .srm files are raw dumps of the battery-backed SRAM from a Super Nintendo cartridge. They have no header, magic bytes, or metadata — the file contains pure SRAM data as it existed on the cartridge chip. Emulators (snes9x, bsnes, RetroArch) save and load .srm files with the same base filename as the ROM. Common sizes: 2KB (0x800) for most RPGs (Final Fantasy VI, Chrono Trigger), 8KB (0x2000) for some titles, and 32KB (0x8000) for special cartridges. The SRAM layout is game-specific — each game stores its save data in its own format within the SRAM space. Some cartridges use RTC (real-time clock) data appended after the SRAM (e.g., Harvest Moon). The SNES CPU addresses SRAM in banks $70-$7D at $7000-$7FFF (LoROM) or banks $20-$3F/$A0-$BF at $6000-$7FFF (HiROM). Emulator .srm files mirror this layout directly.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "SNES Memory Map documentation — SNESdev Wiki",
+      "Snes9x save state format notes"
+    ],
+    "WebLinks": [
+      "https://snes.nesdev.org/wiki/ROM_header#SRAM_size",
+      "https://wiki.superfamicom.org/memory-mapping",
+      "https://en.wikipedia.org/wiki/Game_save#Cartridge_RAM"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "00", "offset": 0, "label": "Raw SRAM data — no magic (SNES .srm files have no header)", "weight": 0.1 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.1,
+    "required": false,
+    "Strength": "Weak",
+    "EntropyHint": { "min": 2.0, "max": 6.5 },
+    "validation": {
+      "minFileSize": 512,
+      "maxSignatureOffset": 0,
+      "note": "SNES .srm files have no magic bytes — detected by file extension and size (typically 2KB, 8KB, or 32KB). Content is raw SRAM data specific to each game."
+    }
+  },
+  "variables": {
+    "srmFirstByte": 0,
+    "srmSize": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "SRAM Data Start",
+      "offset": 0,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First byte of raw SNES cartridge SRAM data. No fixed header or structure — content is game-specific. Common patterns: many RPGs store checksum bytes at fixed offsets within their save slots (e.g., Final Fantasy VI stores a 16-bit checksum at each save slot header). The SRAM is a direct memory dump of the 8-bit SRAM chip on the cartridge PCB.",
+      "storeAs": "srmFirstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "SRAM Data",
+      "variable": "srmFirstByte",
+      "description": "Raw SNES SRAM data (game-specific format)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "SRM size is valid SNES SRAM size",
+      "expression": "true",
+      "severity": "info",
+      "message": "SNES SRAM sizes: 2KB (most RPGs), 8KB, 32KB (special cartridges). Verify file size matches the SRAM size byte in the ROM header (offset $FFD8)."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "SRAM Start", "offset": 0, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "srmFirstByte",
+    "primaryField": "srmFirstByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "SNES Save RAM",
+        "icon": "\uE71B",
+        "fields": ["srmFirstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SRM Raw Dump (JSON)",
+      "format": "json",
+      "fields": ["srmFirstByte"]
+    }
+  ],
+  "forensic": { "category": "game", "riskLevel": "low", "suspiciousPatterns": [] },
+  "aiHints": {
+    "analysisContext": "SNES .srm = raw SRAM chip dump, no header. File size = SRAM size from ROM header $FFD8 (2^N KB). Common: 2KB=Final Fantasy VI/Chrono Trigger, 8KB=A Link to the Past (Zelda), 32KB=special cases. Layout is 100% game-specific. Some games append RTC data (e.g., Harvest Moon: 0x14 bytes at end for RTC state). Emulators: snes9x, bsnes, RetroArch save .srm as binary dump. Editing: use hex editor with game-specific SRAM map.",
+    "suggestedInspections": [
+      "Verify file size matches SRAM size in ROM header ($FFD8): 2^N KB",
+      "Check for RTC trailer: Harvest Moon appends 20 bytes of RTC data after SRAM",
+      "Cross-reference with game-specific SRAM maps for save slot offsets",
+      "Many JRPG save slots start with game-specific checksum bytes"
+    ]
+  },
+  "software": [
+    "Snes9x (saves/loads .srm alongside ROM)",
+    "bsnes/higan (high-accuracy emulator — same .srm format)",
+    "RetroArch (bsnes/snes9x cores — .srm in saves/ folder)",
+    "ZSNES (legacy emulator — same .srm format)",
+    "Lunar Magic (SMW ROM editor — can use .srm saves)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".srm", ".sav"],
+    "relatedFormats": ["ROM_SNES"],
+    "note": ".srm is the de facto standard extension for SNES save RAM used by snes9x, bsnes, and RetroArch. The .sav extension is used by some emulators. The file is named identically to the ROM file (e.g., 'game.smc' -> 'game.srm'). Content is raw SRAM, game-specific layout."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Editing SNES game save files (RPG save data, item cheats)",
+    "Transferring SNES save data between emulators",
+    "ROM hacking and QA testing with pre-built save states",
+    "Recovering or inspecting SNES battery save data"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 58,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 2,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-14",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Raw binary SNES cartridge SRAM dump (no header, no magic bytes)",
+    "Sizes": "2KB (2048B) most common; 8KB, 32KB for some cartridges",
+    "Content": "Game-specific save data — structure varies per game",
+    "RTC": "Some games (Harvest Moon, etc.) append 20-byte RTC data after SRAM",
+    "Naming": "Same basename as ROM file: 'game.smc' -> 'game.srm'"
+  }
+}

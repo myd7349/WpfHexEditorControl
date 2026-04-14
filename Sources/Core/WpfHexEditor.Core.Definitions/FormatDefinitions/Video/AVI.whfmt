@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    AVI Video
-   Category:  Video
-   Ext:       .avi
-   Editor:    hex-editor
-   Desc:      Audio Video Interleave (AVI) is a RIFF-based multimedia container format developed by Microsoft. The file starts with a RIFF header containing an 'AVI ' form type, followed by a LIST 'hdrl' chunk with the main AVI header (avih) that stores frame rate, dimensions, stream count, and flags. The avih structure is 56 bytes and provides all essential playback parameters.
-   Variables: currentOffset, riffSignature, riffFileSize, aviFormType, listChunkId, listChunkSize, hdrlType, avihChunkId, avihChunkSize, microsecondsPerFrame, maxBytesPerSec, paddingGranularity, aviFlags, totalFrames, initialFrames, numberOfStreams, suggestedBufferSize, width, height, durationSeconds, framesPerSecond, formattedFileSize, formattedDuration, totalPixels
-   Detection: signature=52494646 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AVI Video",
-  "version": "2.0",
+  "version": "2.02",
   "extensions": [
     ".avi"
   ],
@@ -436,11 +426,11 @@
     "Surveillance footage"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 92,
     "DocumentationLevel": "comprehensive",
     "BlocksDefined": 28,
     "ValidationRules": 6,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": true,
     "AutoRefined": false
   },
@@ -455,17 +445,151 @@
     "SupportsInterleaving": true,
     "SupportsIndex": true
   },
+  "assertions": [
+    {
+      "name": "RIFF signature valid",
+      "expression": "riffSignature == 'RIFF'",
+      "severity": "error",
+      "message": "Magic bytes at offset 0 must be 'RIFF' (0x52494646) — not a valid RIFF/AVI file"
+    },
+    {
+      "name": "AVI form type valid",
+      "expression": "aviFormType == 'AVI '",
+      "severity": "error",
+      "message": "RIFF form type at offset 8 must be 'AVI ' (0x41564920) — not an AVI container"
+    },
+    {
+      "name": "avih chunk ID valid",
+      "expression": "avihChunkId == 'avih'",
+      "severity": "error",
+      "message": "AVI main header chunk must be 'avih' at offset 24 — missing or misaligned AVI header"
+    },
+    {
+      "name": "avih size is standard 56 bytes",
+      "expression": "avihChunkSize == 56",
+      "severity": "warning",
+      "message": "avih chunk size should be 56 bytes (0x38) — non-standard AVI main header size"
+    },
+    {
+      "name": "Stream count is non-zero",
+      "expression": "numberOfStreams > 0 && numberOfStreams <= 100",
+      "severity": "warning",
+      "message": "AVI stream count must be 1-100; 0 streams is invalid, >100 is suspect"
+    },
+    {
+      "name": "Microseconds per frame is non-zero",
+      "expression": "microsecondsPerFrame > 0",
+      "severity": "warning",
+      "message": "microsecondsPerFrame must be > 0 to determine frame rate — 0 means undefined frame rate"
+    }
+  ],
+  "versionDetection": {
+    "field": "aviFormType",
+    "versions": {
+      "AVI ": "AVI 1.0 / OpenDML AVI 2.0 (RIFF form type 'AVI ')"
+    }
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "RIFF Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "AVI Main Header (avih)",
+        "offset": 24,
+        "icon": "\uE8B7",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Video Dimensions",
+        "offset": 64,
+        "icon": "\uE9D9",
+        "color": "#95E1D3"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "numberOfStreams",
+    "primaryField": "width",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "RIFF Container",
+        "icon": "\uE71B",
+        "fields": ["riffSignature", "riffFileSize", "aviFormType"]
+      },
+      {
+        "title": "Video Properties",
+        "icon": "\uE9D9",
+        "fields": ["width", "height", "microsecondsPerFrame", "framesPerSecond", "totalFrames", "durationSeconds"]
+      },
+      {
+        "title": "Stream Info",
+        "icon": "\uE8B7",
+        "fields": ["numberOfStreams", "maxBytesPerSec", "suggestedBufferSize"]
+      },
+      {
+        "title": "AVI Flags",
+        "icon": "\uE8A5",
+        "fields": ["aviFlags"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "AVI Header (JSON)",
+      "format": "json",
+      "fields": ["riffSignature", "riffFileSize", "aviFormType", "microsecondsPerFrame", "maxBytesPerSec", "aviFlags", "totalFrames", "numberOfStreams", "width", "height", "framesPerSecond", "durationSeconds"]
+    },
+    {
+      "name": "AVIMAINHEADER (C struct)",
+      "format": "c-struct",
+      "structName": "AVIMAINHEADER",
+      "fields": ["microsecondsPerFrame", "maxBytesPerSec", "paddingGranularity", "aviFlags", "totalFrames", "initialFrames", "numberOfStreams", "suggestedBufferSize", "width", "height"]
+    }
+  ],
   "forensic": {
     "category": "video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "No index chunk",
+        "condition": "(aviFlags & 16) == 0",
+        "severity": "info",
+        "description": "AVI file lacks idx1 index chunk (AVIF_HASINDEX not set). Seeking in this file will be slow and may fail. Common in recordings from older capture devices."
+      },
+      {
+        "name": "Excessive stream count",
+        "condition": "numberOfStreams > 10",
+        "severity": "warning",
+        "description": "AVI file declares more than 10 streams. Standard AVI has 1-3 streams (video + audio + subtitle). High stream counts may indicate a malformed or specially crafted file."
+      },
+      {
+        "name": "Zero frame count with non-zero duration",
+        "condition": "totalFrames == 0 && microsecondsPerFrame > 0",
+        "severity": "info",
+        "description": "totalFrames is 0 — file may be an OpenDML AVI 2.0 where totalFrames in avih only reflects the first RIFF chunk. Real frame count is in the odml dmlh super-index."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "Audio Video Interleave (AVI) is a RIFF-based multimedia container format developed by Microsoft. The file st...",
+    "analysisContext": "AVI/RIFF layout (all LE): 'RIFF'(4) + fileSize(4,LE) + 'AVI '(4) + 'LIST'(4) + listSize(4,LE) + 'hdrl'(4) + 'avih'(4) + avihSize(4,LE,must=56) + avih data (56 bytes). avih fields: microsecondsPerFrame(4,LE) + maxBytesPerSec(4,LE) + paddingGranularity(4,LE) + flags(4,LE: bit4=HASINDEX, bit5=MUSTUSEINDEX, bit8=ISINTERLEAVED, bit16=TRUSTCKTYPE) + totalFrames(4,LE) + initialFrames(4,LE) + numberOfStreams(4,LE) + suggestedBufferSize(4,LE) + width(4,LE) + height(4,LE) + reserved[4]×4. FPS = 1,000,000 / microsecondsPerFrame. Stream headers follow: strl LIST → strh (stream header: fccType 'vids'/'auds', codec FourCC, frame rate, length) → strf (BITMAPINFOHEADER for video, WAVEFORMATEX for audio). Index (idx1) at EOF: each entry has FourCC, flags, offset, size.",
+    "knownVulnerabilities": [
+      "CVE-2010-2553: Windows Media Player AVI parsing heap overflow via crafted AVI strh chunk",
+      "Malformed riffFileSize < actual size causes parser buffer reads beyond RIFF boundary",
+      "AVI index (idx1) with out-of-bounds offsets can cause seek operations to read arbitrary file regions"
+    ],
     "suggestedInspections": [
-      "Validate AVI Video container magic, box/atom sizes, and codec FourCC",
-      "Check track/stream layout, frame index, and timing fields",
-      "Inspect audio-video sync, keyframe distribution, and metadata"
+      "Verify 'RIFF' at 0, 'AVI ' at 8, 'LIST' at 12, 'hdrl' at 20, 'avih' at 24",
+      "Check avihChunkSize at offset 28: must be 56 (0x38)",
+      "Read width (offset 64) and height (offset 68) for frame dimensions",
+      "Calculate FPS: 1,000,000 / microsecondsPerFrame (offset 32)",
+      "Check numberOfStreams (offset 56): typically 1 (video only) or 2 (video + audio)",
+      "Scan for 'strh' chunk to find video codec FourCC (e.g., 'XVID', 'DIVX', 'H264', 'MP4V')",
+      "Look for 'idx1' chunk near EOF for frame index — required for seeking"
     ]
   }
 }

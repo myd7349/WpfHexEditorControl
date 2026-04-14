@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Nintendo Switch Package
-   Category:  Game
-   Ext:       .nsp, .xci, .nca
-   Editor:    hex-editor
-   Desc:      Nintendo Switch package formats (NSP/XCI/NCA)
-   Variables: currentOffset, crc32Valid, originalSize, compressionRatio, pfsMagic, fileCount, stringTableSize, fileEntryTable
-   Detection: signature=504653 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Nintendo Switch Package",
-  "version": "1.13",
+  "version": "1.16",
   "extensions": [
     ".nsp",
     ".xci",
@@ -35,13 +25,22 @@
     ]
   },
   "detection": {
-    "signature": "504653",
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "504653",
+        "offset": 0,
+        "label": "ROM_NSW.whfmt magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -126,7 +125,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".nsp",
@@ -151,11 +150,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 42,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -178,5 +177,38 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "nspMagic",
+    "primaryField": "nspFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Nintendo Switch Package",
+        "icon": "",
+        "fields": [
+          "nspMagic",
+          "nspFileCount"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Nintendo Switch Package Header (JSON)",
+      "format": "json",
+      "fields": [
+        "nspMagic",
+        "nspFileCount"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "nspMagic != ''",
+      "severity": "warning",
+      "message": "NSW package magic invalid"
+    }
+  ]
 }

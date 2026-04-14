@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Lotus Notes NSF Database
-   Category:  Database
-   Ext:       .nsf
-   Editor:    hex-editor
-   Desc:      IBM Lotus Notes/Domino database format
-   Variables: currentOffset, pageSize, pageCount, tableCount, version
-   Detection: signature=1A0000 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Lotus Notes NSF Database",
-  "version": "1.10",
+  "version": "1.13",
   "extensions": [
     ".nsf"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "1A0000",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "1A0000",
+        "offset": 0,
+        "label": "NSF magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -82,7 +81,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".nsf"
@@ -105,11 +104,11 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

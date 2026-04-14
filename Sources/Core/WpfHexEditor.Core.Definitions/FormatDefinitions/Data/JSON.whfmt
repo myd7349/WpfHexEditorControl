@@ -1,17 +1,6 @@
-/* ============================================================
-   Format:    JSON Data
-   Category:  Data
-   Ext:       .json
-   Editor:    code-editor
-   Desc:      JavaScript Object Notation - a lightweight text-based data interchange format. JSON files begin with either an opening brace {
-  "diffMode": "semantic", for objects or an opening bracket [ for arrays. Optionally preceded by a UTF-8 BOM.
-   Variables: currentOffset, openingCharacter, firstContentCharacter
-   Detection: signature=7B @ offset 0
-   Updated:   2026-03-22
-   ============================================================ */
 {
   "formatName": "JSON Data",
-  "version": "2.1",
+  "version": "2.14",
   "extensions": [
     ".json"
   ],
@@ -33,13 +22,22 @@
     ]
   },
   "detection": {
-    "signature": "7B",
-    "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 2,
       "maxSignatureOffset": 3
-    }
+    },
+    "signatures": [
+      {
+        "value": "7B",
+        "offset": 0,
+        "label": "JSON magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -93,11 +91,11 @@
     "NoSQL database storage (MongoDB, CouchDB)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 2,
     "ValidationRules": 2,
-    "LastUpdated": "2026-03-22",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": true,
     "AutoRefined": false
   },
@@ -156,7 +154,10 @@
       "useTabs": false,
       "trimTrailingWhitespace": true,
       "insertFinalNewline": true,
-      "supportedRules": ["trimTrailingWhitespace", "insertFinalNewline"]
+      "supportedRules": [
+        "trimTrailingWhitespace",
+        "insertFinalNewline"
+      ]
     },
     "foldingRules": {
       "startPatterns": [
@@ -193,5 +194,38 @@
       "Check nested structure depth and field type tags",
       "Inspect string encodings and numeric value boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "openingCharacter",
+    "primaryField": "firstContentCharacter",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "JSON Data",
+        "icon": "",
+        "fields": [
+          "openingCharacter",
+          "firstContentCharacter"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JSON Data Header (JSON)",
+      "format": "json",
+      "fields": [
+        "openingCharacter",
+        "firstContentCharacter"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "openingCharacter != 0",
+      "severity": "warning",
+      "message": "JSON magic field is zero — possible detection failure"
+    }
+  ]
 }

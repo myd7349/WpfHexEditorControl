@@ -4,10 +4,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Collections.Frozen;
 using System.Reflection;
 using System.Text.Json;
 using WpfHexEditor.Editor.Core;
@@ -28,27 +25,23 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
 {
     // -- Singleton -------------------------------------------------------------
 
-    private static EmbeddedFormatCatalog? _instance;
-
     // JSONC support: .whfmt files contain // comment headers — skip them during parse.
     private static readonly JsonDocumentOptions s_jsonOptions = new()
     {
-        CommentHandling    = JsonCommentHandling.Skip,
+        CommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true
     };
 
     /// <summary>
     /// The singleton instance.
     /// </summary>
-    public static EmbeddedFormatCatalog Instance
-        => _instance ??= new EmbeddedFormatCatalog();
+    public static EmbeddedFormatCatalog Instance => LazyInitializer.EnsureInitialized(ref field, () => new EmbeddedFormatCatalog());
 
     private EmbeddedFormatCatalog() { }
 
     // -- Lazy cache ------------------------------------------------------------
-
-    private IReadOnlyList<EmbeddedFormatEntry>? _entries;
-    private IReadOnlyList<string>?              _categories;
+    private IReadOnlySet<EmbeddedFormatEntry> Entries => LazyInitializer.EnsureInitialized(ref field, () => MakeEntries());
+    private IReadOnlySet<string> Categories => LazyInitializer.EnsureInitialized(ref field, () => MakeCategories(Entries));
 
     /// <summary>
     /// Thread-safe cache: embedded resource key → raw JSON text.
@@ -65,15 +58,15 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
     // -- IEmbeddedFormatCatalog ------------------------------------------------
 
     /// <inheritdoc/>
-    public IReadOnlyList<EmbeddedFormatEntry> GetAll()
-    {
-        if (_entries is not null) return _entries;
+    public IReadOnlySet<EmbeddedFormatEntry> GetAll() => Entries;
 
+    public static IReadOnlySet<EmbeddedFormatEntry> MakeEntries(bool rethrow = false)
+    {
         var list = new List<EmbeddedFormatEntry>();
         foreach (var key in DefinitionsAssembly.GetManifestResourceNames())
         {
             if (!key.Contains("FormatDefinitions")) continue;
-            var isWhfmt   = key.EndsWith(".whfmt");
+            var isWhfmt = key.EndsWith(".whfmt");
             var isGrammar = key.EndsWith(".grammar");
             if (!isWhfmt && !isGrammar) continue;
 
@@ -86,6 +79,8 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
             }
             catch
             {
+                if (rethrow)
+                    throw;
                 // Skip malformed resources
             }
         }
@@ -96,19 +91,18 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
             return cat != 0 ? cat : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
         });
 
-        _entries    = list;
-        _categories = list.Select(e => e.Category)
-                          .Distinct(StringComparer.OrdinalIgnoreCase)
-                          .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
-                          .ToList();
-        return _entries;
+        return list.ToFrozenSet();
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<string> GetCategories()
+    public IReadOnlySet<string> GetCategories() => Categories;
+
+    public static IReadOnlySet<string> MakeCategories(IReadOnlySet<EmbeddedFormatEntry> entries)
     {
-        GetAll(); // ensure cache is populated
-        return _categories!;
+        return entries.Select(e => e.Category)
+                      .Distinct(StringComparer.OrdinalIgnoreCase)
+                      .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+                      .ToFrozenSet();
     }
 
     /// <inheritdoc/>
@@ -139,6 +133,44 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         var ext = extension.StartsWith('.') ? extension : '.' + extension;
         return GetAll().FirstOrDefault(e =>
             e.Extensions.Any(x => x.Equals(ext, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> GetCompatibleEditorIds(string filePath)
+    {
+        var ext = Path.GetExtension(filePath)?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext)) return [];
+
+        var entry = GetByExtension(ext);
+        if (entry is null) return [];
+
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "hex-editor"   // always compatible
+        };
+
+        if (entry.PreferredEditor is not null)
+            ids.Add(entry.PreferredEditor);
+
+        if (entry.IsTextFormat)
+        {
+            ids.Add("code-editor");
+            ids.Add("text-editor");
+        }
+
+        switch (entry.Category)
+        {
+            case "Images": ids.Add("image-viewer");  break;
+            case "Audio":  ids.Add("audio-viewer");  break;
+        }
+
+        if (entry.PreferredEditor == "structure-editor")
+            ids.Add("structure-editor");
+
+        if (entry.DiffMode == "text")
+            ids.Add("diff-viewer");
+
+        return [.. ids];
     }
 
     /// <summary>

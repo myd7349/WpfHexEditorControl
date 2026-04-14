@@ -16,10 +16,12 @@
 // ==========================================================
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.Services;
@@ -43,6 +45,15 @@ namespace WpfHexEditor.HexEditor
         // and JSON deserialization on the UI thread.
         private static (FormatDefinition Format, string Category)[]? s_parsedEmbeddedFormats;
         private static readonly object s_parsedFormatsLock = new object();
+
+        // ── Load-failure tracking (standalone pipeline) ───────────────────────
+        private readonly List<FormatLoadFailure> _formatLoadFailures = new();
+
+        /// <summary>
+        /// Format definitions that failed to load during <see cref="InitializeFormatDetection"/>.
+        /// Empty on a healthy initialization. In standalone mode, failures are surfaced in the StatusBar.
+        /// </summary>
+        public IReadOnlyList<FormatLoadFailure> FormatLoadFailures => _formatLoadFailures;
 
         #endregion
 
@@ -262,11 +273,21 @@ namespace WpfHexEditor.HexEditor
 
                 // Update the LoadedFormatCount property for UI display
                 LoadedFormatCount = totalLoaded;
+
+                // Surface load failures in the StatusBar (standalone mode)
+                if (_formatLoadFailures.Count > 0 && StatusText is not null)
+                {
+                    StatusText.Text = $"⚠ {_formatLoadFailures.Count} whfmt failed to load";
+                    StatusText.Foreground = Brushes.Red;
+                    StatusText.ToolTip = string.Join("\n",
+                        _formatLoadFailures.Select(f => $"{f.Source}: {f.Reason}"));
+                }
             }
             catch (Exception ex)
             {
                 // Silently ignore format loading errors
                 LoadedFormatCount = totalLoaded; // Update even if there was an error
+                System.Diagnostics.Debug.WriteLine($"[FormatDetection] Critical error: {ex.Message}");
             }
         }
 
@@ -346,11 +367,21 @@ namespace WpfHexEditor.HexEditor
             (FormatDefinition Format, string Category)[] parsed;
             lock (s_parsedFormatsLock)
             {
-                if (s_parsedEmbeddedFormats is null)
+                // Populate if not yet done, OR if a previous attempt produced an empty array
+                // (which can happen when GetAll() was called during startup before the fix — now
+                // GetAll() itself is thread-safe, but this guard keeps the cache self-healing).
+                if (s_parsedEmbeddedFormats is null || s_parsedEmbeddedFormats.Length == 0)
                 {
-                    var list = new System.Collections.Generic.List<(FormatDefinition, string)>();
-                    foreach (var entry in EmbeddedFormatCatalog.Instance.GetAll())
+                    var allEntries = EmbeddedFormatCatalog.Instance.GetAll();
+                    var list = new System.Collections.Generic.List<(FormatDefinition, string)>(allEntries.Count);
+                    foreach (var entry in allEntries)
                     {
+                        // Skip non-whfmt resources (.grammar files are XML Synalysis definitions,
+                        // syntax-only whfmt files use a different schema — neither is parseable
+                        // as a FormatDefinition and their null result is expected, not an error.
+                        if (!entry.ResourceKey.EndsWith(".whfmt", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
                         try
                         {
                             // GetJson() is itself cached — no stream I/O after first call.
@@ -363,16 +394,23 @@ namespace WpfHexEditor.HexEditor
                                 list.Add((format, entry.Category));
                             }
                             else
-                                System.Diagnostics.Debug.WriteLine($"[FormatDetection] REJECTED (null format): {entry.ResourceKey}");
+                            {
+                                // Null without exception = wrong schema (e.g. syntax-only whfmt).
+                                // Not a user-facing error — skip silently.
+                                System.Diagnostics.Debug.WriteLine($"[FormatDetection] SKIPPED (incompatible schema): {entry.ResourceKey}");
+                            }
                         }
                         catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"[FormatDetection] Error loading {entry.ResourceKey}: {ex.Message}");
+                            _formatLoadFailures.Add(new FormatLoadFailure(entry.ResourceKey, ex.Message));
                         }
                     }
-                    s_parsedEmbeddedFormats = list.ToArray();
+                    // Only commit to the static cache when we got a meaningful result.
+                    if (list.Count > 0)
+                        s_parsedEmbeddedFormats = list.ToArray();
                 }
-                parsed = s_parsedEmbeddedFormats;
+                parsed = s_parsedEmbeddedFormats ?? [];
             }
 
             // ── Step 2: register cached definitions in this instance's service ─

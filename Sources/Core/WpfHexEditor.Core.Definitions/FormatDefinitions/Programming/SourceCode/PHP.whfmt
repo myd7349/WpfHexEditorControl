@@ -1,17 +1,7 @@
-/*
-   ============================================================
-   Format:    PHP Source File
-   Category:  Programming
-   Ext:       .php, .phtml
-   Editor:    code-editor
-   Desc:      PHP programming language source files and templates.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "PHP Source File",
-  "version": "2.1",
+  "version": "2.13",
   "extensions": [
     ".php",
     ".phtml"

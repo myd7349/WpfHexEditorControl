@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Microsoft Access Compiled Database
-   Category:  Database
-   Ext:       .accde
-   Editor:    hex-editor
-   Desc:      Microsoft Access compiled executable-only database format
-   Variables: currentOffset, pageSize, pageCount, tableCount, version, accdeSignature
-   Detection: signature=5374616E64617264204143452044617461626173 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Microsoft Access Compiled Database",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".accde"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "5374616E64617264204143452044617461626173",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 20,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 20,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "5374616E64617264204143452044617461626173",
+        "offset": 0,
+        "label": "ACCDE magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -85,7 +84,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".accde"
@@ -108,11 +107,11 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -133,5 +132,36 @@
       "Check B-tree/index page pointers and free page list",
       "Inspect record format, schema tables, and journal state"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "accdeSignature",
+    "primaryField": "accdeSignature",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Microsoft Access Compiled Database",
+        "icon": "",
+        "fields": [
+          "accdeSignature"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Microsoft Access Compiled Database Header (JSON)",
+      "format": "json",
+      "fields": [
+        "accdeSignature"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "accdeSignature != 0",
+      "severity": "warning",
+      "message": "ACCDE magic field is zero — possible detection failure"
+    }
+  ]
 }

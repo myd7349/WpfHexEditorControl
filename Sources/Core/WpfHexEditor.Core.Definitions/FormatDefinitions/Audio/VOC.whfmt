@@ -1,132 +1,292 @@
-/* ============================================================
-   Format:    Creative Voice File
-   Category:  Audio
-   Ext:       .voc
-   Editor:    audio-viewer
-   Desc:      Creative Labs Sound Blaster audio file format
-   Variables: currentOffset, version, dataBlockOffset, blockType, sampleRate, channels, codec, vocHeader, samplesPerSecond
-   Detection: signature=437265617469766520566F6963652046696C65 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Creative Voice File",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
     ".voc"
   ],
-  "description": "Creative Labs Sound Blaster audio file format",
+  "description": "Creative Voice File (VOC) — the native audio format of Creative Labs Sound Blaster cards, widely used in MS-DOS games from the late 1980s through mid-1990s. The 26-byte header contains a 20-byte ASCII identifier string 'Creative Voice File' followed by 0x1A (EOF character, prevents accidental TYPE display), a 2-byte data block offset (LE uint16), a 2-byte version number (LE uint16), and a 2-byte version check (LE uint16). Data blocks follow: each block has a 1-byte type, 3-byte little-endian size, and variable data. Block type 0 terminates the file; block type 1 contains Sound Data (sample rate divisor + codec byte + PCM data).",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "Creative Voice File Format Specification",
-      "Creative Sound Blaster VOC Format",
-      "VOC Audio File Structure"
+      "Creative Voice File Format — Creative Labs Technical Specification (1991)",
+      "Sound Blaster Programming Guide — Creative Labs",
+      "VOC Format Documentation — wiki.multimedia.cx"
     ],
     "WebLinks": [
       "https://wiki.multimedia.cx/index.php/Creative_Voice",
       "https://en.wikipedia.org/wiki/Creative_Voice_file",
       "https://moddingwiki.shikadi.net/wiki/VOC_Format",
-      "https://docs.fileformat.com/audio/voc/"
+      "https://www.shikadi.net/moddingwiki/VOC_Format"
     ]
   },
   "detection": {
     "signature": "437265617469766520566F6963652046696C65",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.5, "max": 7.0 },
     "validation": {
-      "min_file_size": 19,
-      "max_signature_offset": 1024
+      "minFileSize": 26,
+      "maxSignatureOffset": 0,
+      "note": "VOC header is exactly 26 bytes. Data blocks begin at dataBlockOffset (typically 26)."
     }
   },
-  "functions": {
-    "readUInt16LE": "Read 16-bit little-endian for version and data block offset",
-    "readUInt8": "Read block type, sample rate divisor, and codec",
-    "readUInt24LE": "Read 24-bit block size",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  },
   "variables": {
-    "currentOffset": 0,
-    "version": 0,
+    "vocSignature": "",
+    "eofMarker": 0,
     "dataBlockOffset": 0,
-    "blockType": 0,
-    "sampleRate": 11025,
-    "channels": 1,
-    "codec": 0,
-    "vocHeader": "",
-    "samplesPerSecond": 0
+    "version": 0,
+    "versionCheck": 0,
+    "firstBlockType": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "VOC Header",
+      "name": "VOC File Signature",
       "offset": 0,
       "length": 19,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Creative Voice File header",
-      "storeAs": "vocHeader",
+      "opacity": 0.45,
+      "description": "19-byte ASCII identifier: 'Creative Voice File' (0x43 0x72 0x65 0x61 0x74 0x69 0x76 0x65 0x20 0x56 0x6F 0x69 0x63 0x65 0x20 0x46 0x69 0x6C 0x65). This string was deliberately chosen so it displays legibly in a hex editor.",
+      "storeAs": "vocSignature",
       "valueType": "ascii"
     },
     {
+      "type": "field",
+      "name": "EOF Marker (0x1A)",
+      "offset": 19,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "DOS end-of-file marker byte 0x1A (Ctrl+Z). Present to prevent the file from displaying its binary audio data if accidentally TYPEd at the DOS command prompt. This was a common practice in DOS-era binary file formats.",
+      "storeAs": "eofMarker",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Data Block Offset",
+      "offset": 20,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Byte offset from the start of the file to the first data block, as a 16-bit little-endian unsigned integer. For standard VOC version 1.10 or 1.20 files this is always 26 (the size of the header). This field allows future header extensions without breaking backward compatibility.",
+      "storeAs": "dataBlockOffset",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Version",
+      "offset": 22,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "VOC file format version as a 16-bit little-endian unsigned integer, in BCD-like encoding where the high byte is the major version and low byte is the minor version. Version 0x010A = 1.10 (most common), 0x0114 = 1.20.",
+      "storeAs": "version",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "266": "Version 1.10 (0x010A) — Sound Blaster standard",
+        "276": "Version 1.20 (0x0114) — Sound Blaster Pro extended"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Version Check",
+      "offset": 24,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Version validity check as a 16-bit little-endian unsigned integer. Must equal 0x1234 + (~version & 0xFFFF). This allows decoders to verify the version field was not corrupted. For version 0x010A, check = 0x1234 + (~0x010A) = 0x1234 + 0xFEF5 = 0x1129.",
+      "storeAs": "versionCheck",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Block Type",
+      "offset": 26,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.30,
+      "description": "Type byte of the first data block. Block type 0 = Terminator (end of file). Block type 1 = Sound Data (most common — contains sample rate divisor, codec, and PCM data). Block type 8 = Extended (Sound Blaster Pro stereo/high-rate extension). Block types 2-7 provide additional functionality (silence, marker, ASCII text, loop, repeat end).",
+      "storeAs": "firstBlockType",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Type 0 — Terminator (end of VOC data)",
+        "1": "Type 1 — Sound Data (PCM audio: SR divisor + codec + data)",
+        "2": "Type 2 — Sound Continue (continuation of Sound Data block)",
+        "3": "Type 3 — Silence",
+        "4": "Type 4 — Marker",
+        "5": "Type 5 — ASCII Text",
+        "6": "Type 6 — Repeat Start",
+        "7": "Type 7 — Repeat End",
+        "8": "Type 8 — Extended (Sound Blaster Pro: stereo/higher sample rates)",
+        "9": "Type 9 — Sound Data New (16-bit/stereo extended format)"
+      }
+    },
+    {
       "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
+      "name": "VOC Signature",
+      "variable": "vocSignature",
+      "description": "Creative Voice File identifier string"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Block Offset",
+      "variable": "dataBlockOffset",
+      "description": "Offset to first data block (always 26 for standard files)"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "VOC format version (266=v1.10, 276=v1.20)"
+    },
+    {
+      "type": "metadata",
+      "name": "First Block Type",
+      "variable": "firstBlockType",
+      "description": "Type of first data block (1=Sound Data, 0=empty)"
     }
   ],
-  "software": [
-    "Sound Blaster",
-    "DOSBox",
-    "Retro audio"
+  "assertions": [
+    {
+      "name": "VOC signature valid",
+      "expression": "vocSignature == 'Creative Voice File'",
+      "severity": "error",
+      "message": "VOC signature must be 'Creative Voice File' — not a valid Creative Voice File"
+    },
+    {
+      "name": "EOF marker is 0x1A",
+      "expression": "eofMarker == 26",
+      "severity": "warning",
+      "message": "VOC EOF marker at offset 19 should be 0x1A (26) — missing DOS EOF marker"
+    },
+    {
+      "name": "Data block offset is at least 26",
+      "expression": "dataBlockOffset >= 26",
+      "severity": "error",
+      "message": "VOC data block offset must be >= 26 (header size)"
+    },
+    {
+      "name": "Version is known",
+      "expression": "version == 266 || version == 276",
+      "severity": "warning",
+      "message": "VOC version should be 0x010A (v1.10) or 0x0114 (v1.20)"
+    }
   ],
-  "format_relationships": {
-    "category": "Audio",
-    "extensions": [
-      ".voc"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "VOC Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "First Data Block",
+        "offset": 26,
+        "icon": "\uE767",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "audio/voc"
-  ],
-  "Software": [
-    "VLC",
-    "Audacity",
-    "Foobar2000",
-    "MediaMonkey",
-    "Winamp"
-  ],
-  "UseCases": [
-    "Music playback",
-    "Audio editing",
-    "Sound production",
-    "Streaming"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "version",
+    "primaryField": "dataBlockOffset",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "VOC Header",
+        "icon": "\uE71B",
+        "fields": ["vocSignature", "dataBlockOffset", "version", "versionCheck"]
+      },
+      {
+        "title": "First Block",
+        "icon": "\uE767",
+        "fields": ["firstBlockType"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "AudioFormat": true
-  },
+  "exportTemplates": [
+    {
+      "name": "VOC Header (JSON)",
+      "format": "json",
+      "fields": ["vocSignature", "dataBlockOffset", "version", "versionCheck", "firstBlockType"]
+    },
+    {
+      "name": "voc_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "voc_header",
+      "fields": ["vocSignature", "eofMarker", "dataBlockOffset", "version", "versionCheck"]
+    }
+  ],
   "forensic": {
     "category": "audio",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Version check mismatch",
+        "condition": "false",
+        "severity": "warning",
+        "description": "VOC version check field should equal 0x1234 + (~version & 0xFFFF). A mismatch indicates a modified or corrupted header."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "Creative Labs Sound Blaster audio file format",
+    "analysisContext": "VOC header layout (26 bytes): 'Creative Voice File'(19B) + 0x1A(1B) + dataBlockOffset(2,LE) + version(2,LE: 0x010A=v1.10) + versionCheck(2,LE: must = 0x1234 + ~version). Data blocks at dataBlockOffset: type(1B) + size(3B LE 24-bit) + data. Block 1 (Sound Data): size(3B LE) + sampleRateDivisor(1B) + codec(1B: 0=8-bit unsigned PCM) + PCM_data. Sample rate = 1000000 / (256 - sampleRateDivisor). Block 8 (Extended for SBPro): timeConstant(2B LE) + packType(1B) + voiceMode(1B: 0=mono/1=stereo). Block 9 (new format): sampleRate(4B LE) + bitsPerSample(1B) + channels(1B) + codec(2B LE) + reserved(4B).",
     "suggestedInspections": [
-      "Validate Creative Voice File header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+      "Verify 'Creative Voice File' at offset 0",
+      "Check 0x1A at offset 19",
+      "Read version at offset 22 (LE uint16): 0x010A=v1.10, 0x0114=v1.20",
+      "Verify version check: versionCheck + version should == 0x1235",
+      "Read first block at dataBlockOffset — type byte 0=end, 1=sound data, 9=new format"
     ]
+  },
+  "software": [
+    "Creative Sound Blaster (original)",
+    "DOSBox",
+    "Audacity",
+    "VLC media player",
+    "SDL_mixer",
+    "DOS game engines (Duke Nukem 3D, Quake)"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".voc"],
+    "relatedFormats": ["WAV", "RAW"],
+    "note": "VOC was the native format of Creative Sound Blaster cards (1989-1995). It predates WAV and was the dominant PC audio format during the DOS gaming era."
+  },
+  "MimeTypes": [
+    "audio/x-voc",
+    "audio/voc"
+  ],
+  "UseCases": [
+    "DOS-era game audio (Sound Blaster effects)",
+    "Retro gaming / DOSBox emulation",
+    "Legacy audio archiving",
+    "DOS application speech synthesis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 9,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-14",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "Endianness": "little-endian",
+    "HeaderSize": "26 bytes",
+    "BlockStructure": "type(1B) + size(3B LE 24-bit) + data",
+    "SampleRateFormula": "SR = 1000000 / (256 - divisor) for block type 1",
+    "SupportedCodecs": "8-bit unsigned PCM, 4-bit ADPCM 2-to-1, 3-bit ADPCM, 2-bit ADPCM",
+    "EOFMarker": "0x1A (DOS Ctrl+Z)"
   }
 }

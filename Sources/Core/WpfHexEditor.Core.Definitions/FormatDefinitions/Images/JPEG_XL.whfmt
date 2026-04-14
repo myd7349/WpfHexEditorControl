@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    JPEG XL Image
-   Category:  Images
-   Ext:       .jxl
-   Editor:    image-viewer
-   Desc:      JPEG XL - Next-generation image format
-   Variables: jpegXlSignature, codestreamHeader
-   Detection: signature=FF0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "JPEG XL Image",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".jxl"
   ],
@@ -32,13 +22,22 @@
     ]
   },
   "detection": {
-    "signature": "FF0A",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "FF0A",
+        "offset": 0,
+        "label": "JPEG_XL magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "functions": {
     "calculateCRC32": "Calculate CRC-32 for data integrity"
@@ -76,7 +75,7 @@
   "software": [
     "Limited support - emerging format"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".jxl"
@@ -99,11 +98,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 2,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -123,5 +122,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "jpegXlSignature",
+    "primaryField": "codestreamHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "JPEG XL Image",
+        "icon": "",
+        "fields": [
+          "jpegXlSignature",
+          "codestreamHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JPEG XL Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "jpegXlSignature",
+        "codestreamHeader"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "jpegXlSignature != 0",
+      "severity": "warning",
+      "message": "JPEG_XL magic field is zero — possible detection failure"
+    }
+  ]
 }

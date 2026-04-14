@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    XFS Filesystem
-   Category:  Disk
-   Ext:       .xfs
-   Editor:    hex-editor
-   Desc:      XFS high-performance journaling filesystem
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=58465342 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "XFS Filesystem",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".xfs"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "58465342",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "58465342",
+        "offset": 0,
+        "label": "XFS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -81,7 +80,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".xfs"
@@ -104,11 +103,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

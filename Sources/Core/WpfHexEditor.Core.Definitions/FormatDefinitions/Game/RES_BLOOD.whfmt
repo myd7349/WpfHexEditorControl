@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Blood RFF
-   Category:  Game
-   Ext:       .rff
-   Editor:    hex-editor
-   Desc:      Blood game RFF resource archive
-   Variables: currentOffset, resourceCount, directoryOffset, version, rffSignature
-   Detection: signature=52464618 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Blood RFF",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".rff"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "52464618",
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "52464618",
+        "offset": 0,
+        "label": "RES_BLOOD magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -99,7 +98,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".rff"
@@ -122,11 +121,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 52,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -149,5 +148,40 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "rffSignature",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Blood RFF",
+        "icon": "",
+        "fields": [
+          "rffSignature",
+          "version",
+          "directoryOffset"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Blood RFF Header (JSON)",
+      "format": "json",
+      "fields": [
+        "rffSignature",
+        "version",
+        "directoryOffset"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "rffSignature != ''",
+      "severity": "warning",
+      "message": "RES_BLOOD magic invalid"
+    }
+  ]
 }

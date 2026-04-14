@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    PKCS#7 Certificate
-   Category:  Crypto
-   Ext:       .p7b, .p7c, .p7m, .p7s
-   Editor:    hex-editor
-   Desc:      PKCS#7 Cryptographic Message Syntax - Certificate chain format
-   Variables: currentOffset, version, serialNumber, issuer, subject, asn1Sequence, totalLength, contentTypeOidTag, oidLength, pkcs7Oid, contentTag, contentLength, signeddataSequence, versionTag, formattedSize
-   Detection: signature=3082 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PKCS#7 Certificate",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
     ".p7b",
     ".p7c",
@@ -40,8 +30,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -201,7 +191,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Crypto",
     "extensions": [
       ".p7b",

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Protocol Buffers
-   Category:  Data
-   Ext:       .pb, .protobuf
-   Editor:    hex-editor
-   Desc:      Google Protocol Buffers binary serialization format
-   Variables: currentOffset, tagCount, messageDepth, wireType
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Protocol Buffers",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".pb",
     ".protobuf"
@@ -29,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "PROTOBUF magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -70,7 +69,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".pb",
@@ -91,11 +90,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

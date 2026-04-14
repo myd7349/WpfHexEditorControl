@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Ruby Gem Package
-   Category:  Programming
-   Ext:       .gem
-   Editor:    hex-editor
-   Desc:      Ruby package format
-   Variables: currentOffset, crc32Valid, originalSize, compressionRatio, gzipHeader
-   Detection: signature=1F8B @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Ruby Gem Package",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".gem"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "1F8B",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "1F8B",
+        "offset": 0,
+        "label": "GEM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -72,7 +71,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".gem"
@@ -95,11 +94,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -120,5 +119,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "gzipHeader",
+    "primaryField": "gzipHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Ruby Gem Package",
+        "icon": "",
+        "fields": [
+          "gzipHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Ruby Gem Package Header (JSON)",
+      "format": "json",
+      "fields": [
+        "gzipHeader"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "gzipHeader != 0",
+      "severity": "warning",
+      "message": "GEM magic field is zero — possible detection failure"
+    }
+  ]
 }

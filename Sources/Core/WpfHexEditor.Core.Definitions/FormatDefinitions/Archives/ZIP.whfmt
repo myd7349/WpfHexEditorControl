@@ -1,28 +1,27 @@
-/* ============================================================
-   Format:    ZIP Archive
-   Category:  Archives
-   Ext:       .zip
-   Editor:    hex-editor
-   Desc:      ZIP archive format (PKZIP) - Used by many file types including Office documents
-   Variables: currentOffset, fileCount, zipFileCount, zipCentralDirSize, zipCommentLength, zipComment, eocdOffset, isZip64, zipSignature, versionNeeded, generalPurposeFlags, compressionMethod, lastModTime, lastModDate, crc32, compressedSize, uncompressedSize, filenameLength, extraFieldLength, formattedSize
-   Detection: signature=504B0304 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ZIP Archive",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
-    ".zip"
+    ".zip",
+    ".jar",
+    ".apk",
+    ".docx",
+    ".xlsx",
+    ".pptx",
+    ".odt",
+    ".epub"
   ],
-  "description": "ZIP archive format (PKZIP) - Used by many file types including Office documents",
+  "description": "ZIP archive format (PKZIP) — General-purpose container supporting stored and compressed file entries. Basis for Java .jar, Android .apk, Office Open XML, OpenDocument, and EPUB formats.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "PKWARE APPNOTE.TXT - ZIP File Format Specification",
-      "ISO/IEC 21320-1:2015 - Document Container File"
+      "PKWARE APPNOTE.TXT v6.3.10 - ZIP File Format Specification",
+      "ISO/IEC 21320-1:2015 - Document Container File",
+      "RFC 1950 - ZLIB Compressed Data Format",
+      "RFC 1951 - DEFLATE Compressed Data Format"
     ],
     "WebLinks": [
       "https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT",
@@ -31,17 +30,23 @@
     ]
   },
   "detection": {
-    "signature": "504B0304",
-    "offset": 0,
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "Local File Header (standard ZIP)", "weight": 1.0 },
+      { "value": "504B0506", "offset": 0, "label": "End of Central Directory (empty archive)", "weight": 0.8 },
+      { "value": "504B0708", "offset": 0, "label": "Data Descriptor (spanning/streaming)", "weight": 0.5 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
     "required": true,
+    "EntropyHint": { "min": 5.0, "max": 8.0 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 22,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
     "parseZIPArchive": "Parse End of Central Directory for archive statistics",
-    "formatFileSize(var:zipCentralDirSize)": "Format central directory size"
+    "formatFileSize(var:zipCentralDirSize)": "Format central directory size as human-readable string"
   },
   "variables": {
     "currentOffset": 0,
@@ -63,41 +68,72 @@
     "uncompressedSize": 0,
     "filenameLength": 0,
     "extraFieldLength": 0,
-    "formattedSize": ""
+    "formattedSize": "",
+    "compressionRatio": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "ZIP Signature",
+      "name": "ZIP Local File Signature",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "PK\\x03\\x04 magic bytes",
+      "opacity": 0.45,
+      "description": "PK\\x03\\x04 — PKZIP local file header magic. 'PK' is the initialism of Phil Katz, the inventor of PKZIP. Bytes: 0x50 0x4B 0x03 0x04. All valid ZIP local entries begin with this 4-byte sequence.",
       "storeAs": "zipSignature",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "endianness": "little"
     },
     {
       "type": "field",
-      "name": "Version Needed",
+      "name": "Version Needed to Extract",
       "offset": 4,
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Version needed to extract",
+      "description": "Minimum ZIP specification version required to extract this entry. Format: major*10 + minor. Value 20=2.0 (standard DEFLATE), 45=4.5 (ZIP64), 50=5.0 (patched data), 63=6.3 (strong encryption). Values above 63 are undefined in current spec.",
       "storeAs": "versionNeeded",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "10": "1.0 — Default (no compression)",
+        "11": "1.1 — File volume label",
+        "20": "2.0 — DEFLATE / folder entry",
+        "25": "2.5 — Patch data descriptor",
+        "27": "2.7 — DCL imploded",
+        "45": "4.5 — ZIP64 extension",
+        "46": "4.6 — BZIP2 compression",
+        "50": "5.0 — DES / 3DES / RC2 encryption",
+        "51": "5.1 — AES-128/AES-192/AES-256",
+        "52": "5.2 — Correcting stream ZipCrypto",
+        "61": "6.1 — Certificate processing",
+        "62": "6.2 — Central directory encryption",
+        "63": "6.3 — LZMA / PPMd / Blowfish / Twofish"
+      }
     },
     {
       "type": "field",
-      "name": "General Purpose Flags",
+      "name": "General Purpose Bit Flag",
       "offset": 6,
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Bit flags (encryption, compression, etc.)",
+      "description": "16-bit bitmask encoding encryption status, compression options, UTF-8 encoding flag, and data descriptor presence. Bit 0 set = entry is encrypted. Bit 11 set = filename and comment are UTF-8 encoded rather than CP437/ISO-8859-1.",
       "storeAs": "generalPurposeFlags",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "bitfields": [
+        { "bit": 0, "name": "Encrypted", "description": "File is encrypted using traditional ZIP 2.0 or strong encryption", "valueMap": { "0": "Not encrypted", "1": "Encrypted" } },
+        { "bit": 1, "name": "CompressionOption1", "description": "Compression method specific option — for Deflate: 1=maximum compression, for Implode: 1=8K sliding dict" },
+        { "bit": 2, "name": "CompressionOption2", "description": "Compression method specific option — for Deflate: 1=super-fast, for Implode: 1=3 Shannon-Fano trees" },
+        { "bit": 3, "name": "DataDescriptorPresent", "description": "CRC-32, compressed/uncompressed sizes are stored in a data descriptor after compressed data", "valueMap": { "0": "Sizes in local header", "1": "Data descriptor follows compressed data" } },
+        { "bit": 4, "name": "EnhancedDeflation", "description": "Reserved for enhanced deflation (not in common use)" },
+        { "bit": 5, "name": "CompressedPatchedData", "description": "Entry is compressed patched data (requires Version Needed >= 2.7)" },
+        { "bit": 6, "name": "StrongEncryption", "description": "Strong encryption used (AES-128/192/256 or similar)", "valueMap": { "0": "Traditional or no encryption", "1": "Strong encryption (AES/3DES/etc.)" } },
+        { "bit": 11, "name": "UTF8Encoding", "description": "Filename and comment are encoded as UTF-8 (if 0, uses CP437 or host system encoding)", "valueMap": { "0": "CP437 / host encoding", "1": "UTF-8" } },
+        { "bit": 12, "name": "ReservedPKWARE", "description": "Reserved for PKWARE enhanced compression" },
+        { "bit": 13, "name": "LocalHeaderMasked", "description": "Central directory encryption is used — local header fields are masked" }
+      ]
     },
     {
       "type": "field",
@@ -106,42 +142,68 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "0=Store, 8=Deflate",
+      "description": "Algorithm used to compress the file entry data. Method 0 = stored (no compression). Method 8 = DEFLATE (most common). Methods 12, 14, 98 require external libraries. Method 99 = AES encryption marker.",
       "storeAs": "compressionMethod",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "1": "Shrunk",
+        "2": "Reduced with factor 1",
+        "3": "Reduced with factor 2",
+        "4": "Reduced with factor 3",
+        "5": "Reduced with factor 4",
+        "6": "Imploded",
+        "8": "DEFLATE",
+        "9": "Enhanced DEFLATE",
+        "10": "PKWare DCL Imploded",
+        "12": "BZIP2",
+        "14": "LZMA",
+        "18": "IBM TERSE",
+        "19": "IBM LZ77",
+        "93": "Zstandard",
+        "95": "XZ",
+        "96": "JPEG",
+        "97": "WavPack",
+        "98": "PPMd version I Rev 1",
+        "99": "AES Encryption"
+      }
     },
     {
       "type": "field",
-      "name": "Last Mod Time",
+      "name": "Last Modification Time",
       "offset": 10,
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "MS-DOS time",
+      "description": "MS-DOS packed time format: bits 15-11 = hours (0-23), bits 10-5 = minutes (0-59), bits 4-0 = seconds/2 (0-29, i.e. 2-second resolution). Stored in local time of the creating system.",
       "storeAs": "lastModTime",
-      "valueType": "uint16"
+      "valueType": "dostime",
+      "endianness": "little"
     },
     {
       "type": "field",
-      "name": "Last Mod Date",
+      "name": "Last Modification Date",
       "offset": 12,
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "MS-DOS date",
+      "description": "MS-DOS packed date format: bits 15-9 = year offset from 1980 (0 = 1980, 119 = 2099), bits 8-5 = month (1-12), bits 4-0 = day (1-31). Year range limited to 1980-2107 in standard ZIP. Use ZIP64 or NTFS extra field for other dates.",
       "storeAs": "lastModDate",
-      "valueType": "uint16"
+      "valueType": "dosdate",
+      "endianness": "little"
     },
     {
       "type": "field",
-      "name": "CRC-32",
+      "name": "CRC-32 Checksum",
       "offset": 14,
       "length": 4,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "CRC-32 checksum",
+      "description": "CRC-32 checksum of the uncompressed file data, computed using the standard PKZIP CRC-32 polynomial (0xEDB88320). If bit 3 of General Purpose Bit Flag is set, this field is 0 and the CRC-32 is in a data descriptor record after the compressed data.",
       "storeAs": "crc32",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -150,9 +212,10 @@
       "length": 4,
       "color": "#C44569",
       "opacity": 0.3,
-      "description": "Compressed size in bytes",
+      "description": "Size of the compressed entry data in bytes, as stored in the archive. If this value is 0xFFFFFFFF (4294967295), the actual size is in the ZIP64 extra data field. If bit 3 of General Purpose Bit Flag is set, this field is 0.",
       "storeAs": "compressedSize",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -161,9 +224,10 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Uncompressed size in bytes",
+      "description": "Size of the entry data when fully decompressed. If 0xFFFFFFFF, the actual size is in the ZIP64 extra data field. A ratio of uncompressedSize/compressedSize > 1000 is a strong indicator of a ZIP bomb attack.",
       "storeAs": "uncompressedSize",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -172,9 +236,10 @@
       "length": 2,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Length of filename",
+      "description": "Length in bytes of the filename that immediately follows the local file header. The filename encoding is CP437 unless bit 11 of General Purpose Bit Flag is set (UTF-8). Maximum value 0xFFFF = 65535 bytes.",
       "storeAs": "filenameLength",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -183,59 +248,95 @@
       "length": 2,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Length of extra field",
+      "description": "Length in bytes of the extra field data that follows the filename. The extra field contains variable-length data blocks identified by 2-byte header IDs. Common IDs: 0x0001=ZIP64 extended info, 0x000A=NTFS timestamps, 0x5455=Unix timestamps, 0x7075=UTF-8 unicode path.",
       "storeAs": "extraFieldLength",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Compression Ratio",
+      "expression": "calc:compressedSize > 0 ? uncompressedSize / compressedSize : 0",
+      "storeAs": "compressionRatio",
+      "description": "Ratio of uncompressed to compressed size. Values above 1000 indicate potential ZIP bomb. Stored (method 0) entries always have ratio 1.0."
     },
     {
       "type": "metadata",
       "name": "Total Files in Archive",
       "variable": "zipFileCount",
-      "description": "Total number of files/entries in the ZIP archive"
+      "description": "Total number of file and directory entries recorded in the ZIP central directory"
     },
     {
       "type": "metadata",
       "name": "Central Directory Size",
       "variable": "zipCentralDirSize",
-      "description": "Size of the central directory in bytes"
+      "description": "Total size of the central directory structure in bytes"
     },
     {
       "type": "metadata",
       "name": "Archive Comment Length",
       "variable": "zipCommentLength",
-      "description": "Length of ZIP archive comment (if present)"
+      "description": "Length of the optional ZIP archive comment appended after the End of Central Directory record (0 = no comment)"
     },
     {
       "type": "metadata",
       "name": "Archive Comment",
       "variable": "zipComment",
-      "description": "ZIP archive comment text (if present)"
+      "description": "Optional archive-level comment stored in the End of Central Directory record (max 65535 bytes)"
     },
     {
       "type": "metadata",
       "name": "EOCD Offset",
       "variable": "eocdOffset",
-      "description": "Byte offset of End of Central Directory record"
+      "description": "Byte offset of the End of Central Directory (EOCD) record from start of file. -1 if not yet parsed."
     },
     {
       "type": "metadata",
       "name": "ZIP64 Format",
       "variable": "isZip64",
-      "description": "true if ZIP64 format (large files/archives), false if standard ZIP"
+      "description": "True if the archive uses ZIP64 extensions for files > 4GB or archives with > 65535 entries. ZIP64 appends a Zip64 EOCD record before the standard EOCD."
     },
     {
       "type": "metadata",
       "name": "Formatted Size",
       "variable": "formattedSize",
-      "description": "Human-readable central directory size"
+      "description": "Human-readable central directory size formatted with appropriate unit (bytes, KB, MB, GB)"
+    }
+  ],
+  "checksums": [
+    {
+      "name": "Local File CRC-32",
+      "algorithm": "crc32",
+      "dataRange": { "fixedOffset": 30, "lengthVar": "uncompressedSize" },
+      "storedAt": { "fixedOffset": 14, "length": 4, "endianness": "little" },
+      "storedType": "uint32",
+      "severity": "warning"
     }
   ],
   "assertions": [
     {
-      "name": "PK signature",
-      "expression": "pkSignature == 1347093252",
+      "name": "PK local file signature valid",
+      "expression": "zipSignature == 'PK\u0003\u0004'",
       "severity": "error",
-      "message": "Missing PK\\003\\004 signature — not a valid ZIP file"
+      "message": "Missing PK\\x03\\x04 — first local file header signature is invalid"
+    },
+    {
+      "name": "Version needed is within spec",
+      "expression": "versionNeeded <= 63",
+      "severity": "warning",
+      "message": "Version needed to extract exceeds ZIP specification 6.3 — may require non-standard software"
+    },
+    {
+      "name": "Compression method is known",
+      "expression": "compressionMethod == 0 || compressionMethod == 8 || compressionMethod == 9 || compressionMethod == 12 || compressionMethod == 14 || compressionMethod == 93 || compressionMethod == 99",
+      "severity": "warning",
+      "message": "Compression method is non-standard — may require specialized decompressor"
+    },
+    {
+      "name": "No ZIP bomb signature",
+      "expression": "compressedSize == 0 || uncompressedSize / compressedSize <= 1000",
+      "severity": "warning",
+      "message": "Compression ratio exceeds 1000:1 — possible ZIP bomb. First entry alone may expand to GB of data."
     }
   ],
   "navigation": {
@@ -243,73 +344,165 @@
       {
         "name": "Local File Header",
         "offset": 0,
-        "icon": ""
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "End of Central Directory",
+        "offsetVar": "eocdOffset",
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
       }
     ]
   },
+  "inspector": {
+    "badge": "compressionMethod",
+    "primaryField": "zipFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Archive Header",
+        "icon": "\uE8B7",
+        "fields": ["zipSignature", "versionNeeded", "generalPurposeFlags", "compressionMethod"]
+      },
+      {
+        "title": "File Timestamps",
+        "icon": "\uE787",
+        "fields": ["lastModTime", "lastModDate"]
+      },
+      {
+        "title": "Size & Checksums",
+        "icon": "\uE8F4",
+        "fields": ["crc32", "compressedSize", "uncompressedSize", "compressionRatio"]
+      },
+      {
+        "title": "Archive Statistics",
+        "icon": "\uE9D9",
+        "fields": ["zipFileCount", "zipCentralDirSize", "eocdOffset", "isZip64", "formattedSize"]
+      },
+      {
+        "title": "Entry Details",
+        "icon": "\uE8A5",
+        "fields": ["filenameLength", "extraFieldLength", "zipCommentLength", "zipComment"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Local File Header (JSON)",
+      "format": "json",
+      "fields": ["zipSignature", "versionNeeded", "generalPurposeFlags", "compressionMethod", "lastModTime", "lastModDate", "crc32", "compressedSize", "uncompressedSize", "filenameLength", "extraFieldLength", "compressionRatio"]
+    },
+    {
+      "name": "ZIP Local Header (C struct)",
+      "format": "c-struct",
+      "structName": "ZIP_LOCAL_FILE_HEADER",
+      "fields": ["zipSignature", "versionNeeded", "generalPurposeFlags", "compressionMethod", "lastModTime", "lastModDate", "crc32", "compressedSize", "uncompressedSize", "filenameLength", "extraFieldLength"]
+    },
+    {
+      "name": "Archive Summary (CSV)",
+      "format": "csv",
+      "fields": ["zipFileCount", "zipCentralDirSize", "eocdOffset", "isZip64", "compressionMethod", "compressedSize", "uncompressedSize"]
+    },
+    {
+      "name": "Python ZIP magic check",
+      "format": "python-bytes",
+      "fields": ["zipSignature", "compressionMethod", "generalPurposeFlags"]
+    }
+  ],
   "forensic": {
     "category": "archive",
-    "riskLevel": "low",
+    "riskLevel": "medium",
     "suspiciousPatterns": [
       {
-        "name": "ZIP bomb potential",
-        "condition": "uncompressedSize > 1073741824",
+        "name": "ZIP bomb ratio",
+        "condition": "compressedSize > 0 && uncompressedSize / compressedSize > 1000",
         "severity": "warning",
-        "description": "Extremely large uncompressed size relative to compressed size"
+        "description": "Compression ratio exceeds 1000:1 — strong indicator of a decompression bomb designed to exhaust disk or memory"
+      },
+      {
+        "name": "Weak PKZIP 2.0 encryption",
+        "condition": "(generalPurposeFlags & 1) != 0 && (generalPurposeFlags & 64) == 0",
+        "severity": "warning",
+        "description": "File uses traditional PKZIP 2.0 stream cipher (XOR-based, cryptographically weak). AES-256 (bit 6) is not set."
+      },
+      {
+        "name": "Path traversal risk",
+        "condition": "filenameLength > 2",
+        "severity": "info",
+        "description": "Inspect stored filenames for path traversal sequences (../ or absolute paths) that could escape extraction directory"
+      },
+      {
+        "name": "Encrypted archive",
+        "condition": "(generalPurposeFlags & 1) != 0",
+        "severity": "info",
+        "description": "At least the first entry is encrypted — content analysis requires password"
       }
+    ],
+    "knownExploitVectors": [
+      "ZIP slip (path traversal via ../ in filenames)",
+      "ZIP bomb (nested archives with extreme compression ratios)",
+      "Malware delivery via .docx/.jar/.apk container abuse",
+      "Symlink extraction attack (platform-dependent)"
     ]
   },
   "aiHints": {
-    "analysisContext": "ZIP archive format (PKZIP) - Used by many file types including Office documents",
+    "analysisContext": "ZIP archive — universal container format that underpins .docx, .xlsx, .apk, .jar, and .epub. Key security fields: compressionMethod (0=stored/8=deflate), bit 0 generalPurposeFlags (encrypted), bit 11 (UTF-8 filenames), compressionRatio (ZIP bomb detection). The EOCD at the end of file is the ground truth for entry count.",
+    "knownVulnerabilities": [
+      "ZIP slip — path traversal via ../ or absolute paths in entry filenames",
+      "ZIP bomb — deeply nested or single-layer archives with extreme compression ratios (e.g., 42.zip)",
+      "Polyglot files — valid ZIP that is also a valid JPEG, PDF, or Java class (content at start of file)",
+      "PKZIP 2.0 encryption — XOR-based stream cipher, brute-forceable with known plaintext attack"
+    ],
     "suggestedInspections": [
-      "Verify ZIP Archive file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Scan all entry filenames for path traversal sequences (../ or absolute /root paths)",
+      "Compute per-entry compression ratio — flag any entry with ratio > 100:1",
+      "Check if .jar/.apk: inspect META-INF/MANIFEST.MF and AndroidManifest.xml for permissions",
+      "For .docx/.xlsx: check word/vbaProject.bin presence (macro indicator)",
+      "Verify EOCD matches reported entry counts and central directory offset"
     ]
   },
   "software": [
     "WinZip",
     "7-Zip",
     "WinRAR",
-    "OS built-in"
+    "OS built-in",
+    "Info-ZIP",
+    "PeaZip",
+    "macOS Archive Utility"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
-    "extensions": [
-      ".zip",
-      ".jar",
-      ".apk"
-    ]
+    "extensions": [".zip", ".jar", ".apk", ".docx", ".xlsx", ".pptx", ".odt", ".epub"],
+    "relatedFormats": ["GZIP", "DEFLATE", "ZSTD", "7Z"]
   },
   "MimeTypes": [
     "application/zip",
-    "application/x-zip-compressed"
-  ],
-  "Software": [
-    "WinZip",
-    "7-Zip",
-    "WinRAR",
-    "Windows Explorer",
-    "macOS Archive Utility"
+    "application/x-zip-compressed",
+    "application/java-archive",
+    "application/vnd.android.package-archive"
   ],
   "UseCases": [
-    "File compression",
-    "Software distribution",
-    "Backup archives",
-    "Document bundling"
+    "File compression and archiving",
+    "Software distribution (.jar, .apk)",
+    "Document bundling (.docx, .xlsx, .epub)",
+    "Backup and transfer"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 65,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 18,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 17,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "CompressionMethod": "DEFLATE, BZIP2, LZMA",
+    "CompressionMethod": "DEFLATE, BZIP2, LZMA, ZSTD, Stored",
     "ArchivesFormat": true,
-    "SupportsEncryption": true
+    "SupportsEncryption": true,
+    "SupportsZIP64": true,
+    "MaxEntries": "65535 (standard), unlimited (ZIP64)",
+    "MaxFileSize": "4GB (standard), 16EB (ZIP64)"
   }
 }

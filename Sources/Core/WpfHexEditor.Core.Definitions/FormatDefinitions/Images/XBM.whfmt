@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    X BitMap
-   Category:  Images
-   Ext:       .xbm
-   Editor:    image-viewer
-   Desc:      X Window System Bitmap (ASCII C source)
-   Variables: imageWidth, imageHeight, totalPixels, bitsPerPixel, xbmHeader
-   Detection: signature=23646566696E65 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "X BitMap",
-  "version": "1.13",
+  "version": "1.16",
   "extensions": [
     ".xbm"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "23646566696E65",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "23646566696E65",
+        "offset": 0,
+        "label": "XBM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "imageWidth": 0,
@@ -89,7 +88,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".xbm"
@@ -112,11 +111,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -141,5 +140,36 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "xbmHeader",
+    "primaryField": "xbmHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "X BitMap",
+        "icon": "",
+        "fields": [
+          "xbmHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "X BitMap Header (JSON)",
+      "format": "json",
+      "fields": [
+        "xbmHeader"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "xbmHeader != 0",
+      "severity": "warning",
+      "message": "XBM magic field is zero — possible detection failure"
+    }
+  ]
 }

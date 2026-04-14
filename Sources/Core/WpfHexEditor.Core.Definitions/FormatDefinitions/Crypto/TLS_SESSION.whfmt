@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    TLS Session Ticket
-   Category:  Crypto
-   Ext:       .ticket, .session
-   Editor:    hex-editor
-   Desc:      TLS Session Ticket - Encrypted session resumption data
-   Variables: currentOffset, version, serialNumber, subject, ticketLifetimeHint, ticketLength, ticketKeyName, initializationVector, stateLength, encryptedState, hmac, tlsVersion, cipherSuite
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "TLS Session Ticket",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
     ".ticket",
     ".session"
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -174,7 +164,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Crypto",
     "extensions": [
       ".ticket",

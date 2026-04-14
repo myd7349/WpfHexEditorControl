@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    PC Engine/TurboGrafx-16 ROM
-   Category:  Game
-   Ext:       .pce, .sgx
-   Editor:    hex-editor
-   Desc:      PC Engine / TurboGrafx-16 HuCard ROM format (no standard header)
-   Variables: currentOffset, machineType, sectionCount, entryPoint, resetVectorEntry, romBank0
-   Detection: signature=00 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "PC Engine/TurboGrafx-16 ROM",
-  "version": "2.4",
+  "version": "2.43",
   "extensions": [
     ".pce",
     ".sgx"
@@ -34,13 +24,23 @@
     ]
   },
   "detection": {
-    "signature": "00",
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "Raw ROM data (PC Engine HuCard — no standard file header)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -90,7 +90,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".pce",
@@ -114,11 +114,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 27,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -140,5 +140,30 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "resetVectorEntry",
+    "primaryField": "romBank0",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PC Engine/TurboGrafx-16 ROM",
+        "icon": "",
+        "fields": [
+          "resetVectorEntry",
+          "romBank0"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PC Engine/TurboGrafx-16 ROM Header (JSON)",
+      "format": "json",
+      "fields": [
+        "resetVectorEntry",
+        "romBank0"
+      ]
+    }
+  ]
 }

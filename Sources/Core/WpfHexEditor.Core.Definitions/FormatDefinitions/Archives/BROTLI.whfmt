@@ -1,132 +1,76 @@
-/* ============================================================
-   Format:    Brotli Compression
-   Category:  Archives
-   Ext:       .br
-   Editor:    hex-editor
-   Desc:      Brotli compressed format developed by Google, used for web compression and file compression
-   Variables: windowBits
-   Detection: signature=CE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
-  "formatName": "Brotli Compression",
-  "version": "1.10",
-  "extensions": [
-    ".br"
-  ],
-  "description": "Brotli compressed format developed by Google, used for web compression and file compression",
+  "formatName": "Brotli Compressed Data",
+  "version": "1.14",
+  "extensions": [".br"],
+  "description": "Brotli is a lossless data compression algorithm by Google (RFC 7932, 2016). No fixed magic bytes — the stream starts with a window size descriptor byte. Bits 0-1 of byte 0: if 0, WBITS-10 is encoded in bits 2-4 (window = 2^WBITS bytes, WBITS 10-24). Common byte: 0x1B = WBITS 22 = 4MB window (Google default). Brotli achieves 20-26% better ratios than gzip/deflate using context modeling and a static 13,504-word dictionary. Used as HTTP Content-Encoding: br and internally in .woff2 web fonts.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
-    "specifications": [
-      "RFC 7932 - Brotli Compressed Data Format",
-      "RFC 9841 - Shared Brotli Format",
-      "Brotli Compression Algorithm by Google"
-    ],
-    "WebLinks": [
-      "https://datatracker.ietf.org/doc/html/rfc7932",
-      "https://github.com/google/brotli",
-      "https://en.wikipedia.org/wiki/Brotli",
-      "https://www.brotli.org/"
-    ]
+    "specifications": ["RFC 7932 — Brotli Compressed Data Format (IETF, July 2016)"],
+    "WebLinks": ["https://www.rfc-editor.org/rfc/rfc7932", "https://github.com/google/brotli"]
   },
   "detection": {
-    "signature": "CE",
-    "offset": 0,
+    "signatures": [
+      { "value": "1B", "offset": 0, "label": "0x1B — Brotli WBITS=22 (4MB window, most common)", "weight": 0.4 },
+      { "value": "0B", "offset": 0, "label": "0x0B — Brotli WBITS=18 (256KB window)", "weight": 0.3 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
     "required": false,
+    "Strength": "Weak",
+    "EntropyHint": { "min": 6.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 0,
+      "note": "No fixed magic. Detected by .br extension and high entropy. First byte is window size descriptor."
     }
   },
-  "functions": {
-    "calculateCRC32": "Calculate CRC-32 for data integrity"
-  },
-  "variables": {
-    "windowBits": 0
-  },
+  "variables": { "windowDescriptor": 0 },
   "blocks": [
     {
       "type": "signature",
-      "name": "Window Bits",
+      "name": "Window Descriptor",
       "offset": 0,
       "length": 1,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "First byte contains window size bits (usually 0xCE for typical files)",
-      "storeAs": "windowBits",
-      "valueType": "uint8"
+      "opacity": 0.45,
+      "description": "Brotli window size descriptor byte at offset 0. Bits 0-1=0: WBITS-10 in bits 2-4 (window = 2^WBITS). Common: 0x1B=4MB window (WBITS=22, Google default), 0x0B=256KB (WBITS=18), 0x1F=16MB max (WBITS=24). Larger window = better compression but more RAM.",
+      "storeAs": "windowDescriptor",
+      "valueType": "uint8",
+      "valueMap": {
+        "11": "0x0B — 256 KB window (WBITS=18)",
+        "15": "0x0F — 1 MB window (WBITS=20)",
+        "27": "0x1B — 4 MB window (WBITS=22, default)",
+        "31": "0x1F — 16 MB window (WBITS=24, maximum)"
+      }
     },
-    {
-      "type": "data",
-      "name": "Compressed Data",
-      "offset": 1,
-      "length": 32,
-      "color": "#4ECDC4",
-      "opacity": 0.4,
-      "description": "Brotli compressed data stream (bit-packed format)"
-    },
-    {
-      "type": "metadata",
-      "name": "Window Bits",
-      "variable": "windowBits",
-      "description": "Window size configuration for decompression"
-    }
+    { "type": "metadata", "name": "Window Size", "variable": "windowDescriptor", "description": "Brotli sliding window size descriptor byte" }
   ],
-  "software": [
-    "7-Zip",
-    "WinRAR"
+  "assertions": [
+    { "name": "Window descriptor plausible", "expression": "windowDescriptor <= 127", "severity": "info", "message": "Window descriptor MSB set — verify this is a valid Brotli stream" }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".br"
-    ],
-    "google_format": true,
-    "web_optimized": true
+  "navigation": { "bookmarks": [{ "name": "Brotli Stream", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" }] },
+  "inspector": {
+    "badge": "windowDescriptor", "primaryField": "windowDescriptor", "showQualityScore": true,
+    "groups": [{ "title": "Brotli Header", "icon": "\uE8B7", "fields": ["windowDescriptor"] }]
   },
-  "MimeTypes": [
-    "application/x-brotli-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
-  "forensic": {
-    "category": "archive",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
+  "exportTemplates": [{ "name": "Brotli Header (JSON)", "format": "json", "fields": ["windowDescriptor"] }],
+  "forensic": { "category": "archive", "riskLevel": "low", "suspiciousPatterns": [] },
   "aiHints": {
-    "analysisContext": "Brotli compressed format developed by Google, used for web compression and file compression",
+    "analysisContext": "Brotli (RFC 7932): no magic bytes. First byte = window descriptor (WBITS-10 in bits 2-4). High entropy. HTTP Content-Encoding: br. Python: import brotli; brotli.decompress(data). CLI: brotli -d file.br. Cannot detect by magic — use extension.",
     "suggestedInspections": [
-      "Verify Brotli Compression file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Byte 0: window size (0x1B=4MB default, 0x0B=256KB)",
+      "Verify via decompress attempt — only reliable detection method",
+      "High entropy (7.5-8.0 bits/byte) confirms compressed content"
     ]
-  }
+  },
+  "software": ["brotli CLI (Google reference)", "curl (--compressed)", "nginx mod_brotli", "Python brotli module"],
+  "formatRelationships": { "category": "Archives", "extensions": [".br"], "relatedFormats": ["GZIP", "ZSTD"],
+    "note": "HTTP compression standard (RFC 7932). ~20% better than gzip. Used in .woff2 fonts. No magic bytes." },
+  "MimeTypes": ["application/x-brotli"],
+  "UseCases": ["HTTP Content-Encoding: br", ".woff2 web font compression", "npm package tarballs", "Static web asset pre-compression"],
+  "QualityMetrics": { "CompletenessScore": 55, "DocumentationLevel": "detailed", "BlocksDefined": 2, "ValidationRules": 1, "LastUpdated": "2026-04-14", "PriorityFormat": false, "AutoRefined": false },
+  "TechnicalDetails": { "Format": "Brotli compressed stream (RFC 7932)", "Magic": "None — no magic bytes", "WindowSize": "Encoded in first byte (WBITS 10-24)", "RFC": "RFC 7932 (IETF, July 2016)" }
 }

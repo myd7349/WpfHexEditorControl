@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    ISO Disk Image
-   Category:  Disk
-   Ext:       .iso
-   Editor:    hex-editor
-   Desc:      ISO 9660 CD/DVD image format
-   Variables: currentOffset, volumeIdentifier, systemIdentifier, publisher, volumeSize, blockSize, pathTableSize, hasJoliet, hasRockRidge, primaryVolumeDescriptor, volumeDescriptorType
-   Detection: signature=4344303031 @ offset 32769
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "ISO Disk Image",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".iso"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "4344303031",
-    "offset": 32769,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "4344303031",
+        "offset": 32769,
+        "label": "ISO magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "readUInt32LE": "Read 32-bit little-endian for volume space size and path table size",
@@ -91,7 +90,7 @@
     "Windows Explorer",
     "ImgBurn"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "iso_9660_standard": true,
     "extensions": [
       "Joliet",
@@ -120,11 +119,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 2,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -150,5 +149,38 @@
       }
     ]
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "inspector": {
+    "badge": "primaryVolumeDescriptor",
+    "primaryField": "volumeDescriptorType",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ISO Disk Image",
+        "icon": "",
+        "fields": [
+          "primaryVolumeDescriptor",
+          "volumeDescriptorType"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ISO Disk Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "primaryVolumeDescriptor",
+        "volumeDescriptorType"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "primaryVolumeDescriptor != 0",
+      "severity": "warning",
+      "message": "ISO magic field is zero — possible detection failure"
+    }
+  ]
 }

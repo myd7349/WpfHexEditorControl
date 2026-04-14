@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    JPEG Network Graphics
-   Category:  Images
-   Ext:       .jng
-   Editor:    image-viewer
-   Desc:      JNG format (JPEG with alpha channel)
-   Variables: packetCount, snaplen, linkType, version, jngSignature, jhdrChunkLength
-   Detection: signature=8B4A4E470D0A1A0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "JPEG Network Graphics",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".jng"
   ],
@@ -32,13 +22,22 @@
     ]
   },
   "detection": {
-    "signature": "8B4A4E470D0A1A0A",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "8B4A4E470D0A1A0A",
+        "offset": 0,
+        "label": "JNG magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "packetCount": 0,
@@ -95,7 +94,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".jng"
@@ -118,11 +117,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -146,5 +145,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "jngSignature",
+    "primaryField": "jhdrChunkLength",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "JPEG Network Graphics",
+        "icon": "",
+        "fields": [
+          "jngSignature",
+          "jhdrChunkLength"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JPEG Network Graphics Header (JSON)",
+      "format": "json",
+      "fields": [
+        "jngSignature",
+        "jhdrChunkLength"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "jngSignature != 0",
+      "severity": "warning",
+      "message": "JNG magic field is zero — possible detection failure"
+    }
+  ]
 }

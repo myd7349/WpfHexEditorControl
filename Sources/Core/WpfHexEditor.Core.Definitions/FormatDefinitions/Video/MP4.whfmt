@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    MP4 Video
-   Category:  Video
-   Ext:       .mp4, .m4v, .m4a
-   Editor:    hex-editor
-   Desc:      MPEG-4 Part 14 multimedia container based on ISO Base Media File Format (ISOBMFF). The file begins with a File Type Box (ftyp) that declares the major brand, minor version, and compatible brands. All data is organized in nested boxes (atoms), each prefixed by a 32-bit size and 4-byte type code. The ftyp box is followed by movie metadata (moov) and media data (mdat) boxes.
-   Variables: currentOffset, ftypBoxSize, ftypBoxType, majorBrand, majorBrandName, minorVersion, compatBrand1, compatBrand2, compatBrand3, compatBrand4, nextBoxSize, nextBoxType, nextBoxTypeName, totalFileSize, formattedFileSize, payloadSize, isFragmented, hasExtendedSize
-   Detection: signature=66747970 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "MP4 Video",
-  "version": "2.0",
+  "version": "2.02",
   "extensions": [
     ".mp4",
     ".m4v",
@@ -291,17 +281,135 @@
       "description": "Total file size formatted as a human-readable string (KB/MB/GB)"
     }
   ],
+  "assertions": [
+    {
+      "name": "ftyp box type is 'ftyp'",
+      "expression": "ftypBoxType == 'ftyp'",
+      "severity": "error",
+      "message": "Box type at offset 4 must be 'ftyp' (0x66747970) — not a valid ISOBMFF/MP4 file"
+    },
+    {
+      "name": "ftyp box size is reasonable",
+      "expression": "ftypBoxSize >= 8 && ftypBoxSize <= 256",
+      "severity": "warning",
+      "message": "ftyp box size outside expected range (8-256 bytes) — malformed or non-standard ftyp"
+    },
+    {
+      "name": "Major brand is known",
+      "expression": "majorBrand == 'isom' || majorBrand == 'iso2' || majorBrand == 'mp41' || majorBrand == 'mp42' || majorBrand == 'M4V ' || majorBrand == 'M4A ' || majorBrand == 'dash' || majorBrand == 'avc1' || majorBrand == '3gp4' || majorBrand == '3gp5' || majorBrand == '3gp6'",
+      "severity": "info",
+      "message": "Major brand is not a commonly recognized ISOBMFF brand — may be a proprietary or specialized MP4 variant"
+    }
+  ],
+  "versionDetection": {
+    "field": "majorBrand",
+    "versions": {
+      "isom": "ISO Base Media File Format (generic)",
+      "iso2": "ISO Base Media File v2",
+      "mp41": "MPEG-4 Part 14 v1",
+      "mp42": "MPEG-4 Part 14 v2",
+      "M4V ": "Apple iTunes Video",
+      "M4A ": "Apple iTunes Audio",
+      "M4P ": "Apple FairPlay DRM",
+      "dash": "MPEG-DASH adaptive streaming",
+      "avc1": "AVC/H.264 video",
+      "3gp4": "3GPP Release 4 (mobile)"
+    }
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ftyp Box",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Major Brand",
+        "offset": 8,
+        "icon": "\uE8B7",
+        "color": "#95E1D3"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "majorBrand",
+    "primaryField": "ftypBoxSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ISOBMFF ftyp Box",
+        "icon": "\uE71B",
+        "fields": ["ftypBoxType", "ftypBoxSize", "majorBrand", "majorBrandName", "minorVersion"]
+      },
+      {
+        "title": "Compatible Brands",
+        "icon": "\uE8B7",
+        "fields": ["compatBrand1", "compatBrand2", "compatBrand3", "compatBrand4"]
+      },
+      {
+        "title": "Container Structure",
+        "icon": "\uE9D9",
+        "fields": ["nextBoxType", "nextBoxTypeName", "isFragmented"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ftyp Box (JSON)",
+      "format": "json",
+      "fields": ["ftypBoxType", "ftypBoxSize", "majorBrand", "majorBrandName", "minorVersion", "compatBrand1", "compatBrand2", "isFragmented"]
+    },
+    {
+      "name": "ISOBMFF_FTYP_BOX (C struct)",
+      "format": "c-struct",
+      "structName": "isobmff_ftyp_box",
+      "fields": ["ftypBoxSize", "ftypBoxType", "majorBrand", "minorVersion"]
+    }
+  ],
   "forensic": {
     "category": "video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Fragmented MP4 (DASH segment)",
+        "condition": "isFragmented == 1",
+        "severity": "info",
+        "description": "File is a fragmented MP4 (moof/mdat pairs). Used for MPEG-DASH/HLS adaptive streaming. Cannot be played directly without a manifest file. May be a streaming segment rather than a complete media file."
+      },
+      {
+        "name": "DRM-protected content",
+        "condition": "majorBrand == 'M4P '",
+        "severity": "info",
+        "description": "File has Apple FairPlay DRM major brand (M4P). Audio/video is encrypted and can only be played on authorized Apple devices. Raw media extraction requires FairPlay decryption keys."
+      },
+      {
+        "name": "Extended 64-bit size",
+        "condition": "ftypBoxSize == 1",
+        "severity": "info",
+        "description": "ftyp box uses 64-bit extended size (size field = 1). File likely exceeds 4 GB. Verify player support for large ISOBMFF files."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2021-30746: Apple CoreMedia MP4 parsing heap overflow via crafted stts atom",
+      "CVE-2019-8627: iOS AVFoundation MP4 parsing OOB read via malformed esds atom",
+      "Crafted tkhd atom with negative track duration can underflow duration calculations in some parsers",
+      "Malformed moov atom with invalid sample table (stts, stsc, stco) offsets enables arbitrary memory reads"
+    ]
   },
   "aiHints": {
-    "analysisContext": "MPEG-4 Part 14 multimedia container based on ISO Base Media File Format (ISOBMFF). The file begins with a Fi...",
+    "analysisContext": "MP4/ISOBMFF layout (all BE): ftyp_box_size(4,BE) + 'ftyp'(4) + majorBrand(4,ASCII) + minorVersion(4,BE) + compatBrands(4B each, until box end). Common brands: 'isom'=generic, 'mp41'/'mp42'=MPEG-4, 'M4V '=iTunes video, 'M4A '=iTunes audio, 'dash'=DASH streaming. After ftyp: 'moov' (metadata) or 'mdat' (media data) box. moov > mvhd: timescale(4,BE) + duration(4,BE). moov > trak > tkhd > mdia > minf > stbl > stsd: video codec box ('avc1'=H.264, 'hev1'/'hvc1'=H.265, 'av01'=AV1, 'mp4v'=MPEG-4 Visual). Audio codec: 'mp4a' (AAC), 'ac-3' (AC-3), 'ec-3' (E-AC-3). Fragmented MP4 (fMP4): moof (Movie Fragment) + mdat pairs replace full moov+mdat. Used for DASH/HLS adaptive streaming.",
+    "knownVulnerabilities": [
+      "CVE-2021-30746: CoreMedia MP4 heap overflow via crafted stts atom",
+      "CVE-2019-8627: AVFoundation OOB read via malformed esds atom",
+      "Malformed stco (chunk offset table) with values > file size causes OOB reads"
+    ],
     "suggestedInspections": [
-      "Validate MP4 Video container magic, box/atom sizes, and codec FourCC",
-      "Check track/stream layout, frame index, and timing fields",
-      "Inspect audio-video sync, keyframe distribution, and metadata"
+      "Verify 'ftyp' at offset 4 (bytes 4-7 = 66 74 79 70)",
+      "Read major brand at offset 8: 'isom'/'mp42' = generic MP4, 'M4V '/'M4A ' = iTunes",
+      "Check if second box is 'moov' (progressive) or 'mdat' (requires full download before playback)",
+      "For fragmented MP4: look for 'moof' box (Movie Fragment) after ftyp — used in DASH/HLS",
+      "Scan moov > trak > mdia > minf > stbl > stsd for codec FourCC (avc1, hvc1, mp4a)"
     ]
   },
   "MimeTypes": [
@@ -324,11 +432,11 @@
     "Social media"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 92,
     "DocumentationLevel": "comprehensive",
     "BlocksDefined": 20,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": true,
     "AutoRefined": false
   },

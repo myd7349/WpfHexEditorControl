@@ -1,17 +1,7 @@
-/*
-   ============================================================
-   Format:    VB.NET Source File
-   Category:  Programming
-   Ext:       .vb
-   Editor:    code-editor
-   Desc:      Visual Basic .NET language source file (Microsoft .NET platform).
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "semantic",
   "formatName": "VB.NET Source File",
-  "version": "2.1",
+  "version": "2.13",
   "extensions": [
     ".vb"
   ],

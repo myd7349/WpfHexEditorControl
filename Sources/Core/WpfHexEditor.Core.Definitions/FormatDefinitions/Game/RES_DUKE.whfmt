@@ -1,54 +1,41 @@
-/* ============================================================
-   Format:    Duke Nukem GRP
-   Category:  Game
-   Ext:       .grp
-   Editor:    hex-editor
-   Desc:      Duke Nukem 3D GRP resource archive
-   Variables: currentOffset, fileCount, totalSize, version, grpSignature, numberOfFiles, formattedSize
-   Detection: signature=4B656E53696C766572696D616E @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
-  "formatName": "Duke Nukem GRP",
-  "version": "1.13",
+  "formatName": "Duke Nukem GRP Archive",
+  "version": "1.16",
   "extensions": [
     ".grp"
   ],
-  "description": "Duke Nukem 3D GRP resource archive",
+  "description": "GRP is the group archive format used by Duke Nukem 3D (3D Realms, 1996) and other BUILD engine games. GRP files start with a 12-byte ASCII signature 'KenSilverman' (4B 65 6E 53 69 6C 76 65 72 6D 61 6E), named after the engine's creator Ken Silverman. After the signature: fileCount (uint32 LE, number of files). The file table follows: each entry is exactly 16 bytes (12-byte null-padded filename + 4-byte uint32 LE size). File data is stored contiguously after the complete file table with no compression. The primary GRP file for Duke3D is DUKE3D.GRP. Other BUILD engine games using GRP: Blood, Shadow Warrior (original), Redneck Rampage, Powerslave/Exhumed.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Duke Nukem 3D GRP Format",
-      "Ken Silverman GRP Archive",
-      "Build Engine Group File"
+      "Duke Nukem 3D GRP format — Ken Silverman's BUILD engine documentation"
     ],
     "WebLinks": [
-      "https://moddingwiki.shikadi.net/wiki/GRP_Format",
-      "http://justsolve.archiveteam.org/wiki/GRP_(Duke_Nukem_3D)",
-      "https://wiki.eduke32.com/wiki/Utilities",
-      "https://www.file-extensions.org/grp-file-extension-duke-nukem-3d-archive"
+      "https://wiki.eduke32.com/wiki/GRP_files",
+      "https://wiki.eduke32.com/wiki/GRP_file_format"
     ]
   },
   "detection": {
-    "signature": "4B656E53696C766572696D616E",
-    "offset": 0,
+    "signatures": [
+      { "value": "4B656E53696C766572696D616E", "offset": 0, "label": "'KenSilverman' — Duke Nukem 3D GRP archive magic (12 bytes)", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 13,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 0,
+      "note": "GRP files start with exactly 'KenSilverman' (12 ASCII bytes). File count follows at offset 12 as uint32 LE."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "fileCount": 0,
-    "totalSize": 0,
-    "version": 0,
     "grpSignature": "",
-    "numberOfFiles": 0,
-    "formattedSize": ""
+    "grpFileCount": 0
   },
   "blocks": [
     {
@@ -57,8 +44,8 @@
       "offset": 0,
       "length": 12,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "KenSilverman signature",
+      "opacity": 0.45,
+      "description": "Duke Nukem 3D GRP archive magic: 12 ASCII bytes 'KenSilverman' (0x4B65 6E53696C76 65726D616E). Named after Ken Silverman, creator of the BUILD game engine used in Duke Nukem 3D, Blood, Shadow Warrior, and Redneck Rampage. The BUILD engine is notable for its room-over-room sectors and the level editor BUILD.EXE. The GRP format is extremely simple — no compression, no checksums, no file hierarchy.",
       "storeAs": "grpSignature",
       "valueType": "ascii"
     },
@@ -68,84 +55,107 @@
       "offset": 12,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Total number of files",
-      "storeAs": "numberOfFiles",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "Number of files in the GRP archive as uint32 little-endian at offset 12. Immediately after this field, the file table begins: each entry is exactly 16 bytes (12-byte null-padded ASCII filename + 4-byte uint32 LE file size in bytes). File data follows the entire file table with no gaps.",
+      "storeAs": "grpFileCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Signature",
+      "variable": "grpSignature",
+      "description": "'KenSilverman' — Duke Nukem 3D GRP archive magic"
     },
     {
       "type": "metadata",
       "name": "File Count",
-      "variable": "fileCount",
-      "description": "File Count"
-    },
-    {
-      "type": "metadata",
-      "name": "Total Size",
-      "variable": "totalSize",
-      "description": "Total Size"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "variable": "grpFileCount",
+      "description": "Number of files in the GRP archive"
     }
   ],
-  "software": [
-    "Emulators",
-    "Game engines"
+  "assertions": [
+    {
+      "name": "GRP signature valid",
+      "expression": "grpSignature == 'KenSilverman'",
+      "severity": "error",
+      "message": "GRP archive must start with 'KenSilverman' (12 bytes) — not a valid Duke Nukem 3D GRP archive"
+    },
+    {
+      "name": "File count non-zero",
+      "expression": "grpFileCount > 0 && grpFileCount < 100000",
+      "severity": "warning",
+      "message": "GRP file count is 0 or unreasonably large — possible corrupt header"
+    }
   ],
-  "format_relationships": {
-    "category": "Game",
-    "extensions": [
-      ".grp"
+  "navigation": {
+    "bookmarks": [
+      { "name": "GRP Header", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" },
+      { "name": "File Table", "offset": 16, "icon": "\uE8B7", "color": "#4ECDC4" }
     ]
   },
-  "MimeTypes": [
-    "application/octet-stream"
+  "inspector": {
+    "badge": "grpSignature",
+    "primaryField": "grpFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GRP Archive Header",
+        "icon": "\uE8B7",
+        "fields": ["grpSignature", "grpFileCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GRP Header (JSON)",
+      "format": "json",
+      "fields": ["grpSignature", "grpFileCount"]
+    }
   ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
+  "forensic": { "category": "game", "riskLevel": "low", "suspiciousPatterns": [] },
+  "aiHints": {
+    "analysisContext": "Duke Nukem 3D GRP format: 'KenSilverman'(12B) + fileCount(4B LE) + fileTable(16B entries: name[12]+size[4B LE]) + file data (concatenated, no gaps, no compression). File table offset = 16. First file data offset = 16 + 16*fileCount. Tools: GrpViewer, NBlood GRP extractor, EDuke32 (can extract DUKE3D.GRP). Used by: Duke3D, Blood (.grp in BloodEX), Shadow Warrior Classic.",
+    "suggestedInspections": [
+      "Bytes 0-11 (ASCII): 'KenSilverman' — BUILD engine GRP magic",
+      "Bytes 12-15 (uint32 LE): number of files",
+      "Starting at byte 16: file table entries (12-byte names + 4-byte sizes)",
+      "First file data at offset 16 + 16*fileCount"
+    ]
+  },
+  "software": [
+    "EDuke32 (enhanced Duke Nukem 3D engine — can extract GRP)",
+    "GrpViewer (Windows GRP browser)",
+    "NBlood (Blood source port — uses GRP format)",
+    "VoidSW (Shadow Warrior Classic source port)"
   ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".grp"],
+    "relatedFormats": ["WAD", "PAK"],
+    "note": "GRP is the BUILD engine archive format used by Duke Nukem 3D, Blood, Shadow Warrior (original), Redneck Rampage, and Powerslave. Simple concatenated file archive — no compression, no hierarchy. DUKE3D.GRP contains all Duke3D assets."
+  },
+  "MimeTypes": ["application/octet-stream"],
   "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
+    "Extracting Duke Nukem 3D, Blood, and Shadow Warrior game assets",
+    "BUILD engine game modding and asset replacement",
+    "Game preservation of 1990s DOS/BUILD engine titles",
+    "Creating custom GRP files for Duke3D total conversions"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 65,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
-    "AutoRefined": true
+    "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Platform": "Various"
-  },
-  "functions": {
-    "readUInt32LE": "Read GRP resource header",
-    "extractASCIIString": "Extract file names",
-    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
-  },
-  "forensic": {
-    "category": "game",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Duke Nukem 3D GRP resource archive",
-    "suggestedInspections": [
-      "Validate Duke Nukem GRP container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
-    ]
+    "Format": "Binary Duke Nukem 3D GRP archive (BUILD engine by Ken Silverman)",
+    "Magic": "'KenSilverman' (12 ASCII bytes) at offset 0",
+    "Header": "16 bytes: magic(12B) + fileCount(4B LE)",
+    "FileTable": "16-byte entries: filename(12B null-padded) + fileSize(4B LE); table at offset 16",
+    "Data": "Files stored contiguously after complete file table, no compression"
   }
 }

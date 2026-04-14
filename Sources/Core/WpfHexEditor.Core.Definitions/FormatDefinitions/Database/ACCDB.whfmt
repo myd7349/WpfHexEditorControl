@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Microsoft Access 2007+ Database
-   Category:  Database
-   Ext:       .accdb
-   Editor:    hex-editor
-   Desc:      Microsoft Access 2007+ database file
-   Variables: currentOffset, pageSize, pageCount, tableCount, version, aceDbSignature
-   Detection: signature=5374616E64617264204143452044617461626173 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Microsoft Access 2007+ Database",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".accdb"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "5374616E64617264204143452044617461626173",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 20,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 20,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "5374616E64617264204143452044617461626173",
+        "offset": 0,
+        "label": "ACCDB magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -85,7 +84,7 @@
     "Microsoft Access",
     "MS Office"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "microsoft_format": true,
     "successor_to": "MDB",
     "access_2007_plus": true
@@ -107,11 +106,11 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -132,5 +131,36 @@
       "Check B-tree/index page pointers and free page list",
       "Inspect record format, schema tables, and journal state"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "aceDbSignature",
+    "primaryField": "aceDbSignature",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Microsoft Access 2007+ Database",
+        "icon": "",
+        "fields": [
+          "aceDbSignature"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Microsoft Access 2007+ Database Header (JSON)",
+      "format": "json",
+      "fields": [
+        "aceDbSignature"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "aceDbSignature != 0",
+      "severity": "warning",
+      "message": "ACCDB magic field is zero — possible detection failure"
+    }
+  ]
 }

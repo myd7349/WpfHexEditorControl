@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Android DEX File
-   Category:  Programming
-   Ext:       .dex
-   Editor:    hex-editor
-   Desc:      Dalvik Executable - Android bytecode
-   Variables: currentOffset, version, checksum, sha1, fileSize, headerSize, stringIds, typeIds, methodIds, classIds, dexMagic, sha1Signature, formattedSize
-   Detection: signature=6465780A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Android DEX File",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".dex"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "6465780A",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "6465780A",
+        "offset": 0,
+        "label": "DEX magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "readUInt32LE": "Read 32-bit little-endian for checksum, file size, and counts",
@@ -128,7 +127,7 @@
     "Dalvik VM",
     "Android tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "android_format": true,
     "contained_in": "APK",
     "replaces": "Java CLASS on Android",
@@ -151,13 +150,50 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
+    "CompletenessScore": 65,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "inspector": {
+    "badge": "dexMagic",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Android DEX File",
+        "icon": "",
+        "fields": [
+          "dexMagic",
+          "version",
+          "checksum",
+          "sha1Signature"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Android DEX File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "dexMagic",
+        "version",
+        "checksum",
+        "sha1Signature"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "dexMagic != 0",
+      "severity": "warning",
+      "message": "DEX magic field is zero — possible detection failure"
+    }
+  ]
 }

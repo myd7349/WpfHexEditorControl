@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Linux Shared Object
-   Category:  Programming
-   Ext:       .so
-   Editor:    hex-editor
-   Desc:      Linux Shared Object library file using ELF (Executable and Linkable Format) structure
-   Variables: vertexCount, faceCount, materialCount, fileSize, elfMagic, formattedSize
-   Detection: signature=7F454C46 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Linux Shared Object",
-  "version": "1.13",
+  "version": "1.16",
   "extensions": [
     ".so"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "7F454C46",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "7F454C46",
+        "offset": 0,
+        "label": "SO magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "vertexCount": 0,
@@ -122,7 +121,7 @@
     "Unix",
     "Dynamic linker"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "linux_format": true,
     "elf_based": true,
     "equivalent_to": "DLL (Windows)",
@@ -147,11 +146,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 9,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -173,5 +172,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "elfMagic",
+    "primaryField": "elfMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Linux Shared Object",
+        "icon": "",
+        "fields": [
+          "elfMagic"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Linux Shared Object Header (JSON)",
+      "format": "json",
+      "fields": [
+        "elfMagic"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "elfMagic != 0",
+      "severity": "warning",
+      "message": "SO magic field is zero — possible detection failure"
+    }
+  ]
 }

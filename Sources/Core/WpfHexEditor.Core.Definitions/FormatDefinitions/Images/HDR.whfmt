@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Radiance HDR Image
-   Category:  Images
-   Ext:       .hdr, .pic
-   Editor:    image-viewer
-   Desc:      Radiance RGBE High Dynamic Range image
-   Variables: width, height, totalPixels, bitsPerPixel, hdrMagic, headerInfo
-   Detection: signature=233F52414449414E4345 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Radiance HDR Image",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".hdr",
     ".pic"
@@ -34,13 +24,22 @@
     ]
   },
   "detection": {
-    "signature": "233F52414449414E4345",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 10,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 10,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "233F52414449414E4345",
+        "offset": 0,
+        "label": "HDR magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "width": 0,
@@ -96,7 +95,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".hdr",
@@ -120,11 +119,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -149,5 +148,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "hdrMagic",
+    "primaryField": "headerInfo",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Radiance HDR Image",
+        "icon": "",
+        "fields": [
+          "hdrMagic",
+          "headerInfo"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Radiance HDR Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "hdrMagic",
+        "headerInfo"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "hdrMagic != 0",
+      "severity": "warning",
+      "message": "HDR magic field is zero — possible detection failure"
+    }
+  ]
 }

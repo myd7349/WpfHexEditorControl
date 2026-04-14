@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Game Save File
-   Category:  Game
-   Ext:       .sav
-   Editor:    hex-editor
-   Desc:      Generic game save file
-   Variables: currentOffset, fileCount, version, indexOffset, saveData
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Game Save File",
-  "version": "2.3",
+  "version": "2.33",
   "extensions": [
     ".sav"
   ],
@@ -33,13 +23,23 @@
     ]
   },
   "detection": {
-    "signature": "00",
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "Raw data — generic game save file (no standard magic)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -84,7 +84,7 @@
     "Flash carts",
     "Save managers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "gaming_format": true,
     "console_specific": true,
     "associated_with": "ROM files"
@@ -106,11 +106,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 21,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -133,5 +133,28 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "saveData",
+    "primaryField": "saveData",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Game Save File",
+        "icon": "",
+        "fields": [
+          "saveData"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Game Save File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "saveData"
+      ]
+    }
+  ]
 }

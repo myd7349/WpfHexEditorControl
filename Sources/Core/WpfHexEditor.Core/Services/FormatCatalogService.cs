@@ -13,6 +13,7 @@
 //     First-class IDE service — same level as EventBus, CommandRegistry.
 //     Injected via IIDEHostContext.FormatCatalog.
 //     Calls FormatDetectionService.SetSharedCatalog() to propagate.
+//     Load failures are captured in LoadFailures (never silently discarded).
 // ==========================================================
 
 using System;
@@ -30,10 +31,12 @@ namespace WpfHexEditor.Core.Services
     public sealed class FormatCatalogService : IFormatCatalogService
     {
         private readonly List<FormatDefinition> _formats = new();
+        private readonly List<FormatLoadFailure> _failures = new();
         private bool _initialized;
 
         public int FormatCount => _formats.Count;
         public bool IsInitialized => _initialized;
+        public IReadOnlyList<FormatLoadFailure> LoadFailures => _failures;
         public event EventHandler? CatalogReady;
 
         /// <summary>
@@ -50,19 +53,27 @@ namespace WpfHexEditor.Core.Services
             var parser = new FormatDetectionService();
 
             // Load embedded formats (from EmbeddedFormatCatalog)
+            // Note: embeddedFormats already filters to .whfmt entries at the call site
+            // (MainWindow.PluginSystem.cs), but we guard here for safety.
             foreach (var (json, category) in embeddedFormats)
             {
                 if (string.IsNullOrEmpty(json)) continue;
                 try
                 {
                     var fmt = parser.ImportFromJson(json);
-                    if (fmt != null)
+                    if (fmt is null)
                     {
-                        fmt.Category ??= category;
-                        _formats.Add(fmt);
+                        // Null without exception = incompatible schema (syntax-only whfmt).
+                        // Not a user-facing error — skip silently.
+                        continue;
                     }
+                    fmt.Category ??= category;
+                    _formats.Add(fmt);
                 }
-                catch { /* skip malformed format definition */ }
+                catch (Exception ex)
+                {
+                    _failures.Add(new FormatLoadFailure(category ?? "embedded", ex.Message));
+                }
             }
 
             // Load external overrides (user-provided .whfmt files)
@@ -74,9 +85,17 @@ namespace WpfHexEditor.Core.Services
                     {
                         var json = File.ReadAllText(file);
                         var fmt = parser.ImportFromJson(json);
-                        if (fmt != null) _formats.Add(fmt);
+                        if (fmt is null || !fmt.IsValid())
+                        {
+                            _failures.Add(new FormatLoadFailure(Path.GetFileName(file), "IsValid() = false"));
+                            continue;
+                        }
+                        _formats.Add(fmt);
                     }
-                    catch { /* skip bad file */ }
+                    catch (Exception ex)
+                    {
+                        _failures.Add(new FormatLoadFailure(Path.GetFileName(file), ex.Message));
+                    }
                 }
             }
 
@@ -92,9 +111,17 @@ namespace WpfHexEditor.Core.Services
                     {
                         var json = File.ReadAllText(file);
                         var fmt = parser.ImportFromJson(json);
-                        if (fmt != null) _formats.Add(fmt);
+                        if (fmt is null || !fmt.IsValid())
+                        {
+                            _failures.Add(new FormatLoadFailure(Path.GetFileName(file), "IsValid() = false"));
+                            continue;
+                        }
+                        _formats.Add(fmt);
                     }
-                    catch { /* skip bad file */ }
+                    catch (Exception ex)
+                    {
+                        _failures.Add(new FormatLoadFailure(Path.GetFileName(file), ex.Message));
+                    }
                 }
             }
 

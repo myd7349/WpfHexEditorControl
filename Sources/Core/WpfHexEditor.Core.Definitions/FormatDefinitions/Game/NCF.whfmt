@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    No Cache File
-   Category:  Game
-   Ext:       .ncf
-   Editor:    hex-editor
-   Desc:      Steam No Cache File format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, ncfHeader, version
-   Detection: signature=0100000001000000 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "No Cache File",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".ncf"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "0100000001000000",
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "0100000001000000",
+        "offset": 0,
+        "label": "NCF magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -89,7 +88,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".ncf"
@@ -112,11 +111,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -138,5 +137,38 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "ncfHeader",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "No Cache File",
+        "icon": "",
+        "fields": [
+          "ncfHeader",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "No Cache File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "ncfHeader",
+        "version"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "ncfHeader != ''",
+      "severity": "warning",
+      "message": "NCF magic invalid"
+    }
+  ]
 }

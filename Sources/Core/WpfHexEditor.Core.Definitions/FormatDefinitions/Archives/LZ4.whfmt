@@ -1,154 +1,341 @@
-/* ============================================================
-   Format:    LZ4 Compressed
-   Category:  Archives
-   Ext:       .lz4
-   Editor:    hex-editor
-   Desc:      LZ4 compression format - Extremely fast
-   Variables: currentOffset, frameFlags, blockDescriptor, lz4Magic, flgByte, bdByte
-   Detection: signature=04224D18 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "LZ4 Compressed",
-  "version": "1.10",
+  "version": "1.12",
   "extensions": [
     ".lz4"
   ],
-  "description": "LZ4 compression format - Extremely fast",
+  "description": "LZ4 frame format compressed file. LZ4 provides extremely fast compression and decompression (>500MB/s typical) at the cost of lower compression ratios vs ZSTD or BZIP2. The frame format wraps raw LZ4 blocks with magic, flag byte (FLG), block descriptor byte (BD), optional content size, optional dict ID, and header checksum (xxHash-32 of FLG+BD).",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "LZ4 Frame Format Specification",
-      "LZ4 Block Format Specification",
-      "LZ4 Compression Algorithm"
+      "LZ4 Frame Format Specification v1.6.2 — github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md",
+      "LZ4 Block Format Specification — github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md"
     ],
     "WebLinks": [
       "https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md",
       "https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md",
       "https://en.wikipedia.org/wiki/LZ4_(compression_algorithm)",
-      "https://docs.fileformat.com/compression/lz4/"
+      "https://lz4.github.io/lz4/"
     ]
   },
   "detection": {
-    "signature": "04224D18",
-    "offset": 0,
+    "signatures": [
+      { "value": "04224D18", "offset": 0, "label": "LZ4 regular frame (magic 0x184D2204 LE)", "weight": 1.0 },
+      { "value": "184D2204", "offset": 0, "label": "LZ4 skippable frame base (0x184D2A50 LE)", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 6.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 11,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "calculateCRC32": "Calculate CRC-32 for frame integrity"
+    "calculateXXHash32": "Calculate xxHash-32 for header and content checksums",
+    "validateHeaderChecksum": "Validate the 1-byte header checksum (second byte of xxHash-32 over FLG+BD)"
   },
   "variables": {
     "currentOffset": 0,
-    "frameFlags": 0,
-    "blockDescriptor": 0,
-    "lz4Magic": "",
+    "lz4Magic": 0,
     "flgByte": 0,
-    "bdByte": 0
+    "bdByte": 0,
+    "version": 0,
+    "bIndep": 0,
+    "bChecksum": 0,
+    "cSize": 0,
+    "cChecksum": 0,
+    "dictID": 0,
+    "headerChecksum": 0,
+    "contentSize": 0,
+    "maxBlockSizeCode": 0,
+    "isSkippable": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "LZ4 Magic",
+      "name": "LZ4 Frame Magic Number",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "LZ4 frame header",
+      "opacity": 0.45,
+      "description": "4-byte little-endian magic number. Regular LZ4 frame: 0x04224D18 stored as bytes 18 4D 22 04 (i.e. 0x184D2204 in standard LE notation). Skippable frames use magic values 0x184D2A50 through 0x184D2A6F — these frames are ignored by decoders and carry user-defined metadata. Any other value indicates a non-LZ4 file.",
       "storeAs": "lz4Magic",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "407710212": "Regular LZ4 frame (0x184D2204)",
+        "408209488": "Skippable frame (0x184D2A50)",
+        "408209519": "Skippable frame (0x184D2A6F)"
+      }
     },
     {
       "type": "field",
-      "name": "FLG Byte",
+      "name": "FLG — Frame Flags",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Frame flags",
+      "opacity": 0.35,
+      "description": "FLG byte encoding key frame properties as packed bit fields. Bits 7-6 encode the version (must be 01 = version 1). Bit 5 (B.Indep): 1=blocks are independent (can be decompressed individually), 0=blocks are chained (each depends on previous). Bit 4 (B.Checksum): each block has a 4-byte xxHash-32 appended. Bit 3 (C.Size): 8-byte content size field follows BD byte. Bit 2 (C.Checksum): stream-level xxHash-32 appended after last block. Bit 0 (DictID): 4-byte dictionary ID follows content size.",
       "storeAs": "flgByte",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "bitfields": [
+        { "bit": 7, "name": "Version_High", "description": "Version bit 7 (MSB). Combined bits 7-6 must be 01 (decimal value of these 2 bits = 1)" },
+        { "bit": 6, "name": "Version_Low", "description": "Version bit 6. Combined FLG[7:6] = 01 required (version 1)" },
+        { "bit": 5, "name": "B_Indep", "description": "Block Independence: 1=each block decompressable independently, 0=blocks are dependent (streaming)", "valueMap": { "0": "Dependent blocks (streaming)", "1": "Independent blocks (random access)" } },
+        { "bit": 4, "name": "B_Checksum", "description": "Block Checksum: each block data is followed by a 4-byte xxHash-32 checksum", "valueMap": { "0": "No per-block checksum", "1": "xxHash-32 per block" } },
+        { "bit": 3, "name": "C_Size", "description": "Content Size: an 8-byte field with the total uncompressed content size follows the BD byte", "valueMap": { "0": "Content size not stored", "1": "Content size present (8 bytes)" } },
+        { "bit": 2, "name": "C_Checksum", "description": "Content Checksum: a 4-byte xxHash-32 of all decompressed data is appended after the end mark", "valueMap": { "0": "No content checksum", "1": "Content checksum present" } },
+        { "bit": 0, "name": "DictID", "description": "Dictionary ID: a 4-byte dictionary identifier follows the content size field (if present)", "valueMap": { "0": "No dictionary ID", "1": "Dictionary ID present (4 bytes)" } }
+      ]
     },
     {
       "type": "field",
-      "name": "BD Byte",
+      "name": "BD — Block Descriptor",
       "offset": 5,
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Block descriptor",
+      "description": "BD byte encoding the maximum block size. Only bits 6-4 are defined; all others must be 0. The block size is 2^(BD[6:4] + 8) bytes. Valid values: 4 (64KB), 5 (256KB), 6 (1MB), 7 (4MB). The block size determines the decompressor's internal buffer requirement.",
       "storeAs": "bdByte",
+      "valueType": "uint8",
+      "bitfields": [
+        { "bit": 6, "name": "MaxBlockSize_2", "description": "Block size bit 2 (MSB of 3-bit field)" },
+        { "bit": 5, "name": "MaxBlockSize_1", "description": "Block size bit 1" },
+        { "bit": 4, "name": "MaxBlockSize_0", "description": "Block size bit 0 (LSB). Combined BD[6:4] values: 4=64KB, 5=256KB, 6=1MB, 7=4MB" }
+      ],
+      "valueMap": {
+        "64": "Max block size: 64 KB (BD[6:4]=4)",
+        "96": "Max block size: 256 KB (BD[6:4]=5)",
+        "112": "Max block size: 1 MB (BD[6:4]=6)",
+        "120": "Max block size: 4 MB (BD[6:4]=7)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Header Checksum",
+      "offset": 6,
+      "length": 1,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "1-byte checksum of the frame header. Computed as: second byte (bits 15-8) of the xxHash-32 of the FLG byte and BD byte (and optional content size and dict ID bytes if present). Note: this is NOT a CRC-32 — it uses xxHash-32. The xxHash-32 polynomial is different from IEEE CRC-32.",
+      "storeAs": "headerChecksum",
       "valueType": "uint8"
     },
     {
       "type": "metadata",
-      "name": "Frame Flags",
-      "variable": "frameFlags",
-      "description": "LZ4 frame configuration flags"
+      "name": "Frame Type",
+      "variable": "isSkippable",
+      "description": "True if this is a skippable frame (magic 0x184D2A50-0x184D2A6F), false for regular LZ4 frame"
     },
     {
       "type": "metadata",
-      "name": "Block Descriptor",
-      "variable": "blockDescriptor",
-      "description": "Block size and independence flags"
+      "name": "Block Independence",
+      "variable": "bIndep",
+      "description": "1 = blocks are independent (supports random access), 0 = blocks chained (better compression)"
+    },
+    {
+      "type": "metadata",
+      "name": "Block Checksum Enabled",
+      "variable": "bChecksum",
+      "description": "1 = each block has a 4-byte xxHash-32 checksum appended after block data"
+    },
+    {
+      "type": "metadata",
+      "name": "Content Checksum Enabled",
+      "variable": "cChecksum",
+      "description": "1 = a 4-byte xxHash-32 of all decompressed content is appended after the last block"
     }
   ],
-  "software": [
-    "LZ4 tools",
-    "Compression libraries"
+  "assertions": [
+    {
+      "name": "Valid LZ4 magic number",
+      "expression": "lz4Magic == 407710212 || (lz4Magic >= 408209488 && lz4Magic <= 408209519)",
+      "severity": "error",
+      "message": "LZ4 frame magic must be 0x184D2204 (regular) or 0x184D2A50-0x184D2A6F (skippable)"
+    },
+    {
+      "name": "FLG version bits must be 01",
+      "expression": "(flgByte & 192) == 64",
+      "severity": "error",
+      "message": "FLG bits 7-6 must be 01 (binary) — version 1. Other values indicate unsupported LZ4 version or corrupted header."
+    },
+    {
+      "name": "BD reserved bits must be zero",
+      "expression": "(bdByte & 143) == 0",
+      "severity": "warning",
+      "message": "BD byte bits 7, 3-0 must be 0 — non-zero reserved bits indicate non-standard or crafted LZ4 frame"
+    },
+    {
+      "name": "BD block size code valid",
+      "expression": "(bdByte >> 4) >= 4 && (bdByte >> 4) <= 7",
+      "severity": "error",
+      "message": "BD block size field (bits 6-4) must be 4 (64KB), 5 (256KB), 6 (1MB), or 7 (4MB)"
+    }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".lz4"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "LZ4 Frame Magic",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "FLG Byte",
+        "offset": 4,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "BD Byte",
+        "offset": 5,
+        "icon": "\uE8B7",
+        "color": "#95E1D3"
+      },
+      {
+        "name": "Header Checksum",
+        "offset": 6,
+        "icon": "\uE72E",
+        "color": "#FF6B9D"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-lz4-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "bdByte",
+    "primaryField": "contentSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Frame Identity",
+        "icon": "\uE71B",
+        "fields": ["lz4Magic", "isSkippable"]
+      },
+      {
+        "title": "Frame Flags (FLG)",
+        "icon": "\uE8A5",
+        "fields": ["flgByte", "bIndep", "bChecksum", "cSize", "cChecksum", "dictID"]
+      },
+      {
+        "title": "Block Configuration (BD)",
+        "icon": "\uE8B7",
+        "fields": ["bdByte", "maxBlockSizeCode"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE72E",
+        "fields": ["headerChecksum", "contentSize"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
+  "exportTemplates": [
+    {
+      "name": "LZ4 Frame Header (JSON)",
+      "format": "json",
+      "fields": ["lz4Magic", "flgByte", "bdByte", "bIndep", "bChecksum", "cChecksum", "headerChecksum", "contentSize"]
+    },
+    {
+      "name": "lz4_frame_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "lz4_frame_header",
+      "fields": ["lz4Magic", "flgByte", "bdByte", "headerChecksum"]
+    },
+    {
+      "name": "Python LZ4 magic check",
+      "format": "python-bytes",
+      "fields": ["lz4Magic", "flgByte", "bdByte"]
+    }
+  ],
   "forensic": {
     "category": "archive",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid FLG version bits",
+        "condition": "(flgByte & 192) != 64",
+        "severity": "error",
+        "description": "FLG version bits (7-6) must be 01. Other values indicate unsupported version or header manipulation."
+      },
+      {
+        "name": "Invalid BD block size code",
+        "condition": "(bdByte >> 4) < 4 || (bdByte >> 4) > 7",
+        "severity": "error",
+        "description": "BD block size field out of range (must be 4-7). Invalid values may cause decompressor buffer misallocation."
+      },
+      {
+        "name": "No integrity checking",
+        "condition": "(flgByte & 4) == 0 && (flgByte & 16) == 0",
+        "severity": "info",
+        "description": "Both block checksum and content checksum are disabled — no integrity verification possible on decompressed data"
+      },
+      {
+        "name": "Skippable frame",
+        "condition": "isSkippable == true",
+        "severity": "info",
+        "description": "File begins with a skippable frame — contains user-defined metadata ignored by decoders. May carry hidden data."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "LZ4 compression format - Extremely fast",
+    "analysisContext": "LZ4 frame format minimum header: 4-byte magic + FLG byte + BD byte + 1-byte header checksum = 7 bytes minimum. Optional: 8-byte content size (if C.Size flag set), 4-byte dict ID (if DictID flag set). FLG version bits [7:6] must be 01. BD[6:4] encodes max block size (4=64KB, 7=4MB). xxHash-32 is used (not CRC-32) for all checksums. LZ4 is often used for real-time database and network compression where speed > ratio.",
+    "knownVulnerabilities": [
+      "No known critical CVEs in the format spec itself",
+      "Very large block sizes (4MB) with no checksum can allow silent data corruption",
+      "Skippable frames can carry arbitrary data undetected by most security scanners"
+    ],
     "suggestedInspections": [
-      "Verify LZ4 Compressed file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Verify FLG version bits [7:6] == 01 (binary)",
+      "Verify BD block size code is 4, 5, 6, or 7",
+      "Check if content checksum (C.Checksum flag) is enabled — if disabled, verify data integrity via external hash",
+      "Scan for skippable frames (magic 0x184D2A50-6F) — inspect their metadata payload",
+      "Verify BD reserved bits 7, 3-0 are all 0"
     ]
+  },
+  "software": [
+    "lz4 (Yann Collet)",
+    "python-lz4",
+    "LZ4 Java",
+    "Qt (QtCore compression)",
+    "Kafka (LZ4 message compression)",
+    "ClickHouse (native compression)"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".lz4"],
+    "relatedFormats": ["ZSTD", "SNAPPY", "LZO", "BROTLI"]
+  },
+  "MimeTypes": [
+    "application/x-lz4",
+    "application/x-lz4-compressed"
+  ],
+  "UseCases": [
+    "Real-time data compression",
+    "Database row compression (ClickHouse, MySQL)",
+    "Network protocol compression (Kafka)",
+    "Linux kernel block device compression (dm-crypt)",
+    "Android OTA update payloads"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 8,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "LZ4 (LZ77-variant with hash tables)",
+    "ArchivesFormat": false,
+    "SupportsEncryption": false,
+    "ChecksumAlgorithm": "xxHash-32 (not CRC-32)",
+    "MinHeaderSize": "7 bytes",
+    "MaxBlockSize": "4 MB (BD[6:4]=7)",
+    "TypicalSpeed": "500-2000 MB/s decompression"
   }
 }

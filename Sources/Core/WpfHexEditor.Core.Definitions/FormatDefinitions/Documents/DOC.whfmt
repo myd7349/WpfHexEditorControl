@@ -1,60 +1,78 @@
-/* ============================================================
-   Format:    Word Document (Legacy)
-   Category:  Documents
-   Ext:       .doc
-   Editor:    hex-editor (intentional — OLE2 binary format, not supported by DocumentLoader; see ADR-001)
-   Desc:      Microsoft Word 97-2003 document (OLE2)
-   Variables: currentOffset, machineType, sectionCount, entryPoint, ole2Signature, minorVersion, majorVersion
-   Detection: signature=D0CF11E0A1B11AE1 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Word Document (Legacy)",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
-    ".doc"
+    ".doc",
+    ".dot"
   ],
-  "description": "Microsoft Word 97-2003 document (OLE2)",
+  "description": "Microsoft Word 97-2003 document (.doc) stored in the OLE2 Compound File Binary (CFB) format. The CFB container header is 512 bytes: 8-byte magic (D0CF11E0A1B11AE1), 16-byte CLSID (usually all zeros at the container level), minor version (0x003E), major version (3 or 4), byte order mark (0xFFFE = little-endian), sector size exponent (9=512B or 12=4096B). The Word document data is stored in named streams within the CFB: the 'WordDocument' stream contains the Word Binary (FIB — File Information Block), '1Table' or '0Table' streams contain document metadata. CFB is also the container for .xls, .ppt, .mpp (Project), .pub (Publisher), and other legacy Office formats — all sharing the same 8-byte magic.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Word Document (Legacy) Format"
+      "[MS-CFB] Compound File Binary Format v21 — Microsoft Open Specifications",
+      "[MS-DOC] Word Binary File Format (.doc) v10.0 — Microsoft Open Specifications",
+      "OLE2 Compound Document File Format — Microsoft"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/DOC"
+      "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cfb/",
+      "https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-doc/",
+      "https://en.wikipedia.org/wiki/Compound_Document_File_Format",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000509.shtml"
     ]
   },
   "detection": {
     "signature": "D0CF11E0A1B11AE1",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.0 },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 512,
+      "note": "All OLE2/CFB files share this 8-byte magic. Disambiguation from .xls/.ppt/.msg requires checking: (1) root entry CLSID at offset 80 (16B GUID), (2) stream names in the directory entries, or (3) file extension. Word-specific CLSID: {00020906-0000-0000-C000-000000000046} in root entry."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "machineType": "",
-    "sectionCount": 0,
-    "entryPoint": 0,
     "ole2Signature": "",
+    "clsid": "",
     "minorVersion": 0,
-    "majorVersion": 0
+    "majorVersion": 0,
+    "byteOrder": 0,
+    "sectorSizeExp": 0,
+    "miniSectorSizeExp": 0,
+    "dirSectorCount": 0,
+    "fatSectorCount": 0,
+    "firstDirSector": 0,
+    "miniStreamCutoff": 0,
+    "firstMiniFATSector": 0,
+    "miniFATSectorCount": 0,
+    "firstDIFATSector": 0,
+    "isWord97": false,
+    "isEncrypted": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "OLE2 Signature",
+      "name": "OLE2/CFB Magic",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Microsoft Office OLE2/CFB header",
+      "opacity": 0.45,
+      "description": "OLE2 Compound File Binary magic bytes: D0 CF 11 E0 A1 B1 1A E1. These 8 bytes identify all OLE2/CFB containers regardless of content (Word, Excel, PowerPoint, Visio, Project, MSG, etc.). The pattern 0xD0CF11E0 is sometimes read as 'DOCFILE0'.",
       "storeAs": "ole2Signature",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "CLSID",
+      "offset": 8,
+      "length": 16,
+      "color": "#4ECDC4",
+      "opacity": 0.25,
+      "description": "Container-level Class ID (GUID, 16 bytes). Usually all zeros in the CFB header; the application CLSID is stored in the root directory entry at byte offset 80 in the first sector of the directory stream. Word 97-2003 root entry CLSID: {00020906-0000-0000-C000-000000000046}.",
+      "storeAs": "clsid",
       "valueType": "ascii"
     },
     {
@@ -62,11 +80,15 @@
       "name": "Minor Version",
       "offset": 24,
       "length": 2,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Format minor version",
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "CFB format minor version (little-endian uint16). Always 0x003E (62) for all known OLE2/CFB files regardless of Office version.",
       "storeAs": "minorVersion",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "62": "0x003E — standard (all OLE2/CFB files)"
+      }
     },
     {
       "type": "field",
@@ -74,77 +96,324 @@
       "offset": 26,
       "length": 2,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Format major version (3 or 4)",
+      "opacity": 0.30,
+      "description": "CFB format major version (little-endian uint16). 3 = Office 97-2003 (512-byte sectors), 4 = Office 2007+ large file support (4096-byte sectors, very rare for .doc).",
       "storeAs": "majorVersion",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "3": "Version 3 — 512-byte sectors (standard, Office 97-2003)",
+        "4": "Version 4 — 4096-byte sectors (large file mode)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Byte Order",
+      "offset": 28,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.25,
+      "description": "Byte order mark (little-endian uint16). Always 0xFFFE for little-endian. This is the only valid value — OLE2 is always little-endian.",
+      "storeAs": "byteOrder",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "65534": "0xFFFE — little-endian (the only valid value)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Sector Size Exponent",
+      "offset": 30,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Sector size as a power of 2 (little-endian uint16). 9 = 2^9 = 512 bytes (standard for version 3), 12 = 2^12 = 4096 bytes (version 4). All sectors in the file are the same size.",
+      "storeAs": "sectorSizeExp",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "9": "512-byte sectors (standard)",
+        "12": "4096-byte sectors (version 4 large file)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Mini Sector Size Exponent",
+      "offset": 32,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Mini sector size as power of 2 (always 6 = 64 bytes). Mini stream stores small streams (<4096 bytes by default) in 64-byte mini sectors packed within the root entry data.",
+      "storeAs": "miniSectorSizeExp",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Directory Sector Count",
+      "offset": 40,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Number of FAT sectors used by the directory stream (little-endian uint32). For version 3 files, this field should be 0 (directory uses the normal FAT). For version 4, this is the count of directory sectors.",
+      "storeAs": "dirSectorCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FAT Sector Count",
+      "offset": 44,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Total number of sectors in the FAT (File Allocation Table) chain (little-endian uint32). The FAT maps sector allocations. Each FAT sector holds 128 (v3) or 1024 (v4) 32-bit sector chain entries.",
+      "storeAs": "fatSectorCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Directory Sector",
+      "offset": 48,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Sector number of the first sector of the directory stream (little-endian uint32). The root directory entry of the CFB tree (containing all stream/storage names) starts here. Typical value: 0 (first sector after header).",
+      "storeAs": "firstDirSector",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Mini Stream Cutoff Size",
+      "offset": 56,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Maximum size of a stream that uses the mini FAT instead of the regular FAT (little-endian uint32). Streams smaller than this value (default: 4096 bytes) are stored in the mini stream. Streams >= this size use full sectors.",
+      "storeAs": "miniStreamCutoff",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Word 97+ Format",
+      "expression": "calc:majorVersion == 3 && minorVersion == 62",
+      "storeAs": "isWord97",
+      "description": "True when CFB major version is 3 and minor version is 0x003E — the standard Word 97-2003 container format"
     },
     {
       "type": "metadata",
-      "name": "Machine",
-      "variable": "machineType",
-      "description": "Machine"
+      "name": "CFB Major Version",
+      "variable": "majorVersion",
+      "description": "OLE2 CFB major version (3=512B sectors, 4=4096B sectors)"
     },
     {
       "type": "metadata",
-      "name": "Sections",
-      "variable": "sectionCount",
-      "description": "Sections"
+      "name": "Minor Version",
+      "variable": "minorVersion",
+      "description": "OLE2 CFB minor version (always 0x3E=62)"
+    },
+    {
+      "type": "metadata",
+      "name": "First Directory Sector",
+      "variable": "firstDirSector",
+      "description": "Sector index of the CFB directory stream root"
+    },
+    {
+      "type": "metadata",
+      "name": "FAT Sector Count",
+      "variable": "fatSectorCount",
+      "description": "Number of FAT sectors in this CFB file"
     }
   ],
-  "software": [
-    "Microsoft Word",
-    "LibreOffice Writer",
-    "Apache OpenOffice Writer",
-    "Google Docs"
+  "assertions": [
+    {
+      "name": "OLE2 magic valid",
+      "expression": "ole2Signature == '\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1'",
+      "severity": "error",
+      "message": "OLE2/CFB magic must be D0 CF 11 E0 A1 B1 1A E1 — not a valid Compound File Binary"
+    },
+    {
+      "name": "Minor version is 0x3E",
+      "expression": "minorVersion == 62",
+      "severity": "error",
+      "message": "OLE2 CFB minor version must be 0x003E (62) — non-standard value indicates corrupt or non-conformant container"
+    },
+    {
+      "name": "Major version is 3 or 4",
+      "expression": "majorVersion == 3 || majorVersion == 4",
+      "severity": "error",
+      "message": "OLE2 CFB major version must be 3 (512-byte sectors) or 4 (4096-byte sectors)"
+    },
+    {
+      "name": "Byte order is little-endian",
+      "expression": "byteOrder == 65534",
+      "severity": "error",
+      "message": "OLE2 CFB byte order must be 0xFFFE (little-endian) — only little-endian CFB files are valid"
+    }
   ],
-  "format_relationships": {
-    "category": "Documents",
-    "extensions": [
-      ".doc"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "CFB Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "First Directory Sector",
+        "offsetVar": "firstDirSector",
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "DIFAT Array (header portion)",
+        "offset": 76,
+        "icon": "\uE790",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/doc"
-  ],
-  "Software": [
-    "Microsoft Word",
-    "LibreOffice Writer",
-    "Apache OpenOffice Writer",
-    "Google Docs"
-  ],
-  "UseCases": [
-    "Document viewing",
-    "Reading",
-    "Publishing",
-    "Archival"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "majorVersion",
+    "primaryField": "firstDirSector",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "CFB Container",
+        "icon": "\uE9D9",
+        "fields": ["ole2Signature", "majorVersion", "minorVersion", "byteOrder"]
+      },
+      {
+        "title": "Sector Layout",
+        "icon": "\uE8A5",
+        "fields": ["sectorSizeExp", "miniSectorSizeExp", "firstDirSector", "fatSectorCount"]
+      },
+      {
+        "title": "Mini Stream",
+        "icon": "\uE790",
+        "fields": ["miniStreamCutoff", "firstMiniFATSector", "miniFATSectorCount"]
+      },
+      {
+        "title": "Word Format",
+        "icon": "\uE8B7",
+        "fields": ["isWord97", "dirSectorCount"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "DocumentFormat": true
-  },
-  "functions": {
-    "readUInt32LE": "Read executable header"
-  },
+  "exportTemplates": [
+    {
+      "name": "OLE2 Header Analysis (JSON)",
+      "format": "json",
+      "fields": ["majorVersion", "minorVersion", "byteOrder", "sectorSizeExp", "fatSectorCount", "firstDirSector", "miniStreamCutoff", "isWord97"]
+    },
+    {
+      "name": "CFB_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "CFB_HEADER",
+      "fields": ["minorVersion", "majorVersion", "byteOrder", "sectorSizeExp", "miniSectorSizeExp", "dirSectorCount", "fatSectorCount", "firstDirSector", "miniStreamCutoff"]
+    },
+    {
+      "name": "Python OLE2 check",
+      "format": "python-bytes",
+      "fields": ["ole2Signature", "majorVersion", "minorVersion"]
+    }
+  ],
   "forensic": {
     "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Macro-enabled format",
+        "condition": "majorVersion == 3 || majorVersion == 4",
+        "severity": "info",
+        "description": "Legacy .doc format can contain VBA macros in a stream named 'VBA'. These macros execute automatically on document open and have been the primary vector for Office malware (Emotet, TrickBot, etc.)."
+      },
+      {
+        "name": "Anomalous sector size exponent",
+        "condition": "sectorSizeExp != 9 && sectorSizeExp != 12",
+        "severity": "warning",
+        "description": "CFB sector size exponent is not 9 (512B) or 12 (4096B) — invalid value indicates a corrupted or crafted file."
+      },
+      {
+        "name": "Invalid byte order mark",
+        "condition": "byteOrder != 65534",
+        "severity": "error",
+        "description": "Byte order is not 0xFFFE (little-endian). All valid OLE2 files must be little-endian — this indicates file corruption or crafted manipulation."
+      },
+      {
+        "name": "Zero FAT sectors",
+        "condition": "fatSectorCount == 0",
+        "severity": "error",
+        "description": "FAT sector count is zero — the file has no allocation table and is structurally invalid."
+      }
+    ],
+    "knownExploitVectors": [
+      "VBA macro execution on document open (Emotet, TrickBot, BazarLoader delivery)",
+      "CVE-2017-0199: OLE object referencing remote HTA/RTF file via updatelinks",
+      "CVE-2012-0158: MSCOMCTL ListView ActiveX buffer overflow via crafted .doc",
+      "CVE-2014-1761: RTF embedded object exploit triggered within .doc context",
+      "Equation Editor exploit CVE-2017-11882: crafted MTEF data in OLE equation object"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Microsoft Word 97-2003 document (OLE2)",
+    "analysisContext": "Legacy .doc = OLE2 Compound File Binary (CFB). Header at offset 0 (512 bytes). Magic: D0 CF 11 E0 A1 B1 1A E1. Structure: header (512B) + FAT sectors + directory sectors + data sectors. Key: find directory stream by sector index at offset 48 (firstDirSector, LE uint32); sector byte offset = (sectorIndex+1) × 512. Directory entries are 128B each: name (64B UTF-16), type (1B), start sector (LE uint32 at +116), size (LE uint32 at +120). Find 'WordDocument' stream for FIB. Find 'Macros' or 'VBA' stream for macros. Tools: oletools (olevba, oleid, olemeta), python-oletools, LibreOffice export.",
+    "knownVulnerabilities": [
+      "CVE-2017-11882: Equation Editor stack overflow — one of the most exploited CVEs (2018-2022)",
+      "CVE-2012-0158: MSCOMCTL.OCX heap overflow via .doc with embedded ActiveX object",
+      "CVE-2017-0199: Remote template injection via Object Linking (updatable OLE link)"
+    ],
     "suggestedInspections": [
-      "Validate Word Document (Legacy) file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
+      "Confirm magic D0 CF 11 E0 A1 B1 1A E1 at offset 0",
+      "Check minor version (offset 24, LE uint16) = 0x003E and major version (offset 26) = 3 or 4",
+      "Find directory stream: firstDirSector (offset 48, LE uint32), calculate offset = (sector+1)*512",
+      "Scan directory entries for 'VBA', 'Macros', 'CONTENTS' stream names (VBA macro presence)",
+      "Look for streams named '\\x01CompObj' to identify application (Word vs Excel vs PowerPoint)",
+      "Use olevba (oletools) to extract and analyze VBA macros if present"
     ]
+  },
+  "software": [
+    "Microsoft Word 97-2003",
+    "LibreOffice Writer",
+    "Apache OpenOffice Writer",
+    "Google Docs (import)",
+    "oletools (forensic analysis)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".doc", ".dot"],
+    "relatedFormats": ["DOCX", "RTF", "XLS", "PPT"],
+    "note": "All legacy Office formats (.doc, .xls, .ppt, .msg, .pub, .mpp) share the OLE2/CFB container — same 8-byte magic. Distinction by root CLSID or stream names. Replaced by OOXML formats (.docx, .xlsx, .pptx) from Office 2007 onward."
+  },
+  "MimeTypes": [
+    "application/msword",
+    "application/vnd.ms-word"
+  ],
+  "UseCases": [
+    "Legacy document compatibility",
+    "Corporate archival (pre-2007 Office)",
+    "Forensic malware analysis (common malware vector)",
+    "Legal e-discovery"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 14,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Endianness": "little-endian",
+    "Container": "OLE2 Compound File Binary (CFB)",
+    "HasHeader": true,
+    "HeaderSize": "512 bytes (CFB container header)",
+    "SectorSize": "512 bytes (major version 3) or 4096 bytes (version 4)",
+    "MacroCapable": true
   }
 }

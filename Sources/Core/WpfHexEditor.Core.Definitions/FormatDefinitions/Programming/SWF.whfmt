@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Adobe Flash SWF
-   Category:  Programming
-   Ext:       .swf
-   Editor:    hex-editor
-   Desc:      Adobe Flash/Shockwave Flash file
-   Variables: currentOffset, machineType, sectionCount, entryPoint, swfSignature, version, fileLength
-   Detection: signature=465753 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Adobe Flash SWF",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".swf"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "465753",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "465753",
+        "offset": 0,
+        "label": "SWF magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -96,7 +95,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".swf"
@@ -119,11 +118,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -143,5 +142,40 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "swfSignature",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Adobe Flash SWF",
+        "icon": "",
+        "fields": [
+          "swfSignature",
+          "version",
+          "fileLength"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Adobe Flash SWF Header (JSON)",
+      "format": "json",
+      "fields": [
+        "swfSignature",
+        "version",
+        "fileLength"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "swfSignature != 0",
+      "severity": "warning",
+      "message": "SWF magic field is zero — possible detection failure"
+    }
+  ]
 }

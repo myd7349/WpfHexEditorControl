@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Btrfs Filesystem
-   Category:  Disk
-   Ext:       .btrfs
-   Editor:    hex-editor
-   Desc:      B-tree Filesystem with copy-on-write
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=5F42486D5F4D @ offset 65600
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Btrfs Filesystem",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".btrfs"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "5F42486D5F4D",
-    "offset": 65600,
     "required": true,
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 6,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "5F42486D5F4D",
+        "offset": 65600,
+        "label": "BTRFS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -81,7 +80,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".btrfs"
@@ -104,11 +103,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

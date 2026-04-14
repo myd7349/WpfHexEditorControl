@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Python Compiled Bytecode
-   Category:  Programming
-   Ext:       .pyc, .pyo
-   Editor:    hex-editor
-   Desc:      Python compiled bytecode file
-   Variables: currentOffset, magicNumber, pythonVersion, timestamp, sourceFileSize, sourceFile, codeObjects, fileSize, formattedSize
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Python Compiled Bytecode",
-  "version": "2.3",
+  "version": "2.33",
   "extensions": [
     ".pyc",
     ".pyo"
@@ -29,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "PYC magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "functions": {
     "readUInt32LE": "Read 32-bit little-endian for magic number, timestamp, and file size",
@@ -99,7 +98,7 @@
     "Python interpreter",
     "CPython"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "python_format": true,
     "generated_from": ".py files",
     "cached_in": "__pycache__"
@@ -121,11 +120,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 33,
+    "CompletenessScore": 58,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -151,5 +150,40 @@
       }
     ]
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "inspector": {
+    "badge": "magicNumber",
+    "primaryField": "timestamp",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Python Compiled Bytecode",
+        "icon": "",
+        "fields": [
+          "magicNumber",
+          "timestamp",
+          "fileSize"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Python Compiled Bytecode Header (JSON)",
+      "format": "json",
+      "fields": [
+        "magicNumber",
+        "timestamp",
+        "fileSize"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "magicNumber != 0",
+      "severity": "warning",
+      "message": "PYC magic field is zero — possible detection failure"
+    }
+  ]
 }

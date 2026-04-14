@@ -83,12 +83,12 @@ public interface IEmbeddedFormatCatalog
     /// <summary>
     /// Returns all embedded format entries (lazy-loaded on first call).
     /// </summary>
-    IReadOnlyList<EmbeddedFormatEntry> GetAll();
+    IReadOnlySet<EmbeddedFormatEntry> GetAll();
 
     /// <summary>
     /// Returns all distinct category names sorted alphabetically.
     /// </summary>
-    IReadOnlyList<string> GetCategories();
+    IReadOnlySet<string> GetCategories();
 
     /// <summary>
     /// Returns the full JSON content for the given resource key.
@@ -101,4 +101,15 @@ public interface IEmbeddedFormatCatalog
     /// Returns <c>null</c> if no matching format is registered.
     /// </summary>
     EmbeddedFormatEntry? GetByExtension(string extension);
+
+    /// <summary>
+    /// Returns the set of editor factory IDs that are semantically compatible with
+    /// <paramref name="filePath"/> based on its whfmt format entry.
+    /// <para>
+    /// <c>"hex-editor"</c> is always included — the hex editor is a universal fallback.
+    /// Returns an empty list when the format is not registered in the catalog;
+    /// callers should fall back to <see cref="IEditorFactory.CanOpen"/> in that case.
+    /// </para>
+    /// </summary>
+    IReadOnlyList<string> GetCompatibleEditorIds(string filePath);
 }

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    X PixMap
-   Category:  Images
-   Ext:       .xpm
-   Editor:    image-viewer
-   Desc:      X Window System Pixmap (ASCII C source)
-   Variables: xpmComment
-   Detection: signature=2F2A2058504D202A2F @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "X PixMap",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".xpm"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "2F2A2058504D202A2F",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 9,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 9,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "2F2A2058504D202A2F",
+        "offset": 0,
+        "label": "XPM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "xpmComment": ""
@@ -61,7 +60,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".xpm"
@@ -84,11 +83,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 1,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -109,5 +108,36 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "xpmComment",
+    "primaryField": "xpmComment",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "X PixMap",
+        "icon": "",
+        "fields": [
+          "xpmComment"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "X PixMap Header (JSON)",
+      "format": "json",
+      "fields": [
+        "xpmComment"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "xpmComment != 0",
+      "severity": "warning",
+      "message": "XPM magic field is zero — possible detection failure"
+    }
+  ]
 }

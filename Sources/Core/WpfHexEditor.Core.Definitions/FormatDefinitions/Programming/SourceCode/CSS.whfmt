@@ -1,18 +1,7 @@
-/*
-   ============================================================
-   Format:    CSS / SCSS / SASS / LESS Stylesheet
-   Category:  Programming
-   Ext:       .css, .scss, .sass, .less, .styl
-   Editor:    code-editor
-   Desc:      Cascading Style Sheets and pre-processor variants.
-   Covers CSS3, SCSS (Sass), LESS, and Stylus syntaxes.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "CSS Stylesheet",
-  "version": "2.1",
+  "version": "2.13",
   "extensions": [
     ".css",
     ".scss",

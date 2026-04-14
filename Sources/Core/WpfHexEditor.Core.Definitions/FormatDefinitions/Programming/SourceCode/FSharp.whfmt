@@ -1,17 +1,7 @@
-/*
-   ============================================================
-   Format:    F# Source File
-   Category:  Programming
-   Ext:       .fs | .fsx | .fsi
-   Editor:    code-editor
-   Desc:      F# functional-first language for .NET (Microsoft).
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "semantic",
   "formatName": "F# Source File",
-  "version": "2.1",
+  "version": "2.13",
   "extensions": [
     ".fs",
     ".fsx",

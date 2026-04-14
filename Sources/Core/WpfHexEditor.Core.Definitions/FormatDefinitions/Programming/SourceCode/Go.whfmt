@@ -1,17 +1,7 @@
-/*
-   ============================================================
-   Format:    Go Source File
-   Category:  Programming
-   Ext:       .go
-   Editor:    code-editor
-   Desc:      Go (Golang) programming language source file.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "Go Source File",
-  "version": "2.1",
+  "version": "2.13",
   "extensions": [
     ".go"
   ],

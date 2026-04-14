@@ -1,29 +1,19 @@
-/* ============================================================
-   Format:    Apple Disk Image
-   Category:  Archives
-   Ext:       .dmg
-   Editor:    hex-editor
-   Desc:      Apple macOS disk image format
-   Variables: currentOffset, compressionType, compressedHeader
-   Detection: signature=7801730D626260 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Apple Disk Image",
-  "version": "1.11",
+  "version": "1.13",
   "extensions": [
     ".dmg"
   ],
-  "description": "Apple macOS disk image format",
+  "description": "Apple UDIF (Universal Disk Image Format) disk image. The primary identifier is the 512-byte 'koly' trailer block located at exactly EOF-512. All koly fields are big-endian. The body of the file contains compressed partition data (UDZO=zlib, UDBZ=bzip2, ULFO=lzfse, UDRO=read-only uncompressed). Commonly used for macOS software distribution. Internet-enabled DMGs can auto-mount on download via Safari/quarantine mechanism.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Apple Disk Image Format Specification",
-      "UDIF (Universal Disk Image Format)",
-      "HFS+ and APFS Disk Image Structure"
+      "Apple UDIF Disk Image Format — internal Apple documentation",
+      "UDIF koly block structure — reverse-engineered by planetbeing/xpwn",
+      "HFS+ and APFS Disk Image Structure — Apple Developer Documentation"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/Apple_Disk_Image",
@@ -33,94 +23,437 @@
     ]
   },
   "detection": {
-    "signature": "7801730D626260",
-    "offset": 0,
-    "required": false,
+    "signatures": [
+      {
+        "value": "6B6F6C79",
+        "offset": -512,
+        "label": "koly trailer magic",
+        "weight": 1.0
+      },
+      {
+        "value": "789C",
+        "offset": 0,
+        "label": "zlib compressed body (UDZO)",
+        "weight": 0.3
+      },
+      {
+        "value": "425A68",
+        "offset": 0,
+        "label": "bzip2 compressed body (UDBZ)",
+        "weight": 0.3
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 6.0, "max": 8.0 },
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 512,
+      "note": "DMG minimum valid size is 512 bytes (just the koly trailer). Real disk images are much larger. The koly trailer must be at exact position EOF-512."
     }
   },
-  "functions": {
-    "calculateCRC32": "Calculate CRC-32 for data integrity"
-  },
   "variables": {
-    "currentOffset": 0,
-    "compressionType": "",
-    "compressedHeader": 0
+    "kolyMagic": "",
+    "kolyVersion": 0,
+    "headerSize": 0,
+    "kolyFlags": 0,
+    "dataForkLength": 0,
+    "resourceForkOffset": 0,
+    "resourceForkLength": 0,
+    "segmentNumber": 0,
+    "segmentCount": 0,
+    "checksumType": 0,
+    "hasMultiplePartitions": false,
+    "isInternetEnabled": false,
+    "isFlattened": false
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Compressed Header",
+      "name": "Data Fork Start",
       "offset": 0,
       "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.25,
+      "description": "First 8 bytes of the DMG body. For UDZO images this is a zlib header (78 9C or 78 DA), for UDBZ images this is a bzip2 header (42 5A 68), for ULFO images an lzfse frame. The body is the compressed partition/filesystem data.",
+      "storeAs": "dataForkStart",
+      "valueType": "bytes"
+    },
+    {
+      "type": "signature",
+      "name": "koly Magic",
+      "offset": -512,
+      "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "DMG files often start with zlib compression",
-      "storeAs": "compressedHeader",
-      "valueType": "uint64"
+      "opacity": 0.55,
+      "description": "Four-byte 'koly' magic (0x6B 0x6F 0x6C 0x79) at exactly 512 bytes before EOF. This is the UDIF trailer block identifier — all Apple UDIF disk images must have this magic at this position.",
+      "storeAs": "kolyMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "koly Version",
+      "offset": -508,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.45,
+      "description": "UDIF koly block version number as a 32-bit big-endian unsigned integer. Must be 4 for all current macOS-produced DMGs. Version 1 and 2 existed in early Mac OS X (10.0-10.2) but are no longer produced.",
+      "storeAs": "kolyVersion",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "1": "UDIF v1 (Mac OS X 10.0 — obsolete)",
+        "2": "UDIF v2 (Mac OS X 10.1 — obsolete)",
+        "4": "UDIF v4 (current — macOS 10.3+)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Header Size",
+      "offset": -504,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Size of the koly trailer block in bytes as a 32-bit big-endian unsigned integer. Must be exactly 512 for all UDIF v4 images. If this value differs from 512, the file is malformed or from a non-standard tool.",
+      "storeAs": "headerSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Flags",
+      "offset": -500,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.35,
+      "description": "UDIF flags as a 32-bit big-endian unsigned integer. Controls internet-enabled mounting and flattened image properties. Bit 2 (Flattened) indicates the image data fork is stored directly without a separate resource fork. Bit 4 (InternetEnabled) causes Safari to auto-mount the DMG after download.",
+      "storeAs": "kolyFlags",
+      "valueType": "uint32",
+      "endianness": "big",
+      "bitfields": [
+        { "name": "Flattened", "bits": "2", "description": "Image is flattened — data fork contains all partition data without a separate resource fork" },
+        { "name": "InternetEnabled", "bits": "4", "description": "Internet-enabled DMG — macOS Safari will auto-mount this image after download via quarantine mechanism" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Running Data Fork Offset",
+      "offset": -496,
+      "length": 8,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Offset into the data fork where the current write position is located, as a 64-bit big-endian unsigned integer. For finished images this points to the start of the XML property list resource fork descriptor.",
+      "storeAs": "dataForkOffset",
+      "valueType": "uint64",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Data Fork Length",
+      "offset": -488,
+      "length": 8,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Total length of the compressed data fork in bytes, as a 64-bit big-endian unsigned integer. This is the size of the actual compressed disk image content (zlib, bzip2, or lzfse blocks).",
+      "storeAs": "dataForkLength",
+      "valueType": "uint64",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Resource Fork Offset",
+      "offset": -480,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "Byte offset from the start of the file to the XML property list block (resource fork), as a 64-bit big-endian unsigned integer. This plist describes the partition map (BLKX chunks), driver descriptor, and partition entries.",
+      "storeAs": "resourceForkOffset",
+      "valueType": "uint64",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Resource Fork Length",
+      "offset": -472,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "Length in bytes of the XML property list resource fork, as a 64-bit big-endian unsigned integer. The plist at resourceForkOffset contains the partition map (BLKX entries), driver descriptor, and partition table.",
+      "storeAs": "resourceForkLength",
+      "valueType": "uint64",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Segment Number",
+      "offset": -464,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.30,
+      "description": "Segment index for multi-part DMG archives, as a 32-bit big-endian unsigned integer. 1-based — the first segment is 1. For single-file DMGs this is always 1.",
+      "storeAs": "segmentNumber",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Segment Count",
+      "offset": -460,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.30,
+      "description": "Total number of segments in a multi-part DMG archive, as a 32-bit big-endian unsigned integer. For single-file DMGs this is always 1. Values > 1 indicate a spanned DMG set (e.g., .dmg, .002.dmg, .003.dmg).",
+      "storeAs": "segmentCount",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Checksum Type",
+      "offset": -456,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Algorithm used for the data integrity checksum stored in the koly trailer, as a 32-bit big-endian unsigned integer. CRC-32 (type 2) is the most common for UDZO/UDBZ images. SHA-1 (type 5) is used for code-signed images.",
+      "storeAs": "checksumType",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "0": "No checksum",
+        "2": "CRC-32",
+        "4": "MD5",
+        "5": "SHA-1"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Has Multiple Partitions",
+      "expression": "calc:segmentCount > 1",
+      "storeAs": "hasMultiplePartitions",
+      "description": "True when segmentCount > 1 — this is a spanned multi-part DMG set"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Internet Enabled",
+      "expression": "calc:(kolyFlags & 16) != 0",
+      "storeAs": "isInternetEnabled",
+      "description": "True when InternetEnabled flag (bit 4) is set — Safari will auto-mount on download"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Flattened",
+      "expression": "calc:(kolyFlags & 4) != 0",
+      "storeAs": "isFlattened",
+      "description": "True when Flattened flag (bit 2) is set — image uses single data fork layout"
     },
     {
       "type": "metadata",
-      "name": "Compression Type",
-      "variable": "compressionType",
-      "description": "Type of compression used (UDZO, UDBZ, ULFO, etc.)"
+      "name": "koly Magic",
+      "variable": "kolyMagic",
+      "description": "UDIF trailer identifier ('koly')"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "kolyVersion",
+      "description": "UDIF koly block version (must be 4)"
+    },
+    {
+      "type": "metadata",
+      "name": "Segment Info",
+      "variable": "segmentNumber",
+      "description": "Segment N of segmentCount total"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Fork Length",
+      "variable": "dataForkLength",
+      "description": "Compressed partition data size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Resource Fork Length",
+      "variable": "resourceForkLength",
+      "description": "XML plist partition map size in bytes"
     }
   ],
-  "software": [
-    "macOS Disk Utility",
-    "7-Zip",
-    "DMG Extractor"
+  "assertions": [
+    {
+      "name": "koly magic valid",
+      "expression": "kolyMagic == 'koly'",
+      "severity": "error",
+      "message": "DMG koly trailer magic must be 'koly' (0x6B 0x6F 0x6C 0x79) at EOF-512 — this is not a valid Apple UDIF disk image"
+    },
+    {
+      "name": "koly version is 4",
+      "expression": "kolyVersion == 4",
+      "severity": "warning",
+      "message": "koly version should be 4 for all modern macOS DMGs; versions 1-2 are obsolete pre-10.3 formats"
+    },
+    {
+      "name": "Header size is 512",
+      "expression": "headerSize == 512",
+      "severity": "error",
+      "message": "koly header size must be exactly 512 bytes — any other value indicates a malformed or non-standard DMG"
+    },
+    {
+      "name": "Segment count reasonable",
+      "expression": "segmentCount >= 1 && segmentCount <= 999",
+      "severity": "warning",
+      "message": "Segment count exceeds expected range (1-999)"
+    }
   ],
-  "format_relationships": {
-    "apple_format": true,
-    "replaces": "IMG",
-    "related": [
-      "PKG",
-      "APP"
+  "versionDetection": {
+    "field": "kolyVersion",
+    "versions": {
+      "1": "UDIF v1 (Mac OS X 10.0 — obsolete)",
+      "2": "UDIF v2 (Mac OS X 10.1 — obsolete)",
+      "4": "UDIF v4 (current standard)"
+    }
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Data Fork Start",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "koly Trailer",
+        "offset": -512,
+        "icon": "\uE80A",
+        "color": "#FF6B6B"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-dmg-compressed"
+  "inspector": {
+    "badge": "kolyVersion",
+    "primaryField": "dataForkLength",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "UDIF Identity",
+        "icon": "\uE9D9",
+        "fields": ["kolyMagic", "kolyVersion", "headerSize"]
+      },
+      {
+        "title": "Partition Layout",
+        "icon": "\uE8B7",
+        "fields": ["dataForkLength", "resourceForkOffset", "resourceForkLength"]
+      },
+      {
+        "title": "Segment Info",
+        "icon": "\uE8F4",
+        "fields": ["segmentNumber", "segmentCount", "hasMultiplePartitions"]
+      },
+      {
+        "title": "Flags & Integrity",
+        "icon": "\uE8A5",
+        "fields": ["kolyFlags", "isFlattened", "isInternetEnabled", "checksumType"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "koly Trailer (JSON)",
+      "format": "json",
+      "fields": ["kolyMagic", "kolyVersion", "headerSize", "kolyFlags", "dataForkLength", "resourceForkOffset", "resourceForkLength", "segmentNumber", "segmentCount", "checksumType"]
+    },
+    {
+      "name": "UDIF_KOLY_BLOCK (C struct)",
+      "format": "c-struct",
+      "structName": "UDIF_KOLY_BLOCK",
+      "fields": ["kolyMagic", "kolyVersion", "headerSize", "kolyFlags", "dataForkLength", "resourceForkOffset", "resourceForkLength", "segmentNumber", "segmentCount", "checksumType"]
+    }
   ],
-  "Software": [
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Internet-enabled DMG",
+        "condition": "isInternetEnabled == true",
+        "severity": "warning",
+        "description": "InternetEnabled flag is set — macOS Safari and quarantine framework will attempt to auto-mount this DMG immediately after download. This is a primary malware delivery mechanism for macOS in 2021-2024 (FakeBrowser, SilverSparrow, Atomic Stealer campaigns)."
+      },
+      {
+        "name": "Multi-segment DMG",
+        "condition": "segmentCount > 1",
+        "severity": "info",
+        "description": "Spanned multi-part DMG set. Ensure all segments are present and that the segment UUIDs match — incomplete sets can trigger crashes in DiskImages.framework."
+      },
+      {
+        "name": "Invalid koly version",
+        "condition": "kolyVersion != 4",
+        "severity": "warning",
+        "description": "Non-standard koly version. Version 4 is the only format produced by modern macOS tools. Versions 1-2 are pre-10.3 and should not appear in current files."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2021-30987: DiskImages.framework heap overflow parsing malformed BLKX chunks in the resource fork plist",
+      "Internet-enabled DMG + Gatekeeper bypass (2022-2023 AMOS Stealer, Atomic macOS Stealer): used to deliver malware via fake browser/app installers",
+      "DMG-in-DMG nesting: outer DMG auto-mounts via quarantine and silently mounts inner DMG with different code signature",
+      "Oversized resource fork plist causing XML parser DoS in older hdiutil versions"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Apple UDIF disk image. Key indicator: 512-byte 'koly' trailer at EOF-512. All koly fields are big-endian. Layout: offset 0 = magic 'koly', +4 = version (must=4), +8 = headerSize (must=512), +12 = flags (bit2=Flattened, bit4=InternetEnabled), +20 = dataForkOffset (uint64), +28 = dataForkLength (uint64), +36 = resourceForkOffset (uint64, points to XML plist), +44 = resourceForkLength (uint64), +52 = segmentNumber, +56 = segmentCount, +60 = checksumType, +64 = checksumSize, +68 = 128-byte checksum data. Body is compressed (UDZO=zlib, UDBZ=bzip2, ULFO=lzfse, UDRO=uncompressed). Resource fork plist contains BLKX partition map.",
+    "knownVulnerabilities": [
+      "InternetEnabled flag causes auto-mount on download — primary macOS malware delivery mechanism (2020-2024)",
+      "CVE-2021-30987: heap overflow in DiskImages.framework BLKX chunk parser",
+      "Gatekeeper bypass via code-signed outer DMG containing unsigned inner payload"
+    ],
+    "suggestedInspections": [
+      "Check last 512 bytes for 'koly' magic (6B 6F 6C 79) — confirms UDIF format",
+      "Read kolyVersion (offset EOF-508): must be 4 for modern macOS",
+      "Check kolyFlags (offset EOF-500): bit 4 = InternetEnabled (malware risk)",
+      "Read resourceForkOffset/Length to locate the XML plist partition map",
+      "Parse BLKX entries in the plist for partition layout and compression type",
+      "For suspicious files: check code signature at offset 0 and verify notarization status"
+    ]
+  },
+  "software": [
+    "macOS Disk Utility",
+    "hdiutil (macOS CLI)",
     "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
+    "DMG Extractor",
+    "The Unarchiver",
+    "libdmg-hfsplus"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".dmg"],
+    "note": "DMG is Apple's primary software distribution format for macOS. Replaced .img and .smi formats. UDIF body may be zlib (UDZO), bzip2 (UDBZ), lzfse (ULFO), or uncompressed (UDRO). The resource fork is always an XML plist with a BLKX partition table."
+  },
+  "MimeTypes": [
+    "application/x-apple-diskimage",
+    "application/x-dmg"
   ],
   "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
+    "macOS application distribution",
+    "Software installation packages",
+    "Bootable macOS recovery/installer media",
+    "macOS filesystem snapshots and backups"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 21,
-    "DocumentationLevel": "basic",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 15,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
   },
   "TechnicalDetails": {
     "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
-  "forensic": {
-    "category": "archive",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Apple macOS disk image format",
-    "suggestedInspections": [
-      "Verify Apple Disk Image file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
-    ]
+    "Endianness": "big-endian",
+    "Compression": "UDZO (zlib), UDBZ (bzip2), ULFO (lzfse), UDRO (uncompressed)",
+    "HasHeader": false,
+    "TrailerOffset": "EOF-512",
+    "TrailerSize": "512 bytes",
+    "SupportsEncryption": true,
+    "EncryptionNote": "AES-128 and AES-256 encrypted DMGs use a different structure with an ENCRCDSA trailer"
   }
 }

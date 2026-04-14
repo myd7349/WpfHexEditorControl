@@ -1,29 +1,19 @@
-/* ============================================================
-   Format:    QOI Image
-   Category:  Images
-   Ext:       .qoi
-   Editor:    image-viewer
-   Desc:      Quite OK Image Format - Fast lossless compression
-   Variables: width, height, totalPixels, bitsPerPixel, qoiMagic, channels, colorspace
-   Detection: signature=716F6966 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "QOI Image",
-  "version": "1.13",
+  "version": "1.15",
   "extensions": [
     ".qoi"
   ],
-  "description": "Quite OK Image Format - Fast lossless compression",
+  "description": "Quite OK Image Format (QOI) — an extremely simple lossless image format designed for fast encoding and decoding. The format consists of: 4-byte magic 'qoif' (0x716F6966), 4-byte width (BE uint32), 4-byte height (BE uint32), 1-byte channels (3=RGB, 4=RGBA), 1-byte colorspace (0=sRGB+linear alpha, 1=all channels linear), followed by a stream of op-codes (QOI_OP_RGB, QOI_OP_RGBA, QOI_OP_INDEX, QOI_OP_DIFF, QOI_OP_LUMA, QOI_OP_RUN), terminated by exactly 8 zero bytes followed by 0x01 (the end marker: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x01). All multi-byte integers in QOI are big-endian.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "QOI (Quite OK Image) Specification v1.0",
-      "QOI Lossless Image Format - Dominic Szablewski",
-      "Fast Lossless Compression Format"
+      "QOI Specification v1.0 — Dominic Szablewski (2021)",
+      "The Quite OK Image Format for Fast, Lossless Compression",
+      "https://qoiformat.org/qoi-specification.pdf"
     ],
     "WebLinks": [
       "https://qoiformat.org/",
@@ -36,19 +26,22 @@
     "signature": "716F6966",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.8 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 23,
+      "note": "QOI magic is 'qoif' (0x71 0x6F 0x69 0x66). Minimum valid file: 14-byte header + 1 op-code byte + 8-byte end marker = 23 bytes. Channels must be 3 or 4. Colorspace must be 0 or 1."
     }
   },
   "variables": {
+    "qoiMagic": "",
     "width": 0,
     "height": 0,
-    "totalPixels": 0,
-    "bitsPerPixel": 0,
-    "qoiMagic": "",
     "channels": 0,
-    "colorspace": 0
+    "colorspace": 0,
+    "totalPixels": 0,
+    "isRGBA": false,
+    "hasLinearColorspace": false
   },
   "blocks": [
     {
@@ -57,10 +50,10 @@
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "qoif magic bytes",
+      "opacity": 0.45,
+      "description": "Four-byte magic identifier 'qoif' (0x71 0x6F 0x69 0x66). This is the only mandatory signature in QOI — no other file format uses this exact 4-byte sequence at offset 0.",
       "storeAs": "qoiMagic",
-      "valueType": "uint32"
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -68,10 +61,11 @@
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Image width (big-endian)",
+      "opacity": 0.35,
+      "description": "Image width in pixels as a 32-bit big-endian unsigned integer. Must be greater than 0. Maximum theoretical width: 4,294,967,295 (2^32-1), but practically limited by memory.",
       "storeAs": "width",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -79,10 +73,11 @@
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Image height (big-endian)",
+      "opacity": 0.35,
+      "description": "Image height in pixels as a 32-bit big-endian unsigned integer. Must be greater than 0.",
       "storeAs": "height",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -90,10 +85,14 @@
       "offset": 12,
       "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "3=RGB, 4=RGBA",
+      "opacity": 0.35,
+      "description": "Number of color channels per pixel. 3 = RGB (no alpha channel), 4 = RGBA (with alpha channel). This determines the output pixel size when decoding but does not directly restrict op-codes in the data stream (a QOI_OP_RGBA op-code can appear in a channels=3 stream).",
       "storeAs": "channels",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "3": "RGB — 3 channels, no alpha",
+        "4": "RGBA — 4 channels with alpha"
+      }
     },
     {
       "type": "field",
@@ -101,85 +100,245 @@
       "offset": 13,
       "length": 1,
       "color": "#FFA07A",
-      "opacity": 0.3,
-      "description": "0=sRGB, 1=linear",
+      "opacity": 0.35,
+      "description": "Color space indicator for the image data. Informational only — does NOT affect the encoded/decoded pixel values, only metadata for correct display and color management. 0 = sRGB (gamma-corrected) color channels with a linear alpha channel. 1 = all channels are in linear colorspace.",
       "storeAs": "colorspace",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "sRGB with linear alpha (standard for photos/web content)",
+        "1": "All linear (for HDR, scientific, or rendering workflows)"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Pixels",
+      "expression": "calc:width * height",
+      "storeAs": "totalPixels",
+      "description": "Total pixel count = width × height. QOI data stream must decode exactly this many pixels."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is RGBA",
+      "expression": "calc:channels == 4",
+      "storeAs": "isRGBA",
+      "description": "True when channels=4 — image has an alpha channel"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Has Linear Colorspace",
+      "expression": "calc:colorspace == 1",
+      "storeAs": "hasLinearColorspace",
+      "description": "True when colorspace=1 — all channels are in linear (non-gamma-corrected) colorspace"
+    },
+    {
+      "type": "metadata",
+      "name": "Magic",
+      "variable": "qoiMagic",
+      "description": "QOI file identifier ('qoif')"
     },
     {
       "type": "metadata",
       "name": "Width",
       "variable": "width",
-      "description": "Width"
+      "description": "Image width in pixels (big-endian)"
     },
     {
       "type": "metadata",
       "name": "Height",
       "variable": "height",
-      "description": "Height"
+      "description": "Image height in pixels (big-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "3=RGB, 4=RGBA"
+    },
+    {
+      "type": "metadata",
+      "name": "Colorspace",
+      "variable": "colorspace",
+      "description": "0=sRGB, 1=linear"
     },
     {
       "type": "metadata",
       "name": "Total Pixels",
       "variable": "totalPixels",
-      "description": "Total Pixels"
+      "description": "Width × Height"
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "QOI magic valid",
+      "expression": "qoiMagic == 'qoif'",
+      "severity": "error",
+      "message": "QOI magic must be 'qoif' (0x71 0x6F 0x69 0x66) — this is not a valid QOI file"
+    },
+    {
+      "name": "Width non-zero",
+      "expression": "width > 0",
+      "severity": "error",
+      "message": "QOI width must be greater than 0"
+    },
+    {
+      "name": "Height non-zero",
+      "expression": "height > 0",
+      "severity": "error",
+      "message": "QOI height must be greater than 0"
+    },
+    {
+      "name": "Channels valid",
+      "expression": "channels == 3 || channels == 4",
+      "severity": "error",
+      "message": "QOI channels must be 3 (RGB) or 4 (RGBA)"
+    },
+    {
+      "name": "Colorspace valid",
+      "expression": "colorspace == 0 || colorspace == 1",
+      "severity": "error",
+      "message": "QOI colorspace must be 0 (sRGB) or 1 (linear)"
+    }
   ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".qoi"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "QOI Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Pixel Data Stream",
+        "offset": 14,
+        "icon": "\uE80A",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "image/qoi"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 50,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "channels",
+    "primaryField": "width",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Image Properties",
+        "icon": "\uE80A",
+        "fields": ["width", "height", "totalPixels", "channels", "colorspace"]
+      },
+      {
+        "title": "Derived",
+        "icon": "\uE8A5",
+        "fields": ["isRGBA", "hasLinearColorspace", "qoiMagic"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
-  "functions": {
-    "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
-  },
+  "exportTemplates": [
+    {
+      "name": "QOI Header (JSON)",
+      "format": "json",
+      "fields": ["qoiMagic", "width", "height", "channels", "colorspace", "totalPixels", "isRGBA"]
+    },
+    {
+      "name": "QOI_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "QOI_HEADER",
+      "fields": ["qoiMagic", "width", "height", "channels", "colorspace"]
+    },
+    {
+      "name": "Python QOI check",
+      "format": "python-bytes",
+      "fields": ["qoiMagic", "channels", "colorspace"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid channels value",
+        "condition": "channels != 3 && channels != 4",
+        "severity": "error",
+        "description": "QOI channels field must be exactly 3 or 4. Any other value indicates a malformed or tampered file."
+      },
+      {
+        "name": "Invalid colorspace value",
+        "condition": "colorspace != 0 && colorspace != 1",
+        "severity": "warning",
+        "description": "QOI colorspace must be 0 or 1. Other values are spec-violating; most decoders may silently accept or reject them."
+      },
+      {
+        "name": "Oversized image dimensions",
+        "condition": "totalPixels > 67108864",
+        "severity": "warning",
+        "description": "Image exceeds 64 megapixels (e.g., 8192×8192). QOI streams for such images will be very large and could cause memory allocation issues in naive decoders."
+      },
+      {
+        "name": "Truncated data stream",
+        "condition": "fileSize < 23",
+        "severity": "error",
+        "description": "File size is below the minimum valid QOI size (14B header + 1B op + 8B end marker = 23B). File is truncated."
+      }
+    ],
+    "knownExploitVectors": [
+      "Integer overflow: width=0xFFFFFFFF × height=0xFFFFFFFF × 4 bytes = 64-bit overflow in 32-bit allocators",
+      "Missing end-marker validation: infinite loop reading op-codes past EOF",
+      "QOI_OP_RUN with max run length (0x3F=63) — decoders not checking total pixel count can write past allocated buffer"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Quite OK Image Format - Fast lossless compression",
+    "analysisContext": "QOI (Quite OK Image) format. Fixed 14-byte header: offset 0-3='qoif' magic, offset 4-7=width BE uint32, offset 8-11=height BE uint32, offset 12=channels (3/4), offset 13=colorspace (0/1). Pixel data stream starts at offset 14. End marker at end of file: 7 zero bytes + 0x01 (0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x01). Op-codes: 0xFE=QOI_OP_RGB (3B), 0xFF=QOI_OP_RGBA (5B), 0b00xxxxxx=QOI_OP_INDEX (1B), 0b01xxxxxx=QOI_OP_DIFF (1B), 0b10xxxxxx=QOI_OP_LUMA (2B), 0b11xxxxxx=QOI_OP_RUN (1B) except 0xFE and 0xFF. Decoder maintains a 64-pixel circular buffer (index array) and a running color (starts RGBA=0,0,0,255).",
+    "knownVulnerabilities": [
+      "Early decoders (2021) lacked total-pixel-count guards — could decode infinite RUN sequences",
+      "Missing end-marker check allows crafted files to drive decoders past allocated output buffers"
+    ],
     "suggestedInspections": [
-      "Validate QOI Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Verify magic at offset 0: 71 6F 69 66 ('qoif')",
+      "Read width and height as big-endian uint32 (offsets 4 and 8)",
+      "Confirm channels (offset 12) is 3 or 4 and colorspace (offset 13) is 0 or 1",
+      "Check EOF-8 for end marker: 00 00 00 00 00 00 00 01",
+      "Compute expected raw output size: width × height × channels bytes and compare to allocated buffer",
+      "Scan for long RUN op-codes (0xC0-0xFD) — a single byte can represent up to 62 repeated pixels"
     ]
+  },
+  "software": [
+    "qoi reference implementation (C)",
+    "GIMP (via plugin)",
+    "ImageMagick",
+    "SDL_image",
+    "Rust image crate",
+    "Python Pillow (via plugin)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".qoi"],
+    "note": "QOI was designed in 2021 as a simpler, faster alternative to PNG for lossless image storage. It does not support progressive loading, interlacing, or color palettes."
+  },
+  "MimeTypes": [
+    "image/qoi",
+    "image/x-qoi"
+  ],
+  "UseCases": [
+    "Fast lossless texture caching in game engines",
+    "Intermediate image format in rendering pipelines",
+    "Embedded systems with limited CPU (simpler codec than PNG)",
+    "Rapid prototyping and tooling"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 13,
+    "ValidationRules": 5,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Endianness": "big-endian",
+    "Compression": "lossless run-length + delta + lookup table op-codes",
+    "HasHeader": true,
+    "HeaderSize": "14 bytes",
+    "EndMarker": "8 bytes (0x00 × 7 + 0x01)",
+    "MaxDimension": "4294967295 × 4294967295 (uint32 max)"
   }
 }

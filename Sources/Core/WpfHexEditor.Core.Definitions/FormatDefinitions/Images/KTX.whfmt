@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Khronos Texture
-   Category:  Images
-   Ext:       .ktx
-   Editor:    image-viewer
-   Desc:      Khronos Texture format for OpenGL/Vulkan
-   Variables: endianness, ktxIdentifier, glType
-   Detection: signature=AB4B54582030310D0A1A0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Khronos Texture",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".ktx"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "AB4B54582030310D0A1A0A",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 11,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 11,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "AB4B54582030310D0A1A0A",
+        "offset": 0,
+        "label": "KTX magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "readUInt32LE": "Read KTX header fields (endianness-dependent)"
@@ -94,7 +93,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".ktx"
@@ -117,11 +116,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -141,5 +140,40 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "ktxIdentifier",
+    "primaryField": "endianness",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Khronos Texture",
+        "icon": "",
+        "fields": [
+          "ktxIdentifier",
+          "endianness",
+          "glType"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Khronos Texture Header (JSON)",
+      "format": "json",
+      "fields": [
+        "ktxIdentifier",
+        "endianness",
+        "glType"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "ktxIdentifier != 0",
+      "severity": "warning",
+      "message": "KTX magic field is zero — possible detection failure"
+    }
+  ]
 }

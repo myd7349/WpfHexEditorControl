@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    OpenSSH Private Key
-   Category:  Crypto
-   Ext:       , .pem
-   Editor:    hex-editor
-   Desc:      OpenSSH private key format - Encrypted SSH authentication key
-   Variables: currentOffset, version, serialNumber, issuer, subject, opensshMagic, nullTerminator, cipherNameLength, cipherName, kdfNameLength, kdfName, kdfOptionsLength, numberOfKeys, publicKeyLength
-   Detection: signature=6F70656E7373682D6B65792D7631 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "OpenSSH Private Key",
-  "version": "1.11",
+  "version": "1.13",
   "extensions": [
     "",
     ".pem"
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 14,
-      "max_signature_offset": 1024
+      "minFileSize": 14,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -181,7 +171,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Crypto",
     "extensions": [
       "",

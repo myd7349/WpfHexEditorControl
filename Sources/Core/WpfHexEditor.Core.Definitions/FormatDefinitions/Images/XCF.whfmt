@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    GIMP Image
-   Category:  Images
-   Ext:       .xcf
-   Editor:    image-viewer
-   Desc:      GIMP native image format (eXperimental Computing Facility)
-   Variables: currentOffset, version, xcfSignature
-   Detection: signature=67696D702078636620 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "GIMP Image",
-  "version": "1.10",
+  "version": "1.13",
   "extensions": [
     ".xcf"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "67696D702078636620",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 9,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 9,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "67696D702078636620",
+        "offset": 0,
+        "label": "XCF magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "extractASCIIString": "Extract XCF version string"
@@ -83,7 +82,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".xcf"
@@ -106,11 +105,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -130,5 +129,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "xcfSignature",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GIMP Image",
+        "icon": "",
+        "fields": [
+          "xcfSignature",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GIMP Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "xcfSignature",
+        "version"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "xcfSignature != 0",
+      "severity": "warning",
+      "message": "XCF magic field is zero — possible detection failure"
+    }
+  ]
 }

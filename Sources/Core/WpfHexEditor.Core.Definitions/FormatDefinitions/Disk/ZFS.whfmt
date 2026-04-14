@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    ZFS Filesystem
-   Category:  Disk
-   Ext:       .zfs
-   Editor:    hex-editor
-   Desc:      Zettabyte File System
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=00000000000000000CBAD1BA @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "ZFS Filesystem",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".zfs"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "00000000000000000CBAD1BA",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 12,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 12,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00000000000000000CBAD1BA",
+        "offset": 0,
+        "label": "ZFS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -81,7 +80,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".zfs"
@@ -104,11 +103,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

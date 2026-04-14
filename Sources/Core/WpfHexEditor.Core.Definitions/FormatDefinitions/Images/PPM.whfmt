@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Portable Pixmap
-   Category:  Images
-   Ext:       .ppm
-   Editor:    image-viewer
-   Desc:      Netpbm Portable Pixmap (RGB color)
-   Variables: magicNumber, ppmMagic, header
-   Detection: signature=5033 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Portable Pixmap",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".ppm"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "5033",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "5033",
+        "offset": 0,
+        "label": "PPM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "functions": {
     "extractASCIIString": "Extract width, height, maxval from ASCII header"
@@ -83,7 +82,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".ppm"
@@ -106,11 +105,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -130,5 +129,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "ppmMagic",
+    "primaryField": "header",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Portable Pixmap",
+        "icon": "",
+        "fields": [
+          "ppmMagic",
+          "header"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Portable Pixmap Header (JSON)",
+      "format": "json",
+      "fields": [
+        "ppmMagic",
+        "header"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "ppmMagic != 0",
+      "severity": "warning",
+      "message": "PPM magic field is zero — possible detection failure"
+    }
+  ]
 }

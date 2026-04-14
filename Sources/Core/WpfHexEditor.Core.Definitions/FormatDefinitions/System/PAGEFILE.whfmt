@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Windows Page File
-   Category:  System
-   Ext:       .sys
-   Editor:    hex-editor
-   Desc:      Windows page file (pagefile.sys) - Virtual memory swap
-   Variables: currentOffset, machineType, sectionCount, entryPoint, pageFileSignature, size, freePages, usedPages, pageSize, creationTime
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Windows Page File",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".sys"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "PAGEFILE magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -132,7 +131,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "System",
     "extensions": [
       ".sys"
@@ -152,11 +151,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 48,
+    "CompletenessScore": 65,
     "DocumentationLevel": "standard",
     "BlocksDefined": 8,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -176,5 +175,44 @@
       "Check timestamp sequence for gaps or chronological anomalies",
       "Inspect event severity levels and source identifiers"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "pageFileSignature",
+    "primaryField": "size",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Windows Page File",
+        "icon": "",
+        "fields": [
+          "pageFileSignature",
+          "size",
+          "freePages",
+          "usedPages",
+          "pageSize"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Windows Page File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "pageFileSignature",
+        "size",
+        "freePages",
+        "usedPages",
+        "pageSize"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "pageFileSignature != 0",
+      "severity": "warning",
+      "message": "PAGEFILE magic field is zero — possible detection failure"
+    }
+  ]
 }

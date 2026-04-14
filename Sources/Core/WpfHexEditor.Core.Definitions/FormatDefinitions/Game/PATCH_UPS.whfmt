@@ -1,55 +1,41 @@
-/* ============================================================
-   Format:    UPS Patch
-   Category:  Game
-   Ext:       .ups
-   Editor:    hex-editor
-   Desc:      Universal Patching System (UPS) format - Enhanced ROM patching with CRC32 validation and bidirectional support
-   Variables: currentOffset, srcSizeByte1, machineType, sectionCount, entryPoint, upsMagic, patchDataStart, patchDataRegion
-   Detection: signature=55505331 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
-  "formatName": "UPS Patch",
-  "version": "1.11",
+  "formatName": "UPS ROM Patch",
+  "version": "1.14",
   "extensions": [
     ".ups"
   ],
-  "description": "Universal Patching System (UPS) format - Enhanced ROM patching with CRC32 validation and bidirectional support",
+  "description": "UPS (Universal Patching System) is a ROM patch format created by byuu/Near as a bidirectional improvement over IPS. UPS files start with 4 ASCII bytes 'UPS1' (55 50 53 31). The format uses Variable-Length Integer (VLI) encoding: inputSize (VLI), outputSize (VLI) encoded after the magic. Patch data consists of XOR-encoded delta records: each record begins with a VLI offset (relative to current position), then XOR data bytes terminated by a 0x00 byte. Bidirectionality: applying a UPS patch to the target produces the source, and applying to the source produces the target. The file ends with three CRC32 checksums (uint32 LE): inputCRC32, outputCRC32, patchCRC32. The patchCRC32 covers all bytes of the file except the last 4 bytes. UPS was superseded by BPS (Beat Patching System) which adds more delta command types.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Universal Patching System (UPS)",
-      "UPS Format by byuu",
-      "Bidirectional ROM Patch Format"
+      "UPS specification by byuu/Near"
     ],
     "WebLinks": [
-      "https://docs.fileformat.com/game/ups/",
-      "https://rainbowdevs.com/2008/05/03/ups-patching-specification/",
-      "https://www.romhacking.net/utilities/606/",
-      "https://consolemods.org/wiki/Applying_ROM_Patches"
+      "https://www.romhacking.net/utilities/519/",
+      "https://github.com/btimofeev/UniPatcher/wiki/UPS"
     ]
   },
   "detection": {
-    "signature": "55505331",
-    "offset": 0,
+    "signatures": [
+      { "value": "55505331", "offset": 0, "label": "'UPS1' — Universal Patching System v1 magic", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.0 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 16,
+      "maxSignatureOffset": 0,
+      "note": "UPS files always start with 'UPS1' ASCII (4 bytes). The file ends with 3 CRC32 values (12 bytes): input CRC, output CRC, patch CRC."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "srcSizeByte1": 0,
-    "machineType": "",
-    "sectionCount": 0,
-    "entryPoint": 0,
     "upsMagic": "",
-    "patchDataStart": 0,
-    "patchDataRegion": ""
+    "upsInputSizeByte": 0
   },
   "blocks": [
     {
@@ -58,113 +44,112 @@
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "UPS1 magic identifier - Universal Patching System v1",
+      "opacity": 0.45,
+      "description": "UPS patch file magic: 4 ASCII bytes 'UPS1' (0x55 0x50 0x53 0x31). Created by byuu/Near. UPS (Universal Patching System) improves on IPS by: (1) bidirectional patching — applying to either source or target reconstructs the other; (2) VLI encoding (no 16MB limit); (3) CRC32 validation of input, output, and patch files; (4) XOR-based delta encoding for small changes in large ROMs. Used for SNES, GBA, NDS ROM hacking.",
       "storeAs": "upsMagic",
-      "valueType": "uint32"
+      "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Source Size (VLI byte 1)",
+      "name": "Input Size (VLI first byte)",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "srcSizeByte1",
-      "description": "First byte of VLI-encoded source file size (MSB=continuation bit, remaining 7 bits=data)"
-    },
-    {
-      "type": "field",
-      "name": "Patch Data Start",
-      "offset": 5,
-      "length": 8,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "valueType": "uint64",
-      "description": "Start of variable-length integer encoded patch data (VLI format - cannot be parsed with fixed offsets)",
-      "storeAs": "patchDataStart"
-    },
-    {
-      "type": "field",
-      "name": "Patch Data Region",
-      "offset": 13,
-      "length": 100,
-      "color": "#FFE66D",
-      "opacity": 0.2,
-      "valueType": "ascii",
-      "description": "Variable-length patch commands region (structure depends on VLI decoding)",
-      "storeAs": "patchDataRegion"
+      "opacity": 0.35,
+      "description": "First byte of the VLI-encoded input (source) ROM file size at offset 4. UPS uses Variable-Length Integers: bit 0 is the continuation flag (1=more bytes), bits 1-7 are data bits. Accumulate 7-bit groups LSB first. The input CRC32 at file end validates this against the actual source ROM file before patching.",
+      "storeAs": "upsInputSizeByte",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",
-      "name": "Machine",
-      "variable": "machineType",
-      "description": "Machine"
+      "name": "Magic",
+      "variable": "upsMagic",
+      "description": "'UPS1' — Universal Patching System identifier"
     },
     {
       "type": "metadata",
-      "name": "Sections",
-      "variable": "sectionCount",
-      "description": "Sections"
+      "name": "Input Size (first VLI byte)",
+      "variable": "upsInputSizeByte",
+      "description": "First byte of VLI-encoded input file size"
     }
   ],
-  "software": [
-    "NUPS",
-    "Lunar IPS",
-    "Rom patcher tools"
+  "assertions": [
+    {
+      "name": "UPS magic valid",
+      "expression": "upsMagic == 'UPS1'",
+      "severity": "error",
+      "message": "UPS patch must start with 'UPS1' magic — not a valid Universal Patching System patch"
+    }
   ],
-  "format_relationships": {
-    "successor_to": "IPS",
-    "supports_larger_files": true,
-    "crc_validation": true,
-    "related": [
-      "BPS",
-      "IPS"
+  "navigation": {
+    "bookmarks": [
+      { "name": "UPS Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "VLI Header Data", "offset": 4, "icon": "\uE71B", "color": "#4ECDC4" }
     ]
   },
-  "MimeTypes": [
-    "application/octet-stream"
+  "inspector": {
+    "badge": "upsMagic",
+    "primaryField": "upsInputSizeByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "UPS Patch Header",
+        "icon": "\uE71B",
+        "fields": ["upsMagic", "upsInputSizeByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "UPS Header (JSON)",
+      "format": "json",
+      "fields": ["upsMagic", "upsInputSizeByte"]
+    }
   ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
+  "forensic": { "category": "game", "riskLevel": "low", "suspiciousPatterns": [] },
+  "aiHints": {
+    "analysisContext": "UPS format: 'UPS1'(4B) + inputSize(VLI) + outputSize(VLI) + patchData(XOR delta records) + inputCRC32(4B LE) + outputCRC32(4B LE) + patchCRC32(4B LE). VLI: bit0=continuation, bits1-7=data LSB first. Delta records: VLI relative offset + XOR bytes + 0x00 terminator. Bidirectional: patch(source)=target and patch(target)=source. File ends with 3x uint32 LE CRC32. Tool: beat, Floating IPS, UniPatcher.",
+    "suggestedInspections": [
+      "Bytes 0-3 (ASCII): 'UPS1' — Universal Patching System magic",
+      "Bytes 4+: VLI-encoded input size, then output size",
+      "Last 12 bytes (3x uint32 LE): input CRC32, output CRC32, patch CRC32",
+      "Verify input CRC32 against your ROM before applying patch"
+    ]
+  },
+  "software": [
+    "beat (byuu/Near, reference patcher for UPS and BPS)",
+    "Floating IPS / flips (supports UPS and IPS)",
+    "UniPatcher (Android, supports UPS)",
+    "ups-patcher (standalone UPS tool)"
   ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".ups"],
+    "relatedFormats": ["PATCH_IPS", "PATCH_BPS"],
+    "note": "UPS is a bidirectional ROM patch format: applying to source gives target, applying to target gives source. Superseded by BPS which adds SourceCopy/TargetCopy delta commands. Both UPS and BPS include CRC32 checksums; IPS does not."
+  },
+  "MimeTypes": ["application/octet-stream"],
   "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
+    "Applying bidirectional ROM patches with CRC32 validation",
+    "Legacy ROM hacking patch distribution (pre-BPS era)",
+    "SNES/GBA/NDS translation patch distribution",
+    "ROM patching without the 16MB address limit of IPS"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 60,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
-    "AutoRefined": true
+    "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Platform": "Various"
-  },
-  "functions": {
-    "readUInt32LE": "Read executable header"
-  },
-  "forensic": {
-    "category": "game",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Universal Patching System (UPS) format - Enhanced ROM patching with CRC32 validation and bidirectional suppo...",
-    "suggestedInspections": [
-      "Validate UPS Patch container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
-    ]
+    "Format": "Binary UPS v1 ROM patch (Universal Patching System by byuu/Near)",
+    "Magic": "'UPS1' ASCII at offset 0",
+    "VLI": "Variable-Length Integer: bit0=continuation, bits1-7=7-bit data chunks (same as BPS)",
+    "Delta": "XOR-encoded byte runs: VLI relative offset + XOR bytes + 0x00 terminator",
+    "Checksums": "Three CRC32 LE at EOF: input, output, patch",
+    "Bidirectional": "patch(source)=target; patch(target)=source"
   }
 }

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Sega Dreamcast Disc Image
-   Category:  Game
-   Ext:       .gdi, .cdi, .iso
-   Editor:    hex-editor
-   Desc:      Sega Dreamcast GD-ROM disc image format (IP.BIN header)
-   Variables: currentOffset, productNumber, releaseDate, gameTitle, width, height, totalPixels, bitsPerPixel, hardwareId, makerId, deviceInfo, areaSymbols, peripherals, version, bootFilename, developerId
-   Detection: signature=534547412053454741 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Sega Dreamcast Disc Image",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
     ".gdi",
     ".cdi",
@@ -39,8 +29,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 9,
-      "max_signature_offset": 1024
+      "minFileSize": 9,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -206,7 +196,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".gdi",

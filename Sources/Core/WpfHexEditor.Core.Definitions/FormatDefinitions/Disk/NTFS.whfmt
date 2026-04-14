@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    NTFS Filesystem
-   Category:  Disk
-   Ext:       .ntfs
-   Editor:    hex-editor
-   Desc:      Windows NT File System
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=4E54465320202020 @ offset 3
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "NTFS Filesystem",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".ntfs"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "4E54465320202020",
-    "offset": 3,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "4E54465320202020",
+        "offset": 3,
+        "label": "NTFS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -81,7 +80,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".ntfs"
@@ -104,11 +103,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

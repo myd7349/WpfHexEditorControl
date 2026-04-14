@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Java Class File
-   Category:  Programming
-   Ext:       .class
-   Editor:    hex-editor
-   Desc:      Java compiled bytecode
-   Variables: currentOffset, minorVersion, majorVersion, constantPoolCount, className, superClassName, accessFlags, methods, javaMagic
-   Detection: signature=CAFEBABE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Java Class File",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".class"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "CAFEBABE",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "CAFEBABE",
+        "offset": 0,
+        "label": "CLASS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for magic number",
@@ -117,7 +116,7 @@
     "Java IDEs",
     "Bytecode tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "java_format": true,
     "contained_in": "JAR",
     "jvm_bytecode": true
@@ -139,13 +138,40 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "inspector": {
+    "badge": "javaMagic",
+    "primaryField": "minorVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Java Class File",
+        "icon": "",
+        "fields": [
+          "javaMagic",
+          "minorVersion",
+          "majorVersion"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Java Class File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "javaMagic",
+        "minorVersion",
+        "majorVersion"
+      ]
+    }
+  ]
 }

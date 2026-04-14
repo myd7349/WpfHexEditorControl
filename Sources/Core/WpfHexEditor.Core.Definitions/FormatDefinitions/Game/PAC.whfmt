@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Game Package
-   Category:  Game
-   Ext:       .pac, .pack
-   Editor:    hex-editor
-   Desc:      Generic game package/archive format
-   Variables: currentOffset, fileCount, version, indexOffset, packageHeader
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Game Package",
-  "version": "2.3",
+  "version": "2.33",
   "extensions": [
     ".pac",
     ".pack"
@@ -34,13 +24,23 @@
     ]
   },
   "detection": {
-    "signature": "00",
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "Raw data — generic PAC package (no standard magic)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -84,7 +84,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".pac",
@@ -108,11 +108,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 21,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -135,5 +135,28 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "packageHeader",
+    "primaryField": "packageHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Game Package",
+        "icon": "",
+        "fields": [
+          "packageHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Game Package Header (JSON)",
+      "format": "json",
+      "fields": [
+        "packageHeader"
+      ]
+    }
+  ]
 }

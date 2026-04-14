@@ -1,33 +1,23 @@
-/* ============================================================
-   Format:    LZMA Compression
-   Category:  Archives
-   Ext:       .lzma
-   Editor:    hex-editor
-   Desc:      LZMA (Lempel-Ziv-Markov chain Algorithm) compressed file format, used in 7-Zip and XZ Utils
-   Variables: dictionarySize, uncompressedSize, lzmaProperties, formattedSize
-   Detection: signature=5D00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "LZMA Compression",
-  "version": "1.11",
+  "version": "1.13",
   "extensions": [
     ".lzma"
   ],
-  "description": "LZMA (Lempel-Ziv-Markov chain Algorithm) compressed file format, used in 7-Zip and XZ Utils",
+  "description": "LZMA (Lempel-Ziv-Markov chain Algorithm) standalone compressed file format. The 13-byte header encodes compression parameters: 1-byte properties (lc/lp/pb model parameters), 4-byte dictionary size, and 8-byte uncompressed content size (0xFFFFFFFFFFFFFFFF when unknown). Developed by Igor Pavlov. Superseded by .xz for most modern use cases.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "LZMA Algorithm Specification - Igor Pavlov",
-      "LZMA SDK Documentation",
+      "LZMA Algorithm Specification — Igor Pavlov (7-zip.org/sdk.html)",
+      "LZMA SDK 23.01 documentation",
       "XZ Utils File Format Specification"
     ],
     "WebLinks": [
       "https://www.7-zip.org/sdk.html",
-      "https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm",
+      "https://en.wikipedia.org/wiki/Lempel-Ziv-Markov_chain_algorithm",
       "https://tukaani.org/xz/xz-file-format.txt",
       "https://github.com/jljusten/LZMA-SDK"
     ]
@@ -36,122 +26,274 @@
     "signature": "5D00",
     "offset": 0,
     "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 7.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 13,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "readUInt32LE": "Read dictionary size and uncompressed size (little-endian)",
-    "formatFileSize(var:uncompressedSize)": "Format uncompressedSize as readable size"
+    "readUInt32LE": "Read dictionary size (4 bytes little-endian at offset 1)",
+    "readUInt64LE": "Read uncompressed size (8 bytes little-endian at offset 5)",
+    "formatFileSize(var:dictionarySize)": "Format dictionary size as human-readable string",
+    "formatFileSize(var:uncompressedSize)": "Format uncompressed size as human-readable string"
   },
   "variables": {
     "dictionarySize": 0,
     "uncompressedSize": 0,
     "lzmaProperties": 0,
-    "formattedSize": ""
+    "lzmaLc": 0,
+    "lzmaPb": 0,
+    "lzmaLp": 0,
+    "formattedDictSize": "",
+    "formattedUncompSize": "",
+    "isUnknownSize": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "LZMA Properties",
+      "name": "LZMA Properties Byte",
       "offset": 0,
       "length": 1,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "LZMA properties byte (usually 0x5D)",
+      "opacity": 0.45,
+      "description": "LZMA model properties byte encoding three compression parameters: lc (literal context bits, 3 bits), lp (literal position bits, 4 bits), pb (position bits, 5 bits). Encoded as: properties = (pb * 5 + lp) * 9 + lc. Most common value is 0x5D = 93 decimal, encoding pb=2, lp=0, lc=3 — the default LZMA settings used by 7-Zip and xz. Values above 224 are invalid.",
       "storeAs": "lzmaProperties",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "validation": {
+        "maxValue": 224
+      }
     },
     {
-      "type": "data",
+      "type": "field",
       "name": "Dictionary Size",
       "offset": 1,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.4,
-      "description": "Dictionary size (little-endian)"
+      "opacity": 0.35,
+      "description": "LZMA dictionary (sliding window) size in bytes, stored as a 32-bit little-endian integer. Must be a power of 2 or a sum of two consecutive powers of 2. Typical values: 0x00010000 (64KB), 0x00100000 (1MB), 0x00400000 (4MB), 0x02000000 (32MB). Larger dictionary = better compression but more memory at decompression time. The dictionary must fit in RAM during decompression.",
+      "storeAs": "dictionarySize",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "65536": "64 KB",
+        "131072": "128 KB",
+        "262144": "256 KB",
+        "524288": "512 KB",
+        "1048576": "1 MB",
+        "2097152": "2 MB",
+        "4194304": "4 MB",
+        "8388608": "8 MB",
+        "16777216": "16 MB",
+        "33554432": "32 MB",
+        "67108864": "64 MB",
+        "134217728": "128 MB",
+        "268435456": "256 MB"
+      }
     },
     {
-      "type": "data",
-      "name": "Uncompressed Size",
+      "type": "field",
+      "name": "Uncompressed Content Size",
       "offset": 5,
       "length": 8,
       "color": "#45B7D1",
-      "opacity": 0.4,
-      "description": "Uncompressed file size (little-endian, 0xFFFFFFFFFFFFFFFF if unknown)"
+      "opacity": 0.35,
+      "description": "Expected size of the decompressed content in bytes, stored as a 64-bit little-endian integer. The special value 0xFFFFFFFFFFFFFFFF (18446744073709551615) means the uncompressed size is unknown — the decompressor must process the stream until the end-of-stream marker is found. This value is used when the original file size was not known at compression time (e.g., stdin piping).",
+      "storeAs": "uncompressedSize",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Literal Context Bits (lc)",
+      "expression": "calc:lzmaProperties % 9",
+      "storeAs": "lzmaLc",
+      "description": "lc parameter extracted from properties byte: number of high bits of the previous byte used as context for literal coding. Range 0-8, default 3."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Unknown Size Flag",
+      "expression": "calc:uncompressedSize == 18446744073709551615",
+      "storeAs": "isUnknownSize",
+      "description": "True if uncompressed size field contains 0xFFFFFFFFFFFFFFFF — meaning the original content size was not stored in the header."
     },
     {
       "type": "metadata",
-      "name": "Dictionary Size (bytes)",
+      "name": "Properties Byte",
+      "variable": "lzmaProperties",
+      "description": "Raw LZMA properties byte (encodes lc, lp, pb parameters). Default 0x5D = pb=2, lp=0, lc=3."
+    },
+    {
+      "type": "metadata",
+      "name": "Dictionary Size",
       "variable": "dictionarySize",
-      "description": "LZMA dictionary size in bytes"
+      "description": "LZMA compression window size in bytes — required RAM for decompression"
     },
     {
       "type": "metadata",
-      "name": "Uncompressed Size (bytes)",
+      "name": "Uncompressed Size",
       "variable": "uncompressedSize",
-      "description": "Original file size before compression"
+      "description": "Original data size (0xFFFFFFFFFFFFFFFF = unknown)"
     },
     {
       "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "Unknown Size",
+      "variable": "isUnknownSize",
+      "description": "True if the uncompressed size is stored as -1 (unknown) in the header"
+    },
+    {
+      "type": "metadata",
+      "name": "Literal Context Bits",
+      "variable": "lzmaLc",
+      "description": "lc parameter: number of previous byte's high bits used as literal coding context (0-8)"
     }
   ],
-  "software": [
-    "LZMA utils",
-    "7-Zip",
-    "xz"
+  "assertions": [
+    {
+      "name": "Properties byte value valid",
+      "expression": "lzmaProperties <= 224",
+      "severity": "error",
+      "message": "LZMA properties byte must be <= 224 (values above 224 encode invalid parameter combinations)"
+    },
+    {
+      "name": "Dictionary size is non-zero",
+      "expression": "dictionarySize > 0",
+      "severity": "error",
+      "message": "LZMA dictionary size must be greater than 0"
+    },
+    {
+      "name": "Dictionary size reasonable",
+      "expression": "dictionarySize <= 536870912",
+      "severity": "warning",
+      "message": "Dictionary size exceeds 512MB — decompression requires at least this much RAM"
+    }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".lzma",
-      ".xz"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "LZMA Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Compressed Data",
+        "offset": 13,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-lzma-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "dictionarySize",
+    "primaryField": "uncompressedSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "LZMA Header",
+        "icon": "\uE71B",
+        "fields": ["lzmaProperties", "lzmaLc", "dictionarySize", "formattedDictSize"]
+      },
+      {
+        "title": "Content Size",
+        "icon": "\uE9D9",
+        "fields": ["uncompressedSize", "isUnknownSize", "formattedUncompSize"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
+  "exportTemplates": [
+    {
+      "name": "LZMA Header (JSON)",
+      "format": "json",
+      "fields": ["lzmaProperties", "lzmaLc", "dictionarySize", "uncompressedSize", "isUnknownSize"]
+    },
+    {
+      "name": "lzma_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "lzma_header",
+      "fields": ["lzmaProperties", "dictionarySize", "uncompressedSize"]
+    },
+    {
+      "name": "Python LZMA check",
+      "format": "python-bytes",
+      "fields": ["lzmaProperties", "dictionarySize"]
+    }
+  ],
   "forensic": {
     "category": "archive",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid properties byte",
+        "condition": "lzmaProperties > 224",
+        "severity": "error",
+        "description": "LZMA properties byte > 224 encodes invalid (lc+lp) > 4 combination — file is malformed or intentionally crafted"
+      },
+      {
+        "name": "Unusually large dictionary",
+        "condition": "dictionarySize > 536870912",
+        "severity": "warning",
+        "description": "Dictionary size > 512MB is unusual and will require equivalent RAM for decompression — possible resource exhaustion"
+      },
+      {
+        "name": "Unknown uncompressed size",
+        "condition": "isUnknownSize == true",
+        "severity": "info",
+        "description": "Uncompressed size is marked unknown (-1) — decompressor must buffer entire output, potential memory risk for large files"
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "LZMA (Lempel-Ziv-Markov chain Algorithm) compressed file format, used in 7-Zip and XZ Utils",
+    "analysisContext": "LZMA standalone format has a fixed 13-byte header: properties byte (lc/lp/pb parameters) + 4-byte dictionary size (LE) + 8-byte uncompressed size (LE, -1 if unknown). No integrity checksum. The properties byte 0x5D (93) is the default. Superseded by .xz format which adds stream framing, checksums, and better multi-file support.",
+    "knownVulnerabilities": [
+      "No integrity checksum in LZMA standalone format — bit errors are not detectable without external checksum",
+      "Very large dictionary sizes (> 256MB) can cause decompressor memory exhaustion"
+    ],
     "suggestedInspections": [
-      "Verify LZMA Compression file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Verify properties byte <= 224 and (lc + lp) <= 4",
+      "Check dictionary size is a power of 2 or sum of two consecutive powers of 2",
+      "If uncompressedSize == 0xFFFFFFFFFFFFFFFF, the file must be fully decompressed to determine content size",
+      "No checksum: verify content integrity with external hash if available"
     ]
+  },
+  "software": [
+    "LZMA utils (Igor Pavlov)",
+    "7-Zip",
+    "xz-utils",
+    "Python lzma module"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".lzma"],
+    "relatedFormats": ["XZ", "7Z", "BZIP2"],
+    "supersededBy": "XZ"
+  },
+  "MimeTypes": [
+    "application/x-lzma",
+    "application/x-lzma-compressed"
+  ],
+  "UseCases": [
+    "Single-file compression (legacy)",
+    "7-Zip internal compression engine",
+    "Embedded firmware compression",
+    "Linux initramfs (older distributions)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "LZMA (LZ77 + range coding + Markov chain prediction)",
+    "ArchivesFormat": false,
+    "SupportsEncryption": false,
+    "HeaderSize": "13 bytes",
+    "HasIntegrityCheck": false,
+    "MaxDictionarySize": "4GB (32-bit field)"
   }
 }

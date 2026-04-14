@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Minecraft Region
-   Category:  Game
-   Ext:       .mcr
-   Editor:    hex-editor
-   Desc:      Minecraft legacy region format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, locationTable, timestampTable
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Minecraft Region",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".mcr"
   ],
@@ -33,13 +23,23 @@
     ]
   },
   "detection": {
-    "signature": "00",
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "000000",
+        "offset": 0,
+        "label": "0x000000 — Minecraft legacy region first sector (weak, no magic)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -89,7 +89,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".mcr"
@@ -112,11 +112,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 27,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -138,5 +138,30 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "locationTable",
+    "primaryField": "timestampTable",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Minecraft Region",
+        "icon": "",
+        "fields": [
+          "locationTable",
+          "timestampTable"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Minecraft Region Header (JSON)",
+      "format": "json",
+      "fields": [
+        "locationTable",
+        "timestampTable"
+      ]
+    }
+  ]
 }

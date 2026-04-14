@@ -1,17 +1,7 @@
-/*
-   ============================================================
-   Format:    Windows Store Resource File
-   Category:  Programming/SourceCode
-   Ext:       .resw
-   Editor:    resx-editor
-   Desc:      Windows Store app resource file using the same XML schema as .resx, used for UWP and WinUI 3 app localization.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Store Resource File",
-  "version": "2.1",
+  "version": "2.12",
   "extensions": [
     ".resw"
   ],

@@ -1,140 +1,522 @@
-/* ============================================================
-   Format:    Opus Audio
-   Category:  Audio
-   Ext:       .opus
-   Editor:    audio-viewer
-   Desc:      Opus lossy audio codec designed for interactive speech and audio transmission
-   Variables: currentOffset, opusVersion, channels, preSkip, sampleRate, outputGain, channelMappingFamily, oggContainer, samplesPerSecond
-   Detection: signature=4F676753 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Opus Audio",
-  "version": "2.3",
+  "version": "2.33",
   "extensions": [
     ".opus"
   ],
-  "description": "Opus lossy audio codec designed for interactive speech and audio transmission",
+  "description": "Opus is an open, royalty-free, highly versatile audio codec standardized by IETF (RFC 6716). Opus files use the Ogg container format. The first Ogg page contains the Opus ID Header packet, which starts at offset 28 (after the Ogg page header). The Opus ID Header signature is 'OpusHead' (8 bytes), followed by the Opus version (1 byte, must be 1), channel count (1 byte), pre-skip (2 bytes LE uint16 — samples to skip at decode start), input sample rate (4 bytes LE uint32 — original recording rate before 48kHz encoding), output gain (2 bytes LE int16), channel mapping family (1 byte: 0=mono/stereo, 1=Vorbis channel order, 255=undefined). The second Ogg page contains the Opus Comment Header ('OpusTags'). Actual audio data starts in the third Ogg page. Opus always internally operates at 48000 Hz regardless of input sample rate.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "RFC 6716 - Definition of the Opus Audio Codec",
-      "RFC 8251 - Updates to the Opus Audio Codec",
-      "IETF Opus Specification"
+      "RFC 6716 — Definition of the Opus Audio Codec (2012)",
+      "RFC 7845 — Ogg Encapsulation for the Opus Audio Codec",
+      "RFC 8251 — Updates to the Opus Audio Codec"
     ],
     "WebLinks": [
-      "https://datatracker.ietf.org/doc/html/rfc6716",
       "https://opus-codec.org/",
-      "https://en.wikipedia.org/wiki/Opus_(audio_format)",
-      "https://www.rfc-editor.org/info/rfc6716"
+      "https://datatracker.ietf.org/doc/html/rfc6716",
+      "https://datatracker.ietf.org/doc/html/rfc7845",
+      "https://en.wikipedia.org/wiki/Opus_(audio_format)"
     ]
   },
   "detection": {
-    "signature": "4F676753",
-    "offset": 0,
+    "signatures": [
+      {
+        "value": "4F676753",
+        "offset": 0,
+        "label": "OggS capture pattern",
+        "weight": 0.5
+      },
+      {
+        "value": "4F707573486561640100",
+        "offset": 28,
+        "label": "OpusHead v1 in first Ogg page",
+        "weight": 1.0
+      },
+      {
+        "value": "4F70757348656164",
+        "offset": 28,
+        "label": "OpusHead magic in first Ogg page",
+        "weight": 0.9
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 47,
+      "note": "Opus files are Ogg containers. First page header: 'OggS' at offset 0. Opus ID Header at offset 28 (after 28-byte Ogg page header): 'OpusHead' (8B) + version byte (must be 1). Second page contains 'OpusTags'. Detection by both OggS and OpusHead is the most reliable approach."
     }
   },
-  "functions": {
-    "readUInt32LE": "Read Ogg page metadata (serial number, sequence)",
-    "readUInt8": "Read Opus header fields (version, channels, pre-skip)",
-    "readUInt16LE": "Read 16-bit fields from Opus header",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  },
   "variables": {
-    "currentOffset": 0,
+    "oggsCapturePattern": "",
+    "oggVersion": 0,
+    "headerType": 0,
+    "granulePosition": 0,
+    "streamSerialNumber": 0,
+    "pageSequenceNumber": 0,
+    "pageChecksum": 0,
+    "numPageSegments": 0,
+    "opusHeadMagic": "",
     "opusVersion": 0,
-    "channels": 0,
+    "channelCount": 0,
     "preSkip": 0,
-    "sampleRate": 48000,
+    "inputSampleRate": 0,
     "outputGain": 0,
     "channelMappingFamily": 0,
-    "oggContainer": 0,
-    "samplesPerSecond": 0
+    "isStereo": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "Ogg Container",
+      "name": "OggS Capture Pattern",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "OggS - Ogg container for Opus audio",
-      "storeAs": "oggContainer",
-      "valueType": "uint32"
+      "opacity": 0.45,
+      "description": "Ogg page capture pattern 'OggS' (0x4F 0x67 0x67 0x53). Present at the start of every Ogg page. All Ogg containers (Opus, Vorbis, FLAC, Theora) begin with this signature.",
+      "storeAs": "oggsCapturePattern",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Ogg Stream Version",
+      "offset": 4,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "Ogg stream structure version — must always be 0x00. Any other value indicates a non-standard or corrupt Ogg page.",
+      "storeAs": "oggVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Version 0 — standard Ogg (required)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Header Type Flags",
+      "offset": 5,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Ogg page header type flags. Bit 0: continuation of previous packet. Bit 1: beginning of stream (BOS — first page). Bit 2: end of stream (EOS — last page). For the first Opus page: value = 0x02 (BOS flag set).",
+      "storeAs": "headerType",
+      "valueType": "uint8",
+      "bitfields": [
+        { "name": "Continuation", "bits": "0", "description": "This page is a continuation of the previous packet" },
+        { "name": "BOS (Beginning of Stream)", "bits": "1", "description": "First page of the logical bitstream" },
+        { "name": "EOS (End of Stream)", "bits": "2", "description": "Last page of the logical bitstream" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Granule Position",
+      "offset": 6,
+      "length": 8,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Granule position — codec-specific timestamp/position (little-endian uint64). For Opus: PCM sample count at 48kHz. For the Opus ID Header page (first page): this is -1 (0xFFFFFFFFFFFFFFFF) because the header packet has no audio samples.",
+      "storeAs": "granulePosition",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Stream Serial Number",
+      "offset": 14,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Unique serial number identifying this logical bitstream within the Ogg container (little-endian uint32). Different streams in a multiplexed Ogg file have different serial numbers.",
+      "storeAs": "streamSerialNumber",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Page Sequence Number",
+      "offset": 18,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Monotonically increasing page sequence number for this logical bitstream (little-endian uint32). First page = 0. Used to detect dropped pages.",
+      "storeAs": "pageSequenceNumber",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Page Checksum",
+      "offset": 22,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "CRC-32 checksum of the entire Ogg page (little-endian uint32). Uses the CRC-32 polynomial 0x04C11DB7 (non-reflected). Computed with this field set to zero, then stored here.",
+      "storeAs": "pageChecksum",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Page Segments",
+      "offset": 26,
+      "length": 1,
+      "color": "#FFA07A",
+      "opacity": 0.25,
+      "description": "Number of entries in the segment table (uint8). Each entry is 1 byte. For the first Opus page this is typically 1 (one segment containing the full ID header packet).",
+      "storeAs": "numPageSegments",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Opus Head Magic",
+      "offset": 28,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Opus ID Header magic: 'OpusHead' (0x4F 0x70 0x75 0x73 0x48 0x65 0x61 0x64). This 8-byte sequence at offset 28 (after Ogg page header + 1-byte segment table entry) uniquely identifies an Opus audio file. The offset assumes a single-segment Ogg page (numPageSegments=1).",
+      "storeAs": "opusHeadMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Opus Version",
+      "offset": 36,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Opus codec version number (uint8). Must be 1 for all current Opus streams. The upper 4 bits are the major version (must be 0 for compatibility); the lower 4 bits are the minor version.",
+      "storeAs": "opusVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "Opus version 1 (RFC 6716 compliant)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Channel Count",
+      "offset": 37,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Number of output audio channels (uint8). Must be between 1 and 255. Common values: 1 (mono), 2 (stereo), 6 (5.1 surround), 8 (7.1 surround). Channel layout depends on channelMappingFamily.",
+      "storeAs": "channelCount",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "Mono",
+        "2": "Stereo",
+        "4": "Quadraphonic",
+        "6": "5.1 Surround",
+        "8": "7.1 Surround"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Pre-Skip",
+      "offset": 38,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Number of Opus samples to skip at the beginning of decoding before actual audio begins (little-endian uint16). Typically 312 samples (6.5ms). This is the encoder delay required by the Opus codec. Decoders must discard exactly this many decoded samples from the start of the stream.",
+      "storeAs": "preSkip",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Input Sample Rate",
+      "offset": 40,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Original input sample rate before Opus encoding (little-endian uint32). Informational only — Opus always internally encodes at 48000 Hz. Common values: 8000, 16000, 24000, 44100, 48000. This field allows preserving the original rate metadata.",
+      "storeAs": "inputSampleRate",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "8000": "8 kHz (narrowband speech)",
+        "12000": "12 kHz",
+        "16000": "16 kHz (wideband speech)",
+        "24000": "24 kHz (superwideband)",
+        "44100": "44.1 kHz (CD quality)",
+        "48000": "48 kHz (Opus native, Blu-ray, professional)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Output Gain",
+      "offset": 44,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Output gain applied to decoded audio (little-endian int16). Encoded as fixed-point Q7.8 (multiply by 2^-8 to get dB gain, then apply as 10^(gain/20) linear scale). 0 = no gain adjustment. Used for replay gain normalization.",
+      "storeAs": "outputGain",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Channel Mapping Family",
+      "offset": 46,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Defines the channel mapping table. 0 = RTP channel order (mono or stereo only), 1 = Vorbis channel order (up to 8 channels with standard surround layout), 255 = undefined/application-specific. Values 2-254 are reserved. For family 0: channelCount must be 1 or 2.",
+      "storeAs": "channelMappingFamily",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Family 0 — RTP order (mono or stereo, no mapping table)",
+        "1": "Family 1 — Vorbis order (1-8 channels, surround support)",
+        "255": "Family 255 — undefined/application-specific"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Stereo",
+      "expression": "calc:channelCount == 2",
+      "storeAs": "isStereo",
+      "description": "True when channelCount=2 (standard stereo Opus stream)"
     },
     {
       "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
+      "name": "Opus Version",
+      "variable": "opusVersion",
+      "description": "Opus codec version (must be 1)"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channelCount",
+      "description": "Number of audio output channels"
+    },
+    {
+      "type": "metadata",
+      "name": "Pre-Skip Samples",
+      "variable": "preSkip",
+      "description": "Samples to skip at decode start (encoder delay)"
+    },
+    {
+      "type": "metadata",
+      "name": "Input Sample Rate",
+      "variable": "inputSampleRate",
+      "description": "Original sample rate before 48kHz Opus encoding"
+    },
+    {
+      "type": "metadata",
+      "name": "Channel Mapping Family",
+      "variable": "channelMappingFamily",
+      "description": "Channel layout family (0=mono/stereo, 1=Vorbis surround)"
     }
   ],
-  "software": [
-    "VLC",
-    "Firefox",
-    "Chrome",
-    "Discord",
-    "WhatsApp"
+  "assertions": [
+    {
+      "name": "OggS capture pattern valid",
+      "expression": "oggsCapturePattern == 'OggS'",
+      "severity": "error",
+      "message": "Ogg capture pattern must be 'OggS' (4F 67 67 53) — not a valid Ogg/Opus file"
+    },
+    {
+      "name": "Ogg stream version is 0",
+      "expression": "oggVersion == 0",
+      "severity": "error",
+      "message": "Ogg stream version must be 0 — any other value is non-standard"
+    },
+    {
+      "name": "Opus version is 1",
+      "expression": "opusVersion == 1",
+      "severity": "error",
+      "message": "Opus ID Header version must be 1 — this Opus stream is not RFC 6716 compliant"
+    },
+    {
+      "name": "Channel count valid",
+      "expression": "channelCount >= 1 && channelCount <= 255",
+      "severity": "error",
+      "message": "Opus channel count must be between 1 and 255"
+    },
+    {
+      "name": "Channel mapping family 0 requires mono/stereo",
+      "expression": "channelMappingFamily != 0 || channelCount <= 2",
+      "severity": "warning",
+      "message": "Channel mapping family 0 supports only 1 or 2 channels — more channels require family 1 or 255"
+    }
   ],
-  "format_relationships": {
-    "open_source": true,
-    "based_on": [
-      "SILK",
-      "CELT"
-    ],
-    "replaces": [
-      "Vorbis",
-      "Speex"
-    ],
-    "container": "OGG/WEBM"
+  "checksums": [
+    {
+      "name": "Ogg Page CRC-32",
+      "algorithm": "crc32",
+      "polynomial": "0x04C11DB7",
+      "reflected": false,
+      "dataRange": { "fixedOffset": 0, "lengthFromField": "pageSize" },
+      "storedAt": { "fixedOffset": 22, "length": 4, "endianness": "little" },
+      "storedType": "uint32",
+      "computeWithFieldZero": true,
+      "severity": "warning"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "First Ogg Page (ID Header)",
+        "offset": 0,
+        "icon": "\uE8D6",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "OpusHead Magic",
+        "offset": 28,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Audio Parameters",
+        "offset": 36,
+        "icon": "\uE8A5",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "Page CRC",
+        "offset": 22,
+        "icon": "\uE8F4",
+        "color": "#95E1D3"
+      }
+    ]
   },
-  "MimeTypes": [
-    "audio/opus"
-  ],
-  "Software": [
-    "VLC",
-    "Audacity",
-    "Foobar2000",
-    "MediaMonkey",
-    "Winamp"
-  ],
-  "UseCases": [
-    "Music playback",
-    "Audio editing",
-    "Sound production",
-    "Streaming"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "channelCount",
+    "primaryField": "inputSampleRate",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Ogg Container",
+        "icon": "\uE8D6",
+        "fields": ["oggsCapturePattern", "oggVersion", "headerType", "streamSerialNumber", "pageSequenceNumber"]
+      },
+      {
+        "title": "Opus ID Header",
+        "icon": "\uE9D9",
+        "fields": ["opusHeadMagic", "opusVersion", "channelCount", "isStereo"]
+      },
+      {
+        "title": "Audio Parameters",
+        "icon": "\uE8A5",
+        "fields": ["inputSampleRate", "preSkip", "outputGain", "channelMappingFamily"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE8F4",
+        "fields": ["pageChecksum", "granulePosition"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "AudioFormat": true
-  },
+  "exportTemplates": [
+    {
+      "name": "Opus Header Analysis (JSON)",
+      "format": "json",
+      "fields": ["oggsCapturePattern", "oggVersion", "opusHeadMagic", "opusVersion", "channelCount", "preSkip", "inputSampleRate", "outputGain", "channelMappingFamily"]
+    },
+    {
+      "name": "OPUS_ID_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "OPUS_ID_HEADER",
+      "fields": ["opusHeadMagic", "opusVersion", "channelCount", "preSkip", "inputSampleRate", "outputGain", "channelMappingFamily"]
+    },
+    {
+      "name": "Python Opus check",
+      "format": "python-bytes",
+      "fields": ["oggsCapturePattern", "opusHeadMagic", "opusVersion"]
+    }
+  ],
   "forensic": {
     "category": "audio",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid Opus version",
+        "condition": "opusVersion != 1",
+        "severity": "warning",
+        "description": "Opus ID Header version is not 1. RFC 6716 requires version=1 for all standard Opus streams."
+      },
+      {
+        "name": "Invalid channel mapping for family 0",
+        "condition": "channelMappingFamily == 0 && channelCount > 2",
+        "severity": "error",
+        "description": "Channel mapping family 0 supports only mono (1) or stereo (2). More channels with family 0 is invalid."
+      },
+      {
+        "name": "Abnormal pre-skip",
+        "condition": "preSkip > 3840",
+        "severity": "warning",
+        "description": "Pre-skip value exceeds 3840 samples (80ms at 48kHz). Standard Opus pre-skip is 312 or 80 samples. An unusual value may indicate a non-standard encoder."
+      }
+    ],
+    "knownExploitVectors": [
+      "Integer overflow in channel count × frame size allocation in early libopus builds",
+      "Crafted Ogg page with pageSize exceeding file bounds causing OOB read in demuxers"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Opus lossy audio codec designed for interactive speech and audio transmission",
+    "analysisContext": "Opus audio in Ogg container. File layout: Ogg page 1 (BOS) → Opus ID Header at offset 28: 'OpusHead'(8B)+version(1B)+channels(1B)+preSkip(2B LE)+inputSampleRate(4B LE)+outputGain(2B LE int16)+channelMappingFamily(1B). Ogg page 2: Opus Comment Header → 'OpusTags'(8B)+vendorLen(4B LE)+vendor(varlen)+userCommentCount(4B LE)+comments. Ogg pages 3+: Opus audio frames. Opus always decodes to 48kHz; inputSampleRate is informational. Pre-skip=312 means first 312 decoded samples should be discarded. Output gain: apply as gain_linear = pow(10, outputGain_dB / 20.0) where outputGain_dB = outputGain * 2^-8.",
+    "knownVulnerabilities": [
+      "CVE-2018-10003: libopus 1.3 integer overflow in frame size calculation",
+      "Malformed Ogg page causing infinite loop in demuxer (missing EOS page)"
+    ],
     "suggestedInspections": [
-      "Validate Opus Audio header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+      "Confirm OggS at offset 0 and 'OpusHead' at offset 28",
+      "Check opusVersion (offset 36) = 1 for RFC 6716 compliance",
+      "Read channelCount (offset 37), preSkip (offset 38-39 LE uint16), inputSampleRate (40-43 LE uint32)",
+      "Check channelMappingFamily (offset 46): 0=mono/stereo, 1=Vorbis surround layout",
+      "Second Ogg page should have 'OpusTags' (4F70757354616773) — Vorbis-style comment header",
+      "Verify page CRC-32 at offset 22 (LE uint32) using polynomial 0x04C11DB7 non-reflected"
     ]
+  },
+  "software": [
+    "libopus (reference encoder/decoder)",
+    "FFmpeg (encode/decode)",
+    "VLC media player",
+    "Firefox/Chrome (WebRTC and HTML5 audio)",
+    "Discord (voice codec)",
+    "Audacity (export)",
+    "Opus-tools (opusenc, opusdec, opusinfo)"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".opus"],
+    "relatedFormats": ["OGG", "WEBM"],
+    "note": "Opus combines the SILK codec (Skype, speech-optimized) and CELT codec (music-optimized) in one unified codec. It is the mandatory audio codec for WebRTC (RFC 7874) and recommended for IETF protocols. Opus replaced Speex (speech) and Vorbis (music) as the preferred open audio format."
+  },
+  "MimeTypes": [
+    "audio/opus",
+    "audio/ogg; codecs=opus"
+  ],
+  "UseCases": [
+    "WebRTC voice/video calls (Discord, Zoom, browsers)",
+    "VoIP and streaming audio (low latency 2.5-60ms frames)",
+    "Music streaming (high quality at 64-128kbps)",
+    "Podcasts and audiobooks",
+    "Game audio effects"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 18,
+    "ValidationRules": 5,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "Endianness": "little-endian (Ogg + Opus fields)",
+    "Container": "Ogg",
+    "Codec": "Opus (SILK + CELT)",
+    "SampleRate": "48000 Hz (fixed internal; inputSampleRate is original)",
+    "HasHeader": true,
+    "Lossless": false,
+    "FrameSize": "2.5ms to 60ms"
   }
 }

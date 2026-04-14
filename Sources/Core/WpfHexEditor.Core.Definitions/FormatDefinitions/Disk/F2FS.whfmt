@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    F2FS (Flash-Friendly File System)
-   Category:  Disk
-   Ext:       .f2fs
-   Editor:    hex-editor
-   Desc:      Flash-Friendly File System for NAND flash devices
-   Variables: currentOffset, machineType, sectionCount, entryPoint
-   Detection: signature=F2F52010 @ offset 1024
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "F2FS (Flash-Friendly File System)",
-  "version": "1.10",
+  "version": "1.13",
   "extensions": [
     ".f2fs"
   ],
@@ -33,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "F2F52010",
-    "offset": 1024,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "F2F52010",
+        "offset": 1024,
+        "label": "F2FS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -74,7 +73,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".f2fs"
@@ -97,11 +96,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

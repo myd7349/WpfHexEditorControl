@@ -778,7 +778,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Cursor-change detection: covers every code path that moves the caret
             // (mouse click, keyboard, undo/redo, NavigateToLine, etc.) without requiring
             // a ScheduleWordHighlightUpdate() call at each individual site.
-            if (_cursorLine != _wordHighlightTrackedLine || _cursorColumn != _wordHighlightTrackedCol)
+            // Guard: skip when no file is open — prevents the timer from firing after
+            // Close() and re-populating word highlights on a blank/next document.
+            if (_currentFilePath is not null &&
+                (_cursorLine != _wordHighlightTrackedLine || _cursorColumn != _wordHighlightTrackedCol))
             {
                 _wordHighlightTrackedLine = _cursorLine;
                 _wordHighlightTrackedCol  = _cursorColumn;
@@ -813,12 +816,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
 
             // Push updated viewport context to LSP overlay layers (debounced internally).
-            if (ShowLspInlayHints)
-                _lspInlayHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, _horizontalScrollOffset);
-            if (ShowLspDeclarationHints)
-                _lspDeclarationHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, BuildVisibleSourceLines(), _horizontalScrollOffset);
-            if (EnableSemanticHighlighting)
-                _semanticTokensLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight);
+            // Guard: only push when a file is open — passing null here would re-arm the debounce
+            // and overwrite a deliberate SetContext(null) clear issued by Close() or RefreshHighlights().
+            if (_currentFilePath is not null)
+            {
+                if (ShowLspInlayHints)
+                    _lspInlayHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, _horizontalScrollOffset);
+                if (ShowLspDeclarationHints)
+                    _lspDeclarationHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, BuildVisibleSourceLines(), _horizontalScrollOffset);
+                if (EnableSemanticHighlighting)
+                    _semanticTokensLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, _horizontalScrollOffset, _lineYLookup, TopMargin);
+            }
 
             // Sticky scroll header: refresh only when the true scroll-line changes.
             // Guard: never call InvalidateArrange() unconditionally inside OnRender —
@@ -1274,6 +1282,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double hintTop  = TopMargin;
             _lspInlayHintsLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
             _lspDeclarationHintsLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
+            _semanticTokensLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
 
             UpdateScrollBars(contentW, contentH);
             return finalSize;
@@ -2206,6 +2215,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private void UpdateWordHighlights()
         {
+            // Guard: no file open — clear any residual state and bail so the timer
+            // cannot re-populate highlights after Close() or during rapid file switching.
+            if (_currentFilePath is null)
+            {
+                _wordHighlights.Clear();
+                _wordHighlightLines.Clear();
+                _wordHighlightLineSet.Clear();
+                _wordHighlightWord = string.Empty;
+                _wordHighlightLen  = 0;
+                _codeScrollMarkerPanel?.ClearWordMarkers();
+                return;
+            }
+
             _wordHighlights.Clear();
             _wordHighlightLines.Clear();
             _wordHighlightLineSet.Clear();

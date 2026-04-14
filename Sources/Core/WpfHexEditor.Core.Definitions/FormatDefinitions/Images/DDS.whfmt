@@ -1,29 +1,20 @@
-/* ============================================================
-   Format:    DirectDraw Surface
-   Category:  Images
-   Ext:       .dds
-   Editor:    image-viewer
-   Desc:      DirectX texture format
-   Variables: currentOffset, imageWidth, imageHeight, totalPixels, ddsSignature, headerSize, flags, height, width
-   Detection: signature=44445320 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "DirectDraw Surface",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
     ".dds"
   ],
-  "description": "DirectX texture format",
+  "description": "DirectDraw Surface — Microsoft's GPU texture container format. A DDS file begins with the 4-byte magic 'DDS ' (0x44445320) followed by a 120-byte DDS_HEADER structure (total 124 bytes including the size field). For DX10+ textures, an optional 20-byte DDS_HEADER_DXT10 follows the main header, identified by fourCC='DX10'. Supports block-compressed formats (DXT1-5=BC1-3, BC4-7), uncompressed RGB/RGBA, mipmap chains, cubemap faces, and volume textures. All multi-byte values are little-endian.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "Microsoft DirectDraw Surface (DDS) Format",
-      "DDS Programming Guide - DirectX Graphics",
-      "DDS_HEADER and DDS_PIXELFORMAT Specification"
+      "Microsoft DirectDraw Surface (DDS) Programming Guide",
+      "DDS_HEADER structure — DirectX Graphics and Gaming",
+      "DXGI_FORMAT enumeration — Direct3D 11",
+      "BCn Block Compression — DirectX Developer Documentation"
     ],
     "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds",
@@ -36,37 +27,42 @@
     "signature": "44445320",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 128,
+      "note": "DDS magic is 0x44445320 = 'DDS ' (with trailing space). Header size field at offset 4 must be 124. Pixel format at offset 76 contains fourCC or RGB bit masks."
     }
   },
-  "functions": {
-    "readUInt32LE": "Read width and height (little-endian)",
-    "multiply": "Calculate total pixels (width × height)",
-    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
-  },
   "variables": {
-    "currentOffset": 0,
-    "imageWidth": 0,
-    "imageHeight": 0,
-    "totalPixels": 0,
     "ddsSignature": "",
     "headerSize": 0,
-    "flags": 0,
+    "ddsFlags": 0,
     "height": 0,
-    "width": ""
+    "width": 0,
+    "pitchOrLinearSize": 0,
+    "depth": 0,
+    "mipMapCount": 0,
+    "ddpfFlags": 0,
+    "ddpfFourCC": "",
+    "ddpfRGBBitCount": 0,
+    "caps1": 0,
+    "caps2": 0,
+    "isCubeMap": false,
+    "isVolume": false,
+    "hasMipMaps": false,
+    "isDxt10Extended": false,
+    "totalPixels": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "DDS Signature",
+      "name": "DDS Magic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "DDS magic bytes",
+      "opacity": 0.45,
+      "description": "Four-byte magic number 'DDS ' (0x44 0x44 0x53 0x20) — ASCII string identifying this as a DirectDraw Surface file. The trailing space (0x20) is part of the signature.",
       "storeAs": "ddsSignature",
       "valueType": "ascii"
     },
@@ -76,21 +72,33 @@
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of header structure (124)",
+      "opacity": 0.30,
+      "description": "Size of the DDS_HEADER structure in bytes. Must always be exactly 124 (includes this 4-byte field). Any value other than 124 indicates a malformed or non-standard DDS file.",
       "storeAs": "headerSize",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
-      "name": "Flags",
+      "name": "DDS Flags",
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Surface description flags",
-      "storeAs": "flags",
-      "valueType": "uint32"
+      "opacity": 0.30,
+      "description": "DDSD flags indicating which DDS_HEADER fields contain valid data. Standard files set CAPS(0x1), HEIGHT(0x2), WIDTH(0x4), PIXELFORMAT(0x1000). Mipmapped textures add MIPMAPCOUNT(0x20000). Compressed textures add LINEARSIZE(0x80000). Uncompressed add PITCH(0x8).",
+      "storeAs": "ddsFlags",
+      "valueType": "uint32",
+      "endianness": "little",
+      "bitfields": [
+        { "name": "DDSD_CAPS", "bits": "0", "description": "Required: caps field is valid" },
+        { "name": "DDSD_HEIGHT", "bits": "1", "description": "Required: height field is valid" },
+        { "name": "DDSD_WIDTH", "bits": "2", "description": "Required: width field is valid" },
+        { "name": "DDSD_PITCH", "bits": "3", "description": "Pitch for uncompressed texture is valid" },
+        { "name": "DDSD_PIXELFORMAT", "bits": "12", "description": "Required: pixel format field is valid" },
+        { "name": "DDSD_MIPMAPCOUNT", "bits": "17", "description": "Mip map count is valid (texture has mipmaps)" },
+        { "name": "DDSD_LINEARSIZE", "bits": "19", "description": "Linear size for compressed texture is valid" },
+        { "name": "DDSD_DEPTH", "bits": "23", "description": "Depth of volume texture is valid" }
+      ]
     },
     {
       "type": "field",
@@ -98,92 +106,442 @@
       "offset": 12,
       "length": 4,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Height in pixels",
+      "opacity": 0.35,
+      "description": "Texture height in pixels (little-endian uint32). For cube maps, this is the face height. For volume textures, the height of the primary surface. Must be a power of 2 for older DirectX hardware (pre-DX10).",
       "storeAs": "height",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
       "name": "Width",
       "offset": 16,
       "length": 4,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
-      "description": "Width in pixels",
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Texture width in pixels (little-endian uint32). For cube maps, this is the face width. Must be a power of 2 for legacy hardware. DX10 supports non-power-of-2 textures.",
       "storeAs": "width",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
-      "type": "metadata",
-      "name": "Image Width (pixels)",
-      "variable": "imageWidth",
-      "description": "Texture width"
+      "type": "field",
+      "name": "Pitch or Linear Size",
+      "offset": 20,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "For uncompressed textures: bytes per scanline (pitch = width × bytesPerPixel). For compressed textures (DDSD_LINEARSIZE set): total bytes in the top-level mipmap image. Block-compressed formats: max(1, (width+3)/4) × max(1, (height+3)/4) × blockSize (DXT1=8 bytes/block, DXT2-5=16 bytes/block).",
+      "storeAs": "pitchOrLinearSize",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
-      "type": "metadata",
-      "name": "Image Height (pixels)",
-      "variable": "imageHeight",
-      "description": "Texture height"
+      "type": "field",
+      "name": "Depth",
+      "offset": 24,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Depth of volume texture in 'slices'. Only valid when DDSD_DEPTH flag is set (caps2 includes DDSCAPS2_VOLUME). For 2D textures and cube maps, this field is 0 or 1.",
+      "storeAs": "depth",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
-      "type": "metadata",
+      "type": "field",
+      "name": "Mip Map Count",
+      "offset": 28,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Number of mipmap levels including the top-level surface. 0 or 1 means no mipmaps. Full mipmap chain for a 256×256 texture has 9 levels (256, 128, 64, 32, 16, 8, 4, 2, 1). Valid only when DDSD_MIPMAPCOUNT flag is set.",
+      "storeAs": "mipMapCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Pixel Format Flags",
+      "offset": 80,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "DDPF flags in DDS_PIXELFORMAT structure (at offset 76+4). Indicates how to interpret the pixel data. DDPF_FOURCC(0x4) = compressed format with fourCC code. DDPF_RGB(0x40) = uncompressed RGB. DDPF_LUMINANCE(0x20000) = grayscale. DDPF_ALPHA(0x2) = alpha-only. DDPF_BUMPDUDV(0x80000) = normal map tangent space.",
+      "storeAs": "ddpfFlags",
+      "valueType": "uint32",
+      "endianness": "little",
+      "bitfields": [
+        { "name": "DDPF_ALPHAPIXELS", "bits": "0", "description": "Texture contains alpha data (mask in dwABitMask)" },
+        { "name": "DDPF_ALPHA", "bits": "1", "description": "Alpha channel only, no color data" },
+        { "name": "DDPF_FOURCC", "bits": "2", "description": "FourCC code identifies compressed or DX10 format" },
+        { "name": "DDPF_RGB", "bits": "6", "description": "Uncompressed RGB/RGBA pixel data" },
+        { "name": "DDPF_YUV", "bits": "9", "description": "Uncompressed YUV data" },
+        { "name": "DDPF_LUMINANCE", "bits": "17", "description": "Single-channel luminance (grayscale) data" },
+        { "name": "DDPF_BUMPDUDV", "bits": "19", "description": "Normal map in tangent space (BUMPMAP)" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Pixel Format FourCC",
+      "offset": 84,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.40,
+      "description": "Four-character code identifying the compressed pixel format. Valid only when DDPF_FOURCC flag is set. 'DX10' means a DDS_HEADER_DXT10 structure follows the main header with the DXGI_FORMAT enum.",
+      "storeAs": "ddpfFourCC",
+      "valueType": "ascii",
+      "valueMap": {
+        "DXT1": "BC1 — DXT1 opaque or 1-bit alpha (4 bits/pixel)",
+        "DXT2": "BC2 — DXT2 premultiplied alpha (8 bits/pixel)",
+        "DXT3": "BC2 — DXT3 explicit alpha (8 bits/pixel)",
+        "DXT4": "BC3 — DXT4 premultiplied alpha (8 bits/pixel)",
+        "DXT5": "BC3 — DXT5 interpolated alpha (8 bits/pixel)",
+        "BC4U": "BC4 — Single-channel unsigned (4 bits/pixel)",
+        "BC4S": "BC4 — Single-channel signed",
+        "ATI2": "BC5 — Two-channel (normal maps, ATI2N / 3Dc+)",
+        "BC5U": "BC5 — Two-channel unsigned",
+        "BC5S": "BC5 — Two-channel signed",
+        "DX10": "Extended DX10 format — DDS_HEADER_DXT10 follows main header"
+      }
+    },
+    {
+      "type": "field",
+      "name": "RGB Bit Count",
+      "offset": 88,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.25,
+      "description": "Number of bits per pixel in uncompressed RGB/RGBA formats. Valid when DDPF_RGB flag is set. Typical values: 16 (5-6-5 or 5-5-5-1), 24 (8-8-8), 32 (8-8-8-8). Ignored for block-compressed (DDPF_FOURCC) formats.",
+      "storeAs": "ddpfRGBBitCount",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "0": "N/A (compressed)",
+        "8": "8-bit indexed or luminance",
+        "16": "16-bit RGB (5-6-5 or 5-5-5-1)",
+        "24": "24-bit RGB",
+        "32": "32-bit RGBA (8-8-8-8)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Surface Caps 1",
+      "offset": 108,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Surface capability flags (DDSCAPS). Always has DDSCAPS_TEXTURE(0x1000). Complex surfaces (mipmaps, cubemaps) set DDSCAPS_COMPLEX(0x8). Mipmapped textures set DDSCAPS_MIPMAP(0x400000).",
+      "storeAs": "caps1",
+      "valueType": "uint32",
+      "endianness": "little",
+      "bitfields": [
+        { "name": "DDSCAPS_COMPLEX", "bits": "3", "description": "Complex surface (multiple sub-surfaces: mipmaps or cubemap faces)" },
+        { "name": "DDSCAPS_TEXTURE", "bits": "12", "description": "Required: this is a texture" },
+        { "name": "DDSCAPS_MIPMAP", "bits": "22", "description": "Texture has mipmap chain" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Surface Caps 2",
+      "offset": 112,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Additional surface capability flags (DDSCAPS2). DDSCAPS2_CUBEMAP(0x200) indicates a cube map. Individual cube map face flags: +X(0x400), -X(0x800), +Y(0x1000), -Y(0x2000), +Z(0x4000), -Z(0x8000). DDSCAPS2_VOLUME(0x200000) indicates a volume (3D) texture.",
+      "storeAs": "caps2",
+      "valueType": "uint32",
+      "endianness": "little",
+      "bitfields": [
+        { "name": "DDSCAPS2_CUBEMAP", "bits": "9", "description": "Surface is a cube map" },
+        { "name": "DDSCAPS2_CUBEMAP_POSITIVEX", "bits": "10", "description": "Cube map positive X face" },
+        { "name": "DDSCAPS2_CUBEMAP_NEGATIVEX", "bits": "11", "description": "Cube map negative X face" },
+        { "name": "DDSCAPS2_CUBEMAP_POSITIVEY", "bits": "12", "description": "Cube map positive Y face" },
+        { "name": "DDSCAPS2_CUBEMAP_NEGATIVEY", "bits": "13", "description": "Cube map negative Y face" },
+        { "name": "DDSCAPS2_CUBEMAP_POSITIVEZ", "bits": "14", "description": "Cube map positive Z face" },
+        { "name": "DDSCAPS2_CUBEMAP_NEGATIVEZ", "bits": "15", "description": "Cube map negative Z face" },
+        { "name": "DDSCAPS2_VOLUME", "bits": "21", "description": "Surface is a volume (3D) texture" }
+      ]
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Cube Map",
+      "expression": "calc:(caps2 & 512) != 0",
+      "storeAs": "isCubeMap",
+      "description": "True when DDSCAPS2_CUBEMAP flag is set — file contains a cube map (environment map with 6 faces)"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Volume Texture",
+      "expression": "calc:(caps2 & 2097152) != 0",
+      "storeAs": "isVolume",
+      "description": "True when DDSCAPS2_VOLUME flag is set — file contains a 3D volume texture"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Has Mip Maps",
+      "expression": "calc:mipMapCount > 1",
+      "storeAs": "hasMipMaps",
+      "description": "True when the texture has a mipmap chain (mipMapCount > 1)"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is DX10 Extended",
+      "expression": "calc:ddpfFourCC == 1480877636",
+      "storeAs": "isDxt10Extended",
+      "description": "True when fourCC='DX10' (0x30315844) — a DDS_HEADER_DXT10 structure follows the main 128-byte header at offset 128"
+    },
+    {
+      "type": "computeFromVariables",
       "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Width × Height (total pixel count)"
+      "expression": "calc:width * height",
+      "storeAs": "totalPixels",
+      "description": "Total pixel count for the primary surface (width × height)"
+    },
+    {
+      "type": "metadata",
+      "name": "FourCC / Format",
+      "variable": "ddpfFourCC",
+      "description": "Pixel format FourCC code (DXT1-5, BC4-5, DX10)"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Texture width in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Texture height in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Mip Levels",
+      "variable": "mipMapCount",
+      "description": "Number of mipmap levels (including top-level)"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Cube Map",
+      "variable": "isCubeMap",
+      "description": "True for environment/cube map textures"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Volume Texture",
+      "variable": "isVolume",
+      "description": "True for 3D volume textures"
+    },
+    {
+      "type": "metadata",
+      "name": "Is DX10 Extended",
+      "variable": "isDxt10Extended",
+      "description": "True when DDS_HEADER_DXT10 extension is present at offset 128"
     }
   ],
-  "software": [
-    "DirectX",
-    "NVIDIA Texture Tools",
-    "AMD Compressonator",
-    "Game engines"
+  "assertions": [
+    {
+      "name": "DDS magic valid",
+      "expression": "ddsSignature == 'DDS '",
+      "severity": "error",
+      "message": "DDS magic bytes must be 0x44445320 ('DDS ') — this is not a valid DirectDraw Surface file"
+    },
+    {
+      "name": "Header size is 124",
+      "expression": "headerSize == 124",
+      "severity": "error",
+      "message": "DDS_HEADER dwSize must be exactly 124 bytes — this file has a non-standard or corrupt header"
+    },
+    {
+      "name": "Image dimensions valid",
+      "expression": "width > 0 && height > 0",
+      "severity": "error",
+      "message": "Width and height must be non-zero for a valid DDS texture"
+    },
+    {
+      "name": "Mip map count reasonable",
+      "expression": "mipMapCount <= 14",
+      "severity": "warning",
+      "message": "Mip map count exceeds 14 levels — this would require a texture larger than 16384 pixels (unusual)"
+    }
   ],
-  "format_relationships": {
-    "microsoft_format": true,
-    "directx_format": true,
-    "used_in": "Game development"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "DDS Magic",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "DDS Header",
+        "offset": 4,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Pixel Format",
+        "offset": 76,
+        "icon": "\uE790",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "Texture Data",
+        "offset": 128,
+        "icon": "\uE80A",
+        "color": "#95E1D3"
+      }
+    ]
   },
-  "MimeTypes": [
-    "image/dds"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 50,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "ddpfFourCC",
+    "primaryField": "width",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Texture Dimensions",
+        "icon": "\uE80A",
+        "fields": ["width", "height", "depth", "totalPixels", "mipMapCount"]
+      },
+      {
+        "title": "Pixel Format",
+        "icon": "\uE790",
+        "fields": ["ddpfFlags", "ddpfFourCC", "ddpfRGBBitCount"]
+      },
+      {
+        "title": "Surface Type",
+        "icon": "\uE9D9",
+        "fields": ["isCubeMap", "isVolume", "hasMipMaps", "isDxt10Extended"]
+      },
+      {
+        "title": "Header",
+        "icon": "\uE8A5",
+        "fields": ["headerSize", "ddsFlags", "pitchOrLinearSize", "caps1", "caps2"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
+  "versionDetection": {
+    "field": "ddpfFourCC",
+    "versions": {
+      "DX10": "DDS DX10 extended (DXGI format — DDS_HEADER_DXT10 at offset 128)",
+      "DXT1": "DDS DXT1/BC1 (4-bit block compression)",
+      "DXT3": "DDS DXT3/BC2 (8-bit block compression with explicit alpha)",
+      "DXT5": "DDS DXT5/BC3 (8-bit block compression with interpolated alpha)"
+    }
   },
+  "exportTemplates": [
+    {
+      "name": "DDS Header Analysis (JSON)",
+      "format": "json",
+      "fields": ["ddsSignature", "headerSize", "width", "height", "depth", "mipMapCount", "ddpfFourCC", "ddpfRGBBitCount", "isCubeMap", "isVolume", "hasMipMaps", "isDxt10Extended"]
+    },
+    {
+      "name": "DDS_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "DDS_HEADER",
+      "fields": ["headerSize", "ddsFlags", "height", "width", "pitchOrLinearSize", "depth", "mipMapCount", "ddpfFlags", "ddpfFourCC", "ddpfRGBBitCount", "caps1", "caps2"]
+    },
+    {
+      "name": "Python DDS format check",
+      "format": "python-bytes",
+      "fields": ["ddsSignature", "ddpfFourCC", "ddpfFlags"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid header size",
+        "condition": "headerSize != 124",
+        "severity": "error",
+        "description": "DDS_HEADER dwSize must be exactly 124. Incorrect value indicates header corruption or a crafted file attempting to confuse parsers."
+      },
+      {
+        "name": "Extremely large texture",
+        "condition": "width > 16384 || height > 16384",
+        "severity": "warning",
+        "description": "Texture dimension exceeds 16384 pixels — beyond DirectX 12 hardware limits. Could trigger allocation overflows in older parsers."
+      },
+      {
+        "name": "Mipmap count overflow risk",
+        "condition": "mipMapCount > 14",
+        "severity": "warning",
+        "description": "Mipmap level count exceeds 14 — physically impossible for any texture ≤ 8192 pixels. May indicate integer overflow in mip chain allocation."
+      },
+      {
+        "name": "Unknown FourCC code",
+        "condition": "ddpfFourCC != 'DXT1' && ddpfFourCC != 'DXT2' && ddpfFourCC != 'DXT3' && ddpfFourCC != 'DXT4' && ddpfFourCC != 'DXT5' && ddpfFourCC != 'BC4U' && ddpfFourCC != 'BC4S' && ddpfFourCC != 'ATI2' && ddpfFourCC != 'BC5U' && ddpfFourCC != 'BC5S' && ddpfFourCC != 'DX10' && (ddpfFlags & 4) != 0",
+        "severity": "warning",
+        "description": "DDPF_FOURCC flag set but FourCC is not a standard recognized compression code. May indicate a vendor-specific format extension."
+      }
+    ],
+    "knownExploitVectors": [
+      "Integer overflow in mip level allocation: mipMapCount used as loop bound without bounds check",
+      "DXT1 alpha-mode confusion: single-bit alpha decoded as premultiplied causing color channel corruption",
+      "DX10 header parsing: isDxt10Extended check skipped; offset 128 pixel data parsed as DDS_HEADER_DXT10",
+      "Width/height as 0 bypass: some parsers compute pitch as 0 then write zero-size buffer"
+    ]
   },
   "aiHints": {
-    "analysisContext": "DirectX texture format",
+    "analysisContext": "DDS texture file. Layout: 4B magic ('DDS ') + 120B DDS_HEADER (headerSize must=124) = 128B total header. If fourCC='DX10' (bytes 84-87 = 44 58 31 30), an additional 20B DDS_HEADER_DXT10 follows at offset 128. Pixel data starts at offset 128 (or 148 for DX10). Key fields: offset 12=height, offset 16=width, offset 28=mipMapCount, offset 80=ddpfFlags, offset 84=fourCC. Block-compressed textures: pitch = max(1,(w+3)/4)*max(1,(h+3)/4)*blockSize (DXT1=8, DXT2-5=16, BC4=8, BC5=16).",
+    "knownVulnerabilities": [
+      "CVE-2021-21991 (Nvidia Texture Tools): heap buffer overflow via oversized mip level count",
+      "Various game engine DDS loaders: missing cube map face count validation (should be 6 but not checked)"
+    ],
     "suggestedInspections": [
-      "Validate DirectDraw Surface signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Confirm headerSize==124 at offset 4 (LE uint32)",
+      "Read fourCC at offset 84 (ASCII 4B): DXT1=BC1, DXT3=BC2, DXT5=BC3, DX10=extended",
+      "For DX10 extended: read DXGI_FORMAT at offset 128 (LE uint32)",
+      "Check caps2 bit 9 for cube maps — should have all 6 face bits (bits 10-15) set",
+      "Verify mipMapCount is log2(max(width,height))+1 for full mip chain or 0/1 for no mipmaps",
+      "Compute expected file size: 128 + sum of all mip level data sizes and compare to actual file size"
     ]
+  },
+  "software": [
+    "DirectX SDK / DirectXTex",
+    "NVIDIA Texture Tools (nvtt)",
+    "AMD Compressonator",
+    "Intel ISPC Texture Compressor",
+    "GIMP with DDS plugin",
+    "Paint.NET with DDS plugin",
+    "Unity Engine (native import)",
+    "Unreal Engine (native import)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".dds"],
+    "relatedFormats": ["KTX", "KTX2"],
+    "note": "DDS is the primary GPU texture container for DirectX games and tools. KTX/KTX2 is the Vulkan/OpenGL equivalent. DX10 extended DDS headers support all DXGI_FORMAT values including BC6H (HDR) and BC7 (high-quality RGBA)."
+  },
+  "MimeTypes": [
+    "image/dds",
+    "image/x-dds"
+  ],
+  "UseCases": [
+    "Game development GPU textures (Unity, Unreal, id Tech, Source)",
+    "Cubemap environment maps for PBR rendering",
+    "Normal maps and roughness/metalness maps",
+    "Sprite atlases and UI textures",
+    "Volume textures for particle systems and fog"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 20,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Endianness": "little-endian",
+    "Compression": "optional BCn block compression (DXT1-5, BC4-7)",
+    "HasMipmaps": "optional",
+    "HasHeader": true,
+    "HeaderSize": "128 bytes (4 magic + 124 DDS_HEADER) or 148 bytes with DX10 extension"
   }
 }

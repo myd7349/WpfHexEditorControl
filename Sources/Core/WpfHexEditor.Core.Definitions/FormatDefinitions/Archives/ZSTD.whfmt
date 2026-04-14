@@ -1,125 +1,323 @@
-/* ============================================================
-   Format:    Zstandard Compressed
-   Category:  Archives
-   Ext:       .zst, .zstd
-   Editor:    hex-editor
-   Desc:      Zstandard compression format by Facebook
-   Variables: currentOffset, frameMagic, zstandardMagic
-   Detection: signature=28B52FFD @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Zstandard Compressed",
-  "version": "1.10",
+  "version": "1.12",
   "extensions": [
     ".zst",
     ".zstd"
   ],
-  "description": "Zstandard compression format by Facebook",
+  "description": "Zstandard (zstd) real-time lossless compression format (RFC 8878). Developed by Facebook/Meta. Features: dictionary compression, multi-threading, streaming, seekable format. Compression ratios comparable to zlib at 3-4x higher speed. Used in Linux kernel initramfs, Facebook's RocksDB, and many modern package managers.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "RFC 8878 - Zstandard Compression Format",
-      "RFC 8478 - Zstandard (Obsolete)",
-      "Zstandard Frame Format"
+      "RFC 8878 - Zstandard Compression Format (2021, supersedes RFC 8478)",
+      "RFC 8478 - Zstandard Compression and the application/zstd Media Type (2018, obsolete)",
+      "Zstandard format specification v0.3.4 — github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md"
     ],
     "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc8878",
-      "https://datatracker.ietf.org/doc/html/rfc8478",
+      "https://github.com/facebook/zstd",
       "https://en.wikipedia.org/wiki/Zstd",
-      "https://github.com/facebook/zstd"
+      "https://facebook.github.io/zstd/"
     ]
   },
   "detection": {
-    "signature": "28B52FFD",
-    "offset": 0,
+    "signatures": [
+      { "value": "28B52FFD", "offset": 0, "label": "Zstandard regular frame", "weight": 1.0 },
+      { "value": "184D2A50", "offset": 0, "label": "Skippable frame (magic 0x184D2A50)", "weight": 0.7 },
+      { "value": "184D2A51", "offset": 0, "label": "Skippable frame (magic 0x184D2A51)", "weight": 0.7 },
+      { "value": "184D2A52", "offset": 0, "label": "Skippable frame (magic 0x184D2A52)", "weight": 0.7 },
+      { "value": "184D2A60", "offset": 0, "label": "Skippable frame (magic 0x184D2A60)", "weight": 0.6 },
+      { "value": "184D2A6F", "offset": 0, "label": "Skippable frame (magic 0x184D2A6F)", "weight": 0.6 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.6,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 7.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "calculateCRC32": "Calculate CRC-32 for frame checksum"
+    "calculateCRC32": "Calculate CRC-32 checksum for frame content (if Content_Checksum_Flag is set)",
+    "formatFrameSize(var:frameContentSize)": "Format decompressed frame content size as human-readable string"
   },
   "variables": {
     "currentOffset": 0,
     "frameMagic": 0,
-    "zstandardMagic": ""
+    "frameType": "",
+    "fhd": 0,
+    "fcsFlag": 0,
+    "singleSegmentFlag": 0,
+    "contentChecksumFlag": 0,
+    "dictIdFlag": 0,
+    "windowDescriptor": 0,
+    "dictionaryId": 0,
+    "frameContentSize": 0,
+    "compressionRatio": 0,
+    "isSkippable": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "Zstandard Magic",
+      "name": "Zstandard Frame Magic Number",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Zstandard frame header",
-      "storeAs": "zstandardMagic",
-      "valueType": "uint32"
+      "opacity": 0.45,
+      "description": "4-byte little-endian magic number identifying the frame type. Regular Zstandard frame: 0xFD2FB528 (stored as bytes 28 B5 2F FD). Skippable frames use magic values in range 0x184D2A50-0x184D2A6F — they are ignored by decoders but carry user-defined metadata. Magic is always stored in little-endian byte order.",
+      "storeAs": "frameMagic",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "4247762216": "Regular Zstandard frame (0xFD2FB528)",
+        "408209488": "Skippable frame range base (0x184D2A50)",
+        "408209487": "Skippable frame range top (0x184D2A6F)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Frame Header Descriptor (FHD)",
+      "offset": 4,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "1-byte descriptor encoding key frame header properties as packed bit fields. Bits 7-6 (FCS_Field_Size): 0=FCS absent or 1B, 1=2B, 2=4B, 3=8B. Bit 5 (Single_Segment): frame uses a single memory segment. Bit 2 (Content_Checksum): 4-byte CRC-32 appended after last block. Bits 1-0 (Dict_ID_Flag): 0=no dict, 1=1B, 2=2B, 3=4B dict ID.",
+      "storeAs": "fhd",
+      "valueType": "uint8",
+      "bitfields": [
+        { "bit": 7, "name": "FCS_Flag_High", "description": "Frame Content Size field size MSB — combined with bit 6 to determine FCS field width" },
+        { "bit": 6, "name": "FCS_Flag_Low", "description": "Frame Content Size field size LSB. Combined (bits 7-6): 00=FCS not present or 1B, 01=2B, 10=4B, 11=8B" },
+        { "bit": 5, "name": "Single_Segment_Flag", "description": "All compressed blocks fit in a single memory buffer. When set, Window Descriptor is absent from header.", "valueMap": { "0": "Multi-segment (Window Descriptor present)", "1": "Single segment (Window Descriptor absent)" } },
+        { "bit": 3, "name": "Reserved", "description": "Must be 0. Non-zero value indicates corrupted or non-standard frame." },
+        { "bit": 2, "name": "Content_Checksum_Flag", "description": "A 4-byte CRC-32 of the decompressed content is appended after the last data block.", "valueMap": { "0": "No content checksum", "1": "CRC-32 checksum present at end of frame" } },
+        { "bit": 1, "name": "DictID_Flag_High", "description": "Dictionary ID field size MSB" },
+        { "bit": 0, "name": "DictID_Flag_Low", "description": "Dictionary ID field size LSB. Combined (bits 1-0): 00=no Dict ID, 01=1B, 10=2B, 11=4B" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Window Descriptor",
+      "offset": 5,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Window size descriptor present only when Single_Segment_Flag (bit 5 of FHD) is 0. Encodes the maximum window size required for decompression as: windowSize = (1 << (10 + exponent)) + mantissa * (1 << (7 + exponent)), where mantissa = bits 7-5, exponent = bits 4-0. Max value 0xFF encodes ~3.75 GB window.",
+      "storeAs": "windowDescriptor",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Dictionary ID",
+      "offset": 6,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Optional dictionary identifier (1, 2, or 4 bytes depending on DictID_Flag in FHD). References a pre-shared compression dictionary that was used during compression. Absent if DictID_Flag = 00. Dictionary IDs are assigned by Facebook's zstd dictionary training tool or user-defined.",
+      "storeAs": "dictionaryId",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Frame Content Size",
+      "offset": 7,
+      "length": 8,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "Optional field specifying the exact size of the decompressed content in bytes. Width is 1, 2, 4, or 8 bytes determined by FCS_Flag bits in FHD. When present, decoders can pre-allocate exact memory. Absent if FCS_Flag = 00 and Single_Segment_Flag = 0.",
+      "storeAs": "frameContentSize",
+      "valueType": "uint64",
+      "endianness": "little"
     },
     {
       "type": "metadata",
-      "name": "Frame Magic Number",
-      "variable": "frameMagic",
-      "description": "Zstandard magic number (0x28B52FFD)"
+      "name": "Frame Type",
+      "variable": "frameType",
+      "description": "Zstandard frame type: 'regular' (decompressible data) or 'skippable' (user metadata, ignored by decoder)"
+    },
+    {
+      "type": "metadata",
+      "name": "Decompressed Content Size",
+      "variable": "frameContentSize",
+      "description": "Size in bytes of the fully decompressed frame content (if FCS field is present in header)"
+    },
+    {
+      "type": "metadata",
+      "name": "Content Checksum Flag",
+      "variable": "contentChecksumFlag",
+      "description": "Indicates whether a CRC-32 integrity checksum is appended after the last compressed block"
+    },
+    {
+      "type": "metadata",
+      "name": "Dictionary Reference",
+      "variable": "dictionaryId",
+      "description": "Dictionary ID used for compression (0 = no dictionary). Dictionary must be available for decompression."
+    },
+    {
+      "type": "metadata",
+      "name": "Window Size",
+      "variable": "windowDescriptor",
+      "description": "Raw window descriptor byte encoding the maximum decompression buffer size required"
     }
   ],
-  "software": [
-    "7-Zip",
-    "WinRAR"
+  "assertions": [
+    {
+      "name": "Valid Zstandard frame magic",
+      "expression": "frameMagic == 4247762216 || (frameMagic >= 408209488 && frameMagic <= 408209519)",
+      "severity": "error",
+      "message": "Frame magic number is not a valid Zstandard magic. Expected 0xFD2FB528 (regular) or 0x184D2A50-0x184D2A6F (skippable)"
+    },
+    {
+      "name": "FHD reserved bit is zero",
+      "expression": "(fhd & 8) == 0",
+      "severity": "warning",
+      "message": "Frame Header Descriptor reserved bit 3 is non-zero — indicates non-standard or corrupted frame"
+    },
+    {
+      "name": "Frame content size present when single segment",
+      "expression": "singleSegmentFlag == 0 || frameContentSize > 0",
+      "severity": "info",
+      "message": "Single-segment frame without Frame Content Size — decoders may need to dynamically resize output buffer"
+    }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".zst",
-      ".zstd"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Frame Magic",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Frame Header Descriptor",
+        "offset": 4,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-zstd-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "frameType",
+    "primaryField": "frameContentSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Frame Identity",
+        "icon": "\uE71B",
+        "fields": ["frameMagic", "frameType", "isSkippable"]
+      },
+      {
+        "title": "Frame Header",
+        "icon": "\uE8A5",
+        "fields": ["fhd", "singleSegmentFlag", "contentChecksumFlag", "dictIdFlag"]
+      },
+      {
+        "title": "Compression Parameters",
+        "icon": "\uE9D9",
+        "fields": ["windowDescriptor", "dictionaryId", "frameContentSize"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
+  "exportTemplates": [
+    {
+      "name": "Zstandard Frame Header (JSON)",
+      "format": "json",
+      "fields": ["frameMagic", "frameType", "fhd", "singleSegmentFlag", "contentChecksumFlag", "dictIdFlag", "windowDescriptor", "dictionaryId", "frameContentSize"]
+    },
+    {
+      "name": "Zstandard Frame Header (C struct)",
+      "format": "c-struct",
+      "structName": "ZSTD_FRAME_HEADER",
+      "fields": ["frameMagic", "fhd", "windowDescriptor", "dictionaryId", "frameContentSize"]
+    },
+    {
+      "name": "Python zstd magic check",
+      "format": "python-bytes",
+      "fields": ["frameMagic", "fhd"]
+    }
+  ],
   "forensic": {
     "category": "archive",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Reserved bit set in FHD",
+        "condition": "(fhd & 8) != 0",
+        "severity": "warning",
+        "description": "Frame Header Descriptor reserved bit 3 is set — violates RFC 8878. Indicates file manipulation or non-standard encoder."
+      },
+      {
+        "name": "Skippable frame",
+        "condition": "isSkippable == true",
+        "severity": "info",
+        "description": "File begins with a skippable frame — contains user-defined metadata ignored by standard decoders. Could carry hidden data."
+      },
+      {
+        "name": "Dictionary dependency",
+        "condition": "dictionaryId != 0",
+        "severity": "info",
+        "description": "Frame requires a specific dictionary (ID found in header). File cannot be decompressed without the matching dictionary."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "Zstandard compression format by Facebook",
+    "analysisContext": "Zstandard is a modern compression format designed to replace gzip and bzip2 in Linux distributions and high-throughput systems. Key properties: extremely high entropy output (near 8.0 bits/byte), optional dictionary support for domain-specific compression, skippable frames for metadata. Often used in conjunction with tar (.tar.zst). Content_Checksum_Flag indicates if data integrity can be verified post-decompression.",
+    "knownVulnerabilities": [
+      "CVE-2021-28651: zstd before 1.4.9 buffer overread in dictionary decompression",
+      "Skippable frames can carry arbitrary data undetected by most security tools"
+    ],
     "suggestedInspections": [
-      "Verify Zstandard Compressed file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Check FHD Content_Checksum_Flag — verify CRC-32 if present after decompression",
+      "If Dictionary ID is non-zero, identify the dictionary source (public or custom)",
+      "Inspect skippable frames for embedded metadata or hidden data",
+      "Verify FHD reserved bit is 0 — non-zero values indicate non-standard encoding"
     ]
+  },
+  "software": [
+    "zstd (reference implementation by Facebook)",
+    "7-Zip (v22+)",
+    "PeaZip",
+    "tar (combined as .tar.zst)",
+    "Linux kernel (initramfs)",
+    "Facebook RocksDB"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".zst", ".zstd"],
+    "relatedFormats": ["GZIP", "BZIP2", "LZ4", "SNAPPY", "BROTLI"]
+  },
+  "MimeTypes": [
+    "application/zstd",
+    "application/x-zstd-compressed"
+  ],
+  "UseCases": [
+    "Real-time data compression",
+    "Database storage compression (RocksDB, MariaDB)",
+    "Linux package manager compression (Fedora, Arch)",
+    "Network data transfer",
+    "Kernel initramfs compression"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "ANS (Asymmetric Numeral Systems) + LZ77-variant",
+    "ArchivesFormat": false,
+    "SupportsStreaming": true,
+    "SupportsDictionary": true,
+    "SupportsMultipleFrames": true,
+    "TypicalCompressionRatio": "3:1 to 5:1 text, 1.5:1 binary",
+    "CompressionSpeed": "400-1400 MB/s (hardware dependent)"
   }
 }

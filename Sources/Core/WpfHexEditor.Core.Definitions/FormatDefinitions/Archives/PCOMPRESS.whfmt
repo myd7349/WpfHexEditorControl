@@ -1,173 +1,82 @@
-/* ============================================================
-   Format:    Parallel Compression Archive
-   Category:  Archives
-   Ext:       .pz
-   Editor:    hex-editor
-   Desc:      Parallel compression archive format optimized for multi-threaded compression and decompression
-   Variables: calculatedCRC32, crc32Valid, originalSize, compressedSize, compressionRatio, pcompressMagic, formattedSize
-   Detection: signature=50434F4D50 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
-  "formatName": "Parallel Compression Archive",
-  "version": "1.12",
-  "extensions": [
-    ".pz"
-  ],
-  "description": "Parallel compression archive format optimized for multi-threaded compression and decompression",
+  "formatName": "Pcompress Archive",
+  "version": "1.16",
+  "extensions": [".pz"],
+  "description": "Pcompress is an open-source parallel deduplication and compression utility by Moinak Ghosh. Archives start with a 2-byte magic 'PC' (0x50 0x43) at offset 0. At offset 2: format version byte. At offset 3: compression algorithm byte (0x00=None, 0x01=Zlib/Deflate, 0x02=Bzip2, 0x03=LZMA, 0x04=LZ4, 0x05=Zstd). At offset 4: chunk size as uint32 LE. At offset 8: flags uint32 LE (bit 0=dedup enabled, bit 1=encryption, bit 2=delta compression). Pcompress supports data deduplication, encryption (AES-256), and parallel compression of large files in configurable chunks.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
-    "specifications": [
-      "PCompress Parallel Deduplication and Compression",
-      "PCompress Archive Format",
-      "Chunk-Based Parallel Compression"
-    ],
-    "WebLinks": [
-      "https://github.com/moinakg/pcompress",
-      "https://moinakg.github.io/pcompress/",
-      "https://encode.su/threads/1639-pcompress-a-deduplication-compression-utility"
-    ]
+    "specifications": ["Pcompress format — moinakg/pcompress GitHub"],
+    "WebLinks": ["https://github.com/moinakg/pcompress"]
   },
   "detection": {
-    "signature": "50434F4D50",
-    "offset": 0,
+    "signatures": [
+      { "value": "5043", "offset": 0, "label": "'PC' — Pcompress archive magic (2 bytes)", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
-    "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
-    }
+    "Strength": "Medium",
+    "EntropyHint": { "min": 6.0, "max": 8.0 },
+    "validation": { "minFileSize": 12, "maxSignatureOffset": 0, "note": "Pcompress archives start with 'PC' (2 bytes). Short magic — confirm with version and algorithm bytes." }
   },
-  "variables": {
-    "calculatedCRC32": 0,
-    "crc32Valid": false,
-    "originalSize": 0,
-    "compressedSize": 0,
-    "compressionRatio": 0,
-    "pcompressMagic": "",
-    "formattedSize": ""
-  },
+  "variables": { "pcompressMagic": "", "pcompressVersion": 0, "compressionAlgo": 0, "chunkSize": 0, "flags": 0 },
   "blocks": [
     {
-      "type": "signature",
-      "name": "PCompress Magic",
-      "offset": 0,
-      "length": 5,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Magic bytes: 'PCOMP'",
-      "storeAs": "pcompressMagic",
-      "valueType": "ascii"
+      "type": "signature", "name": "Pcompress Magic", "offset": 0, "length": 2,
+      "color": "#FF6B6B", "opacity": 0.45,
+      "description": "Pcompress archive magic: 2 ASCII bytes 'PC' (0x50 0x43). Short magic — combined with version byte (offset 2) and algorithm byte (offset 3) for positive identification. Pcompress is a Linux utility for parallel chunked compression with optional deduplication and AES-256 encryption.",
+      "storeAs": "pcompressMagic", "valueType": "ascii"
     },
     {
-      "type": "data",
-      "name": "Version",
-      "offset": 5,
-      "length": 1,
-      "color": "#4ECDC4",
-      "opacity": 0.4,
-      "description": "Format version"
+      "type": "field", "name": "Format Version", "offset": 2, "length": 1,
+      "color": "#4ECDC4", "opacity": 0.35,
+      "description": "Pcompress format version byte at offset 2. Version 1 is the original format; version 2 adds extended features. Used for forward compatibility checking.",
+      "storeAs": "pcompressVersion", "valueType": "uint8"
     },
     {
-      "type": "data",
-      "name": "Algorithm",
-      "offset": 6,
-      "length": 1,
-      "color": "#45B7D1",
-      "opacity": 0.4,
-      "description": "Compression algorithm identifier"
+      "type": "field", "name": "Compression Algorithm", "offset": 3, "length": 1,
+      "color": "#95E1D3", "opacity": 0.35,
+      "description": "Compression algorithm identifier byte at offset 3. Selects the per-chunk compression codec applied after optional deduplication.",
+      "storeAs": "compressionAlgo", "valueType": "uint8",
+      "valueMap": { "0": "None (store only)", "1": "Zlib/Deflate", "2": "Bzip2", "3": "LZMA", "4": "LZ4", "5": "Zstd" }
     },
     {
-      "type": "data",
-      "name": "Chunk Size",
-      "offset": 7,
-      "length": 4,
-      "color": "#96CEB4",
-      "opacity": 0.4,
-      "description": "Chunk size for parallel processing (little-endian)"
+      "type": "field", "name": "Chunk Size", "offset": 4, "length": 4,
+      "color": "#FFE66D", "opacity": 0.35,
+      "description": "Compression chunk size as uint32 LE at offset 4. Data is split into fixed-size chunks for parallel processing. Common values: 1MB (1048576), 4MB (4194304). Smaller chunks = more parallelism but less compression ratio.",
+      "storeAs": "chunkSize", "valueType": "uint32", "endianness": "little"
     },
     {
-      "type": "metadata",
-      "name": "CRC Valid",
-      "variable": "crc32Valid",
-      "description": "CRC Valid"
+      "type": "field", "name": "Flags", "offset": 8, "length": 4,
+      "color": "#C7CEEA", "opacity": 0.35,
+      "description": "Feature flags as uint32 LE at offset 8. Bit 0=deduplication enabled, bit 1=AES-256 encryption, bit 2=delta compression, bit 3=similarity-based dedup.",
+      "storeAs": "flags", "valueType": "uint32", "endianness": "little"
     },
-    {
-      "type": "metadata",
-      "name": "Original Size",
-      "variable": "originalSize",
-      "description": "Original Size"
-    },
-    {
-      "type": "metadata",
-      "name": "Compression Ratio",
-      "variable": "compressionRatio",
-      "description": "Compression Ratio"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
-    }
+    { "type": "metadata", "name": "Magic", "variable": "pcompressMagic", "description": "'PC' — Pcompress archive" },
+    { "type": "metadata", "name": "Algorithm", "variable": "compressionAlgo", "description": "Compression codec used" }
   ],
-  "software": [
-    "7-Zip",
-    "WinRAR"
+  "assertions": [
+    { "name": "Pcompress magic valid", "expression": "pcompressMagic == 'PC'", "severity": "error", "message": "Pcompress archive must start with 'PC' — not a valid Pcompress archive" },
+    { "name": "Algorithm known", "expression": "compressionAlgo <= 5", "severity": "warning", "message": "Unknown compression algorithm byte — format may be a newer version" }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".pz"
-    ]
+  "navigation": { "bookmarks": [{ "name": "Pcompress Header", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" }] },
+  "inspector": {
+    "badge": "compressionAlgo", "primaryField": "chunkSize", "showQualityScore": true,
+    "groups": [{ "title": "Pcompress Header", "icon": "\uE8B7", "fields": ["pcompressMagic", "pcompressVersion", "compressionAlgo", "chunkSize", "flags"] }]
   },
-  "MimeTypes": [
-    "application/x-pcompress-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
-  "functions": {
-    "calculateCRC32": "Validate CRC",
-    "readUInt32LE": "Read size",
-    "formatFileSize(var:compressedSize)": "Format compressedSize as readable size"
-  },
-  "forensic": {
-    "category": "archive",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
+  "exportTemplates": [{ "name": "Pcompress Header (JSON)", "format": "json", "fields": ["pcompressMagic", "pcompressVersion", "compressionAlgo", "chunkSize", "flags"] }],
+  "forensic": { "category": "archive", "riskLevel": "low", "suspiciousPatterns": [] },
   "aiHints": {
-    "analysisContext": "Parallel compression archive format optimized for multi-threaded compression and decompression",
-    "suggestedInspections": [
-      "Verify Parallel Compression Archive file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
-    ]
-  }
+    "analysisContext": "'PC'(2B)+version(1B)+algo(1B: 0=none,1=zlib,2=bzip2,3=lzma,4=lz4,5=zstd)+chunkSize(4B LE)+flags(4B LE). Linux parallel chunked compressor with optional dedup and AES-256. Tool: pcompress CLI (moinakg/pcompress).",
+    "suggestedInspections": ["Bytes 0-1: 'PC' magic", "Byte 2: format version", "Byte 3: compression algorithm", "Bytes 4-7 (uint32 LE): chunk size in bytes"]
+  },
+  "software": ["pcompress CLI (moinakg/pcompress, Linux)"],
+  "formatRelationships": { "category": "Archives", "extensions": [".pz"], "relatedFormats": ["ZSTD", "LZ4", "LZMA"], "note": "Linux parallel deduplication+compression utility. Niche format — rarely encountered outside Linux server backups." },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": ["Parallel compression of large files on multi-core Linux systems", "Deduplication-aware backup archiving"],
+  "QualityMetrics": { "CompletenessScore": 62, "DocumentationLevel": "detailed", "BlocksDefined": 7, "ValidationRules": 2, "LastUpdated": "2026-04-14", "PriorityFormat": false, "AutoRefined": false },
+  "TechnicalDetails": { "Format": "'PC'(2B)+ver(1B)+algo(1B)+chunkSize(4B LE)+flags(4B LE)", "Magic": "'PC' (0x5043) at offset 0", "Algorithms": "None/Zlib/Bzip2/LZMA/LZ4/Zstd" }
 }

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Nintendo Wii Disc
-   Category:  Game
-   Ext:       .iso, .wbfs
-   Editor:    hex-editor
-   Desc:      Nintendo Wii disc image format (similar to GameCube with Wii extensions)
-   Variables: currentOffset, gameCode, makerCode, gameName, discNumber, version, discId, regionCode, audioStreaming, streamBufferSize, wiiMagic, disableHashVerification, disableDiscEncryption
-   Detection: signature=5D1C9EA3 @ offset 24
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Nintendo Wii Disc",
-  "version": "2.5",
+  "version": "2.52",
   "extensions": [
     ".iso",
     ".wbfs"
@@ -38,8 +28,8 @@
     "offset": 24,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -218,7 +208,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".iso",

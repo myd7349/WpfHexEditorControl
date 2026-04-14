@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    LLVM Bitcode
-   Category:  Programming
-   Ext:       .bc
-   Editor:    hex-editor
-   Desc:      LLVM Bitcode binary format, intermediate representation used by LLVM compiler infrastructure
-   Variables: llvmBitcodeMagic
-   Detection: signature=4243C0DE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "LLVM Bitcode",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".bc"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "4243C0DE",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "4243C0DE",
+        "offset": 0,
+        "label": "LLVM_BC magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "llvmBitcodeMagic": ""
@@ -74,7 +73,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".bc"
@@ -97,11 +96,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -119,5 +118,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "llvmBitcodeMagic",
+    "primaryField": "llvmBitcodeMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "LLVM Bitcode",
+        "icon": "",
+        "fields": [
+          "llvmBitcodeMagic"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "LLVM Bitcode Header (JSON)",
+      "format": "json",
+      "fields": [
+        "llvmBitcodeMagic"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "llvmBitcodeMagic != 0",
+      "severity": "warning",
+      "message": "LLVM_BC magic field is zero — possible detection failure"
+    }
+  ]
 }

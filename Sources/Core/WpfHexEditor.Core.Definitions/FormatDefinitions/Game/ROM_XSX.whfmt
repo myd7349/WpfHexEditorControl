@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Xbox Series X/S Package
-   Category:  Game
-   Ext:       .xvd, .msixvc
-   Editor:    hex-editor
-   Desc:      Xbox Series X/S optimized package format (enhanced XVD)
-   Variables: currentOffset, crc32Valid, originalSize, compressionRatio, xvdSignature, formatVersion, packageFlags, compressionType, contentSize, contentId
-   Detection: signature=6D737863 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Xbox Series X/S Package",
-  "version": "2.4",
+  "version": "2.43",
   "extensions": [
     ".xvd",
     ".msixvc"
@@ -34,13 +24,22 @@
     ]
   },
   "detection": {
-    "signature": "6D737863",
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "6D737863",
+        "offset": 0,
+        "label": "'msxc' — Xbox Series X/S XVD package magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -138,7 +137,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".xvd",
@@ -162,11 +161,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 48,
+    "CompletenessScore": 55,
     "DocumentationLevel": "standard",
     "BlocksDefined": 8,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -189,5 +188,45 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "xvdSignature",
+    "primaryField": "contentSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Xbox Series X/S Package",
+        "icon": "",
+        "fields": [
+          "xvdSignature",
+          "formatVersion",
+          "packageFlags",
+          "compressionType",
+          "contentSize",
+          "contentId"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Xbox Series X/S Package Header (JSON)",
+      "format": "json",
+      "fields": [
+        "xvdSignature",
+        "formatVersion",
+        "packageFlags",
+        "compressionType",
+        "contentSize"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ROM_XSX valid",
+      "expression": "xvdSignature != ''",
+      "severity": "warning",
+      "message": "XVD signature field empty — may not be valid Xbox Series X XVD package"
+    }
+  ]
 }

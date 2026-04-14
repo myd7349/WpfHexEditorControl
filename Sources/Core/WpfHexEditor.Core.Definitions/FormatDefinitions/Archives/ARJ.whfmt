@@ -1,29 +1,19 @@
-/* ============================================================
-   Format:    ARJ Archive
-   Category:  Archives
-   Ext:       .arj
-   Editor:    hex-editor
-   Desc:      ARJ compressed archive format
-   Variables: currentOffset, headerID, arjSignature, headerId
-   Detection: signature=60EA @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ARJ Archive",
-  "version": "1.10",
+  "version": "1.12",
   "extensions": [
     ".arj"
   ],
-  "description": "ARJ compressed archive format",
+  "description": "ARJ (Archived by Robert Jung) — a DOS-era compressed archive format popular in the 1990s. An ARJ file begins with a 2-byte magic marker (0xEA60 little-endian = bytes 0x60 0xEA) followed by a 2-byte basic header size, then the basic archive header. The main header contains compression parameters, host OS, version info, archive name, and comment. Each stored file has its own local header with the same structure. The archive compression algorithm uses LZ77 with Huffman coding. ARJ supports multi-volume spanning, password protection with 8-byte DES, and comment storage. ARJ was widely used for software distribution on BBS networks and CD-ROMs before ZIP/RAR became dominant.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "ARJ Archive Format Specification - Robert K. Jung",
-      "ARJ File Format Technical Documentation",
-      "ARJ Compression Algorithm"
+      "ARJ Archive Format — Robert K. Jung, arj.sourceforge.net",
+      "ARJ Technical Documentation — arj.txt (included with ARJ source)",
+      "ARJ 3.10 Technical Reference"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/ARJ",
@@ -36,101 +26,416 @@
     "signature": "60EA",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 30,
+      "maxSignatureOffset": 0
     }
   },
-  "functions": {
-    "calculateCRC32": "Calculate CRC-32 for archive integrity"
-  },
   "variables": {
-    "currentOffset": 0,
-    "headerID": 0,
     "arjSignature": 0,
-    "headerId": 0
+    "basicHeaderSize": 0,
+    "firstHeaderSize": 0,
+    "archiveVersion": 0,
+    "minExtractVersion": 0,
+    "hostOS": 0,
+    "arjFlags": 0,
+    "securityVersion": 0,
+    "fileType": 0,
+    "timestamp": 0,
+    "compressedSize": 0,
+    "originalSize": 0,
+    "crc32": 0,
+    "archiverName": ""
+  },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for archive header and file integrity verification",
+    "extractASCIIString": "Extract archiver name, archive filename, and comment strings"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "ARJ Signature",
+      "name": "ARJ Magic Marker",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "ARJ archive marker",
+      "opacity": 0.45,
+      "description": "ARJ archive magic marker stored in little-endian byte order: bytes 0x60 0xEA representing the value 0xEA60 (=60000 decimal). This 2-byte signature identifies the start of every ARJ archive header — both the main archive header and each individual file header begin with this value. The unusual value 0xEA60 was chosen to be distinctive and unlikely to appear in normal data.",
       "storeAs": "arjSignature",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "60000": "0xEA60 — Valid ARJ header marker"
+      }
     },
     {
       "type": "field",
-      "name": "Header ID",
+      "name": "Basic Header Size",
       "offset": 2,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Basic header ID",
-      "storeAs": "headerId",
-      "valueType": "uint16"
+      "opacity": 0.35,
+      "description": "Size of the basic header that follows, in bytes (little-endian 16-bit). Does not include the 4 bytes for this size field or the trailing 4-byte CRC. Valid range is 4-2600. A value of 0 indicates end-of-archive — no more file headers follow. The basic header starts at offset 4 from the start of the ARJ header block.",
+      "storeAs": "basicHeaderSize",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "0 — End of archive marker (no more file headers)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Header Size (Internal)",
+      "offset": 4,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Size of the fixed-length portion of the basic header (first header size), in bytes. For ARJ version 3.x this is 30 bytes. This value marks the boundary between the fixed header fields and the variable-length filename and comment strings that follow.",
+      "storeAs": "firstHeaderSize",
+      "valueType": "uint8",
+      "valueMap": {
+        "30": "30 bytes — Standard ARJ 3.x first header size"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Archiver Version",
+      "offset": 5,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Version of the ARJ archiver that created this archive. Common values: 3 (ARJ 2.x/3.x). Used to determine which format features are present in the archive.",
+      "storeAs": "archiveVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "ARJ version 1.x",
+        "2": "ARJ version 2.x",
+        "3": "ARJ version 3.x (most common)",
+        "4": "ARJ version 4.x (ARJ32)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Minimum Extraction Version",
+      "offset": 6,
+      "length": 1,
+      "color": "#45B7D1",
+      "opacity": 0.30,
+      "description": "Minimum ARJ version required to extract this archive. If the extractor version is less than this value, it should refuse to extract and notify the user that a newer ARJ version is required.",
+      "storeAs": "minExtractVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Host Operating System",
+      "offset": 7,
+      "length": 1,
+      "color": "#96CEB4",
+      "opacity": 0.30,
+      "description": "Operating system on which the archive was created. Affects how file attributes and timestamps are interpreted.",
+      "storeAs": "hostOS",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "MSDOS",
+        "1": "PRIMOS",
+        "2": "UNIX",
+        "3": "AMIGA",
+        "4": "MAC_OS",
+        "5": "OS_2",
+        "6": "APPLE_GS",
+        "7": "ATARI_ST",
+        "8": "NEXT",
+        "9": "VAX_VMS",
+        "10": "WIN95",
+        "11": "WIN32"
+      }
+    },
+    {
+      "type": "field",
+      "name": "ARJ Flags",
+      "offset": 8,
+      "length": 1,
+      "color": "#DDA0DD",
+      "opacity": 0.35,
+      "description": "Archive flags indicating encryption, multi-volume spanning, chapter handling, and other archive-level properties.",
+      "storeAs": "arjFlags",
+      "valueType": "uint8",
+      "bitfields": [
+        { "bit": 0, "name": "GARBLED", "description": "Archive is password-encrypted (DES 8-byte key)" },
+        { "bit": 1, "name": "ANSIPAGE", "description": "Filename is stored in ANSI code page" },
+        { "bit": 2, "name": "MAINHDRID", "description": "This is the main archive header (not a file header)" },
+        { "bit": 3, "name": "MULTIVOLUME", "description": "Archive spans multiple volumes" },
+        { "bit": 4, "name": "EXTFILE", "description": "Extended file position (file exceeds 4GB) — ARJ32 only" },
+        { "bit": 5, "name": "PATHSYM", "description": "Path separators are stored as '/' (Unix style)" },
+        { "bit": 6, "name": "BACKUP", "description": "Archive was created for backup purposes" },
+        { "bit": 7, "name": "SECURED", "description": "Archive has security envelope (digital signature)" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Compression Method / File Type",
+      "offset": 10,
+      "length": 1,
+      "color": "#FF8C69",
+      "opacity": 0.35,
+      "description": "For main archive header: file type (0=binary, 1=7-bit text, 2=comment header, 3=directory, 4=volume label, 5=chapter label). For file headers: compression method (0=stored, 1=best compression, 2-3=medium compression, 4=fast, 5-9=maximum speed).",
+      "storeAs": "fileType",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Method 0: Stored (no compression) or binary file",
+        "1": "Method 1: Best compression (LZ77+Huffman maximum)",
+        "2": "Method 2: Less compression",
+        "3": "Method 3: Fast compression",
+        "4": "Method 4: Fastest compression",
+        "5": "Method 5-9: Special/maximum speed modes"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Timestamp (DOS format)",
+      "offset": 12,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.30,
+      "description": "File modification timestamp in MS-DOS packed date/time format (little-endian 32-bit). High word is the date: bits 15-9=year-1980, bits 8-5=month(1-12), bits 4-0=day(1-31). Low word is time: bits 15-11=hour(0-23), bits 10-5=minute(0-59), bits 4-0=2-second intervals(0-29).",
+      "storeAs": "timestamp",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compressed Size",
+      "offset": 16,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.30,
+      "description": "Size of the compressed data in the archive in bytes (little-endian 32-bit). For file headers, this is the size of the compressed file data. For the main header, this may be 0.",
+      "storeAs": "compressedSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Original (Uncompressed) Size",
+      "offset": 20,
+      "length": 4,
+      "color": "#F7DC6F",
+      "opacity": 0.30,
+      "description": "Original uncompressed size of the stored content in bytes (little-endian 32-bit). For file headers, this is the size of the extracted file. The compression ratio can be computed as compressedSize/originalSize.",
+      "storeAs": "originalSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "CRC-32 of Original Data",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.30,
+      "description": "CRC-32 checksum of the original (uncompressed) file data. Used to verify extraction integrity. The CRC polynomial is the standard IEEE 802.3 polynomial (0xEDB88320 reflected). If the extracted data CRC does not match this field, the archive is corrupted.",
+      "storeAs": "crc32",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "metadata",
-      "name": "Header ID",
-      "variable": "headerID",
-      "description": "ARJ basic header identifier"
+      "name": "ARJ Signature",
+      "variable": "arjSignature",
+      "description": "ARJ magic marker (0xEA60 = 60000)"
+    },
+    {
+      "type": "metadata",
+      "name": "Basic Header Size",
+      "variable": "basicHeaderSize",
+      "description": "Size of the basic header body (0=end of archive)"
+    },
+    {
+      "type": "metadata",
+      "name": "Archiver Version",
+      "variable": "archiveVersion",
+      "description": "ARJ version that created this archive (typical: 3)"
+    },
+    {
+      "type": "metadata",
+      "name": "Host OS",
+      "variable": "hostOS",
+      "description": "Operating system where archive was created"
+    },
+    {
+      "type": "metadata",
+      "name": "ARJ Flags",
+      "variable": "arjFlags",
+      "description": "Archive flags: encryption, multi-volume, security envelope"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Type",
+      "variable": "fileType",
+      "description": "File type or compression method (0=stored, 1=best, 4=fast)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compressed Size",
+      "variable": "compressedSize",
+      "description": "Size of compressed data in archive"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Uncompressed file size"
     }
   ],
-  "software": [
-    "ARJ",
-    "7-Zip",
-    "WinRAR"
+  "assertions": [
+    {
+      "name": "ARJ signature valid",
+      "expression": "arjSignature == 60000",
+      "severity": "error",
+      "message": "ARJ magic marker must be 0xEA60 (60000) — not a valid ARJ archive"
+    },
+    {
+      "name": "Basic header size valid",
+      "expression": "basicHeaderSize == 0 || (basicHeaderSize >= 4 && basicHeaderSize <= 2600)",
+      "severity": "warning",
+      "message": "ARJ basic header size must be 0 (end of archive) or 4-2600 bytes"
+    },
+    {
+      "name": "Archive version recognized",
+      "expression": "archiveVersion >= 1 && archiveVersion <= 6",
+      "severity": "warning",
+      "message": "ARJ archive version should be 1-6 — unrecognized version may indicate non-standard ARJ"
+    }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".arj"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ARJ Main Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "ARJ Basic Header",
+        "offset": 4,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-arj-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "archiveVersion",
+    "primaryField": "originalSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Archive Header",
+        "icon": "\uE71B",
+        "fields": ["arjSignature", "basicHeaderSize", "firstHeaderSize", "archiveVersion"]
+      },
+      {
+        "title": "Compression",
+        "icon": "\uE8A5",
+        "fields": ["fileType", "compressedSize", "originalSize", "crc32"]
+      },
+      {
+        "title": "Platform & Flags",
+        "icon": "\uE9D9",
+        "fields": ["hostOS", "arjFlags", "timestamp"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
+  "exportTemplates": [
+    {
+      "name": "ARJ Header (JSON)",
+      "format": "json",
+      "fields": ["arjSignature", "basicHeaderSize", "archiveVersion", "minExtractVersion", "hostOS", "arjFlags", "fileType", "compressedSize", "originalSize", "crc32"]
+    },
+    {
+      "name": "Python ARJ check",
+      "format": "python-bytes",
+      "fields": ["arjSignature", "archiveVersion", "hostOS"]
+    }
+  ],
   "forensic": {
     "category": "archive",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Password-encrypted archive",
+        "condition": "(arjFlags & 1) != 0",
+        "severity": "warning",
+        "description": "ARJ archive uses DES password encryption (flag GARBLED). The 8-byte DES encryption is cryptographically weak and can be brute-forced. Encrypted ARJ archives were used to hide malware payloads from early AV scanners."
+      },
+      {
+        "name": "Multi-volume archive",
+        "condition": "(arjFlags & 8) != 0",
+        "severity": "info",
+        "description": "Archive spans multiple volumes. Complete content requires all volumes in the set. Used historically to split large archives across floppy disks."
+      },
+      {
+        "name": "Unknown host OS",
+        "condition": "hostOS > 11",
+        "severity": "info",
+        "description": "Host OS code is outside the known range (0-11). May indicate an uncommon platform or a crafted archive."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "ARJ compressed archive format",
+    "analysisContext": "ARJ archive header: magic(2,LE)=0xEA60 + basicHeaderSize(2,LE) + [basicHeader body]. Basic header body: firstHeaderSize(1) + archiverVersion(1) + minExtractVersion(1) + hostOS(1) + arjFlags(1) + securityVersion(1) + fileType(1) + reserved(1) + timestamp(4,LE,DOS format) + compressedSize(4,LE) + originalSize(4,LE) + originalCRC32(4,LE) + filespecOffset(2,LE) + fileAccessMode(2,LE) + firstChapter(1) + lastChapter(1) + [filename null-term string] + [comment null-term string] + header CRC32(4,LE). Each file header also starts with 0xEA60 magic. End of archive: basicHeaderSize == 0.",
+    "knownVulnerabilities": [
+      "ARJ 8-byte DES encryption is cryptographically weak — passwords can be brute-forced",
+      "Path traversal via ../ in stored filenames (pre-2003 arj.exe versions)",
+      "Integer overflow in originalSize * X computation in naive extractors"
+    ],
     "suggestedInspections": [
-      "Verify ARJ Archive file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Verify 0x60 0xEA at offset 0 (little-endian 0xEA60)",
+      "Check arjFlags bit 0 (GARBLED=encryption) and bit 3 (MULTIVOLUME)",
+      "Read hostOS to understand file attribute interpretation (DOS vs UNIX)",
+      "Scan stored filenames for path traversal characters (../ or absolute paths)",
+      "Verify CRC-32 of extracted data matches originalCRC32 field"
     ]
+  },
+  "software": [
+    "ARJ (Robert Jung)",
+    "ARJ32",
+    "7-Zip",
+    "WinRAR",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".arj"],
+    "relatedFormats": ["ZIP", "LZH", "RAR"],
+    "era": "DOS BBS era (1991-2000)"
+  },
+  "MimeTypes": [
+    "application/x-arj-compressed",
+    "application/x-arj"
+  ],
+  "UseCases": [
+    "Legacy DOS software distribution (1990s BBS and CD-ROM)",
+    "Digital preservation of 1990s archives",
+    "Retro computing and DOS emulation environments"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 14,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ArchiveFormat": true,
+    "CompressionAlgorithm": "LZ77 with Huffman coding (methods 0-9)",
+    "Endianness": "little-endian",
+    "MagicValue": "0xEA60 (bytes: 0x60 0xEA)",
+    "EncryptionMethod": "DES 8-byte key (GARBLED flag)",
+    "SupportsMultiVolume": true,
+    "ChecksumAlgorithm": "CRC-32 (IEEE 802.3 polynomial)",
+    "MaxFileSize": "2GB (32-bit size field)"
   }
 }

@@ -1,15 +1,7 @@
-/* ============================================================
-   Format:    WpfHexEditor Class Diagram DSL
-   Category:  Programming
-   Ext:       .classdiagram
-   Editor:    code-editor
-   Desc:      WpfHexEditor Class Diagram Domain Specific Language
-   Updated:   2026-04-07
-   ============================================================ */
-{
+﻿{
   "diffMode": "text",
   "formatName": "Class Diagram DSL",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".classdiagram"
   ],

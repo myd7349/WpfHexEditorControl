@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    SQLite Shared Memory
-   Category:  Database
-   Ext:       .shm, -shm
-   Editor:    hex-editor
-   Desc:      SQLite shared-memory file for WAL mode coordination
-   Variables: currentOffset, pageSize, pageCount, tableCount, version
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "SQLite Shared Memory",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".shm",
     "-shm"
@@ -29,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "SQLITE_SHM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -83,7 +82,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".shm",
@@ -107,11 +106,11 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    .NET MSIL Assembly
-   Category:  Programming
-   Ext:       .dll, .exe
-   Editor:    hex-editor
-   Desc:      .NET Microsoft Intermediate Language (MSIL/CIL) assembly format using PE/COFF structure
-   Variables: machineType, sectionCount, entryPoint, dosSignature
-   Detection: signature=4D5A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": ".NET MSIL Assembly",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".dll",
     ".exe"
@@ -29,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "4D5A",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "4D5A",
+        "offset": 0,
+        "label": "MSIL magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "machineType": "",
@@ -90,7 +89,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".dll",
@@ -114,11 +113,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -138,5 +137,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "dosSignature",
+    "primaryField": "dosSignature",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": ".NET MSIL Assembly",
+        "icon": "",
+        "fields": [
+          "dosSignature"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": ".NET MSIL Assembly Header (JSON)",
+      "format": "json",
+      "fields": [
+        "dosSignature"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "dosSignature != 0",
+      "severity": "warning",
+      "message": "MSIL magic field is zero — possible detection failure"
+    }
+  ]
 }

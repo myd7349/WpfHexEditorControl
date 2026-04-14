@@ -1,47 +1,39 @@
-/* ============================================================
-   Format:    FLAC Audio
-   Category:  Audio
-   Ext:       .flac
-   Editor:    audio-viewer
-   Desc:      Free Lossless Audio Codec - An open-source lossless audio compression format. The file begins with a 4-byte 'fLaC' signature followed by one or more metadata blocks. The first metadata block must be STREAMINFO (type 0), which contains the audio stream parameters: sample rate, channel count, bit depth, total samples, and MD5 signature of the uncompressed audio data.
-   Variables: currentOffset, flacSignature, metadataBlockHeader, isLastBlock, blockType, blockLength, minBlockSize, maxBlockSize, minFrameSize, maxFrameSize, sampleRateChannelsBps, totalSamplesHigh, totalSamplesLow, sampleRate, channels, bitsPerSample, totalSamples, md5High, md5Low, flacDuration, formattedDuration, formattedSize, byteRate, compressionRatio
-   Detection: signature=664C6143 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "FLAC Audio",
-  "version": "2.0",
+  "version": "2.02",
   "extensions": [
     ".flac"
   ],
-  "description": "Free Lossless Audio Codec - An open-source lossless audio compression format. The file begins with a 4-byte 'fLaC' signature followed by one or more metadata blocks. The first metadata block must be STREAMINFO (type 0), which contains the audio stream parameters: sample rate, channel count, bit depth, total samples, and MD5 signature of the uncompressed audio data.",
+  "description": "Free Lossless Audio Codec (FLAC) — an open-source lossless audio compression format by Josh Coalson, standardized as RFC 9639. The file begins with the 4-byte 'fLaC' stream marker followed by one or more metadata blocks. Each metadata block starts with a 4-byte header (1-bit last-block flag + 7-bit block type + 24-bit body length). The mandatory first block is STREAMINFO (type 0) containing the 34-byte stream parameters: sample rate (20 bits), channel count (3 bits), bit depth (5 bits), total samples (36 bits), and MD5 signature of the uncompressed PCM data. FLAC achieves 30-70% compression of CD audio without any quality loss.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "FLAC Format Specification",
-      "Free Lossless Audio Codec Documentation",
-      "RFC 9639 - FLAC: Free Lossless Audio Codec"
+      "RFC 9639 — FLAC: Free Lossless Audio Codec (2024)",
+      "FLAC Format Specification — xiph.org/flac/format.html",
+      "FLAC Reference Implementation — github.com/xiph/flac"
     ],
     "WebLinks": [
       "https://xiph.org/flac/format.html",
-      "https://xiph.org/flac/documentation.html",
-      "https://en.wikipedia.org/wiki/FLAC"
+      "https://www.rfc-editor.org/rfc/rfc9639",
+      "https://en.wikipedia.org/wiki/FLAC",
+      "https://xiph.org/flac/documentation.html"
     ]
   },
   "detection": {
     "signature": "664C6143",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 5.5, "max": 7.8 },
     "validation": {
       "minFileSize": 42,
       "maxSignatureOffset": 0
     }
   },
   "variables": {
-    "currentOffset": 0,
     "flacSignature": "",
     "metadataBlockHeader": 0,
     "isLastBlock": 0,
@@ -52,7 +44,6 @@
     "minFrameSize": 0,
     "maxFrameSize": 0,
     "sampleRateChannelsBps": 0,
-    "totalSamplesHigh": 0,
     "totalSamplesLow": 0,
     "sampleRate": 0,
     "channels": 0,
@@ -67,7 +58,7 @@
     "compressionRatio": 0
   },
   "functions": {
-    "parseFLACStreamInfo": "Parse the 34-byte STREAMINFO metadata block to extract sample rate, channels, bits per sample, total samples, and MD5 signature",
+    "parseFLACStreamInfo": "Parse the 34-byte STREAMINFO metadata block body to extract sampleRate, channels, bitsPerSample, totalSamples, md5High, md5Low",
     "formatFileSize(var:maxFrameSize)": "Format maximum frame size as human-readable string with units",
     "formatDuration(var:flacDuration)": "Format computed duration as human-readable HH:MM:SS string",
     "computeFromVariables(var:sampleRate * var:bitsPerSample * var:channels / 8, byteRate)": "Calculate uncompressed byte rate from stream parameters",
@@ -80,8 +71,8 @@
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "FLAC stream marker (ASCII 'fLaC' = 0x664C6143). Identifies the file as a native FLAC stream.",
+      "opacity": 0.45,
+      "description": "FLAC stream identification marker: ASCII 'fLaC' = bytes 0x66 0x4C 0x61 0x43. This 4-byte signature unambiguously identifies the file as a native FLAC stream. The mixed case ('fLaC') was chosen deliberately so it is visible in a hex dump and not easily confused with other formats. Embedded FLAC in Ogg containers does not use this marker — it uses the Ogg capture pattern instead.",
       "storeAs": "flacSignature",
       "valueType": "ascii",
       "validation": {
@@ -94,32 +85,32 @@
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "First metadata block header byte. Bit 7 indicates whether this is the last metadata block before audio frames. Bits 6-0 encode the block type.",
+      "opacity": 0.35,
+      "description": "Combined header byte for the first metadata block. Bit 7 (MSB) is the last-metadata-block flag. Bits 6-0 encode the block type. The first block must be STREAMINFO (type 0). Block type 127 is reserved and must never appear. Block types 7-126 are undefined in the current specification.",
       "storeAs": "metadataBlockHeader",
       "valueType": "uint8",
       "bitfields": [
         {
           "bit": 7,
-          "name": "Last Block Flag",
-          "description": "Indicates whether this is the last metadata block before audio frames",
+          "name": "Last Metadata Block",
+          "description": "When 1, this is the last metadata block before the audio frame data. When 0, more metadata blocks follow.",
           "valueMap": {
             "0": "More metadata blocks follow",
-            "1": "This is the last metadata block"
+            "1": "Last metadata block — audio frames begin after this block"
           }
         },
         {
           "bits": "6-0",
           "name": "Block Type",
-          "description": "Type of this metadata block",
+          "description": "Metadata block type code (7 bits, range 0-126). Type 127 is reserved.",
           "valueMap": {
-            "0": "STREAMINFO (mandatory, must be first)",
-            "1": "PADDING",
-            "2": "APPLICATION",
-            "3": "SEEKTABLE",
-            "4": "VORBIS_COMMENT",
-            "5": "CUESHEET",
-            "6": "PICTURE"
+            "0": "STREAMINFO — mandatory stream technical parameters (must be first)",
+            "1": "PADDING — arbitrary pad bytes to allow in-place tag editing",
+            "2": "APPLICATION — registered application-specific data with 32-bit ID",
+            "3": "SEEKTABLE — seek point table for efficient random access",
+            "4": "VORBIS_COMMENT — human-readable UTF-8 key=value tags (title, artist, album, etc.)",
+            "5": "CUESHEET — CD cue sheet data for disc images",
+            "6": "PICTURE — embedded cover art or other images (typically JPEG or PNG)"
           }
         }
       ]
@@ -130,11 +121,15 @@
       "offset": 5,
       "length": 3,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Length in bytes of the metadata block body that follows (24 bits big-endian). For STREAMINFO this is always 34.",
+      "opacity": 0.30,
+      "description": "Length in bytes of the metadata block body that immediately follows (24-bit big-endian unsigned integer). For STREAMINFO this must be exactly 34. For PADDING, the body is all zero bytes of this length. The total block occupies 4 header bytes + this many body bytes.",
       "storeAs": "blockLength",
       "valueType": "uint32",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "expectedValue": 34,
+        "note": "Must be 34 for the mandatory STREAMINFO first block"
+      }
     },
     {
       "type": "field",
@@ -142,11 +137,15 @@
       "offset": 8,
       "length": 2,
       "color": "#45B7D1",
-      "opacity": 0.3,
-      "description": "Minimum block size in inter-channel samples used in the stream (16 bits big-endian). Must be >= 16.",
+      "opacity": 0.30,
+      "description": "Minimum inter-channel audio sample count per block used in the stream (16-bit big-endian). Must be >= 16. Encoders using a fixed block size (most common) set both min and max block size to the same value. The FLAC reference encoder defaults to 4096 samples per block.",
       "storeAs": "minBlockSize",
       "valueType": "uint16",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "minValue": 16,
+        "maxValue": 65535
+      }
     },
     {
       "type": "field",
@@ -154,8 +153,8 @@
       "offset": 10,
       "length": 2,
       "color": "#96CEB4",
-      "opacity": 0.3,
-      "description": "Maximum block size in inter-channel samples used in the stream (16 bits big-endian). Must be >= minimum block size and <= 65535.",
+      "opacity": 0.30,
+      "description": "Maximum inter-channel audio sample count per block (16-bit big-endian). Must be >= minimum block size and <= 65535. If equal to minBlockSize, the encoder used fixed-length blocks (typical). Decoders allocate output buffer based on maxBlockSize × channels × bytesPerSample.",
       "storeAs": "maxBlockSize",
       "valueType": "uint16",
       "endianness": "big"
@@ -166,8 +165,8 @@
       "offset": 12,
       "length": 3,
       "color": "#FFEAA7",
-      "opacity": 0.3,
-      "description": "Minimum frame size in bytes (24 bits big-endian). A value of 0 means the minimum is unknown.",
+      "opacity": 0.30,
+      "description": "Minimum encoded FLAC frame size in bytes (24-bit big-endian). A value of 0 means the minimum frame size is unknown — the encoder did not record this during encoding. This field is informational and not required for decoding.",
       "storeAs": "minFrameSize",
       "valueType": "uint32",
       "endianness": "big"
@@ -178,224 +177,416 @@
       "offset": 15,
       "length": 3,
       "color": "#DDA0DD",
-      "opacity": 0.3,
-      "description": "Maximum frame size in bytes (24 bits big-endian). A value of 0 means the maximum is unknown.",
+      "opacity": 0.30,
+      "description": "Maximum encoded FLAC frame size in bytes (24-bit big-endian). A value of 0 means the maximum frame size is unknown. Decoders can use this to allocate an appropriately-sized read buffer. The maximum possible FLAC frame size is approximately maxBlockSize × channels × bytesPerSample + 16 bytes of frame overhead.",
       "storeAs": "maxFrameSize",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Sample Rate / Channels / BPS / Samples (High)",
+      "name": "Packed: Sample Rate / Channels / Bit Depth / Total Samples High",
       "offset": 18,
-      "length": 4,
+      "length": 8,
       "color": "#FF8C69",
-      "opacity": 0.3,
-      "description": "Packed 32-bit field (big-endian) containing: sample rate (20 bits), number of channels minus 1 (3 bits), bits per sample minus 1 (5 bits), and upper 4 bits of total samples.",
+      "opacity": 0.30,
+      "description": "64-bit big-endian packed field containing four sub-fields: sample rate (bits 63-44, 20 bits, Hz), channels-minus-1 (bits 43-41, 3 bits → 1-8 channels), bits-per-sample-minus-1 (bits 40-36, 5 bits → 4-32 bps), and upper 4 bits of total sample count (bits 35-32). The total sample count is spread across this field and the following 32-bit field to form a 36-bit integer.",
       "storeAs": "sampleRateChannelsBps",
-      "valueType": "uint32",
+      "valueType": "uint64",
       "endianness": "big",
       "bitfields": [
         {
-          "bits": "31-12",
-          "name": "Sample Rate",
-          "description": "Sample rate in Hz (20 bits). Valid values: 1-655350 Hz. Common: 44100, 48000, 88200, 96000, 176400, 192000."
+          "bits": "63-44",
+          "name": "Sample Rate (Hz)",
+          "description": "Audio sample rate in Hz (20 bits). Valid range: 1-655350 Hz. Common values: 44100, 48000, 88200, 96000, 176400, 192000. Value 0 is invalid."
         },
         {
-          "bits": "11-9",
-          "name": "Channels - 1",
-          "description": "Number of channels minus 1 (3 bits, 0-7 representing 1-8 channels)",
+          "bits": "43-41",
+          "name": "Channels Minus 1",
+          "description": "Number of audio channels encoded as (channels - 1), range 0-7 for 1-8 channels",
           "valueMap": {
-            "0": "1 channel (Mono)",
-            "1": "2 channels (Stereo)",
+            "0": "1 channel — Mono",
+            "1": "2 channels — Stereo",
             "2": "3 channels",
-            "3": "4 channels (Quadraphonic)",
-            "4": "5 channels (5.0 Surround)",
-            "5": "6 channels (5.1 Surround)",
-            "6": "7 channels (6.1 Surround)",
-            "7": "8 channels (7.1 Surround)"
+            "3": "4 channels — Quadraphonic",
+            "4": "5 channels — 5.0 Surround",
+            "5": "6 channels — 5.1 Surround",
+            "6": "7 channels — 6.1 Surround",
+            "7": "8 channels — 7.1 Surround"
           }
         },
         {
-          "bits": "8-4",
-          "name": "Bits Per Sample - 1",
-          "description": "Bits per sample minus 1 (5 bits, 0-31 representing 1-32 bits per sample)",
+          "bits": "40-36",
+          "name": "Bits Per Sample Minus 1",
+          "description": "Sample bit depth encoded as (bitsPerSample - 1), range 3-31 for 4-32 bits",
           "valueMap": {
             "7": "8 bits per sample",
-            "15": "16 bits per sample (CD quality)",
+            "15": "16 bits per sample — CD quality",
             "19": "20 bits per sample",
-            "23": "24 bits per sample (studio quality)",
-            "31": "32 bits per sample"
+            "23": "24 bits per sample — studio quality",
+            "31": "32 bits per sample — mastering"
           }
         },
         {
-          "bits": "3-0",
-          "name": "Total Samples (High 4 bits)",
-          "description": "Upper 4 bits of the 36-bit total sample count"
+          "bits": "35-32",
+          "name": "Total Samples High (4 bits)",
+          "description": "Upper 4 bits of the 36-bit total sample count field — combined with the 32-bit low word in the next field"
         }
       ]
     },
     {
       "type": "field",
-      "name": "Total Samples (Low 32 bits)",
+      "name": "Total Samples — Low 32 Bits",
       "offset": 22,
       "length": 4,
       "color": "#87CEEB",
-      "opacity": 0.3,
-      "description": "Lower 32 bits of the total inter-channel sample count (big-endian). Combined with the upper 4 bits from the previous field to form a 36-bit value. A value of 0 means the total is unknown.",
+      "opacity": 0.30,
+      "description": "Lower 32 bits of the 36-bit total inter-channel sample count (big-endian). Combined with bits 35-32 from the previous field. A value of 0 across both fields means total samples is unknown — the decoder must process until end-of-stream. For a CD-quality stereo stream at 44100 Hz, a 36-bit field supports up to ~436 hours.",
       "storeAs": "totalSamplesLow",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "MD5 Signature (High 64 bits)",
+      "name": "MD5 Signature — High 64 Bits",
       "offset": 26,
       "length": 8,
       "color": "#98D8C8",
-      "opacity": 0.3,
-      "description": "First 8 bytes of the 16-byte MD5 signature of the uncompressed audio data. Used for verifying the integrity of the decoded audio stream.",
+      "opacity": 0.30,
+      "description": "First 8 bytes of the 16-byte MD5 signature computed over the uncompressed, interleaved audio data in channel-order, little-endian sample order. Used by decoders to verify lossless decompression integrity. A value of all-zeros means the MD5 was not computed (common in streaming encoders).",
       "storeAs": "md5High",
       "valueType": "uint64",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "MD5 Signature (Low 64 bits)",
+      "name": "MD5 Signature — Low 64 Bits",
       "offset": 34,
       "length": 8,
       "color": "#F7DC6F",
-      "opacity": 0.3,
-      "description": "Last 8 bytes of the 16-byte MD5 signature of the uncompressed audio data.",
+      "opacity": 0.30,
+      "description": "Last 8 bytes of the 16-byte MD5 signature of the uncompressed audio data. Combined with the preceding 8 bytes forms the complete 128-bit MD5 hash. Zero value = MD5 not computed. A non-zero MD5 that fails verification after decoding indicates data corruption.",
       "storeAs": "md5Low",
       "valueType": "uint64",
       "endianness": "big"
     },
     {
       "type": "computeFromVariables",
-      "name": "Audio Duration",
+      "name": "Audio Duration (seconds)",
       "expression": "sampleRate > 0 ? (totalSamples / sampleRate) : 0",
       "storeAs": "flacDuration",
-      "description": "Exact audio duration in seconds calculated from total sample count divided by sample rate"
+      "description": "Exact audio duration in seconds, computed as totalSamples / sampleRate. Accurate to sub-second precision for stored-sample-count streams."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Uncompressed Byte Rate",
+      "expression": "sampleRate * bitsPerSample * channels / 8",
+      "storeAs": "byteRate",
+      "description": "Uncompressed PCM byte rate in bytes per second = sampleRate × bitsPerSample × channels / 8. Divide file size by this to estimate compression ratio."
     },
     {
       "type": "computeFromVariables",
       "name": "Compression Ratio",
       "expression": "totalSamples > 0 && sampleRate > 0 && bitsPerSample > 0 && channels > 0 ? (fileSize * 100 / (totalSamples * channels * bitsPerSample / 8)) : 0",
       "storeAs": "compressionRatio",
-      "description": "Compression ratio as a percentage: compressed size relative to uncompressed PCM size"
+      "description": "Approximate compression ratio as a percentage: (compressed file size / uncompressed PCM size) × 100. FLAC typically achieves 50-70% of original PCM size."
     },
     {
       "type": "conditional",
-      "name": "Block Size Consistency",
+      "name": "Fixed vs Variable Block Size",
       "condition": "minBlockSize == maxBlockSize",
-      "trueLabel": "Fixed block size (typical for most FLAC files)",
-      "falseLabel": "Variable block size (last block may be shorter)",
-      "description": "Checks whether the encoder used a fixed block size throughout the stream"
+      "trueLabel": "Fixed block size (all blocks same sample count — typical for most FLAC encoders)",
+      "falseLabel": "Variable block size (last block may be shorter than others)",
+      "description": "Checks whether the encoder used uniform block sizes throughout the stream. The FLAC reference encoder uses fixed block size by default."
     },
     {
       "type": "conditional",
-      "name": "High Resolution Check",
+      "name": "High-Resolution Audio",
       "condition": "sampleRate > 48000 || bitsPerSample > 16",
-      "trueLabel": "High-resolution audio (above CD quality)",
-      "falseLabel": "Standard resolution audio (CD quality or below)",
-      "description": "Determines whether the FLAC stream exceeds standard CD audio specifications (44.1/48 kHz 16-bit)"
+      "trueLabel": "High-resolution audio (exceeds CD quality: >48kHz or >16-bit)",
+      "falseLabel": "Standard resolution audio (CD quality or below: ≤48kHz and ≤16-bit)",
+      "description": "Identifies high-resolution FLAC files (e.g., 24-bit/96kHz studio masters) that require more storage and processing resources."
+    },
+    {
+      "type": "conditional",
+      "name": "MD5 Integrity Available",
+      "condition": "md5High != 0 || md5Low != 0",
+      "trueLabel": "MD5 signature stored — decoder can verify lossless integrity after full decode",
+      "falseLabel": "MD5 is all-zeros — integrity verification not available (common for streaming encoders)",
+      "description": "Determines whether the STREAMINFO block contains a valid MD5 hash for post-decode integrity checking."
     },
     {
       "type": "metadata",
-      "name": "Sample Rate (Hz)",
+      "name": "Sample Rate",
       "variable": "sampleRate",
-      "description": "Audio sample rate in Hertz (samples per second per channel)"
+      "description": "Audio sample rate in Hz (e.g., 44100, 48000, 96000, 192000)"
     },
     {
       "type": "metadata",
       "name": "Channels",
       "variable": "channels",
-      "description": "Number of audio channels (1=Mono, 2=Stereo, up to 8 channels)"
+      "description": "Number of audio channels: 1=Mono, 2=Stereo, up to 8 for surround"
     },
     {
       "type": "metadata",
       "name": "Bits Per Sample",
       "variable": "bitsPerSample",
-      "description": "Audio bit depth (4-32 bits per sample)"
+      "description": "Audio bit depth per sample (4-32 bits; typical: 16 for CD, 24 for studio)"
     },
     {
       "type": "metadata",
       "name": "Total Samples",
       "variable": "totalSamples",
-      "description": "Total number of inter-channel sample frames in the stream"
+      "description": "Total inter-channel sample frames in the stream (0=unknown)"
     },
     {
       "type": "metadata",
       "name": "Duration",
       "variable": "formattedDuration",
-      "description": "Audio duration formatted as HH:MM:SS"
+      "description": "Audio playback duration formatted as HH:MM:SS"
     },
     {
       "type": "metadata",
       "name": "Min / Max Block Size",
       "variable": "minBlockSize",
-      "description": "Minimum and maximum block size in samples used by the encoder"
+      "description": "Minimum block size in samples (fixed-block encoders: min=max; typical default: 4096)"
+    },
+    {
+      "type": "metadata",
+      "name": "Min / Max Frame Size",
+      "variable": "minFrameSize",
+      "description": "Minimum encoded FLAC frame size in bytes (0=unknown)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Ratio",
+      "variable": "compressionRatio",
+      "description": "Compressed file size as percentage of uncompressed PCM size (typical: 50-70%)"
     }
   ],
   "assertions": [
     {
-      "name": "fLaC marker",
-      "expression": "flacSignature == 1716281667",
+      "name": "fLaC stream marker valid",
+      "expression": "flacSignature == 'fLaC'",
       "severity": "error",
-      "message": "Missing fLaC stream marker"
+      "message": "FLAC stream marker must be ASCII 'fLaC' (0x664C6143) — not a valid native FLAC file"
+    },
+    {
+      "name": "First block type must be STREAMINFO",
+      "expression": "(metadataBlockHeader & 127) == 0",
+      "severity": "error",
+      "message": "First metadata block must be STREAMINFO (type 0) — FLAC specification requires STREAMINFO as the mandatory first block"
+    },
+    {
+      "name": "STREAMINFO block length must be 34",
+      "expression": "blockLength == 34",
+      "severity": "error",
+      "message": "STREAMINFO block body must be exactly 34 bytes — other lengths indicate a malformed or non-standard FLAC file"
+    },
+    {
+      "name": "Minimum block size at least 16",
+      "expression": "minBlockSize >= 16",
+      "severity": "error",
+      "message": "Minimum block size must be >= 16 samples — values below 16 are invalid per the FLAC specification"
+    },
+    {
+      "name": "Max block size >= min block size",
+      "expression": "maxBlockSize >= minBlockSize",
+      "severity": "error",
+      "message": "Maximum block size must be >= minimum block size — inconsistent values indicate a corrupted STREAMINFO"
+    },
+    {
+      "name": "Sample rate is valid",
+      "expression": "sampleRate > 0 && sampleRate <= 655350",
+      "severity": "error",
+      "message": "Sample rate must be 1-655350 Hz — value 0 is invalid"
+    }
+  ],
+  "checksums": [
+    {
+      "name": "Audio MD5 Integrity",
+      "algorithm": "md5",
+      "note": "MD5 is computed over the fully decoded raw PCM data and stored in STREAMINFO bytes 18-33 (relative to STREAMINFO body). Verification requires full decode of all audio frames.",
+      "dataRange": { "description": "Full decoded PCM audio stream" },
+      "storedAt": { "fixedOffset": 26, "length": 16 },
+      "storedType": "bytes16",
+      "severity": "warning"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "fLaC Stream Marker",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "STREAMINFO Block Header",
+        "offset": 4,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "STREAMINFO Body",
+        "offset": 8,
+        "icon": "\uE9D9",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "MD5 Signature",
+        "offset": 26,
+        "icon": "\uE72E",
+        "color": "#98D8C8"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "sampleRate",
+    "primaryField": "flacDuration",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Stream Identity",
+        "icon": "\uE71B",
+        "fields": ["flacSignature", "metadataBlockHeader", "blockLength"]
+      },
+      {
+        "title": "Audio Parameters",
+        "icon": "\uE767",
+        "fields": ["sampleRate", "channels", "bitsPerSample", "totalSamples", "flacDuration", "formattedDuration"]
+      },
+      {
+        "title": "Block Sizes",
+        "icon": "\uE8B7",
+        "fields": ["minBlockSize", "maxBlockSize", "minFrameSize", "maxFrameSize"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE72E",
+        "fields": ["md5High", "md5Low", "compressionRatio", "byteRate"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "FLAC STREAMINFO (JSON)",
+      "format": "json",
+      "fields": ["flacSignature", "sampleRate", "channels", "bitsPerSample", "totalSamples", "minBlockSize", "maxBlockSize", "minFrameSize", "maxFrameSize", "md5High", "md5Low"]
+    },
+    {
+      "name": "flac_streaminfo_t (C struct)",
+      "format": "c-struct",
+      "structName": "flac_streaminfo",
+      "fields": ["minBlockSize", "maxBlockSize", "minFrameSize", "maxFrameSize", "sampleRate", "channels", "bitsPerSample", "totalSamples"]
+    },
+    {
+      "name": "Python FLAC check",
+      "format": "python-bytes",
+      "fields": ["flacSignature", "sampleRate", "channels", "bitsPerSample"]
     }
   ],
   "forensic": {
     "category": "audio",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "First block is not STREAMINFO",
+        "condition": "(metadataBlockHeader & 127) != 0",
+        "severity": "error",
+        "description": "FLAC requires STREAMINFO as the first metadata block. A different block type at offset 4 indicates a malformed, truncated, or crafted FLAC file."
+      },
+      {
+        "name": "Invalid STREAMINFO length",
+        "condition": "blockLength != 34",
+        "severity": "error",
+        "description": "STREAMINFO body must be exactly 34 bytes. An incorrect length indicates intentional modification or corruption of the FLAC metadata structure."
+      },
+      {
+        "name": "Zero sample rate",
+        "condition": "sampleRate == 0",
+        "severity": "error",
+        "description": "Sample rate of 0 Hz is invalid and cannot be decoded. Indicates corrupted or intentionally malformed STREAMINFO."
+      },
+      {
+        "name": "MD5 all-zeros (no integrity check)",
+        "condition": "md5High == 0 && md5Low == 0",
+        "severity": "info",
+        "description": "MD5 signature is all-zeros — the encoder did not compute the integrity hash. Decoded audio cannot be verified for correctness. Common in streaming encoders (e.g., FFmpeg default settings)."
+      },
+      {
+        "name": "Unreasonably small minimum block size",
+        "condition": "minBlockSize < 16",
+        "severity": "error",
+        "description": "Minimum block size below 16 samples violates the FLAC specification. May cause decoder buffer allocation failures."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "Free Lossless Audio Codec - An open-source lossless audio compression format. The file begins with a 4-byte ...",
+    "analysisContext": "FLAC stream layout: 4-byte 'fLaC' marker + metadata blocks. Each block: 1-byte type (bit7=last + bits6-0=type) + 3-byte big-endian length + body. First block always STREAMINFO (type 0, length=34). STREAMINFO body layout (big-endian): minBlockSize(16b) + maxBlockSize(16b) + minFrameSize(24b) + maxFrameSize(24b) + sampleRate(20b) + channels-1(3b) + bitsPerSample-1(5b) + totalSamples(36b) + MD5(128b). Audio frames follow after last metadata block. FLAC frames have their own CRC-8 header and CRC-16 footer.",
+    "knownVulnerabilities": [
+      "CVE-2021-0561: Android FLAC decoder heap buffer overflow via crafted minBlockSize/maxBlockSize in STREAMINFO",
+      "Malformed STREAMINFO with sampleRate=0 causes divide-by-zero in duration calculation in some players",
+      "Missing STREAMINFO (first block not type 0) can cause parser confusion in non-strict decoders"
+    ],
     "suggestedInspections": [
-      "Validate FLAC Audio header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+      "Verify 'fLaC' marker at offset 0 is exactly 0x664C6143",
+      "Verify first block type byte (offset 4) & 0x7F == 0 (STREAMINFO)",
+      "Verify STREAMINFO body length (bytes 5-7) == 34 exactly",
+      "Check sample rate is non-zero and within 1-655350 Hz range",
+      "Verify minBlockSize >= 16 and maxBlockSize >= minBlockSize",
+      "Check MD5 — if non-zero, verify after full decode for integrity",
+      "Scan for VORBIS_COMMENT block (type 4) containing embedded metadata tags"
     ]
+  },
+  "software": [
+    "FLAC reference encoder (xiph.org)",
+    "FFmpeg",
+    "VLC media player",
+    "foobar2000",
+    "Audacity",
+    "dBpoweramp",
+    "EAC (Exact Audio Copy)",
+    "MusicBrainz Picard"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".flac"],
+    "relatedFormats": ["OGG", "AIFF", "WAV", "ALAC"],
+    "containerVariant": "Ogg-FLAC (FLAC embedded in Ogg container)"
   },
   "MimeTypes": [
     "audio/flac",
     "audio/x-flac"
   ],
-  "Software": [
-    "VLC",
-    "foobar2000",
-    "Audacity",
-    "Winamp",
-    "ffmpeg",
-    "FLAC reference encoder"
-  ],
   "UseCases": [
-    "Lossless audio",
-    "Audiophile music",
-    "Music archiving",
-    "Studio recording masters",
-    "CD ripping"
+    "Lossless music archiving (CD ripping to FLAC)",
+    "Audiophile music distribution (HDtracks, Bandcamp)",
+    "Studio mastering and audio production",
+    "Streaming lossless (Tidal, Amazon Music HD, Apple Lossless via ALAC equivalent)",
+    "Video game audio (mod formats wrapping FLAC)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 92,
     "DocumentationLevel": "comprehensive",
-    "BlocksDefined": 21,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-02-24",
+    "BlocksDefined": 18,
+    "ValidationRules": 6,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "AudioFormat": true,
-    "CompressionMethod": "Lossless (linear prediction + entropy coding)",
-    "Endianness": "big-endian",
-    "StreamMarkerSize": 4,
-    "StreamInfoSize": 34,
+    "CompressionMethod": "Lossless (linear prediction + entropy coding with Rice-Golomb coding)",
+    "Endianness": "big-endian for header/STREAMINFO; little-endian for audio samples",
+    "StreamMarkerSize": "4 bytes",
+    "StreamInfoBodySize": "34 bytes",
     "MaxChannels": 8,
     "MaxSampleRate": 655350,
     "MaxBitDepth": 32,
-    "MD5Verification": true
+    "MD5Verification": true,
+    "PerFrameCRC": true,
+    "FrameHeaderCRC": "CRC-8 (polynomial 0x07)",
+    "FrameFooterCRC": "CRC-16 (polynomial 0x8005)"
   }
 }

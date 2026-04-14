@@ -1,31 +1,21 @@
-/* ============================================================
-   Format:    AIFF Audio
-   Category:  Audio
-   Ext:       .aiff, .aif, .aifc
-   Editor:    audio-viewer
-   Desc:      Audio Interchange File Format - Apple audio format
-   Variables: currentOffset, formSize, fileType, channels, sampleFrames, bitDepth, sampleRate, formChunk, chunkSize, aiffType, byteRate, samplesPerSecond
-   Detection: signature=464F524D @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AIFF Audio",
-  "version": "1.11",
+  "version": "1.14",
   "extensions": [
     ".aiff",
     ".aif",
     ".aifc"
   ],
-  "description": "Audio Interchange File Format - Apple audio format",
+  "description": "Audio Interchange File Format (AIFF) — Apple's IFF-based lossless audio container format designed by Apple and SGI. An AIFF file is a FORM IFF chunk containing a 4-byte type identifier ('AIFF' or 'AIFC') followed by sub-chunks. The mandatory COMM chunk describes the audio: number of channels (2 bytes), total sample frames (4 bytes), sample size/bit depth (2 bytes), and sample rate as an 80-bit IEEE 754 extended precision big-endian float. The SSND (Sound Data) chunk holds raw interleaved PCM samples in big-endian byte order. AIFC extends AIFF by adding a compression type to COMM, enabling non-PCM codecs.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "AIFF-1.3 Specification (1989)",
-      "AIFF-C Specification - IFF-AIFC",
-      "Audio Interchange File Format - Apple Standard"
+      "AIFF Specification 1.3 — Apple Computer, Inc. (1989)",
+      "AIFF-C Specification — Apple/SGI (1991)",
+      "IFF-85: Interchange File Format — Electronic Arts (1985)"
     ],
     "WebLinks": [
       "https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/AIFF/Docs/AIFF-1.3.pdf",
@@ -35,145 +25,534 @@
     ]
   },
   "detection": {
-    "signature": "464F524D",
-    "offset": 0,
+    "signatures": [
+      { "value": "464F524D", "offset": 0, "label": "FORM IFF chunk identifier", "weight": 0.6,
+        "note": "Requires additional check: bytes 8-11 must be 0x41494646 (AIFF) or 0x41494643 (AIFC)" },
+      { "value": "41494646", "offset": 8, "label": "AIFF file type marker", "weight": 1.0 },
+      { "value": "41494643", "offset": 8, "label": "AIFC file type marker (compressed AIFF)", "weight": 1.0 }
+    ],
+    "matchMode": "all-of-first-then-any",
+    "Strength": "Strong",
     "required": true,
+    "EntropyHint": { "min": 3.0, "max": 7.0 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 46,
+      "maxSignatureOffset": 0
     }
   },
-  "functions": {
-    "readUInt32BE": "Read 32-bit big-endian for chunk sizes and sample rate",
-    "extractASCIIString": "Extract chunk identifiers (FORM, AIFF, COMM, SSND)",
-    "readUInt16BE": "Read 16-bit values for channels and bit depth",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  },
   "variables": {
-    "currentOffset": 0,
+    "formChunkId": 0,
     "formSize": 0,
-    "fileType": "Unknown",
+    "fileType": "",
+    "commChunkId": 0,
+    "commSize": 0,
     "channels": 0,
     "sampleFrames": 0,
-    "bitDepth": 0,
+    "sampleSize": 0,
+    "sampleRateBytes": 0,
     "sampleRate": 0,
-    "formChunk": 0,
-    "chunkSize": 0,
-    "aiffType": "",
     "byteRate": 0,
-    "samplesPerSecond": 0
+    "estimatedDuration": 0,
+    "totalDataBytes": 0,
+    "isAIFC": false,
+    "compressionType": 0,
+    "compressionName": ""
+  },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for chunk sizes and sample frame count",
+    "readUInt16BE": "Read 16-bit big-endian for channels, sample size, COMM fields",
+    "extractASCIIString": "Extract 4-byte chunk IDs (FORM, AIFF, AIFC, COMM, SSND, MARK, INST)",
+    "read80BitExtendedBE(var:sampleRateBytes, sampleRate)": "Convert 80-bit IEEE 754 extended precision big-endian float to integer Hz sample rate",
+    "computeFromVariables(var:sampleRate * var:sampleSize * var:channels / 8, byteRate)": "Calculate uncompressed byte rate",
+    "computeFromVariables(var:sampleFrames / var:sampleRate, estimatedDuration)": "Calculate audio duration in seconds"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "FORM Chunk",
+      "name": "FORM Chunk Identifier",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "IFF FORM identifier",
-      "storeAs": "formChunk",
+      "opacity": 0.45,
+      "description": "IFF FORM chunk identifier: ASCII 'FORM' (0x46 0x4F 0x52 0x4D). This 4-byte tag marks the beginning of the IFF FORM container chunk. The FORM chunk is the top-level wrapper that contains all sub-chunks. This is the standard Electronic Arts IFF-85 outer envelope used by AIFF, IFF, ILBM, and other Apple/Amiga/SGI media formats.",
+      "storeAs": "formChunkId",
+      "valueType": "uint32",
+      "endianness": "big",
+      "validation": {
+        "expectedValue": 1179011410
+      }
+    },
+    {
+      "type": "field",
+      "name": "FORM Chunk Size",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Size in bytes of the FORM chunk data (big-endian 32-bit unsigned integer). This count begins immediately after this 4-byte length field and extends to the end of the file. Equals total file size minus 8 (the 4-byte 'FORM' tag and this 4-byte size field). For files larger than 2^32-1 bytes, the legacy 32-bit field overflows — AIFC has no native large-file support.",
+      "storeAs": "formSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "signature",
+      "name": "AIFF / AIFC File Type",
+      "offset": 8,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Four-byte file type identifier inside the FORM chunk. 'AIFF' (0x41494646) — standard uncompressed PCM Audio Interchange File Format as defined in Apple AIFF 1.3 specification. 'AIFC' (0x41494643) — compressed AIFF variant supporting non-PCM codecs (IMA ADPCM, MACE3, MACE6, ulaw, alaw, etc.) as defined in the AIFF-C specification.",
+      "storeAs": "fileType",
+      "valueType": "ascii",
+      "valueMap": {
+        "AIFF": "AIFF — Audio Interchange File Format (uncompressed PCM, big-endian)",
+        "AIFC": "AIFC — Compressed Audio Interchange File Format (supports non-PCM codecs)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "COMM Chunk Identifier",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "COMM chunk identifier: ASCII 'COMM' (0x434F4D4D). The COMM (Common) chunk is the mandatory metadata chunk in every AIFF file. It must appear before the SSND chunk and describes the fundamental audio parameters. In AIFC files, the COMM chunk is extended with a compression type field beyond the standard 18 bytes.",
+      "storeAs": "commChunkId",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Chunk Size",
-      "offset": 4,
+      "name": "COMM Chunk Size",
+      "offset": 16,
       "length": 4,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of data",
-      "storeAs": "chunkSize",
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Size in bytes of the COMM chunk body (big-endian). For standard AIFF, this is always 18 (numChannels:2 + numSampleFrames:4 + sampleSize:2 + sampleRate:10). For AIFC files, it is >= 22 (18 + 4-byte compression type code + Pascal string length byte + compression name).",
+      "storeAs": "commSize",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "18": "Standard AIFF COMM (18 bytes — uncompressed PCM)",
+        "22": "Minimal AIFC COMM (22 bytes — compression type + empty name)",
+        "26": "AIFC COMM with 4-byte compression name string"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Channels",
+      "offset": 20,
+      "length": 2,
+      "color": "#45B7D1",
+      "opacity": 0.35,
+      "description": "Number of audio channels (big-endian 16-bit signed integer). 1=Mono, 2=Stereo. AIFF formally supports any positive number but practical decoders handle 1-8 channels. Note: AIFF uses signed 16-bit here (range 1-32767), unlike WAV which uses unsigned 16-bit.",
+      "storeAs": "channels",
+      "valueType": "int16",
+      "endianness": "big",
+      "valueMap": {
+        "1": "1 channel — Mono",
+        "2": "2 channels — Stereo",
+        "4": "4 channels — Quadraphonic",
+        "6": "6 channels — 5.1 Surround",
+        "8": "8 channels — 7.1 Surround"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Sample Frames",
+      "offset": 22,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.30,
+      "description": "Total number of sample frames in the SSND data (big-endian 32-bit unsigned integer). One frame contains one sample for each channel. For stereo audio, a single frame contains 2 samples. The total byte count of uncompressed PCM audio = numSampleFrames × numChannels × (sampleSize / 8). At 44100 Hz a 32-bit frame count supports up to ~27 hours.",
+      "storeAs": "sampleFrames",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
-      "type": "signature",
-      "name": "AIFF Type",
-      "offset": 8,
+      "type": "field",
+      "name": "Sample Size (Bit Depth)",
+      "offset": 26,
+      "length": 2,
+      "color": "#FFEAA7",
+      "opacity": 0.30,
+      "description": "Bit depth (number of bits per sample) stored as a big-endian 16-bit signed integer. Must be 1-32. Standard values: 8, 16, 20, 24, 32. AIFF PCM samples are stored as big-endian signed integers, right-justified and zero-padded on the right if not a multiple of 8 bits. For 16-bit stereo the sample layout is: [L_high, L_low, R_high, R_low] per frame.",
+      "storeAs": "sampleSize",
+      "valueType": "int16",
+      "endianness": "big",
+      "valueMap": {
+        "8": "8-bit PCM (unsigned in AIFF convention, samples stored as 0-255 offset binary)",
+        "16": "16-bit PCM — CD quality",
+        "20": "20-bit PCM — DAT/DVD quality",
+        "24": "24-bit PCM — studio/mastering quality",
+        "32": "32-bit PCM — integer mastering format"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Sample Rate (80-bit IEEE Extended)",
+      "offset": 28,
+      "length": 10,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "Sample rate in Hz encoded as an 80-bit (10-byte) IEEE 754 extended precision floating-point number in big-endian byte order. This is the only use of 80-bit extended in common audio formats. The 80-bit extended format: 1 sign bit + 15 exponent bits + 64 significand bits (explicit integer part, no hidden bit). Common encoded values: 44100 Hz = 0x400EAC44000000000000, 48000 Hz = 0x400EBB80000000000000, 96000 Hz = 0x400FBB80000000000000.",
+      "storeAs": "sampleRateBytes",
+      "valueType": "bytes",
+      "length": 10,
+      "endianness": "big",
+      "note": "Requires 80-bit IEEE 754 extended conversion to read as integer Hz. Standard parsers call Extended80ToDouble() or equivalent."
+    },
+    {
+      "type": "field",
+      "name": "SSND Chunk Identifier",
+      "offset": 38,
       "length": 4,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "AIFF or AIFC",
-      "storeAs": "aiffType",
-      "valueType": "ascii"
+      "color": "#FF8C69",
+      "opacity": 0.30,
+      "description": "SSND (Sound Data) chunk identifier: ASCII 'SSND' (0x53534E44). The SSND chunk contains the raw interleaved PCM audio samples. In AIFF, samples are stored big-endian, signed integers, right-justified in each sample word. The SSND chunk appears after the COMM chunk. Some AIFF files may have additional chunks (MARK, INST, MIDI, APPL) before SSND.",
+      "storeAs": "ssndChunkId",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "SSND Chunk Size",
+      "offset": 42,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.30,
+      "description": "Size in bytes of the SSND chunk body (big-endian). Equals 8 (offset + blockSize fields) + actual audio data bytes. Total audio bytes = numSampleFrames × numChannels × ceil(sampleSize / 8).",
+      "storeAs": "ssndSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "SSND Offset",
+      "offset": 46,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.30,
+      "description": "Offset in bytes from the start of the sample data to the first sample frame (big-endian). Almost always 0. A non-zero value means the audio data is offset into the SSND block body, allowing the sample data to start on a specific memory alignment boundary. The first sample is at SSND_body_start + ssndOffset.",
+      "storeAs": "ssndOffset",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "SSND Block Size",
+      "offset": 50,
+      "length": 4,
+      "color": "#F7DC6F",
+      "opacity": 0.30,
+      "description": "Block alignment size for the audio data (big-endian). Almost always 0, meaning no block alignment. When non-zero it specifies the alignment granularity used when writing the SSND data, for hardware DMA alignment purposes. The actual audio data begins at SSND body offset 8 (after these two 4-byte header fields).",
+      "storeAs": "ssndBlockSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is AIFC",
+      "expression": "calc:fileType == 'AIFC'",
+      "storeAs": "isAIFC",
+      "description": "True if the file type is AIFC (compressed AIFF) rather than plain AIFF"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Uncompressed Byte Rate",
+      "expression": "sampleRate * sampleSize * channels / 8",
+      "storeAs": "byteRate",
+      "description": "Uncompressed PCM byte rate in bytes per second = sampleRate × sampleSize × channels / 8"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Estimated Audio Duration",
+      "expression": "sampleRate > 0 ? (sampleFrames / sampleRate) : 0",
+      "storeAs": "estimatedDuration",
+      "description": "Audio duration in seconds = numSampleFrames / sampleRate"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Audio Data Bytes",
+      "expression": "sampleFrames * channels * (sampleSize / 8)",
+      "storeAs": "totalDataBytes",
+      "description": "Expected uncompressed audio data size in bytes = sampleFrames × channels × bytesPerSample"
+    },
+    {
+      "type": "conditional",
+      "name": "AIFF vs AIFC",
+      "condition": "isAIFC == false",
+      "trueLabel": "Standard AIFF — uncompressed PCM, big-endian signed integer samples",
+      "falseLabel": "AIFC — compressed audio with codec specified in extended COMM chunk",
+      "description": "Identifies whether the file is standard uncompressed AIFF or the AIFC compressed variant"
+    },
+    {
+      "type": "metadata",
+      "name": "File Type",
+      "variable": "fileType",
+      "description": "AIFF file variant: 'AIFF'=uncompressed PCM, 'AIFC'=compressed"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Number of audio channels (1=Mono, 2=Stereo, up to 8)"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Frames",
+      "variable": "sampleFrames",
+      "description": "Total audio sample frames (one frame = one sample per channel)"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
+      "variable": "sampleSize",
+      "description": "Bits per sample (8, 16, 20, 24, or 32-bit)"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "sampleRate",
+      "description": "Sample rate in Hz (derived from 80-bit IEEE extended field)"
+    },
+    {
+      "type": "metadata",
+      "name": "Duration (seconds)",
+      "variable": "estimatedDuration",
+      "description": "Estimated audio duration in seconds = sampleFrames / sampleRate"
     },
     {
       "type": "metadata",
       "name": "Byte Rate",
       "variable": "byteRate",
-      "description": "Calculated byte rate"
+      "description": "Uncompressed PCM byte rate = sampleRate × sampleSize × channels / 8"
     },
     {
       "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
+      "name": "Total Audio Bytes",
+      "variable": "totalDataBytes",
+      "description": "Total uncompressed audio data size in bytes"
     }
   ],
-  "software": [
-    "Apple software",
-    "Audio editors",
-    "iTunes"
+  "assertions": [
+    {
+      "name": "FORM chunk identifier valid",
+      "expression": "formChunkId == 1179011410",
+      "severity": "error",
+      "message": "FORM chunk identifier must be 0x464F524D ('FORM') — not a valid IFF/AIFF file"
+    },
+    {
+      "name": "File type is AIFF or AIFC",
+      "expression": "fileType == 'AIFF' || fileType == 'AIFC'",
+      "severity": "error",
+      "message": "File type identifier must be 'AIFF' or 'AIFC' — 'FORM' chunk does not contain an AIFF audio file"
+    },
+    {
+      "name": "Channel count is valid",
+      "expression": "channels >= 1 && channels <= 8",
+      "severity": "warning",
+      "message": "AIFF channel count should be 1-8 — value outside this range is unusual"
+    },
+    {
+      "name": "Sample size is valid",
+      "expression": "sampleSize >= 1 && sampleSize <= 32",
+      "severity": "error",
+      "message": "AIFF sample size must be 1-32 bits per sample"
+    },
+    {
+      "name": "COMM chunk size valid for AIFF",
+      "expression": "isAIFC || commSize == 18",
+      "severity": "warning",
+      "message": "Standard AIFF COMM chunk must be exactly 18 bytes — different size may indicate AIFC or malformed file"
+    }
   ],
-  "format_relationships": {
-    "category": "Audio",
-    "extensions": [
-      ".aiff",
-      ".aif",
-      ".aifc"
-    ]
-  },
-  "MimeTypes": [
-    "audio/aiff"
-  ],
-  "Software": [
-    "VLC",
-    "Audacity",
-    "Foobar2000",
-    "MediaMonkey",
-    "Winamp"
-  ],
-  "UseCases": [
-    "Music playback",
-    "Audio editing",
-    "Sound production",
-    "Streaming"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "forensic": {
-    "category": "audio",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Audio Interchange File Format - Apple audio format",
-    "suggestedInspections": [
-      "Validate AIFF Audio header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
-    ]
-  },
   "navigation": {
     "bookmarks": [
       {
-        "name": "FORM Chunk",
-        "offsetVar": "currentOffset",
-        "icon": ""
+        "name": "FORM Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "AIFF/AIFC Type",
+        "offset": 8,
+        "icon": "\uE8A5",
+        "color": "#95E1D3"
+      },
+      {
+        "name": "COMM Chunk",
+        "offset": 12,
+        "icon": "\uE9D9",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "Sample Rate (80-bit)",
+        "offset": 28,
+        "icon": "\uE767",
+        "color": "#DDA0DD"
+      },
+      {
+        "name": "SSND Chunk",
+        "offset": 38,
+        "icon": "\uE8B7",
+        "color": "#87CEEB"
+      },
+      {
+        "name": "Audio Data",
+        "offset": 54,
+        "icon": "\uE71B",
+        "color": "#98D8C8"
       }
     ]
   },
+  "inspector": {
+    "badge": "fileType",
+    "primaryField": "estimatedDuration",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "IFF / FORM Header",
+        "icon": "\uE71B",
+        "fields": ["formChunkId", "formSize", "fileType", "isAIFC"]
+      },
+      {
+        "title": "COMM — Audio Parameters",
+        "icon": "\uE767",
+        "fields": ["channels", "sampleFrames", "sampleSize", "sampleRate"]
+      },
+      {
+        "title": "SSND — Sound Data",
+        "icon": "\uE8B7",
+        "fields": ["ssndOffset", "ssndBlockSize", "totalDataBytes"]
+      },
+      {
+        "title": "Computed Properties",
+        "icon": "\uE9D9",
+        "fields": ["estimatedDuration", "byteRate"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "AIFF COMM Header (JSON)",
+      "format": "json",
+      "fields": ["fileType", "channels", "sampleFrames", "sampleSize", "sampleRate", "isAIFC", "estimatedDuration", "byteRate"]
+    },
+    {
+      "name": "aiff_comm_t (C struct)",
+      "format": "c-struct",
+      "structName": "aiff_comm_chunk",
+      "fields": ["channels", "sampleFrames", "sampleSize", "sampleRateBytes"]
+    },
+    {
+      "name": "Python AIFF check",
+      "format": "python-bytes",
+      "fields": ["formChunkId", "fileType", "channels", "sampleSize"]
+    }
+  ],
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "FORM chunk missing",
+        "condition": "formChunkId != 1179011410",
+        "severity": "error",
+        "description": "FORM chunk identifier is not 'FORM' — file does not start with a valid IFF/AIFF container. May be a truncated or non-AIFF file with a false positive signature match."
+      },
+      {
+        "name": "Invalid file type marker",
+        "condition": "fileType != 'AIFF' && fileType != 'AIFC'",
+        "severity": "error",
+        "description": "File type field is neither 'AIFF' nor 'AIFC' — FORM container does not contain audio data. Could be an IFF image (ILBM) or other IFF-based format misidentified as AIFF."
+      },
+      {
+        "name": "Zero channel count",
+        "condition": "channels == 0",
+        "severity": "error",
+        "description": "Channel count of 0 is invalid — indicates a corrupted or malformed COMM chunk."
+      },
+      {
+        "name": "Zero sample frames",
+        "condition": "sampleFrames == 0",
+        "severity": "warning",
+        "description": "Zero sample frames — audio data section is empty. May indicate a header-only AIFF stub or file that was not properly finalized."
+      },
+      {
+        "name": "SSND offset non-zero",
+        "condition": "ssndOffset != 0",
+        "severity": "info",
+        "description": "Non-zero SSND offset delays the start of audio data within the SSND block. Uncommon in practice — may indicate hardware-specific DMA alignment or modified header."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "AIFF file layout (all values big-endian): FORM(4) + formSize(4,BE) + 'AIFF'/'AIFC'(4) + COMM(4) + commSize(4,BE) + numChannels(2,BE) + numSampleFrames(4,BE) + sampleSize(2,BE) + sampleRate(10,80-bit IEEE extended BE) [+ compressionType(4) + name(pascal string) if AIFC] + SSND(4) + ssndSize(4,BE) + offset(4,BE) + blockSize(4,BE) + audio_data. Audio samples are big-endian signed integers, right-justified in their sample word. 80-bit extended precision: sign(1b) + exponent(15b, biased by 16383) + significand(64b, explicit). To read sample rate: convert 10 bytes at offset 28 using Extended80ToDouble().",
+    "knownVulnerabilities": [
+      "Integer overflow in numSampleFrames × numChannels calculation can cause allocator underalloc in naive decoders",
+      "80-bit extended float special values (NaN, infinity) in sample rate field can cause division-by-zero",
+      "AIFC with unknown compression type may cause decoder fallback to raw PCM misinterpretation"
+    ],
+    "suggestedInspections": [
+      "Verify FORM chunk ID is 0x464F524D at offset 0",
+      "Verify file type at offset 8 is 'AIFF' (0x41494646) or 'AIFC' (0x41494643)",
+      "Parse 80-bit extended float at offset 28 to verify sample rate is a valid value (8000-192000 Hz typical)",
+      "Verify COMM chunk size: 18 for AIFF, >= 22 for AIFC",
+      "Check channel count (1-8) and sample size (1-32) are valid",
+      "For AIFC: check compression type at offset 38 — 'NONE' / 'sowt' (LE PCM) / 'ima4' (IMA ADPCM) / 'ulaw' / 'alaw'",
+      "Verify sampleFrames × channels × (sampleSize/8) matches the SSND chunk data size"
+    ]
+  },
+  "software": [
+    "Apple Logic Pro / GarageBand",
+    "Audacity",
+    "Adobe Audition",
+    "Pro Tools",
+    "iTunes / Music (Apple)",
+    "FFmpeg",
+    "SoX",
+    "Foobar2000"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".aiff", ".aif", ".aifc"],
+    "relatedFormats": ["WAV", "FLAC", "ALAC", "CAF"],
+    "parentFormat": "IFF (Interchange File Format, Electronic Arts 1985)",
+    "variants": ["AIFF (uncompressed PCM)", "AIFC (compressed, multiple codecs)"]
+  },
+  "MimeTypes": [
+    "audio/aiff",
+    "audio/x-aiff",
+    "audio/x-aifc"
+  ],
+  "UseCases": [
+    "Professional audio production (Pro Tools, Logic Pro session files)",
+    "CD mastering and distribution (uncompressed 16-bit 44100 Hz)",
+    "Studio mastering (24-bit / 32-bit high-resolution archiving)",
+    "macOS system sounds and audio assets",
+    "Legacy Apple II / IIGS and SGI workstation audio"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 17,
+    "ValidationRules": 5,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
   "TechnicalDetails": {
-    "AudioFormat": true
+    "AudioFormat": true,
+    "Endianness": "big-endian (all multi-byte values, all PCM samples)",
+    "SampleEncoding": "big-endian signed integer (right-justified in sample word)",
+    "SampleRateEncoding": "80-bit IEEE 754 extended precision float (10 bytes)",
+    "MaxChannels": "unlimited (practical: 1-8)",
+    "MaxBitDepth": 32,
+    "HasIntegrityCheck": false,
+    "HeaderSize": "12 bytes FORM header + 26 bytes COMM chunk + SSND header",
+    "CompressionAIFC": "PCM (NONE), IMA ADPCM (ima4), µ-law (ulaw), A-law (alaw), MACE3, MACE6, Qualcomm PureVoice",
+    "BaseFormat": "IFF-85 Electronic Arts Interchange File Format"
   }
 }

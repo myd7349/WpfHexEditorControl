@@ -1,16 +1,7 @@
-/* ============================================================
-   Format:    PFRO Registry Data
-   Category:  System
-   Editor:    hex-editor
-   Desc:      PendingFileRenameOperations - Delayed file operations
-   Variables: currentOffset, timestamp, size, version, type, operationCount, firstSourcePathLength, firstSourcePath, firstTargetPathLength, firstTargetPath, operationFlags
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "PFRO Registry Data",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ""
   ],
@@ -27,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "PFRO magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -138,7 +138,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "System",
     "extensions": [
       ""
@@ -158,11 +158,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 48,
+    "CompletenessScore": 65,
     "DocumentationLevel": "standard",
     "BlocksDefined": 9,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -183,5 +183,44 @@
       "Check timestamp sequence for gaps or chronological anomalies",
       "Inspect event severity levels and source identifiers"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "operationCount",
+    "primaryField": "firstSourcePathLength",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PFRO Registry Data",
+        "icon": "",
+        "fields": [
+          "operationCount",
+          "firstSourcePathLength",
+          "firstSourcePath",
+          "firstTargetPathLength",
+          "firstTargetPath"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PFRO Registry Data Header (JSON)",
+      "format": "json",
+      "fields": [
+        "operationCount",
+        "firstSourcePathLength",
+        "firstSourcePath",
+        "firstTargetPathLength",
+        "firstTargetPath"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "operationCount != 0",
+      "severity": "warning",
+      "message": "PFRO magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,79 +1,80 @@
-/* ============================================================
-   Format:    Ubisoft FORGE
-   Category:  Game
-   Ext:       .forge
-   Editor:    hex-editor
-   Desc:      Ubisoft FORGE archive format
-   Variables: currentOffset, sectorSize, sectorCount, capacity, format, forgeSignature, version, fileSize, formattedSize
-   Detection: signature=7363696D61676500 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
-  "formatName": "Ubisoft FORGE",
-  "version": "1.13",
+  "formatName": "Ubisoft FORGE Archive",
+  "version": "1.16",
   "extensions": [
     ".forge"
   ],
-  "description": "Ubisoft FORGE archive format",
+  "description": "FORGE is the proprietary archive format used by Ubisoft's AnvilNext engine for games including Assassin's Creed series (AC3, Black Flag, Unity, Origins, Odyssey, Valhalla), Watch Dogs, and Far Cry series. FORGE files start with the magic 'scimago(NUL)' or 'scimago ' (ASCII at offset 0, 8 bytes). After the magic: formatVersion (uint32 LE at offset 8), fileSize (uint64 LE at offset 12), and an index table that maps resource IDs to file offsets. Assets inside FORGE may be Zlib/LZ4-compressed and are identified by 8-byte resource UIDs. The format evolved significantly across AC games — tools like Ubisoft's ForgeExtract or community tools are needed for specific game versions.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Ubisoft FORGE Archive Format",
-      "Ubisoft ANVIL Engine Archive",
-      "FORGE scimage Container"
+      "Ubisoft FORGE format analysis — Assassin's Creed modding community"
     ],
     "WebLinks": [
-      "https://fileinfo.com/extension/forge",
-      "https://github.com/gentlegiantJGC/ACExplorer",
-      "https://www.zenhax.com/viewtopic.php@t=9138.html",
-      "https://www.moddb.com/groups/assassins-creed-fans/downloads/forge-extractorreplacer-by-turfster"
+      "https://github.com/theawesomecoder61/Blacksmith",
+      "https://wiki.xentax.com/index.php/Ubisoft_Forge"
     ]
   },
   "detection": {
-    "signature": "7363696D61676500",
-    "offset": 0,
+    "signatures": [
+      {
+        "value": "7363696D61676F00",
+        "offset": 0,
+        "label": "'scimago(NUL)' — Ubisoft FORGE archive magic (null-terminated)",
+        "weight": 1.0
+      },
+      {
+        "value": "7363696D61676F20",
+        "offset": 0,
+        "label": "'scimago ' — Ubisoft FORGE archive magic (space variant)",
+        "weight": 0.9
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": {
+      "min": 4.0,
+      "max": 7.5
+    },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 32,
+      "maxSignatureOffset": 0,
+      "note": "FORGE files start with 'scimago' followed by a null byte or space (8 bytes total). Format version at offset 8 varies by game."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "sectorSize": 0,
-    "sectorCount": 0,
-    "capacity": 0,
-    "format": "",
-    "forgeSignature": "",
-    "version": "",
-    "fileSize": 0,
-    "formattedSize": ""
+    "forgeMagic": "",
+    "forgeVersion": 0,
+    "forgeFileSize": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "FORGE Signature",
+      "name": "FORGE Magic",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "scimage signature",
-      "storeAs": "forgeSignature",
+      "opacity": 0.45,
+      "description": "Ubisoft FORGE archive magic: 8 bytes 'scimago(NUL)' (0x73 0x63 0x69 0x6D 0x61 0x67 0x6F 0x00) or 'scimago ' (with trailing space). 'Scimago' is a reference to the Scimitar project name used internally at Ubisoft Montreal. Used in AnvilNext engine games: Assassin's Creed III through Valhalla, Watch Dogs 1/2, Far Cry 4/5, Ghost Recon Wildlands. Each FORGE file contains thousands of game assets indexed by unique 8-byte resource IDs.",
+      "storeAs": "forgeMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "Format Version",
       "offset": 8,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "FORGE version",
-      "storeAs": "version",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "FORGE format version as uint32 little-endian at offset 8. Version numbers correlate with game releases: earlier AC titles use lower version numbers, while AC Origins, Odyssey, and Valhalla use higher versions with extended resource metadata. The format version determines how the index table is parsed.",
+      "storeAs": "forgeVersion",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -81,96 +82,136 @@
       "offset": 12,
       "length": 8,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Total file size",
-      "storeAs": "fileSize",
-      "valueType": "uint64"
+      "opacity": 0.35,
+      "description": "Total FORGE archive file size as uint64 little-endian at offset 12. FORGE files can be very large (several GB each) as they contain entire game worlds' assets. AC games typically ship with 50-100+ FORGE files covering textures, meshes, animations, audio, and scripts.",
+      "storeAs": "forgeFileSize",
+      "valueType": "uint64",
+      "endianness": "little"
     },
     {
       "type": "metadata",
-      "name": "Sector Size",
-      "variable": "sectorSize",
-      "description": "Sector Size"
+      "name": "Magic",
+      "variable": "forgeMagic",
+      "description": "'scimago' — Ubisoft FORGE archive identifier"
     },
     {
       "type": "metadata",
-      "name": "Sector Count",
-      "variable": "sectorCount",
-      "description": "Sector Count"
+      "name": "Version",
+      "variable": "forgeVersion",
+      "description": "FORGE format version number"
     },
     {
       "type": "metadata",
-      "name": "Capacity",
-      "variable": "capacity",
-      "description": "Capacity"
-    },
-    {
-      "type": "metadata",
-      "name": "Format",
-      "variable": "format",
-      "description": "Format"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "File Size",
+      "variable": "forgeFileSize",
+      "description": "Total archive size in bytes"
     }
   ],
-  "software": [
-    "Emulators",
-    "Game engines"
+  "assertions": [
+    {
+      "name": "FORGE magic valid",
+      "expression": "forgeMagic == 'scimago'",
+      "severity": "error",
+      "message": "FORGE archive must start with 'scimago' magic — not a valid Ubisoft FORGE archive"
+    }
   ],
-  "format_relationships": {
-    "category": "Game",
-    "extensions": [
-      ".forge"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "FORGE Header",
+        "offset": 0,
+        "icon": "",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Version & Size",
+        "offset": 8,
+        "icon": "",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
-  "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "forgeVersion",
+    "primaryField": "forgeFileSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "FORGE Archive Header",
+        "icon": "",
+        "fields": [
+          "forgeMagic",
+          "forgeVersion",
+          "forgeFileSize"
+        ]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "Platform": "Various"
-  },
-  "functions": {
-    "readUInt32LE": "Read disk header",
-    "multiply": "Calculate capacity",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
-  },
+  "exportTemplates": [
+    {
+      "name": "FORGE Header (JSON)",
+      "format": "json",
+      "fields": [
+        "forgeMagic",
+        "forgeVersion",
+        "forgeFileSize"
+      ]
+    }
+  ],
   "forensic": {
     "category": "game",
     "riskLevel": "low",
     "suspiciousPatterns": []
   },
   "aiHints": {
-    "analysisContext": "Ubisoft FORGE archive format",
+    "analysisContext": "Ubisoft FORGE format: 'scimago(NUL)'(8B) + version(4B LE) + fileSize(8B LE) + index table. Index table maps 8-byte resource UIDs to (offset, size, compressed size, type). Asset data compressed with zlib or LZ4. Game-specific parsing required — version number determines table layout. Tools: Blacksmith (GUI, AC Origins/Odyssey/Valhalla), Dunia Tools (Far Cry). QuickBMS scripts available for older AC titles.",
     "suggestedInspections": [
-      "Validate Ubisoft FORGE container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
+      "Bytes 0-7 (ASCII): 'scimago(NUL)' or 'scimago ' — Ubisoft FORGE magic",
+      "Bytes 8-11 (uint32 LE): format version — determines parsing strategy",
+      "Bytes 12-19 (uint64 LE): total file size in bytes",
+      "Use Blacksmith tool for AC Origins/Odyssey/Valhalla FORGE files"
     ]
+  },
+  "software": [
+    "Blacksmith (theawesomecoder61, GUI FORGE extractor for newer AC)",
+    "Dunia Tools (FORGE extraction for Far Cry series)",
+    "QuickBMS with Ubisoft FORGE script",
+    "Ubisoft Modding Tools (official, limited release)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [
+      ".forge"
+    ],
+    "relatedFormats": [
+      "UASSET",
+      "PAK"
+    ],
+    "note": "FORGE is Ubisoft's AnvilNext engine asset container. Used in Assassin's Creed series (AC3 through Valhalla), Watch Dogs 1/2, Far Cry 4/5/6, Ghost Recon Wildlands/Breakpoint. Each game ships with many large .forge files. The format evolved significantly — tools are game-version specific."
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Extracting textures, models, animations from Assassin's Creed games",
+    "Modding Ubisoft AnvilNext engine games",
+    "Game asset analysis and reverse engineering of AC/Watch Dogs titles",
+    "Accessing sound and dialogue files from Far Cry games"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 60,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-14",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary Ubisoft FORGE archive (AnvilNext engine)",
+    "Magic": "'scimago(NUL)' or 'scimago ' (8 bytes) at offset 0",
+    "Header": "8B magic + 4B version (LE) + 8B fileSize (LE) + index table",
+    "Resources": "Identified by 8-byte UIDs; compressed with zlib or LZ4",
+    "Versions": "Format version varies by game; Blacksmith supports newer AC titles"
   }
 }

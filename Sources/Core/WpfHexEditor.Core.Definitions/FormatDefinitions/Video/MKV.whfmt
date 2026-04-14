@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Matroska Video
-   Category:  Video
-   Ext:       .mkv, .mka, .mks, .mk3d
-   Editor:    hex-editor
-   Desc:      Matroska is an open-standard multimedia container format based on EBML (Extensible Binary Meta Language). The file begins with an EBML Header element (ID 0x1A45DFA3) containing version information and document type declaration, followed by a Segment element (ID 0x18538067) containing all media data. Each EBML element consists of an Element ID, a VINT-encoded size, and element data.
-   Variables: currentOffset, ebmlSignature, ebmlHeaderSize, ebmlVersionId, ebmlVersionSizeAndValue, ebmlVersionValue, ebmlReadVersionId, ebmlReadVersionSizeAndValue, ebmlReadVersionValue, ebmlMaxIdLenId, ebmlMaxIdLenSizeAndValue, ebmlMaxIdLenValue, ebmlMaxSizeLenId, ebmlMaxSizeLenSizeAndValue, ebmlMaxSizeLenValue, ebmlDocTypeId, ebmlDocTypeSize, ebmlDocTypeVersionId, ebmlDocTypeVersionSizeAndValue, ebmlDocTypeReadVersionId, ebmlDocTypeReadVersionSizeAndValue, mkvDocType, mkvDocTypeVersion, mkvDocTypeReadVersion, mkvEBMLVersion, mkvEBMLReadVersion, mkvMaxIdLength, mkvMaxSizeLength, totalHeaderBytes, isWebM, formattedSize
-   Detection: signature=1A45DFA3 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Matroska Video",
-  "version": "2.0",
+  "version": "2.02",
   "extensions": [
     ".mkv",
     ".mka",
@@ -376,17 +366,115 @@
       "description": "Total size of the EBML header in bytes, after which the Segment element begins"
     }
   ],
+  "assertions": [
+    {
+      "name": "EBML Header Element ID valid",
+      "expression": "ebmlSignature == 0x1A45DFA3",
+      "severity": "error",
+      "message": "EBML Header Element ID at offset 0 must be 0x1A45DFA3 — not a valid EBML/Matroska file"
+    },
+    {
+      "name": "DocType is matroska or webm",
+      "expression": "mkvDocType == 'matroska' || mkvDocType == 'webm'",
+      "severity": "warning",
+      "message": "EBML DocType must be 'matroska' or 'webm' — unknown EBML-based container"
+    },
+    {
+      "name": "EBML MaxIDLength is 4",
+      "expression": "mkvMaxIdLength == 4",
+      "severity": "warning",
+      "message": "Matroska requires EBMLMaxIDLength = 4 — non-standard value may break parsers"
+    },
+    {
+      "name": "EBML MaxSizeLength is 8",
+      "expression": "mkvMaxSizeLength == 8",
+      "severity": "warning",
+      "message": "Matroska requires EBMLMaxSizeLength = 8 — non-standard value may break parsers"
+    }
+  ],
+  "versionDetection": {
+    "field": "mkvDocType",
+    "versions": {
+      "matroska": "Matroska — full-featured multimedia container (MKV/MKA/MKS)",
+      "webm": "WebM — web-optimized Matroska subset (VP8/VP9/AV1 + Vorbis/Opus only)"
+    }
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "EBML Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "DocType Element",
+        "offset": 21,
+        "icon": "\uE8B7",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "mkvDocType",
+    "primaryField": "mkvDocTypeVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "EBML Identity",
+        "icon": "\uE71B",
+        "fields": ["mkvDocType", "mkvDocTypeVersion", "mkvDocTypeReadVersion"]
+      },
+      {
+        "title": "EBML Version",
+        "icon": "\uE8B7",
+        "fields": ["mkvEBMLVersion", "mkvEBMLReadVersion", "mkvMaxIdLength", "mkvMaxSizeLength"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "EBML Header (JSON)",
+      "format": "json",
+      "fields": ["mkvDocType", "mkvDocTypeVersion", "mkvDocTypeReadVersion", "mkvEBMLVersion", "mkvEBMLReadVersion", "mkvMaxIdLength", "mkvMaxSizeLength", "isWebM"]
+    }
+  ],
   "forensic": {
     "category": "video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "WebM container with non-standard DocType",
+        "condition": "mkvDocType != 'matroska' && mkvDocType != 'webm'",
+        "severity": "warning",
+        "description": "EBML DocType is not 'matroska' or 'webm'. This may be a non-standard EBML-based container or a malformed Matroska file with an incorrect DocType string."
+      },
+      {
+        "name": "DocTypeReadVersion higher than DocTypeVersion",
+        "condition": "mkvDocTypeReadVersion > mkvDocTypeVersion",
+        "severity": "error",
+        "description": "DocTypeReadVersion must be <= DocTypeVersion. A higher minimum read version than write version indicates a corrupted or invalid Matroska header."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2019-13767: Matroska demuxer out-of-bounds read via crafted EBML element with large size",
+      "VINT integer overflow in EBML element size parsing can cause heap buffer overflows in some demuxers",
+      "Malformed Cluster positions in SeekHead can trick parsers into reading arbitrary file offsets"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Matroska is an open-standard multimedia container format based on EBML (Extensible Binary Meta Language). Th...",
+    "analysisContext": "Matroska/EBML layout: EBML_Header_ID(4B,BE,=0x1A45DFA3) + VINT_size(1-8B) + header_elements. Header child elements: EBMLVersion(ID=0x4286,VINT_size+value=1), EBMLReadVersion(0x42F7), EBMLMaxIDLength(0x42F2,must=4), EBMLMaxSizeLength(0x42F3,must=8), DocType(0x4282,ASCII,='matroska'/'webm'), DocTypeVersion(0x4287), DocTypeReadVersion(0x4285). After EBML header: Segment element (ID=0x18538067) + VINT size. Inside Segment: SeekHead(0x114D9B74,optional index), Info(0x1549A966,duration/title/timescodeScale), Tracks(0x1654AE6B,codec IDs), Cluster(0x1F43B675,actual video/audio data). Track entry: TrackType(0x83: 1=video,2=audio,17=subtitle) + CodecID(ASCII: 'V_MPEG4/ISO/AVC' for H.264, 'V_VP9', 'A_AAC', 'A_OPUS').",
+    "knownVulnerabilities": [
+      "CVE-2019-13767: EBML element size VINT overflow → heap OOB read",
+      "Crafted SeekHead with fake Cluster offsets enables arbitrary read in vulnerable demuxers",
+      "Infinite recursion via deeply nested EBML master elements"
+    ],
     "suggestedInspections": [
-      "Validate Matroska Video container magic, box/atom sizes, and codec FourCC",
-      "Check track/stream layout, frame index, and timing fields",
-      "Inspect audio-video sync, keyframe distribution, and metadata"
+      "Verify EBML header: bytes 0-3 must be 1A 45 DF A3",
+      "Read DocType string (at ~offset 24): must be 'matroska' or 'webm'",
+      "Check DocTypeVersion (0x4287 element) for Matroska spec version (1-4)",
+      "Find Segment element (18 53 80 67) after EBML header — contains all media",
+      "Scan Tracks element for TrackType (1=video, 2=audio) and CodecID strings"
     ]
   },
   "MimeTypes": [
@@ -409,11 +497,11 @@
     "Blu-ray remux"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 92,
     "DocumentationLevel": "comprehensive",
     "BlocksDefined": 27,
-    "ValidationRules": 3,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": true,
     "AutoRefined": false
   },

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Windows Executable (PE)
-   Category:  Executables
-   Ext:       .exe, .scr
-   Editor:    hex-editor
-   Desc:      Windows Portable Executable format. The PE format is the standard executable file format on Windows, consisting of a DOS MZ stub header followed by a PE signature, COFF file header, and Optional Header with data directories and section tables.
-   Variables: currentOffset, dosMzSignature, bytesOnLastPage, pagesInFile, relocations, headerParagraphs, minExtraParagraphs, maxExtraParagraphs, initialSs, initialSp, dosChecksum, initialIp, initialCs, relocTableOffset, overlayNumber, peHeaderOffset, peSignature, coffMachine, coffNumberOfSections, coffTimeDateStamp, coffPointerToSymbolTable, coffNumberOfSymbols, coffSizeOfOptionalHeader, coffCharacteristics, optionalMagic, majorLinkerVersion, minorLinkerVersion, sizeOfCode, sizeOfInitializedData, addressOfEntryPoint, headerSizeBytes, isDLL, is64Bit, machineName, linkerVersionString, peOffset, peMachineName, peSubsystemName, peIs64Bit, peEntryPoint, peImageBase, peSectionCount, peMachine
-   Detection: signature=4D5A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Executable (PE)",
-  "version": "2.0",
+  "version": "2.02",
   "extensions": [
     ".exe",
     ".scr"
@@ -686,82 +676,91 @@
       "message": "e_lfanew < 64 — DOS header too small for a valid PE"
     }
   ],
-  "navigation": {
+    "navigation": {
     "bookmarks": [
       {
         "name": "DOS Header",
         "offset": 0,
-        "icon": ""
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
       },
       {
-        "name": "PE Header",
+        "name": "PE Header (e_lfanew)",
         "offsetVar": "peHeaderOffset",
-        "icon": ""
+        "icon": "\uE7EF",
+        "color": "#FF6B6B"
       },
       {
         "name": "COFF Header",
         "offsetVar": "peHeaderOffset",
-        "icon": ""
+        "icon": "\uE8B7",
+        "color": "#FFE66D"
       },
       {
         "name": "Section Table",
         "offsetVar": "sectionTableOffset",
-        "icon": ""
+        "icon": "\uE9D9",
+        "color": "#C7CEEA"
       },
       {
         "name": "Entry Point",
         "offsetVar": "addressOfEntryPoint",
-        "icon": "",
+        "icon": "\uE72E",
         "color": "#FF4444"
       }
     ]
   },
-  "versionDetection": {
-    "field": "optionalMagic",
-    "map": {
-      "267": "PE32",
-      "523": "PE32+"
-    }
-  },
-  "versionedBlocks": {
-    "PE32": [
+  "inspector": {
+    "badge": "peMachineName",
+    "primaryField": "addressOfEntryPoint",
+    "showQualityScore": true,
+    "groups": [
       {
-        "type": "field",
-        "name": "BaseOfData",
-        "offsetFrom": "peHeaderOffset",
-        "offsetAdd": 52,
-        "length": 4,
-        "color": "#98D8C8",
-        "valueType": "uint32",
-        "storeAs": "baseOfData",
-        "opacity": 0.3
+        "title": "DOS Header",
+        "icon": "\uE8A5",
+        "fields": ["dosMzSignature", "bytesOnLastPage", "pagesInFile", "relocations", "headerParagraphs", "initialSp", "dosChecksum", "peHeaderOffset"]
       },
       {
-        "type": "field",
-        "name": "ImageBase",
-        "offsetFrom": "peHeaderOffset",
-        "offsetAdd": 56,
-        "length": 4,
-        "color": "#98D8C8",
-        "valueType": "uint32",
-        "storeAs": "peImageBase",
-        "opacity": 0.3
-      }
-    ],
-    "PE32+": [
+        "title": "COFF Header",
+        "icon": "\uE7EF",
+        "fields": ["peSignature", "coffMachine", "coffNumberOfSections", "coffTimeDateStamp", "coffSizeOfOptionalHeader", "coffCharacteristics"]
+      },
       {
-        "type": "field",
-        "name": "ImageBase",
-        "offsetFrom": "peHeaderOffset",
-        "offsetAdd": 48,
-        "length": 8,
-        "color": "#98D8C8",
-        "valueType": "uint64",
-        "storeAs": "peImageBase",
-        "opacity": 0.3
+        "title": "Optional Header",
+        "icon": "\uE946",
+        "fields": ["optionalMagic", "majorLinkerVersion", "minorLinkerVersion", "sizeOfCode", "sizeOfInitializedData", "addressOfEntryPoint"]
+      },
+      {
+        "title": "Derived Properties",
+        "icon": "\uE72E",
+        "fields": ["isDLL", "is64Bit", "headerSizeBytes", "sectionTableOffset"]
       }
     ]
   },
+  "exportTemplates": [
+    {
+      "name": "PE Header Summary (JSON)",
+      "format": "json",
+      "fields": ["dosMzSignature", "peHeaderOffset", "coffMachine", "coffNumberOfSections", "coffTimeDateStamp", "coffCharacteristics", "optionalMagic", "addressOfEntryPoint", "isDLL", "is64Bit"]
+    },
+    {
+      "name": "Section Table (CSV)",
+      "format": "csv",
+      "source": "repeating:Section Table",
+      "columns": ["sectionName", "sectionVirtualSize", "sectionVirtualAddr", "sectionRawSize", "sectionRawOffset", "sectionCharacteristics"]
+    },
+    {
+      "name": "IMAGE_FILE_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "IMAGE_FILE_HEADER",
+      "fields": ["coffMachine", "coffNumberOfSections", "coffTimeDateStamp", "coffPointerToSymbolTable", "coffNumberOfSymbols", "coffSizeOfOptionalHeader", "coffCharacteristics"]
+    },
+    {
+      "name": "Python PE magic check",
+      "format": "python-bytes",
+      "fields": ["dosMzSignature", "peSignature", "optionalMagic", "coffMachine"]
+    }
+  ],
   "forensic": {
     "category": "executable",
     "riskLevel": "high",
@@ -770,28 +769,62 @@
         "name": "Invalid e_lfanew",
         "condition": "peHeaderOffset < 64 || peHeaderOffset > 4096",
         "severity": "error",
-        "description": "e_lfanew points outside the typical DOS header range — possible corruption or packer"
+        "description": "e_lfanew points outside the typical DOS header range -- possible corruption or packer tool"
       },
       {
         "name": "Empty code section",
         "condition": "sizeOfCode == 0",
         "severity": "warning",
-        "description": "SizeOfCode is 0 — may indicate a packed/hollowed executable"
+        "description": "SizeOfCode is 0 -- may indicate a packed or hollowed executable where code has been removed from the header record"
       },
       {
         "name": "Zero section count",
         "condition": "coffNumberOfSections == 0",
         "severity": "error",
-        "description": "No sections defined — highly unusual for a valid PE image"
+        "description": "No sections defined -- highly unusual for a valid PE image, indicates corruption or crafted file"
+      },
+      {
+        "name": "Anomalous TimeDateStamp",
+        "condition": "coffTimeDateStamp < 631152000 || coffTimeDateStamp > 2524608000",
+        "severity": "warning",
+        "description": "TimeDateStamp is before 1990 or after 2050 -- values outside this range indicate forging, zeroing, or max-value (0xFFFFFFFF) stamping common in malware"
+      },
+      {
+        "name": "Suspicious section count",
+        "condition": "coffNumberOfSections > 20",
+        "severity": "warning",
+        "description": "More than 20 sections is unusual -- typical PE has 4-8. High counts are common in packers and PE analysis evasion tools."
+      },
+      {
+        "name": "Code-only binary (no data sections)",
+        "condition": "sizeOfCode > 0 && sizeOfInitializedData == 0",
+        "severity": "info",
+        "description": "No initialized data section -- may indicate code-only packed binary or unusual linker output"
       }
+    ],
+    "knownExploitVectors": [
+      "DLL hijacking -- replacing a legitimate DLL in the load path",
+      "PE header manipulation to bypass AV signature scanning",
+      "Entry point shellcode injection (EP patching)",
+      "Section injection via expanded section raw size",
+      "Import table poisoning (IAT hooking)"
     ]
   },
   "aiHints": {
-    "analysisContext": "Windows Portable Executable format. The PE format is the standard executable file format on Windows, consist...",
+    "analysisContext": "Windows PE is the primary executable format. Structure: DOS header (64 bytes) + DOS stub + PE signature at e_lfanew + COFF header (20 bytes) + Optional header (224/240 bytes PE32/PE32+) + Section table. Key fields: coffTimeDateStamp (may be zeroed/forged), optionalMagic (PE32 vs PE32+), coffCharacteristics DLL bit, addressOfEntryPoint. High section entropy (>7.2) suggests packing. Absent or minimal import table also suggests packing.",
+    "knownVulnerabilities": [
+      "Integer overflow in SizeOfOptionalHeader parsing allows bypassing section table bounds",
+      "e_lfanew manipulation can cause parsers to read crafted data as COFF header",
+      "Signed PE abuse: SIP hijacking for Authenticode bypass",
+      "Overlay data after last section -- common carrier for second-stage payloads"
+    ],
     "suggestedInspections": [
-      "Verify Windows Executable (PE) signature, section table, and entry point",
-      "Check import/export tables for suspicious library references",
-      "Inspect section entropy for packing, encryption, or hollowing"
+      "Verify coffTimeDateStamp is within 1990-2050 range -- zero or future dates indicate manipulation",
+      "Check sizeOfCode vs total file size -- ratio < 10% suggests packed executable",
+      "Inspect coffCharacteristics bit 13 (DLL) -- mismatch between extension and DLL flag is suspicious",
+      "Review import table for: VirtualAlloc+WriteProcessMemory+CreateRemoteThread combo (injection)",
+      "Check for overlay data: bytes after the last section raw end offset",
+      "Verify no section RawOffset + RawSize extends beyond file size (truncated PE)"
     ]
   },
   "software": [
@@ -801,7 +834,7 @@
     "PE Explorer",
     "CFF Explorer"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Executables",
     "extensions": [
       ".exe",
@@ -829,11 +862,11 @@
     "Device drivers"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 93,
     "DocumentationLevel": "comprehensive",
     "BlocksDefined": 38,
-    "ValidationRules": 4,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 9,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": true,
     "AutoRefined": false
   },

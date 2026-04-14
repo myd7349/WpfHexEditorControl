@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Apache ORC
-   Category:  Data
-   Ext:       .orc
-   Editor:    hex-editor
-   Desc:      Apache Optimized Row Columnar file format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, orcMagic
-   Detection: signature=4F5243 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Apache ORC",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".orc"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "4F5243",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "4F5243",
+        "offset": 0,
+        "label": "ORC magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -72,7 +71,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".orc"
@@ -92,11 +91,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -116,5 +115,36 @@
       "Check nested structure depth and field type tags",
       "Inspect string encodings and numeric value boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "orcMagic",
+    "primaryField": "orcMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Apache ORC",
+        "icon": "",
+        "fields": [
+          "orcMagic"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Apache ORC Header (JSON)",
+      "format": "json",
+      "fields": [
+        "orcMagic"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "orcMagic != 0",
+      "severity": "warning",
+      "message": "ORC magic field is zero — possible detection failure"
+    }
+  ]
 }

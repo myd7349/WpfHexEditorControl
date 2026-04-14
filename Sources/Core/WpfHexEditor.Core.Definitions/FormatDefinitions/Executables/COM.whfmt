@@ -1,139 +1,297 @@
-/* ============================================================
-   Format:    DOS COM Executable
-   Category:  Executables
-   Ext:       .com
-   Editor:    hex-editor
-   Desc:      DOS Command file - Simple executable
-   Variables: currentOffset, machineType, sectionCount, timestamp, entryPoint, codeStart
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "DOS COM Executable",
-  "version": "2.3",
+  "version": "2.32",
   "extensions": [
     ".com"
   ],
-  "description": "DOS Command file - Simple executable",
+  "description": "MS-DOS COM (Command) executable — the simplest possible binary executable format. A COM file has no header: raw x86 machine code starting at offset 0 that is loaded verbatim into memory at offset 0x0100 within a 64KB segment (the first 256 bytes are the PSP — Program Segment Prefix, filled by DOS). Execution begins at CS:IP = segment:0x0100. Maximum file size is 65280 bytes (64KB - 256-byte PSP). COM files were the standard executable format for CP/M (where the format originated) and were adopted by MS-DOS for small utilities. The first byte is always an x86 instruction, typically a JMP (0xEB=short, 0xE9=near) to skip over data at the start, or directly a first instruction opcode.",
   "category": "Executables",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "DOS COM Executable Format",
-      "8086 Memory Model and Segment Layout",
-      "CP/M and DOS Binary Executable Standards"
+      "MS-DOS Programmer's Reference — Microsoft Press",
+      "CP/M 2.2 Operating System Manual — Digital Research",
+      "8086/8088 Assembly Language Programming — Intel"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/COM_file",
       "https://docs.fileformat.com/executable/com/",
-      "https://elearning.algonquincollege.com/coursemat/pincka/dat2343/lectures.f03/33-COM-and-EXE.htm",
+      "https://en.wikipedia.org/wiki/Program_Segment_Prefix",
       "http://justsolve.archiveteam.org/wiki/DOS_executable_(.com)"
     ]
   },
   "detection": {
-    "signature": "00",
+    "signature": "EB",
     "offset": 0,
     "required": false,
+    "Strength": "Weak",
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxFileSize": 65280,
+      "note": "COM files have no magic bytes. Detection is primarily by file extension and size (≤ 65280 bytes). Common first-byte opcodes: 0xEB (short JMP), 0xE9 (near JMP), 0xB8 (MOV AX,imm16), 0xCD (INT n). Never starts with 0x4D 0x5A (MZ) — those are .EXE files."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "machineType": "",
-    "sectionCount": 0,
-    "timestamp": 0,
-    "entryPoint": 0,
-    "codeStart": 0
+    "firstOpcode": 0,
+    "secondByte": 0,
+    "thirdByte": 0,
+    "fourthByte": 0,
+    "isJmpAtStart": false,
+    "jumpTarget": 0,
+    "estimatedEntryPoint": 256
+  },
+  "functions": {
+    "extractASCIIString": "Scan for embedded ASCII strings in the raw code"
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Code Start",
+      "name": "First Byte (Entry Opcode)",
       "offset": 0,
-      "length": 2,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the COM file is simultaneously the first x86 instruction byte executed at CS:0100h. For well-structured COM files this is typically a JMP opcode (0xEB for short JMP rel8, 0xE9 for near JMP rel16) to jump over data tables at the start of the file. Direct code COM files start with the first executable opcode (0xB8=MOV AX, 0xCD=INT, 0x50-0x57=PUSH reg, etc.). A value of 0x4D (ASCII 'M') suggests this might actually be an MZ EXE file.",
+      "storeAs": "firstOpcode",
+      "valueType": "uint8",
+      "valueMap": {
+        "235": "0xEB — Short JMP (near, rel8, typical COM structure jump)",
+        "233": "0xE9 — Near JMP (rel16, jump over data area)",
+        "184": "0xB8 — MOV AX, imm16 (direct register load at entry)",
+        "205": "0xCD — INT n (direct interrupt call at start)",
+        "80": "0x50 — PUSH AX",
+        "85": "0x55 — PUSH BP / PUSH EBP (stack frame setup)",
+        "144": "0x90 — NOP (no-operation, occasional padding)",
+        "77": "0x4D — 'M' — possible MZ EXE misidentified as COM"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "COM files have no header",
-      "storeAs": "codeStart",
-      "valueType": "uint16"
+      "opacity": 0.30,
+      "description": "Second byte of the COM file. For a short JMP (0xEB) first byte, this is the signed 8-bit displacement from the next instruction (IP+2). A short JMP of 0xEB 0x00 jumps to offset 2 (no-op JMP). For a near JMP (0xE9), bytes 1-2 form a 16-bit little-endian displacement. For direct code, this is the second instruction byte.",
+      "storeAs": "secondByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Third Byte",
+      "offset": 2,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Third byte of the COM file. For a near JMP (0xE9), this is the high byte of the 16-bit displacement. For many COM programs, bytes 2-5 contain a version number, OEM identifier, or copyright notice that is printed by the COM loader or stored in a fixed location.",
+      "storeAs": "thirdByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Fourth Byte",
+      "offset": 3,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.30,
+      "description": "Fourth byte of the COM file. Part of the initial instruction sequence or data area. Some COM programs place a version string at offset 3 (e.g., 'version 1.0') that can be seen in a hex dump.",
+      "storeAs": "fourthByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Has JMP at Entry",
+      "expression": "calc:firstOpcode == 235 || firstOpcode == 233",
+      "storeAs": "isJmpAtStart",
+      "description": "True if the COM file begins with a JMP instruction (0xEB or 0xE9), indicating a structured COM layout with data before code"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Short JMP Target",
+      "expression": "calc:firstOpcode == 235 ? (256 + 2 + secondByte) : 256",
+      "storeAs": "jumpTarget",
+      "description": "Absolute memory address of the short JMP target (CS:0100h base + 2 + signed displacement), only valid when first opcode is 0xEB"
     },
     {
       "type": "metadata",
-      "name": "Machine Type",
-      "variable": "machineType",
-      "description": "Machine Type"
+      "name": "First Opcode",
+      "variable": "firstOpcode",
+      "description": "First x86 instruction byte (entry point — executed at CS:0100h)"
     },
     {
       "type": "metadata",
-      "name": "Section Count",
-      "variable": "sectionCount",
-      "description": "Section Count"
+      "name": "Has Entry JMP",
+      "variable": "isJmpAtStart",
+      "description": "True if file starts with a JMP instruction (typical COM structure)"
     },
     {
       "type": "metadata",
-      "name": "Entry Point",
-      "variable": "entryPoint",
-      "description": "Entry Point"
+      "name": "JMP Target Address",
+      "variable": "jumpTarget",
+      "description": "Absolute segment-relative target address of the initial JMP (if present)"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point (Absolute)",
+      "variable": "estimatedEntryPoint",
+      "description": "Absolute memory entry point: always 0x0100 (256) in the executing segment (PSP is at 0x0000-0x00FF)"
     }
   ],
-  "software": [
-    "MS-DOS",
-    "DOSBox",
-    "FreeDOS"
+  "assertions": [
+    {
+      "name": "Not an MZ EXE file",
+      "expression": "firstOpcode != 77",
+      "severity": "warning",
+      "message": "First byte is 0x4D ('M') — this may be an MZ EXE file misidentified as a COM file by extension alone"
+    },
+    {
+      "name": "File size is valid for COM",
+      "expression": "fileSize <= 65280",
+      "severity": "error",
+      "message": "COM file exceeds maximum size of 65280 bytes (64KB minus PSP) — cannot be loaded by DOS as a valid COM executable"
+    }
   ],
-  "format_relationships": {
-    "dos_format": true,
-    "legacy": true,
-    "simple_format": true,
-    "no_header": true
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Entry Point (CS:0100h)",
+        "offset": 0,
+        "icon": "\uE72E",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Jump Target (if JMP)",
+        "offsetVar": "jumpTarget",
+        "offsetAdd": -256,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
+    ]
   },
-  "MimeTypes": [
-    "application/x-executable"
+  "inspector": {
+    "badge": "firstOpcode",
+    "primaryField": "isJmpAtStart",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Entry Code",
+        "icon": "\uE72E",
+        "fields": ["firstOpcode", "secondByte", "thirdByte", "fourthByte"]
+      },
+      {
+        "title": "Structure",
+        "icon": "\uE8A5",
+        "fields": ["isJmpAtStart", "jumpTarget", "estimatedEntryPoint"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "COM Entry Analysis (JSON)",
+      "format": "json",
+      "fields": ["firstOpcode", "secondByte", "thirdByte", "fourthByte", "isJmpAtStart", "jumpTarget"]
+    },
+    {
+      "name": "Python COM opcode check",
+      "format": "python-bytes",
+      "fields": ["firstOpcode", "secondByte"]
+    }
   ],
-  "Software": [
-    "IDA Pro",
-    "Ghidra",
-    "PE Explorer",
-    "Dependency Walker",
-    "CFF Explorer"
-  ],
-  "UseCases": [
-    "Program execution",
-    "Reverse engineering",
-    "Analysis",
-    "Debugging"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 21,
-    "DocumentationLevel": "basic",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ExecutablesFormat": true
-  },
-  "functions": {
-    "readUInt32LE": "Read executable header",
-    "calculateCRC32": "Validate"
-  },
   "forensic": {
     "category": "executable",
     "riskLevel": "high",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Possible MZ EXE masquerading as COM",
+        "condition": "firstOpcode == 77 && secondByte == 90",
+        "severity": "error",
+        "description": "First bytes are 0x4D 0x5A ('MZ') — this is actually an MZ EXE file with a .com extension. Could be used to evade file-type detection."
+      },
+      {
+        "name": "File exceeds COM maximum size",
+        "condition": "fileSize > 65280",
+        "severity": "error",
+        "description": "File size exceeds the 65280-byte COM executable limit. Cannot be loaded by DOS. Indicates a non-COM file with .com extension."
+      },
+      {
+        "name": "Direct INT 21h at entry",
+        "condition": "firstOpcode == 205 && secondByte == 33",
+        "severity": "warning",
+        "description": "File starts immediately with INT 21h (0xCD 0x21) — direct DOS API call at entry. Unusual and may indicate shellcode or obfuscated code rather than a normal COM utility."
+      },
+      {
+        "name": "NOP sled at start",
+        "condition": "firstOpcode == 144 && secondByte == 144 && thirdByte == 144",
+        "severity": "warning",
+        "description": "COM file starts with multiple NOP (0x90) instructions — NOP sleds are common in shellcode and exploit payloads."
+      }
+    ],
+    "knownExploitVectors": [
+      "COM files contain raw shellcode with no PE/ELF structure — trivially executable on DOS or legacy bootloaders",
+      "Polymorphic COM virus — self-modifying code that changes its own instructions to evade signature scanning",
+      "Companion virus — creating a .com file with the same name as a .exe to hijack execution under DOS search order",
+      "Boot sector dropper — COM file that patches the MBR or VBR to persist across reboots"
+    ]
   },
   "aiHints": {
-    "analysisContext": "DOS Command file - Simple executable",
+    "analysisContext": "DOS COM files have NO header — raw x86 16-bit code starting at file offset 0, loaded at CS:0x0100. The PSP (Program Segment Prefix, 256 bytes) is placed by DOS before the COM code at the base of the segment. File size limit: 65280 bytes. Common first-byte patterns: 0xEB (short JMP) + offset byte to skip data area; 0xE9 (near JMP rel16); direct instruction stream. COM files are entirely 16-bit x86 real-mode code. To disassemble: use NASM/NDISASM or DOSBox debugger.",
+    "knownVulnerabilities": [
+      "Polymorphic COM viruses (Vienna, Cascade, Brain) mutate code to evade early AV signatures",
+      "COM extension masking: MZ EXE files renamed to .com are loaded by DOS incorrectly but may trick filename-based security tools",
+      "Companion/parasitic viruses exploit the DOS .com-before-.exe search order"
+    ],
     "suggestedInspections": [
-      "Verify DOS COM Executable signature, section table, and entry point",
-      "Check import/export tables for suspicious library references",
-      "Inspect section entropy for packing, encryption, or hollowing"
+      "Check if first byte is 0x4D ('M') followed by 0x5A ('Z') — would be an MZ EXE with .com extension",
+      "Verify file size <= 65280 bytes (64KB - 256-byte PSP)",
+      "Scan for embedded strings: copyright notices, error messages, embedded filenames",
+      "Check first opcode: 0xEB/0xE9=JMP (structured COM), 0xCD=INT, others=direct code",
+      "For 0xEB first byte: second byte + 2 = file offset of actual code start (skip over data)",
+      "Look for interrupt calls: INT 21h (0xCD 0x21) = DOS services, INT 10h = BIOS video"
     ]
+  },
+  "software": [
+    "MS-DOS / PC-DOS",
+    "DOSBox",
+    "FreeDOS",
+    "NASM assembler",
+    "NDISASM disassembler",
+    "IDA Pro (x86 16-bit mode)"
+  ],
+  "formatRelationships": {
+    "category": "Executables",
+    "extensions": [".com"],
+    "relatedFormats": ["PE_EXE"],
+    "note": "COM is the predecessor to MZ EXE. DOS searches for .com before .exe when both exist with the same base name."
+  },
+  "MimeTypes": [
+    "application/x-msdos-program",
+    "application/x-executable"
+  ],
+  "UseCases": [
+    "Legacy MS-DOS utilities (debug.com, format.com, fdisk.com)",
+    "CP/M-80 and CP/M-86 programs",
+    "Embedded system bootloaders",
+    "DOS viruses and proof-of-concept shellcode",
+    "Retro computing and demoscene productions"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ExecutableFormat": true,
+    "Platform": "MS-DOS, CP/M",
+    "Architecture": "x86 16-bit real mode",
+    "HasHeader": false,
+    "LoadAddress": "CS:0100h (PSP occupies 0x0000-0x00FF)",
+    "MaxSize": "65280 bytes (64KB - 256-byte PSP)",
+    "Endianness": "little-endian (x86 native)"
   }
 }

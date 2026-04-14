@@ -1,137 +1,443 @@
-/* ============================================================
-   Format:    WavPack Audio
-   Category:  Audio
-   Ext:       .wv
-   Editor:    audio-viewer
-   Desc:      WavPack hybrid lossless audio compression format
-   Variables: currentOffset, version, blockSamples, totalSamples, sampleRate, channels, bitDepth, wavpackHeader, byteRate, samplesPerSecond
-   Detection: signature=7776706B @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "WavPack Audio",
-  "version": "1.12",
+  "version": "1.14",
   "extensions": [
-    ".wv"
+    ".wv",
+    ".wvc"
   ],
-  "description": "WavPack hybrid lossless audio compression format",
+  "description": "WavPack is a hybrid lossless audio compression format. Files consist of blocks, each starting with a 32-byte block header: 4-byte magic 'wvpk' (0x77 0x76 0x70 0x6B), 4-byte block size (LE uint32 — total block bytes minus 8), 2-byte version (LE uint16, current is 0x0410 = 1040), 1-byte track number, 1-byte index number, 4-byte total samples in file (LE uint32, 0xFFFFFFFF if unknown/streaming), 4-byte block index (sample offset of this block), 4-byte block samples count (LE uint32), 4-byte flags (LE uint32 — encodes sample rate index, bit depth, mono/stereo, lossless/hybrid modes), 4-byte block CRC-32 (LE uint32). The .wvc file is the correction file (optional lossless correction for lossy hybrid mode). The flags field is key: bits 0-1=bytes per sample minus 1, bits 2-3=sample rate index (see valueMap), bit 4=mono, bits 5-8=hybrid modes, bit 31=32-bit float samples.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "Microsoft WAVE Audio File Format",
-      "RFC 2361 - WAVE and AVI Codec Registries"
+      "WavPack File Format Specification 4.x — David Bryant",
+      "WavPack Technical Specification v1.0 — wavpack.com"
     ],
     "WebLinks": [
-      "https://docs.microsoft.com/en-us/windows/win32/multimedia/waveform-audio-file-format",
-      "https://www.ietf.org/rfc/rfc2361.txt",
-      "https://en.wikipedia.org/wiki/WAV"
+      "https://www.wavpack.com/",
+      "https://www.wavpack.com/WavPack5FileFormat_4.22.pdf",
+      "https://en.wikipedia.org/wiki/WavPack",
+      "https://wiki.hydrogenaud.io/index.php?title=WavPack"
     ]
   },
   "detection": {
     "signature": "7776706B",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 32,
+      "note": "WavPack magic 'wvpk' (0x77 0x76 0x70 0x6B) at offset 0. Version at offset 8 (LE uint16) should be 0x0402-0x0410 (1026-1040). Block size at offset 4 (LE uint32) should be reasonable (non-zero)."
     }
   },
-  "functions": {
-    "readUInt32LE": "Read 32-bit little-endian for block header and sample counts",
-    "readUInt16LE": "Read 16-bit values for version and flags",
-    "calculateCRC32": "Calculate CRC32 for block integrity",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  },
   "variables": {
-    "currentOffset": 0,
+    "wvpkSignature": "",
+    "blockSize": 0,
     "version": 0,
-    "blockSamples": 0,
+    "trackNumber": 0,
+    "indexNumber": 0,
     "totalSamples": 0,
+    "blockIndex": 0,
+    "blockSamples": 0,
+    "blockFlags": 0,
+    "blockCrc": 0,
     "sampleRate": 0,
-    "channels": 0,
     "bitDepth": 0,
-    "wavpackHeader": 0,
-    "byteRate": 0,
-    "samplesPerSecond": 0
+    "isMono": false,
+    "isStereo": false,
+    "isLossless": false,
+    "isHybrid": false,
+    "is32BitFloat": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "WavPack Header",
+      "name": "WavPack Magic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "wvpk - WavPack file signature",
-      "storeAs": "wavpackHeader",
-      "valueType": "uint32"
+      "opacity": 0.45,
+      "description": "WavPack block magic 'wvpk' (0x77 0x76 0x70 0x6B). Present at the start of every WavPack block — the file begins with the first block header. 'wvpk' in lowercase ASCII uniquely identifies WavPack blocks.",
+      "storeAs": "wvpkSignature",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Block Size",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "Total byte size of this block minus 8 (little-endian uint32). Does NOT include the first 8 bytes (magic + this size field). The actual data following the 32-byte header occupies (blockSize - 24) bytes (header is 32B total, minus 8B already accounted = 24B remaining header).",
+      "storeAs": "blockSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Version",
+      "offset": 8,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "WavPack format version (little-endian uint16). Current version is 0x0410 (1040). The major version (high byte) must match the decoder's supported major version.",
+      "storeAs": "version",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "1040": "0x0410 — WavPack 5.x (current)",
+        "1028": "0x0404 — WavPack 4.x",
+        "1026": "0x0402 — WavPack 4.0 (early)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Track Number",
+      "offset": 10,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Track number for multi-track support (uint8). Usually 0 for single-track files. WavPack 5+ supports multi-track encoding.",
+      "storeAs": "trackNumber",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Index Number",
+      "offset": 11,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Index number within a track (uint8). Usually 0.",
+      "storeAs": "indexNumber",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Total Samples",
+      "offset": 12,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Total number of samples in the entire file (little-endian uint32). For stereo, this counts sample frames (pairs), not individual channel samples. Value 0xFFFFFFFF means unknown (streaming mode).",
+      "storeAs": "totalSamples",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Block Index",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Sample index of the first sample in this block (little-endian uint32). Allows seeking within the file. The first block has index 0.",
+      "storeAs": "blockIndex",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Block Samples",
+      "offset": 20,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Number of samples in this block (little-endian uint32). Typical block size is 22050 samples (~0.5 seconds at 44.1kHz). A value of 0 indicates a header-only block with no audio data.",
+      "storeAs": "blockSamples",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Block Flags",
+      "offset": 24,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.35,
+      "description": "Packed flags encoding audio properties and block type (little-endian uint32). Critical for determining sample rate, bit depth, mono/stereo, and lossless/hybrid mode.",
+      "storeAs": "blockFlags",
+      "valueType": "uint32",
+      "endianness": "little",
+      "bitfields": [
+        { "name": "Bytes per Sample minus 1", "bits": "1:0", "description": "0=1 byte, 1=2 bytes, 2=3 bytes, 3=4 bytes per sample" },
+        { "name": "Mono", "bits": "2", "description": "1=mono block, 0=stereo block" },
+        { "name": "Hybrid Mode", "bits": "3", "description": "1=hybrid (lossy with optional .wvc correction), 0=pure lossless" },
+        { "name": "Joint Stereo", "bits": "4", "description": "1=joint stereo (mid/side), 0=independent L/R" },
+        { "name": "Cross-Channel Decorr", "bits": "5", "description": "1=cross-channel decorrelation used" },
+        { "name": "Floating Point Data", "bits": "7", "description": "1=original data was floating point" },
+        { "name": "Shifted Integer", "bits": "9", "description": "1=data was originally shifted integer" },
+        { "name": "Hybrid Bitrate", "bits": "12", "description": "1=hybrid bitrate mode for this block" },
+        { "name": "False Stereo", "bits": "30", "description": "1=stereo container but both channels are identical (encoded as mono)" },
+        { "name": "32-bit Integer", "bits": "31", "description": "1=data is 32-bit integer samples" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Block CRC-32",
+      "offset": 28,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "CRC-32 of the decoded sample data in this block (little-endian uint32). Computed from the original uncompressed audio samples, not the compressed data. Allows verification of lossless decompression correctness.",
+      "storeAs": "blockCrc",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Mono",
+      "expression": "calc:(blockFlags & 4) != 0",
+      "storeAs": "isMono",
+      "description": "True when the Mono flag (bit 2) is set in blockFlags"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Stereo",
+      "expression": "calc:(blockFlags & 4) == 0",
+      "storeAs": "isStereo",
+      "description": "True when the Mono flag is NOT set — stereo block"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Lossless",
+      "expression": "calc:(blockFlags & 8) == 0",
+      "storeAs": "isLossless",
+      "description": "True when Hybrid flag (bit 3) is NOT set — pure lossless mode"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Hybrid",
+      "expression": "calc:(blockFlags & 8) != 0",
+      "storeAs": "isHybrid",
+      "description": "True when Hybrid flag (bit 3) is set — lossy with optional .wvc correction file"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Bit Depth",
+      "expression": "calc:((blockFlags & 3) + 1) * 8",
+      "storeAs": "bitDepth",
+      "description": "Bits per sample: (bytesPerSample-1 from flags bits 1:0 + 1) × 8. E.g., flags&3=1 → 2 bytes → 16-bit"
     },
     {
       "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Calculated byte rate"
+      "name": "WavPack Version",
+      "variable": "version",
+      "description": "WavPack format version (0x0410 = current)"
     },
     {
       "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
+      "name": "Total Samples",
+      "variable": "totalSamples",
+      "description": "Total sample frames in file (0xFFFFFFFF = unknown)"
+    },
+    {
+      "type": "metadata",
+      "name": "Block Samples",
+      "variable": "blockSamples",
+      "description": "Number of sample frames in first block"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
+      "variable": "bitDepth",
+      "description": "Bits per sample (computed from flags)"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Lossless",
+      "variable": "isLossless",
+      "description": "True for pure lossless mode (no hybrid)"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Hybrid",
+      "variable": "isHybrid",
+      "description": "True for hybrid lossy+correction mode"
     }
   ],
-  "software": [
-    "WavPack tools",
-    "Foobar2000"
+  "assertions": [
+    {
+      "name": "WavPack magic valid",
+      "expression": "wvpkSignature == 'wvpk'",
+      "severity": "error",
+      "message": "WavPack magic must be 'wvpk' (77 76 70 6B) — not a valid WavPack file"
+    },
+    {
+      "name": "Block size non-zero",
+      "expression": "blockSize > 0",
+      "severity": "error",
+      "message": "WavPack block size must be greater than 0"
+    },
+    {
+      "name": "Version in expected range",
+      "expression": "version >= 1026 && version <= 1040",
+      "severity": "warning",
+      "message": "WavPack version is outside expected range 0x0402-0x0410 (WavPack 4.0-5.x)"
+    }
   ],
-  "format_relationships": {
-    "category": "Audio",
-    "extensions": [
-      ".wv"
+  "checksums": [
+    {
+      "name": "Block Decoded Sample CRC-32",
+      "algorithm": "crc32",
+      "description": "CRC-32 of decoded (uncompressed) samples in this block — verifies lossless integrity",
+      "storedAt": { "fixedOffset": 28, "length": 4, "endianness": "little" },
+      "storedType": "uint32",
+      "severity": "warning"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "First Block Header",
+        "offset": 0,
+        "icon": "\uE8D6",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Block Flags",
+        "offset": 24,
+        "icon": "\uE8A5",
+        "color": "#FFA07A"
+      },
+      {
+        "name": "Block CRC-32",
+        "offset": 28,
+        "icon": "\uE8F4",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "Block Data",
+        "offset": 32,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "audio/wv"
-  ],
-  "Software": [
-    "VLC",
-    "Audacity",
-    "Foobar2000",
-    "MediaMonkey",
-    "Winamp"
-  ],
-  "UseCases": [
-    "Music playback",
-    "Audio editing",
-    "Sound production",
-    "Streaming"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 26,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "version",
+    "primaryField": "totalSamples",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Block Identity",
+        "icon": "\uE8D6",
+        "fields": ["wvpkSignature", "version", "blockSize"]
+      },
+      {
+        "title": "Audio Properties",
+        "icon": "\uE9D9",
+        "fields": ["totalSamples", "blockSamples", "blockIndex", "bitDepth", "isMono", "isStereo"]
+      },
+      {
+        "title": "Encoding Mode",
+        "icon": "\uE8A5",
+        "fields": ["isLossless", "isHybrid", "blockFlags"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE8F4",
+        "fields": ["blockCrc"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "AudioFormat": true
-  },
+  "exportTemplates": [
+    {
+      "name": "WavPack Block Header (JSON)",
+      "format": "json",
+      "fields": ["wvpkSignature", "blockSize", "version", "totalSamples", "blockSamples", "blockFlags", "bitDepth", "isMono", "isLossless", "isHybrid"]
+    },
+    {
+      "name": "WVPK_BLOCK_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "WVPK_BLOCK_HEADER",
+      "fields": ["wvpkSignature", "blockSize", "version", "trackNumber", "indexNumber", "totalSamples", "blockIndex", "blockSamples", "blockFlags", "blockCrc"]
+    },
+    {
+      "name": "Python WavPack check",
+      "format": "python-bytes",
+      "fields": ["wvpkSignature", "version", "blockFlags"]
+    }
+  ],
   "forensic": {
     "category": "audio",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid magic",
+        "condition": "wvpkSignature != 'wvpk'",
+        "severity": "error",
+        "description": "WavPack magic is not 'wvpk' — file is corrupt or not a WavPack file."
+      },
+      {
+        "name": "Unknown version",
+        "condition": "version < 1026 || version > 1040",
+        "severity": "warning",
+        "description": "WavPack version outside known range 0x0402-0x0410. May indicate a future version or corrupt header."
+      }
+    ],
+    "knownExploitVectors": [
+      "Integer overflow in blockSamples × channels × bytesPerSample allocation",
+      "WavPack hybrid mode with .wvc correction file: crafted correction data causing decoder divergence"
+    ]
   },
   "aiHints": {
-    "analysisContext": "WavPack hybrid lossless audio compression format",
+    "analysisContext": "WavPack block structure: 'wvpk'(4B) + blockSize(4B LE) + version(2B LE) + trackNo(1B) + indexNo(1B) + totalSamples(4B LE) + blockIndex(4B LE) + blockSamples(4B LE) + flags(4B LE) + crc32(4B LE) = 32B header. Flags key: bits 1:0 = bytesPerSampleMinus1 (0-3), bit 2 = mono, bit 3 = hybrid mode, bit 4 = joint stereo. Sample rate encoded in sub-blocks (metadata blocks) following header, not directly in header. Sub-block format: 1-byte ID + 1-byte size (or 3-byte if bit 7 set) + data. Sub-block ID 0x27 = CHANNEL_INFO, 0x28 = SAMPLE_RATE (if non-standard). Standard sample rates indexed via flags — use wavpack.com spec for the 16-entry table.",
+    "knownVulnerabilities": [
+      "CVE-2018-7253: WavPack 5.1.0 DFF/DSF decoder integer overflow",
+      "CVE-2019-1010317: crafted WavPack file causing OOB read in metadata block parsing"
+    ],
     "suggestedInspections": [
-      "Validate WavPack Audio header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+      "Confirm 'wvpk' at offset 0 (77 76 70 6B)",
+      "Read version at offset 8 (LE uint16): current = 0x0410 (1040)",
+      "Check flags at offset 24 (LE uint32): bit 3 = hybrid mode, bit 2 = mono",
+      "Compute bit depth: ((flags & 3) + 1) * 8 (1-byte → 8-bit, 2-byte → 16-bit, etc.)",
+      "For hybrid .wv: check if matching .wvc file exists (lossless correction data)",
+      "Validate blockCrc at offset 28 against decoded samples for lossless integrity verification"
     ]
+  },
+  "software": [
+    "WavPack command-line tools (wavpack, wvunpack, wvgain, wvtag)",
+    "Foobar2000 (plugin)",
+    "VLC media player",
+    "ffmpeg (libwavpack)",
+    "Audacity",
+    "J. River Media Center"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".wv", ".wvc"],
+    "note": "WavPack is unique in its hybrid mode: a .wv file provides lossy quality at ~50% file size reduction; the companion .wvc correction file can be added to achieve perfect lossless reconstruction. This allows distributing the lossy version while archiving the lossless correction separately."
+  },
+  "MimeTypes": [
+    "audio/x-wavpack",
+    "audio/wavpack"
+  ],
+  "UseCases": [
+    "Lossless audio archiving",
+    "Hybrid lossy+lossless distribution",
+    "High-resolution audio preservation (up to 32-bit, DSD)",
+    "Audiophile music collection"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 16,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "Endianness": "little-endian",
+    "Compression": "lossless or hybrid lossy+correction",
+    "HasHeader": true,
+    "HeaderSize": "32 bytes per block",
+    "Lossless": true,
+    "MaxBitDepth": "32-bit integer or float, DSD"
   }
 }

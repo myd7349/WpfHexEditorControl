@@ -1,161 +1,302 @@
-/* ============================================================
-   Format:    DjVu Document
-   Category:  Documents
-   Ext:       .djvu, .djv
-   Editor:    hex-editor
-   Desc:      DjVu scanned document format
-   Variables: currentOffset, pageCount, title, author, preferredEditor, atTForm, fileSize, djvuType, formattedSize
-   Detection: signature=41542654464F524D @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "DjVu Document",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".djvu",
     ".djv"
   ],
-  "description": "DjVu scanned document format",
+  "description": "DjVu (\"déjà vu\") — a compressed raster document format optimized for scanned documents, books, and text-heavy images. The file uses an IFF-like container structure: the mandatory 4-byte literal 'AT&T' followed by 'FORM' (total 8 bytes), a 4-byte big-endian body size, and a 4-byte form type. Form type 'DJVU' (0x444A5655) = single-page document; 'DJVM' (0x444A564D) = multi-page document (index in DIRM chunk); 'DJVI' = shared annotations; 'THUM' = thumbnail strip. DjVu uses three separate image layers: background (IW44 wavelet), foreground (IW44), and foreground mask (JB2 — bilevel image for text). Resolution and metadata stored in INFO chunk. Annotations in ANT chunks. Hidden text layer in TXTa/TXTz chunks.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "DjVu Document Format"
+      "DjVu File Format Specification v3.0 — LizardTech / AT&T Labs Research",
+      "DjVu Reference: The DjVu Image Format — Léon Bottou, Patrick Haffner (AT&T Labs)",
+      "DjVu v2 Format Specification — DjVuLibre documentation"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/DJVU"
+      "https://djvu.sourceforge.net/spec/DjVu3Spec.djvu",
+      "https://en.wikipedia.org/wiki/DjVu",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000020.shtml",
+      "http://www.djvuzone.org/"
     ]
   },
   "detection": {
-    "signature": "41542654464F524D",
-    "offset": 0,
+    "signatures": [
+      {
+        "value": "41542654464F524D444A5655",
+        "offset": 0,
+        "label": "AT&TFORM + DJVU (single page)",
+        "weight": 1.0
+      },
+      {
+        "value": "41542654464F524D444A564D",
+        "offset": 0,
+        "label": "AT&TFORM + DJVM (multi-page)",
+        "weight": 1.0
+      },
+      {
+        "value": "41542654464F524D",
+        "offset": 0,
+        "label": "AT&TFORM header only",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 16,
+      "note": "DjVu signature is 'AT&TFORM' (41 54 26 54 46 4F 52 4D) at offset 0. Form type at offset 12 must be 'DJVU', 'DJVM', 'DJVI', or 'THUM' for a valid DjVu file."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "pageCount": 0,
-    "title": "",
-    "author": "",
-    "preferredEditor": "hex-editor",
-    "atTForm": 0,
-    "fileSize": 0,
+    "atTFormSignature": "",
+    "bodySize": 0,
     "djvuType": "",
-    "formattedSize": ""
+    "isSinglePage": false,
+    "isMultiPage": false,
+    "isBundle": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "AT&T Form",
+      "name": "AT&T FORM Marker",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "AT&TFORM IFF container",
-      "storeAs": "atTForm",
-      "valueType": "uint64"
-    },
-    {
-      "type": "field",
-      "name": "File Size",
-      "offset": 8,
-      "length": 4,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of file minus 8",
-      "storeAs": "fileSize",
-      "valueType": "uint32"
-    },
-    {
-      "type": "field",
-      "name": "DjVu Type",
-      "offset": 12,
-      "length": 4,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "DJVU or DJVM",
-      "storeAs": "djvuType",
+      "opacity": 0.45,
+      "description": "DjVu container header: 'AT&TFORM' (0x41 0x54 0x26 0x54 0x46 0x4F 0x52 0x4D). The first 4 bytes 'AT&T' identify this as an AT&T Labs Research file. 'FORM' identifies the IFF-like container type. Together these 8 bytes uniquely identify DjVu files.",
+      "storeAs": "atTFormSignature",
       "valueType": "ascii"
     },
     {
-      "type": "metadata",
-      "name": "Pages",
-      "variable": "pageCount",
-      "description": "Pages"
+      "type": "field",
+      "name": "Body Size",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Size of the file body in bytes (big-endian uint32). This is the total file size minus 12 (the 8-byte header + 4-byte size field itself). All subsequent chunks are contained within this body. A value of 0 would indicate an empty document.",
+      "storeAs": "bodySize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "DjVu Form Type",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.40,
+      "description": "Four-character DjVu document type identifying the structure of the document. DJVU = single-page document (image layers directly in FORM). DJVM = multi-page document bundle (DIRM chunk contains page directory). DJVI = shared annotations file (not standalone). THUM = thumbnail container.",
+      "storeAs": "djvuType",
+      "valueType": "ascii",
+      "valueMap": {
+        "DJVU": "DJVU — single-page DjVu document",
+        "DJVM": "DJVM — multi-page DjVu bundle (contains DIRM directory chunk)",
+        "DJVI": "DJVI — shared annotations file (not a standalone document)",
+        "THUM": "THUM — thumbnail container"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Single Page",
+      "expression": "calc:djvuType == 1145979477",
+      "storeAs": "isSinglePage",
+      "description": "True when form type is 'DJVU' (0x444A5655 = 1145979477) — single-page document"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Multi-Page",
+      "expression": "calc:djvuType == 1145979469",
+      "storeAs": "isMultiPage",
+      "description": "True when form type is 'DJVM' (0x444A564D = 1145979469) — multi-page document bundle"
     },
     {
       "type": "metadata",
-      "name": "Title",
-      "variable": "title",
-      "description": "Title"
+      "name": "Form Type",
+      "variable": "djvuType",
+      "description": "DJVU=single, DJVM=multi-page, DJVI=shared, THUM=thumbnails"
     },
     {
       "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "Body Size",
+      "variable": "bodySize",
+      "description": "Total body size in bytes (file size - 12)"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Single Page",
+      "variable": "isSinglePage",
+      "description": "True for single-page DJVU documents"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Multi-Page",
+      "variable": "isMultiPage",
+      "description": "True for multi-page DJVM bundles"
     }
   ],
-  "software": [
-    "DjVuLibre",
-    "WinDjView",
-    "Sumatra PDF",
-    "Evince"
+  "assertions": [
+    {
+      "name": "AT&TFORM signature valid",
+      "expression": "atTFormSignature == 'AT&TFORM'",
+      "severity": "error",
+      "message": "DjVu signature must be 'AT&TFORM' (41 54 26 54 46 4F 52 4D) — not a valid DjVu file"
+    },
+    {
+      "name": "DjVu type is recognized",
+      "expression": "djvuType == 'DJVU' || djvuType == 'DJVM' || djvuType == 'DJVI' || djvuType == 'THUM'",
+      "severity": "warning",
+      "message": "DjVu form type is not a recognized value (DJVU, DJVM, DJVI, THUM) — may be a non-standard or corrupt DjVu file"
+    },
+    {
+      "name": "Body size non-zero",
+      "expression": "bodySize > 0",
+      "severity": "error",
+      "message": "DjVu body size is zero — the document has no content"
+    }
   ],
-  "format_relationships": {
-    "category": "Documents",
-    "extensions": [
-      ".djvu",
-      ".djv"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "AT&TFORM Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Form Type",
+        "offset": 12,
+        "icon": "\uE8A5",
+        "color": "#95E1D3"
+      },
+      {
+        "name": "First Chunk",
+        "offset": 16,
+        "icon": "\uE80A",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/djvu"
-  ],
-  "Software": [
-    "DjVuLibre",
-    "WinDjView",
-    "Sumatra PDF",
-    "Evince"
-  ],
-  "UseCases": [
-    "Document viewing",
-    "Reading",
-    "Publishing",
-    "Archival"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "djvuType",
+    "primaryField": "isMultiPage",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Container",
+        "icon": "\uE9D9",
+        "fields": ["atTFormSignature", "bodySize", "djvuType"]
+      },
+      {
+        "title": "Document Type",
+        "icon": "\uE8A5",
+        "fields": ["isSinglePage", "isMultiPage"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "DocumentFormat": true
+  "versionDetection": {
+    "field": "djvuType",
+    "versions": {
+      "DJVU": "DjVu single-page document",
+      "DJVM": "DjVu multi-page bundle (v2+)",
+      "DJVI": "DjVu shared annotations file",
+      "THUM": "DjVu thumbnail container"
+    }
   },
-  "functions": {
-    "readUInt32LE": "Read document header",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
-  },
+  "exportTemplates": [
+    {
+      "name": "DjVu Header (JSON)",
+      "format": "json",
+      "fields": ["atTFormSignature", "bodySize", "djvuType", "isSinglePage", "isMultiPage"]
+    },
+    {
+      "name": "Python DjVu check",
+      "format": "python-bytes",
+      "fields": ["atTFormSignature", "djvuType"]
+    }
+  ],
   "forensic": {
     "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Unrecognized form type",
+        "condition": "djvuType != 'DJVU' && djvuType != 'DJVM' && djvuType != 'DJVI' && djvuType != 'THUM'",
+        "severity": "warning",
+        "description": "DjVu form type is not a standard recognized value. May indicate a forged or corrupt container."
+      },
+      {
+        "name": "Zero body size",
+        "condition": "bodySize == 0",
+        "severity": "error",
+        "description": "Body size is zero — file contains no document data."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2007-3996: Multiple integer overflows in DjVuLibre 3.5.x IFF parser",
+      "CVE-2021-32490 to CVE-2021-32494: DjVuLibre heap/stack overflows in JBIG2 and BZZ decoders"
+    ]
   },
   "aiHints": {
-    "analysisContext": "DjVu scanned document format",
+    "analysisContext": "DjVu container structure: 8-byte 'AT&TFORM' + 4-byte BE uint32 body size + 4-byte form type = 16-byte header. Following chunks (IFF-style): 4-byte chunk ID + 4-byte BE uint32 chunk size + chunk data (padded to even). Key chunks: INFO (image resolution/dimensions: 2B width BE, 2B height BE, 2B minor ver, 1B major ver, 2B DPI BE, 1B gamma), DIRM (multi-page directory), BG44/FG44 (IW44 wavelet background/foreground), Sjbz (JB2 foreground mask for text), TXTa/TXTz (hidden text layer — TXTz is BZZ-compressed). To extract hidden text: decompress TXTz chunk with BZZ algorithm (DjVu's custom lossless compressor).",
+    "knownVulnerabilities": [
+      "CVE-2021-32490: DjVuLibre JBIG2 decoder stack overflow",
+      "CVE-2021-32494: DjVuLibre BZZ decoder heap overflow"
+    ],
     "suggestedInspections": [
-      "Validate DjVu Document file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
+      "Confirm 'AT&TFORM' at offset 0 (41 54 26 54 46 4F 52 4D)",
+      "Read body size at offset 8 (BE uint32) and form type at offset 12 (ASCII 4B)",
+      "For DJVM: scan for DIRM chunk (44 49 52 4D) after offset 16 — contains multi-page directory",
+      "Scan for TXTz chunks (54 58 54 7A) to extract hidden OCR text (BZZ-compressed)",
+      "Check INFO chunk for image dimensions and DPI",
+      "Validate chunk sizes sum to bodySize (truncated chunks indicate corruption)"
     ]
+  },
+  "software": [
+    "DjVuLibre (open source reference)",
+    "WinDjView (Windows viewer)",
+    "Sumatra PDF (built-in DjVu support)",
+    "Evince (GNOME document viewer)",
+    "Djview4",
+    "Calibre (conversion)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".djvu", ".djv"],
+    "note": "DjVu was designed as a web-optimized alternative to PDF for scanned documents, achieving 3-8x better compression than JPEG for scanned text at equal quality. Developed at AT&T Labs Research (Léon Bottou, Yann LeCun), later open-sourced as DjVuLibre."
+  },
+  "MimeTypes": [
+    "image/vnd.djvu",
+    "image/x-djvu",
+    "application/djvu"
+  ],
+  "UseCases": [
+    "Scanned book archives (Internet Archive, Google Books legacy)",
+    "Scientific and technical document distribution",
+    "Legal document scanning",
+    "Historical newspaper archives"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Endianness": "big-endian (all multi-byte fields)",
+    "Compression": "IW44 wavelet (background/foreground) + JB2 bilevel (text mask) + BZZ (lossless)",
+    "HasHeader": true,
+    "HeaderSize": "16 bytes (AT&TFORM + size + form type)"
   }
 }

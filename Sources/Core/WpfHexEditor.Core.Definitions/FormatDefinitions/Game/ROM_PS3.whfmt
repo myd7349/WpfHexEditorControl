@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    PlayStation 3 Disc/Package
-   Category:  Game
-   Ext:       .iso, .pkg
-   Editor:    hex-editor
-   Desc:      PlayStation 3 Blu-ray disc image or PKG package format
-   Variables: currentOffset, crc32Valid, originalSize, compressionRatio, pkgMagic, packageType, packageFlags, dataOffset, dataSize, contentId, formattedSize
-   Detection: signature=7F504B47 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PlayStation 3 Disc/Package",
-  "version": "2.5",
+  "version": "2.52",
   "extensions": [
     ".iso",
     ".pkg"
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -145,7 +135,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".iso",

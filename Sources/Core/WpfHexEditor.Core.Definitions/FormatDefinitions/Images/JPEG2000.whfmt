@@ -1,169 +1,389 @@
-/* ============================================================
-   Format:    JPEG 2000 Image
-   Category:  Images
-   Ext:       .jp2, .j2k, .jpf, .jpx, .jpm
-   Editor:    image-viewer
-   Desc:      JPEG 2000 - Advanced wavelet-based image compression
-   Variables: width, height, totalPixels, bitsPerPixel, jpeg2000Signature, fileTypeBox, brand
-   Detection: signature=0000000C6A5020200D0A870A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "JPEG 2000 Image",
-  "version": "1.12",
+  "version": "1.15",
   "extensions": [
     ".jp2",
     ".j2k",
     ".jpf",
     ".jpx",
-    ".jpm"
+    ".jpm",
+    ".j2c"
   ],
-  "description": "JPEG 2000 - Advanced wavelet-based image compression",
+  "description": "JPEG 2000 (ISO/IEC 15444) wavelet-based image compression format. Supports two file formats: (1) JP2 container (extensions .jp2, .jpf, .jpx) — ISO base media file format box structure starting with a 12-byte JP2 Signature Box (size=12, type='jP\\x20\\x20', content=0x0D0A870A), followed by an ftyp box with brand 'jp2 '. Dimensions and channel info are in the Image Header Box (ihdr). (2) J2K/J2C raw codestream (extensions .j2k, .j2c) — starts directly with the SOC (Start of Codestream) marker 0xFF4F, then SIZ marker 0xFF51 with image dimensions. JPEG 2000 supports lossless and lossy compression, multi-component images (including alpha), 1-16 bit depth, and arbitrarily large images.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "ISO/IEC 10918-1 - Digital Compression and Coding",
-      "JFIF File Format Specification",
-      "ITU-T T.81"
+      "ISO/IEC 15444-1:2019 — JPEG 2000 Part 1: Core coding system",
+      "ISO/IEC 15444-2 — JPEG 2000 Part 2: Extensions (JPX)",
+      "ITU-T T.800 — JPEG 2000 Core coding",
+      "RFC 3745 — MIME Types for JPEG 2000"
     ],
     "WebLinks": [
-      "https://www.w3.org/Graphics/JPEG/",
-      "https://jpeg.org/jpeg/",
-      "https://en.wikipedia.org/wiki/JPEG"
+      "https://jpeg.org/jpeg2000/",
+      "https://en.wikipedia.org/wiki/JPEG_2000",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000143.shtml",
+      "https://www.iso.org/standard/78321.html"
     ]
   },
   "detection": {
-    "signature": "0000000C6A5020200D0A870A",
-    "offset": 0,
+    "signatures": [
+      {
+        "value": "0000000C6A502020",
+        "offset": 0,
+        "label": "JP2 Signature Box header (size=12, type='jP  ')",
+        "weight": 1.0
+      },
+      {
+        "value": "FF4FFF51",
+        "offset": 0,
+        "label": "J2K raw codestream SOC+SIZ markers",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 5.5, "max": 7.8 },
     "validation": {
-      "min_file_size": 12,
-      "max_signature_offset": 1024
+      "minFileSize": 12,
+      "note": "JP2 container: bytes 0-11 = 00 00 00 0C 6A 50 20 20 0D 0A 87 0A (JP2 signature box with magic validation bytes 0x0D0A870A). J2K codestream: bytes 0-1 = FF 4F (SOC marker), bytes 2-3 = FF 51 (SIZ marker). Both are strong indicators."
     }
   },
   "variables": {
-    "width": 0,
-    "height": 0,
-    "totalPixels": 0,
-    "bitsPerPixel": 0,
-    "jpeg2000Signature": "",
-    "fileTypeBox": "",
-    "brand": ""
+    "jp2SignatureBoxSize": 0,
+    "jp2SignatureBoxType": "",
+    "jp2SignatureMagic": 0,
+    "ftypBoxSize": 0,
+    "ftypBoxType": "",
+    "jp2Brand": "",
+    "j2kSocMarker": 0,
+    "j2kSizMarker": 0,
+    "isJP2Container": false,
+    "isJ2KCodestream": false,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "numComponents": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "JPEG 2000 Signature",
+      "name": "JP2 Signature Box Size",
       "offset": 0,
-      "length": 12,
+      "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "JP2 signature box",
-      "storeAs": "jpeg2000Signature",
+      "opacity": 0.40,
+      "description": "Box size of the JP2 Signature Box (big-endian uint32). Must be exactly 12 (0x0000000C) for the JP2 Signature Box. This is the first 4 bytes of all JP2 container files.",
+      "storeAs": "jp2SignatureBoxSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "JP2 Signature Box Type",
+      "offset": 4,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Box type identifier for the JP2 Signature Box: 'jP\\x20\\x20' (0x6A 0x50 0x20 0x20 — ASCII 'jP  ' with two spaces). This identifies the file as a JP2 container. Not to be confused with 'jP2 ' — the exact bytes must be 6A 50 20 20.",
+      "storeAs": "jp2SignatureBoxType",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "File Type Box",
-      "offset": 12,
-      "length": 8,
+      "name": "JP2 Signature Validation Bytes",
+      "offset": 8,
+      "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "ftyp box header",
-      "storeAs": "fileTypeBox",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "Four-byte validation content of the JP2 Signature Box: must be 0x0D 0x0A 0x87 0x0A. These bytes detect common file transfer corruption (0x0D0A = CR+LF detects newline translation; 0x87 detects 7-bit ASCII stripping; 0x0A = LF). A JP2 file that survives network transfer intact will have these exact 4 bytes.",
+      "storeAs": "jp2SignatureMagic",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Brand",
-      "offset": 20,
+      "name": "ftyp Box Size",
+      "offset": 12,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Brand identifier (jp2 )",
-      "storeAs": "brand",
+      "opacity": 0.30,
+      "description": "Box size of the File Type Box (ftyp) in bytes (big-endian uint32). For standard JP2 with one compatible brand, size = 20 bytes (4+4+4+4+4). The ftyp box follows immediately after the 12-byte JP2 Signature Box.",
+      "storeAs": "ftypBoxSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ftyp Box Type",
+      "offset": 16,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Box type identifier: 'ftyp' (0x66 0x74 0x79 0x70). The ftyp box declares the brand and compatible profiles for the JP2 container.",
+      "storeAs": "ftypBoxType",
       "valueType": "ascii"
     },
     {
-      "type": "metadata",
-      "name": "Width",
-      "variable": "width",
-      "description": "Width"
+      "type": "field",
+      "name": "JP2 Brand",
+      "offset": 20,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Major brand of the JP2 container, identifying the specific JPEG 2000 file type. 'jp2 ' (with trailing space) = standard JP2 (Part 1). 'jpx ' = extended JP2 format (Part 2). 'jpm ' = compound mixed-mode document (Part 6).",
+      "storeAs": "jp2Brand",
+      "valueType": "ascii",
+      "valueMap": {
+        "jp2 ": "JP2 — standard JPEG 2000 Part 1 (ISO 15444-1)",
+        "jpx ": "JPX — JPEG 2000 Part 2 extensions (ISO 15444-2)",
+        "jpm ": "JPM — JPEG 2000 compound document (ISO 15444-6)",
+        "mjp2": "MJ2 — Motion JPEG 2000 (ISO 15444-3)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "J2K SOC Marker",
+      "offset": 0,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.35,
+      "description": "J2K Start of Codestream (SOC) marker — 0xFF 0x4F. This is the first 2 bytes of a raw J2K/J2C codestream file (as opposed to a JP2 container). Only valid for .j2k/.j2c files that do not use the JP2 container format.",
+      "storeAs": "j2kSocMarker",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "J2K SIZ Marker",
+      "offset": 2,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "J2K Image and tile Size (SIZ) marker — 0xFF 0x51. Immediately follows the SOC marker in a raw J2K codestream. The SIZ segment contains image dimensions (Xsiz, Ysiz as BE uint32), reference grid offset (XOsiz, YOsiz), tile size (XTsiz, YTsiz), tile origin (XTOsiz, YTOsiz), number of components (Csiz as BE uint16).",
+      "storeAs": "j2kSizMarker",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is JP2 Container",
+      "expression": "calc:jp2SignatureBoxSize == 12 && jp2SignatureMagic == 227327754",
+      "storeAs": "isJP2Container",
+      "description": "True when this is a JP2 container file (jp2SignatureBoxSize=12 and validation magic=0x0D0A870A=227327754)"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is J2K Codestream",
+      "expression": "calc:j2kSocMarker == 65359",
+      "storeAs": "isJ2KCodestream",
+      "description": "True when file starts with J2K SOC marker (0xFF4F = 65359) — raw codestream without JP2 container"
     },
     {
       "type": "metadata",
-      "name": "Height",
-      "variable": "height",
-      "description": "Height"
+      "name": "Container Format",
+      "variable": "isJP2Container",
+      "description": "True = JP2 box container; False = may be raw J2K codestream"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Total Pixels"
+      "name": "JP2 Brand",
+      "variable": "jp2Brand",
+      "description": "JP2 container brand: jp2 =Part 1, jpx =Part 2, jpm =compound document"
+    },
+    {
+      "type": "metadata",
+      "name": "Is J2K Codestream",
+      "variable": "isJ2KCodestream",
+      "description": "True for raw J2K/J2C codestream without container"
     }
   ],
-  "software": [
-    "IrfanView",
-    "XnView",
-    "Medical imaging software"
+  "assertions": [
+    {
+      "name": "JP2 signature box size is 12",
+      "expression": "jp2SignatureBoxSize != 12 || isJ2KCodestream",
+      "severity": "warning",
+      "message": "JP2 container signature box size should be exactly 12 bytes"
+    },
+    {
+      "name": "JP2 signature magic valid",
+      "expression": "isJP2Container || isJ2KCodestream",
+      "severity": "error",
+      "message": "File does not start with JP2 container (signature box) or J2K raw codestream (SOC marker 0xFF4F) — not a valid JPEG 2000 file"
+    },
+    {
+      "name": "JP2 brand recognized",
+      "expression": "!isJP2Container || jp2Brand == 'jp2 ' || jp2Brand == 'jpx ' || jp2Brand == 'jpm ' || jp2Brand == 'mjp2'",
+      "severity": "warning",
+      "message": "JP2 container brand is not a recognized JPEG 2000 profile brand"
+    }
   ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".jp2",
-      ".j2k",
-      ".jpf"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "JP2 Signature Box",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "File Type Box (ftyp)",
+        "offset": 12,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "JP2 Header Box",
+        "offset": 32,
+        "icon": "\uE80A",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "image/jpeg2000"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "jp2Brand",
+    "primaryField": "isJP2Container",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Container Type",
+        "icon": "\uE9D9",
+        "fields": ["isJP2Container", "isJ2KCodestream", "jp2Brand"]
+      },
+      {
+        "title": "JP2 Signature",
+        "icon": "\uE8A5",
+        "fields": ["jp2SignatureBoxSize", "jp2SignatureBoxType", "jp2SignatureMagic"]
+      },
+      {
+        "title": "File Type Box",
+        "icon": "\uE790",
+        "fields": ["ftypBoxType", "ftypBoxSize"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
+  "versionDetection": {
+    "field": "jp2Brand",
+    "versions": {
+      "jp2 ": "JPEG 2000 Part 1 (JP2 — ISO 15444-1)",
+      "jpx ": "JPEG 2000 Part 2 Extensions (JPX — ISO 15444-2)",
+      "jpm ": "JPEG 2000 Compound Document (JPM — ISO 15444-6)",
+      "mjp2": "Motion JPEG 2000 (MJ2 — ISO 15444-3)"
+    }
   },
-  "functions": {
-    "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
-  },
+  "exportTemplates": [
+    {
+      "name": "JPEG 2000 Header (JSON)",
+      "format": "json",
+      "fields": ["isJP2Container", "isJ2KCodestream", "jp2SignatureBoxSize", "jp2SignatureBoxType", "jp2Brand", "ftypBoxType"]
+    },
+    {
+      "name": "JP2_SIGNATURE_BOX (C struct)",
+      "format": "c-struct",
+      "structName": "JP2_SIGNATURE_BOX",
+      "fields": ["jp2SignatureBoxSize", "jp2SignatureBoxType", "jp2SignatureMagic"]
+    },
+    {
+      "name": "Python JP2 check",
+      "format": "python-bytes",
+      "fields": ["jp2SignatureBoxSize", "jp2SignatureBoxType", "jp2Brand"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Corrupted JP2 signature magic",
+        "condition": "jp2SignatureBoxSize == 12 && jp2SignatureMagic != 227327754",
+        "severity": "warning",
+        "description": "JP2 Signature Box size is 12 but validation bytes (0x0D0A870A) are wrong — file may have been corrupted by text-mode file transfer (CR+LF conversion or 7-bit ASCII stripping)."
+      },
+      {
+        "name": "Unrecognized JP2 brand",
+        "condition": "isJP2Container && jp2Brand != 'jp2 ' && jp2Brand != 'jpx ' && jp2Brand != 'jpm ' && jp2Brand != 'mjp2'",
+        "severity": "warning",
+        "description": "JP2 ftyp major brand is not a recognized JPEG 2000 profile. File may be a vendor-specific extension or a renamed ISOBMFF file."
+      },
+      {
+        "name": "Neither JP2 container nor J2K codestream",
+        "condition": "!isJP2Container && !isJ2KCodestream",
+        "severity": "error",
+        "description": "File does not match either JP2 container or J2K raw codestream signatures. Likely a misidentified file."
+      }
+    ],
+    "knownExploitVectors": [
+      "JPEG 2000 tile size arithmetic overflow: crafted tileWidth=1, tileHeight=1, many tiles causes OOM in decoders",
+      "CVE-2016-8332: OpenJPEG off-by-one in T2 decoder heap overflow",
+      "CVE-2018-14423: OpenJPEG division by zero in pi_next_pcrl with zero-component images",
+      "JPEG 2000 used as initial payload in Microsoft Office exploits (CVE-2017-0262)"
+    ]
   },
   "aiHints": {
-    "analysisContext": "JPEG 2000 - Advanced wavelet-based image compression",
+    "analysisContext": "JPEG 2000 has two distinct file formats: (1) JP2 container — starts with 12-byte Signature Box (00 00 00 0C 6A 50 20 20 0D 0A 87 0A), followed by ftyp box at offset 12 with brand 'jp2 ' at offset 20, then jp2h (JP2 Header Box) containing ihdr (Image Header) with dimensions. (2) Raw J2K codestream — starts with SOC=FF4F, then SIZ=FF51 marker segment with dimensions (Xsiz BE uint32 at +4, Ysiz at +8, number of components Csiz BE uint16). Boxes: size (4B BE uint32) + type (4B ASCII) + data. If size=1, next 8B is 64-bit extended size. To get dimensions from JP2: scan for 'ihdr' box (inside 'jp2h') — ihdr contains height (4B BE), width (4B BE), numComponents (2B BE).",
+    "knownVulnerabilities": [
+      "CVE-2016-8332: OpenJPEG 2.1 off-by-one heap overflow in T2 packet decoder",
+      "CVE-2018-14423: OpenJPEG pi_next_pcrl division by zero (components=0)",
+      "CVE-2017-0262: JPEG 2000 parsing in Windows used as exploit vector in APT28 attacks"
+    ],
     "suggestedInspections": [
-      "Validate JPEG 2000 Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "For JP2: verify bytes 0-11 = 00 00 00 0C 6A 50 20 20 0D 0A 87 0A (Signature Box)",
+      "Check brand at offset 20: 6A 70 32 20 = 'jp2 ' (standard), 6A 70 78 20 = 'jpx ' (extended)",
+      "Look for 'jp2h' box (byte sequence 6A703268) — contains 'ihdr' with dimensions",
+      "For J2K: confirm FF 4F (SOC) at 0, FF 51 (SIZ) at 2; read Ysiz (height) BE uint32 at offset 6, Xsiz (width) at offset 10",
+      "Scan for tile dimensions in SIZ segment: XTsiz/YTsiz — very small values (1×1) may indicate DoS crafted file",
+      "Check number of components (Csiz) in SIZ — should be 1 (grayscale), 3 (RGB), 4 (RGBA)"
     ]
+  },
+  "software": [
+    "OpenJPEG (open source reference implementation)",
+    "Kakadu (commercial reference)",
+    "Adobe Photoshop (JP2 import/export)",
+    "GIMP (via OpenJPEG plugin)",
+    "ImageMagick",
+    "IrfanView",
+    "DICOM viewers (JP2 lossless for medical)",
+    "Digital cinema systems (JPEG 2000 MXF)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".jp2", ".j2k", ".jpf", ".jpx", ".jpm", ".j2c"],
+    "relatedFormats": ["JPEG", "JFIF"],
+    "note": "JPEG 2000 was designed to replace JPEG (2000), offering lossless/lossy, arbitrary bit depth, ROI coding, and scalable decoding. Adopted for digital cinema (DCI), medical imaging (DICOM), and digital preservation archives (Library of Congress). Not widely used on the web due to patent history and decoder complexity."
+  },
+  "MimeTypes": [
+    "image/jp2",
+    "image/jpx",
+    "image/jpm",
+    "image/x-jpeg2000-image"
+  ],
+  "UseCases": [
+    "Digital cinema distribution (DCI MXF containers)",
+    "Medical imaging (DICOM lossless compression)",
+    "Digital preservation (Library of Congress, archives)",
+    "Satellite and aerial imagery",
+    "Digital ID documents and biometric data"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 14,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Endianness": "big-endian",
+    "Compression": "wavelet-based (DWT + EBCOT entropy coding)",
+    "Container": "JP2 (ISO BMFF box structure) or raw J2K codestream",
+    "HasHeader": true,
+    "HeaderSize": "12 bytes JP2 Signature Box + variable",
+    "Lossless": true,
+    "MaxBitDepth": "16 bits per component"
   }
 }

@@ -1,78 +1,106 @@
-/* ============================================================
-   Format:    JFIF Image
-   Category:  Images
-   Ext:       .jfif, .jpg, .jpeg
-   Editor:    image-viewer
-   Desc:      JPEG File Interchange Format
-   Variables: width, height, totalPixels, bitsPerPixel, jpegSoiApp0, app0Length, jfifIdentifier
-   Detection: signature=FFD8FFE0 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "JFIF Image",
-  "version": "1.13",
+  "version": "1.16",
   "extensions": [
     ".jfif",
+    ".jfi",
     ".jpg",
     ".jpeg"
   ],
-  "description": "JPEG File Interchange Format",
+  "description": "JPEG File Interchange Format (JFIF) — a standardized wrapper (ITU-T T.871 / ISO 10918-5) for JPEG-compressed image data. A JFIF file always begins with the 2-byte JPEG SOI (Start of Image) marker 0xFFD8, followed by the APP0 marker 0xFFE0, a 2-byte big-endian APP0 segment length, then the 5-byte JFIF identifier 'JFIF\\0' (0x4A 0x46 0x49 0x46 0x00). The APP0 segment contains: JFIF version (major byte at offset 11, minor byte at offset 12), pixel aspect ratio unit (0=no units, 1=DPI, 2=DPCM), x/y density (2B each BE uint16), thumbnail dimensions (1B each). JFIF is distinct from EXIF (which uses APP1/0xFFE1/'Exif\\0\\0').",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "ITU-T T.871 - JPEG File Interchange Format",
-      "ISO/IEC 10918-5 - JFIF Specification",
-      "ECMA TR-98 - JFIF Technical Report"
+      "ITU-T T.871:2011 — JPEG File Interchange Format (JFIF)",
+      "ISO/IEC 10918-5:2013 — JFIF Specification",
+      "ECMA TR-98 (1st edition, 2009) — JFIF technical report"
     ],
     "WebLinks": [
       "https://www.itu.int/rec/T-REC-T.871-201105-I/en",
-      "https://www.ecma-international.org/wp-content/uploads/ECMA_TR-98_1st_edition_june_2009.pdf",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000018.shtml",
-      "https://en.wikipedia.org/wiki/JPEG_File_Interchange_Format"
+      "https://en.wikipedia.org/wiki/JPEG_File_Interchange_Format",
+      "https://www.ecma-international.org/wp-content/uploads/ECMA_TR-98_1st_edition_june_2009.pdf"
     ]
   },
   "detection": {
-    "signature": "FFD8FFE0",
-    "offset": 0,
+    "signatures": [
+      {
+        "value": "FFD8FFE0",
+        "offset": 0,
+        "label": "JPEG SOI + APP0 marker",
+        "weight": 0.8
+      },
+      {
+        "value": "4A46494600",
+        "offset": 6,
+        "label": "JFIF\\0 identifier in APP0",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "all",
+    "MinimumScore": 0.8,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 6.0, "max": 7.8 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "note": "JFIF requires FFD8 (SOI) at offset 0, FFE0 (APP0) at offset 2, and 'JFIF\\0' (4A464946 00) at offset 6. Note: EXIF-JPEG files start with FFD8 FFE1 ('APP1', not 'APP0') — they are NOT JFIF. A file may be both JFIF-compliant and contain EXIF by having APP0 first and APP1 second."
     }
   },
   "variables": {
-    "width": 0,
-    "height": 0,
-    "totalPixels": 0,
-    "bitsPerPixel": 0,
-    "jpegSoiApp0": 0,
+    "jpegSoiMarker": 0,
+    "app0Marker": 0,
     "app0Length": 0,
-    "jfifIdentifier": ""
+    "jfifIdentifier": "",
+    "jfifVersionMajor": 0,
+    "jfifVersionMinor": 0,
+    "pixelAspectRatioUnit": 0,
+    "xDensity": 0,
+    "yDensity": 0,
+    "thumbnailWidth": 0,
+    "thumbnailHeight": 0,
+    "isValidJFIF": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "JPEG SOI + APP0",
+      "name": "JPEG SOI Marker",
       "offset": 0,
-      "length": 4,
+      "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Start of Image + APP0 marker",
-      "storeAs": "jpegSoiApp0",
-      "valueType": "uint32",
+      "opacity": 0.45,
+      "description": "JPEG Start of Image (SOI) marker — mandatory first 2 bytes of every JPEG file. Always 0xFF 0xD8 regardless of JFIF or EXIF variant. The SOI marker has no data payload.",
+      "storeAs": "jpegSoiMarker",
+      "valueType": "uint16",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "APP0 Length",
+      "name": "APP0 Marker",
+      "offset": 2,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.40,
+      "description": "APP0 application marker — 0xFF 0xE0. This identifies the APP0 segment which contains the JFIF header. If this is 0xFF 0xE1 instead, the file uses EXIF (APP1) and may not be JFIF-compliant.",
+      "storeAs": "app0Marker",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "65504": "0xFFE0 — APP0 (JFIF application segment)",
+        "65505": "0xFFE1 — APP1 (EXIF application segment — not JFIF)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "APP0 Segment Length",
       "offset": 4,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "APP0 segment length",
+      "opacity": 0.35,
+      "description": "Length of the APP0 segment in bytes (big-endian uint16), including this 2-byte length field but NOT the 2-byte marker. For a standard JFIF APP0 without thumbnail: length = 16. With embedded thumbnail: length = 16 + 3 × thumbnailWidth × thumbnailHeight.",
       "storeAs": "app0Length",
       "valueType": "uint16",
       "endianness": "big"
@@ -83,87 +111,339 @@
       "offset": 6,
       "length": 5,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "JFIF\\0 identifier",
+      "opacity": 0.40,
+      "description": "Five-byte JFIF identifier string: 'JFIF' followed by a null terminator (0x4A 0x46 0x49 0x46 0x00). This exact sequence at offset 6 is the definitive indicator that the APP0 segment contains a JFIF header.",
       "storeAs": "jfifIdentifier",
       "valueType": "ascii"
     },
     {
-      "type": "metadata",
-      "name": "Width",
-      "variable": "width",
-      "description": "Width"
+      "type": "field",
+      "name": "JFIF Version Major",
+      "offset": 11,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Major version of the JFIF specification. Should be 0x01 (version 1.x). A value other than 1 is unusual and may indicate a non-standard or future extension.",
+      "storeAs": "jfifVersionMajor",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "JFIF version 1.x (all standard files)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "JFIF Version Minor",
+      "offset": 12,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.25,
+      "description": "Minor version of the JFIF specification. Common values: 0x00 (v1.00), 0x01 (v1.01), 0x02 (v1.02). Version 1.02 added the thumbnail extension. Most modern files are v1.01 or v1.02.",
+      "storeAs": "jfifVersionMinor",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "v1.00 — no thumbnail support",
+        "1": "v1.01 — standard (most common)",
+        "2": "v1.02 — thumbnail in APP0 supported"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Pixel Aspect Ratio Unit",
+      "offset": 13,
+      "length": 1,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Specifies the unit for the xDensity and yDensity fields. 0 = no absolute unit (aspect ratio only), 1 = dots per inch (DPI), 2 = dots per centimeter (DPCM). When 0, only the ratio xDensity:yDensity matters (e.g., 1:1 = square pixels).",
+      "storeAs": "pixelAspectRatioUnit",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "No unit — pixel aspect ratio only (xDensity:yDensity ratio)",
+        "1": "DPI — dots per inch",
+        "2": "DPCM — dots per centimeter"
+      }
+    },
+    {
+      "type": "field",
+      "name": "X Density",
+      "offset": 14,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Horizontal pixel density (big-endian uint16) in the units specified by pixelAspectRatioUnit. Common values: 72, 96, 300. Must be non-zero. When unit=0, only the X:Y ratio matters (use 1:1 for square pixels).",
+      "storeAs": "xDensity",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Y Density",
+      "offset": 16,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Vertical pixel density (big-endian uint16) in the units specified by pixelAspectRatioUnit. Must be non-zero. Equals xDensity for square pixels.",
+      "storeAs": "yDensity",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Thumbnail Width",
+      "offset": 18,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Width of the embedded thumbnail image in pixels (uint8). 0 = no thumbnail embedded. Maximum 255×255. Thumbnail pixel data (uncompressed 24-bit RGB) follows the APP0 header at offset 20, with size = 3 × thumbnailWidth × thumbnailHeight bytes.",
+      "storeAs": "thumbnailWidth",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Thumbnail Height",
+      "offset": 19,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Height of the embedded thumbnail image in pixels (uint8). 0 = no thumbnail embedded.",
+      "storeAs": "thumbnailHeight",
+      "valueType": "uint8"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Valid JFIF",
+      "expression": "calc:jpegSoiMarker == 65496 && app0Marker == 65504",
+      "storeAs": "isValidJFIF",
+      "description": "True when JPEG SOI marker (0xFFD8=65496) and APP0 marker (0xFFE0=65504) are both present and correct"
     },
     {
       "type": "metadata",
-      "name": "Height",
-      "variable": "height",
-      "description": "Height"
+      "name": "JFIF Version",
+      "variable": "jfifVersionMajor",
+      "description": "JFIF spec major version (should be 1)"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Total Pixels"
+      "name": "JFIF Minor Version",
+      "variable": "jfifVersionMinor",
+      "description": "JFIF spec minor version (0, 1, or 2)"
+    },
+    {
+      "type": "metadata",
+      "name": "X Density",
+      "variable": "xDensity",
+      "description": "Horizontal density in DPI/DPCM or aspect ratio"
+    },
+    {
+      "type": "metadata",
+      "name": "Y Density",
+      "variable": "yDensity",
+      "description": "Vertical density in DPI/DPCM or aspect ratio"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Valid JFIF",
+      "variable": "isValidJFIF",
+      "description": "True when both SOI and APP0 markers are correct"
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "JPEG SOI marker valid",
+      "expression": "jpegSoiMarker == 65496",
+      "severity": "error",
+      "message": "First 2 bytes must be 0xFF 0xD8 (JPEG SOI marker) — this is not a valid JPEG file"
+    },
+    {
+      "name": "APP0 marker present (JFIF)",
+      "expression": "app0Marker == 65504",
+      "severity": "error",
+      "message": "Bytes 2-3 must be 0xFF 0xE0 (APP0 marker) — files with APP1 (0xFFE1) are EXIF-JPEG, not JFIF"
+    },
+    {
+      "name": "JFIF version major is 1",
+      "expression": "jfifVersionMajor == 1",
+      "severity": "warning",
+      "message": "JFIF version major should be 1 — other values are non-standard"
+    },
+    {
+      "name": "Density values non-zero",
+      "expression": "xDensity > 0 && yDensity > 0",
+      "severity": "warning",
+      "message": "xDensity and yDensity must both be non-zero per JFIF specification"
+    }
   ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".jfif",
-      ".jpg",
-      ".jpeg"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "SOI Marker",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "APP0 / JFIF Header",
+        "offset": 2,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Pixel Density",
+        "offset": 13,
+        "icon": "\uE790",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "Thumbnail Data",
+        "offset": 20,
+        "icon": "\uE80A",
+        "color": "#95E1D3"
+      }
     ]
   },
-  "MimeTypes": [
-    "image/jfif"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "jfifVersionMajor",
+    "primaryField": "pixelAspectRatioUnit",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "JPEG Markers",
+        "icon": "\uE9D9",
+        "fields": ["jpegSoiMarker", "app0Marker", "app0Length"]
+      },
+      {
+        "title": "JFIF Version",
+        "icon": "\uE8A5",
+        "fields": ["jfifIdentifier", "jfifVersionMajor", "jfifVersionMinor", "isValidJFIF"]
+      },
+      {
+        "title": "Pixel Density",
+        "icon": "\uE790",
+        "fields": ["pixelAspectRatioUnit", "xDensity", "yDensity"]
+      },
+      {
+        "title": "Thumbnail",
+        "icon": "\uE80A",
+        "fields": ["thumbnailWidth", "thumbnailHeight"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
+  "versionDetection": {
+    "field": "jfifVersionMinor",
+    "versions": {
+      "0": "JFIF v1.00 — basic (no thumbnail)",
+      "1": "JFIF v1.01 — standard version",
+      "2": "JFIF v1.02 — with thumbnail support"
+    }
   },
-  "functions": {
-    "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
-  },
+  "exportTemplates": [
+    {
+      "name": "JFIF Header (JSON)",
+      "format": "json",
+      "fields": ["jpegSoiMarker", "app0Marker", "app0Length", "jfifIdentifier", "jfifVersionMajor", "jfifVersionMinor", "pixelAspectRatioUnit", "xDensity", "yDensity", "thumbnailWidth", "thumbnailHeight"]
+    },
+    {
+      "name": "JFIF_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "JFIF_HEADER",
+      "fields": ["app0Length", "jfifIdentifier", "jfifVersionMajor", "jfifVersionMinor", "pixelAspectRatioUnit", "xDensity", "yDensity", "thumbnailWidth", "thumbnailHeight"]
+    },
+    {
+      "name": "Python JFIF marker check",
+      "format": "python-bytes",
+      "fields": ["jpegSoiMarker", "app0Marker", "jfifIdentifier"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "EXIF marker instead of JFIF",
+        "condition": "app0Marker == 65505",
+        "severity": "info",
+        "description": "Bytes 2-3 are 0xFF 0xE1 (APP1/EXIF marker) — this is an EXIF-JPEG file, not strictly JFIF. May contain GPS coordinates or camera metadata embedded by the camera."
+      },
+      {
+        "name": "Zero pixel density",
+        "condition": "xDensity == 0 || yDensity == 0",
+        "severity": "warning",
+        "description": "xDensity or yDensity is zero — violates JFIF spec, may indicate a stripped or malformed header."
+      },
+      {
+        "name": "Large embedded thumbnail",
+        "condition": "thumbnailWidth > 0 && thumbnailHeight > 0",
+        "severity": "info",
+        "description": "File contains an embedded thumbnail in the APP0 segment. Thumbnail data follows the JFIF header at offset 20. Forensic steganography tools sometimes embed payloads in JFIF thumbnails."
+      },
+      {
+        "name": "Non-standard JFIF version",
+        "condition": "jfifVersionMajor != 1",
+        "severity": "warning",
+        "description": "JFIF major version is not 1. All known JFIF files use major version 1. A different value may indicate a crafted or non-conformant file."
+      }
+    ],
+    "knownExploitVectors": [
+      "JPEG SOF/SOS marker parsing: malformed segment lengths leading to out-of-bounds reads",
+      "Huffman table overflow: crafted DHT segments with invalid code lengths causing decoder crashes",
+      "Progressive JPEG coeff overflow: CVE-2020-0569 (libjpeg-turbo) progressive scan heap overflow",
+      "JFIF thumbnail steganography: hidden data in thumbnail RGB triples at offset 20+"
+    ]
   },
   "aiHints": {
-    "analysisContext": "JPEG File Interchange Format",
+    "analysisContext": "JFIF = JPEG container defined by ITU-T T.871. Fixed header at offset 0: FFD8 (SOI) + FFE0 (APP0) + 2B length (BE) + 'JFIF\\0' (5B) + version (2B) + aspect unit (1B) + x/y density (2B each BE) + thumbnail WH (1B each) = 20 bytes minimum. Distinguish from EXIF-JPEG: JFIF has APP0 (0xFFE0) at offset 2; EXIF has APP1 (0xFFE1) with 'Exif\\0\\0' at offset 6. A file can be both if APP0 comes first, APP1 second. JPEG marker format: 0xFF + marker type (1B) + segment length (2B BE, includes length field). EOI (End of Image) = 0xFF 0xD9 at file end.",
+    "knownVulnerabilities": [
+      "CVE-2020-0569: libjpeg-turbo 2.0.x — progressive JPEG coefficients heap buffer overflow",
+      "CVE-2018-11813: libjpeg 9c — crafted JFIF with invalid DHT segment triggers infinite loop",
+      "GPS metadata in EXIF APP1 after JFIF APP0 can leak location data from camera images"
+    ],
     "suggestedInspections": [
-      "Validate JFIF Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Confirm bytes 0-1 = FF D8 (JPEG SOI) and bytes 2-3 = FF E0 (APP0) for JFIF",
+      "Verify bytes 6-10 = 4A 46 49 46 00 ('JFIF\\0') — distinguishes JFIF from other JPEG variants",
+      "Check bytes 11-12 for version (major.minor): 01 01 = v1.01 (most common)",
+      "Scan for APP1 marker (FF E1) following APP0 — indicates EXIF metadata present",
+      "For forensics: scan all APP markers (FF E0 through FF EF) for steganographic payloads",
+      "Check EOF for 0xFF 0xD9 (JPEG EOI) — missing EOI may indicate truncated or tampered file"
     ]
+  },
+  "software": [
+    "libjpeg / libjpeg-turbo",
+    "IJG JPEG library",
+    "Photoshop (JFIF output)",
+    "GIMP (JPEG export)",
+    "Most digital cameras (JFIF or EXIF-JPEG output)",
+    "Web browsers (universal support)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".jfif", ".jfi", ".jpg", ".jpeg"],
+    "relatedFormats": ["JPEG", "EXIF"],
+    "note": "JFIF is one flavor of JPEG packaging. EXIF-JPEG (APP1) is another common wrapper used by cameras. Most '.jpg' files on the web are JFIF. Camera RAW JPEG files are typically EXIF. The JPEG bitstream itself is the same regardless of wrapper."
+  },
+  "MimeTypes": [
+    "image/jpeg",
+    "image/jfif",
+    "image/pjpeg"
+  ],
+  "UseCases": [
+    "Web image delivery (most common JPEG variant on the web)",
+    "Photo storage from scanners and early digital cameras",
+    "Email attachments and document scanning",
+    "Legacy web compatibility"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 15,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Endianness": "big-endian (JPEG marker values)",
+    "Compression": "DCT-based JPEG (lossy)",
+    "HasHeader": true,
+    "HeaderSize": "20 bytes (APP0 without thumbnail)"
   }
 }

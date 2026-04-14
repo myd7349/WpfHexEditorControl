@@ -143,6 +143,23 @@ public class DockControl : ContentControl, IDockHost, IDisposable
             typeof(DockControl),
             new PropertyMetadata(null));
 
+    public static readonly DependencyProperty ShowGroupNumberBadgeProperty =
+        DependencyProperty.Register(
+            nameof(ShowGroupNumberBadge),
+            typeof(bool),
+            typeof(DockControl),
+            new PropertyMetadata(false, (d, _) => ((DockControl)d).AssignGroupBadges()));
+
+    /// <summary>
+    /// When <see langword="true"/>, a "Group N" badge is overlaid on each document tab bar
+    /// while multiple tab groups are open. Default: <see langword="false"/>.
+    /// </summary>
+    public bool ShowGroupNumberBadge
+    {
+        get => (bool)GetValue(ShowGroupNumberBadgeProperty);
+        set => SetValue(ShowGroupNumberBadgeProperty, value);
+    }
+
     /// <summary>
     /// Settings for the document tab bar (placement, multi-row, colorization, etc.).
     /// Shared with the active <see cref="DocumentTabHost"/> and serialized in the layout.
@@ -1248,12 +1265,21 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         {
             CornerRadius        = new CornerRadius(8),
             Padding             = new Thickness(6, 1, 6, 1),
-            Margin              = new Thickness(0, 4, 8, 0),
+            Margin              = new Thickness(0, 4, 42, 0),
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment   = VerticalAlignment.Top,
-            IsHitTestVisible    = false,
+            IsHitTestVisible    = true,
+            Opacity             = 0.35,
+            Cursor              = System.Windows.Input.Cursors.Arrow,
         };
         badgeBorder.SetResourceReference(Border.BackgroundProperty, "TG_BadgeBackgroundBrush");
+
+        var fadeIn  = new System.Windows.Media.Animation.DoubleAnimation(0.85, TimeSpan.FromMilliseconds(120));
+        var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(0.35, TimeSpan.FromMilliseconds(200));
+        badgeBorder.MouseEnter += (_, _) => badgeBorder.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+        badgeBorder.MouseLeave += (_, _) => badgeBorder.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+
+        badgeBorder.ContextMenu = BuildBadgeContextMenu(docHost);
 
         var badgeText = new TextBlock
         {
@@ -1369,17 +1395,57 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     {
         if (Layout is null) return;
         var hosts = Layout.GetAllDocumentHosts().ToList();
-        bool showBadge = hosts.Count > 1;
+        bool showBadge = ShowGroupNumberBadge && hosts.Count > 1;
 
         for (int i = 0; i < hosts.Count; i++)
         {
             if (_tabControlCache.TryGetValue(hosts[i], out var tabControl)
                 && tabControl is DocumentTabHost docTabHost)
             {
-                docTabHost.GroupIndex   = i + 1;
+                docTabHost.GroupIndex     = i + 1;
                 docTabHost.ShowGroupBadge = showBadge;
             }
         }
+    }
+
+    private ContextMenu BuildBadgeContextMenu(DocumentHostNode docHost)
+    {
+        var menu = new ContextMenu();
+
+        MenuItem Make(string header, Action execute, bool enabled = true)
+        {
+            var item = new MenuItem { Header = header, IsEnabled = enabled };
+            item.Click += (_, _) => execute();
+            return item;
+        }
+
+        DockItem? ActiveItem() => docHost.ActiveItem
+            ?? docHost.Items.FirstOrDefault();
+
+        menu.Opened += (_, _) =>
+        {
+            menu.Items.Clear();
+
+            var active       = ActiveItem();
+            var hosts        = Layout?.GetAllDocumentHosts().ToList() ?? [];
+            var hostIndex    = hosts.IndexOf(docHost);
+            bool hasNext     = hostIndex < hosts.Count - 1;
+            bool hasPrev     = hostIndex > 0;
+            bool multiGroup  = hosts.Count > 1;
+
+            menu.Items.Add(Make("Move to Next Tab Group",     () => { if (active is not null) HandleMoveToAdjacentGroup(active, forward: true);  }, active is not null && hasNext));
+            menu.Items.Add(Make("Move to Previous Tab Group", () => { if (active is not null) HandleMoveToAdjacentGroup(active, forward: false); }, active is not null && hasPrev));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Make("New Vertical Tab Group",   () => { if (active is not null) HandleNewTabGroup(active, DockDirection.Right);  }, active is not null));
+            menu.Items.Add(Make("New Horizontal Tab Group", () => { if (active is not null) HandleNewTabGroup(active, DockDirection.Bottom); }, active is not null));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Make("Close This Tab Group",       () => { if (active is not null) HandleCloseTabGroup(active); }, active is not null && multiGroup));
+            menu.Items.Add(Make("Close All Other Tab Groups", () => HandleCloseAllTabGroups(),                               multiGroup));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Make("Hide Group Badge", () => ShowGroupNumberBadge = false));
+        };
+
+        return menu;
     }
 
     private UIElement CreateTabControl(DockGroupNode group)

@@ -1,17 +1,7 @@
-/* ============================================================
-   Format:    Ruby Marshal
-   Category:  Data
-   Ext:       .marshal
-   Editor:    hex-editor
-   Desc:      Ruby object serialization format
-   Variables: currentOffset, machineType, sectionCount, entryPoint
-   Detection: signature=0408 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
 {
   "diffMode": "binary",
   "formatName": "Ruby Marshal",
-  "version": "1.10",
+  "version": "1.13",
   "extensions": [
     ".marshal"
   ],
@@ -28,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "0408",
-    "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
-    }
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
+    },
+    "signatures": [
+      {
+        "value": "0408",
+        "offset": 0,
+        "label": "MARSHAL magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -69,7 +68,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".marshal"
@@ -89,11 +88,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
