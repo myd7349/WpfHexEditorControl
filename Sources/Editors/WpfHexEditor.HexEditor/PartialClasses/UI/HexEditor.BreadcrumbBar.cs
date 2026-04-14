@@ -97,37 +97,24 @@ public partial class HexEditor
 
     private void OnBreadcrumbNavigate(object? sender, BreadcrumbNavigateEventArgs e)
     {
-        // Suppress ALL breadcrumb rebuilds while we're processing this click.
-        // Without this guard:
-        //   1. SetPosition fires OnSelectionChanged → UpdateBreadcrumb (first spurious rebuild)
-        //   2. SelectionStop assignment fires it again (second spurious rebuild)
-        //   3. SetBookmarks() inside UpdateBreadcrumb does Children.Clear() + re-Add while the
-        //      mouse button is still physically down. WPF re-dispatches MouseLeftButtonDown to
-        //      the newly created chip at the same screen position → NavigateRequested fires again
-        //      → infinite loop until the IDE freezes.
-        // The fix: keep _bcUpdating=true through the entire SetBookmarks visual-tree mutation,
-        // then defer the single final rebuild to Input priority so that all pending mouse events
-        // from the current click are fully drained before the chips are recreated.
+        // Layer 1 guard: block UpdateBreadcrumb re-entry while SetPosition/SelectionStop
+        // are being committed (they fire OnSelectionChanged → UpdateBreadcrumb spuriously).
+        // Layer 2 guard lives in HexBreadcrumbBar._navigating: it blocks SetSegments/SetBookmarks
+        // from doing Children.Clear() while the originating mouse event is still on the stack.
+        // Both layers are needed — this one prevents the double rebuild, the other prevents
+        // the WPF MouseDown re-dispatch loop on newly created visual elements.
         _bcUpdating = true;
-        try
-        {
-            SetPosition(e.Offset);
-            if (e.Length > 0 && e.Length <= 256)
-                SelectionStop = e.Offset + e.Length - 1;
-        }
-        finally
-        {
-            // Keep _bcUpdating=true — cleared inside the deferred action below.
-        }
+        SetPosition(e.Offset);
+        if (e.Length > 0 && e.Length <= 256)
+            SelectionStop = e.Offset + e.Length - 1;
 
-        // Invalidate the block cache so the deferred rebuild picks up the new position.
+        // Invalidate block cache so the deferred rebuild picks up the new position.
         _bcLastBlock = null;
         _bcLastBlockWasNull = false;
 
-        // Defer the visual rebuild to Input priority: guarantees that WPF has fully processed
-        // the current MouseDown event (and any mouse-capture release from Children.Clear())
-        // before new bookmark chips are inserted into the visual tree.
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, () =>
+        // Defer to Input priority — same priority used by HexBreadcrumbBar._navigating reset,
+        // so the visual rebuild happens exactly once after both guards are cleared.
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
             _bcUpdating = false;
             UpdateBreadcrumb();
