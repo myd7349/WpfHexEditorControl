@@ -33,6 +33,7 @@
     ],
     "matchMode": "all-of-first-then-any",
     "Strength": "Strong",
+    "required": true,
     "EntropyHint": { "min": 3.0, "max": 7.0 },
     "validation": {
       "minFileSize": 46,

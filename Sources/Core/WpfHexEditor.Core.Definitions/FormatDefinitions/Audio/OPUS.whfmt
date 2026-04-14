@@ -45,6 +45,7 @@
     ],
     "matchMode": "any",
     "MinimumScore": 0.9,
+    "required": true,
     "Strength": "Strong",
     "EntropyHint": { "min": 4.0, "max": 7.5 },
     "validation": {
