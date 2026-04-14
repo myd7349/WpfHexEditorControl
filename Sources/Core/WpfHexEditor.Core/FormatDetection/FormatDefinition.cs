@@ -254,7 +254,7 @@ namespace WpfHexEditor.Core.FormatDetection
         /// Strength of the signature (for confidence scoring)
         /// Default: Medium for backward compatibility
         /// </summary>
-        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        [JsonConverter(typeof(SignatureStrengthConverter))]
         public SignatureStrength Strength { get; set; } = SignatureStrength.Medium;
 
         /// <summary>
@@ -354,6 +354,35 @@ namespace WpfHexEditor.Core.FormatDetection
         /// Unique signature - highly distinctive (e.g., PNG, ZIP, JPEG)
         /// </summary>
         Unique = 100
+    }
+
+    /// <summary>
+    /// Case-insensitive JSON converter for <see cref="SignatureStrength"/>.
+    /// Accepts string names ("strong", "Strong", "STRONG") and integer values (80).
+    /// Falls back to <see cref="SignatureStrength.Medium"/> for unknown values.
+    /// </summary>
+    internal sealed class SignatureStrengthConverter : JsonConverter<SignatureStrength>
+    {
+        public override SignatureStrength Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number)
+            {
+                if (reader.TryGetInt32(out int intVal) && Enum.IsDefined(typeof(SignatureStrength), intVal))
+                    return (SignatureStrength)intVal;
+                return SignatureStrength.Medium;
+            }
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (Enum.TryParse<SignatureStrength>(s, ignoreCase: true, out var result))
+                    return result;
+                return SignatureStrength.Medium; // unknown value → safe default
+            }
+            return SignatureStrength.Medium;
+        }
+
+        public override void Write(Utf8JsonWriter writer, SignatureStrength value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value.ToString());
     }
 
     /// <summary>
