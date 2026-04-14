@@ -254,6 +254,7 @@ namespace WpfHexEditor.Core.FormatDetection
         /// Strength of the signature (for confidence scoring)
         /// Default: Medium for backward compatibility
         /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
         public SignatureStrength Strength { get; set; } = SignatureStrength.Medium;
 
         /// <summary>
