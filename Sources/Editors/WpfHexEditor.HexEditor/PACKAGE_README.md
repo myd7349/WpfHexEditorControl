@@ -14,8 +14,9 @@ A full-featured WPF hex editor UserControl for .NET 8. Successor to [WPFHexaEdit
 dotnet add package WPFHexaEditor
 ```
 
-## What's New in 3.0.5
+## What's New in 3.0.8
 
+- **Fix**: `JsonReaderException` no longer thrown in `EmbeddedFormatCatalog.LoadHeader` on first run — removed fragile `/* */` file headers from all 463 `.whfmt` format definitions (fixes [#229](https://github.com/abbaye/WpfHexEditorIDE/issues/229))
 - **Fix**: BCB (Custom Background Block) visual tree locked during navigation to prevent mouse re-dispatch loop
 - **Fix**: Bookmark chip `MouseDown` re-dispatch loop eliminated
 - **Fix**: Bookmark chips no longer re-render on every navigation — repaint only on actual changes
