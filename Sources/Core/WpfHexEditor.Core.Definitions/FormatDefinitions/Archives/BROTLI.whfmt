@@ -1,30 +1,20 @@
 {
   "diffMode": "binary",
-  "formatName": "Brotli Compression",
-  "version": "1.13",
-  "extensions": [ ".br" ],
-  "description": "Brotli is a lossless data compression algorithm developed by Google, published in 2015 and standardized as RFC 7932. It is primarily used for HTTP Content-Encoding (br) to compress web assets, and as a standalone .br file format. Brotli uses a combination of LZ77, Huffman coding, and 2nd-order context modelling. Raw .br files have no fixed file-level magic; the first byte encodes the WBITS (window bits) parameter. The most common value is 0x1B (WBITS=22, 4MB window) and 0x0B (WBITS=17, 128KB window). Detection without container context is weak and requires attempted decompression for confirmation.",
+  "formatName": "Brotli Compressed Data",
+  "version": "1.14",
+  "extensions": [".br"],
+  "description": "Brotli is a lossless data compression algorithm by Google (RFC 7932, 2016). No fixed magic bytes — the stream starts with a window size descriptor byte. Bits 0-1 of byte 0: if 0, WBITS-10 is encoded in bits 2-4 (window = 2^WBITS bytes, WBITS 10-24). Common byte: 0x1B = WBITS 22 = 4MB window (Google default). Brotli achieves 20-26% better ratios than gzip/deflate using context modeling and a static 13,504-word dictionary. Used as HTTP Content-Encoding: br and internally in .woff2 web fonts.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
-    "specifications": [
-      "RFC 7932 - Brotli Compressed Data Format",
-      "RFC 9841 - Shared Brotli Format",
-      "Brotli Compression Algorithm by Google"
-    ],
-    "WebLinks": [
-      "https://datatracker.ietf.org/doc/html/rfc7932",
-      "https://github.com/google/brotli",
-      "https://en.wikipedia.org/wiki/Brotli",
-      "https://www.brotli.org/"
-    ]
+    "specifications": ["RFC 7932 — Brotli Compressed Data Format (IETF, July 2016)"],
+    "WebLinks": ["https://www.rfc-editor.org/rfc/rfc7932", "https://github.com/google/brotli"]
   },
   "detection": {
     "signatures": [
-      { "hex": "1B", "offset": 0, "weight": 0.3 },
-      { "hex": "0B", "offset": 0, "weight": 0.3 },
-      { "hex": "CB", "offset": 0, "weight": 0.3 }
+      { "value": "1B", "offset": 0, "label": "0x1B — Brotli WBITS=22 (4MB window, most common)", "weight": 0.4 },
+      { "value": "0B", "offset": 0, "label": "0x0B — Brotli WBITS=18 (256KB window)", "weight": 0.3 }
     ],
     "matchMode": "any",
     "MinimumScore": 0.3,
@@ -32,15 +22,12 @@
     "Strength": "Weak",
     "EntropyHint": { "min": 6.5, "max": 8.0 },
     "validation": {
-      "minFileSize": 1,
+      "minFileSize": 2,
       "maxSignatureOffset": 0,
-      "note": "Brotli has no fixed magic. Detection is probabilistic. Use attempted decompression to confirm. WBITS nibble must encode a valid window size (10-24)."
+      "note": "No fixed magic. Detected by .br extension and high entropy. First byte is window size descriptor."
     }
   },
-  "variables": {
-    "windowDescriptor": 0,
-    "wbits": 0
-  },
+  "variables": { "windowDescriptor": 0 },
   "blocks": [
     {
       "type": "signature",
@@ -48,121 +35,42 @@
       "offset": 0,
       "length": 1,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "First byte encodes WBITS (window size bits 10-24). Common values: 0x1B=WBITS 22 (4MB), 0x0B=WBITS 17 (128KB). This is not a reliable magic byte.",
+      "opacity": 0.45,
+      "description": "Brotli window size descriptor byte at offset 0. Bits 0-1=0: WBITS-10 in bits 2-4 (window = 2^WBITS). Common: 0x1B=4MB window (WBITS=22, Google default), 0x0B=256KB (WBITS=18), 0x1F=16MB max (WBITS=24). Larger window = better compression but more RAM.",
       "storeAs": "windowDescriptor",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "11": "0x0B — 256 KB window (WBITS=18)",
+        "15": "0x0F — 1 MB window (WBITS=20)",
+        "27": "0x1B — 4 MB window (WBITS=22, default)",
+        "31": "0x1F — 16 MB window (WBITS=24, maximum)"
+      }
     },
-    {
-      "type": "data",
-      "name": "Compressed Stream",
-      "offset": 1,
-      "length": 32,
-      "color": "#4ECDC4",
-      "opacity": 0.4,
-      "description": "Brotli bit-packed compressed data. The stream is bit-oriented, not byte-aligned after the window descriptor."
-    },
-    {
-      "type": "data",
-      "name": "Huffman Trees Section",
-      "offset": 2,
-      "length": 16,
-      "color": "#45B7D1",
-      "opacity": 0.4,
-      "description": "Encoded Huffman trees follow the window descriptor. Layout is bit-packed per RFC 7932 section 3."
-    },
-    {
-      "type": "data",
-      "name": "Meta-Block Header",
-      "offset": 3,
-      "length": 8,
-      "color": "#96CEB4",
-      "opacity": 0.4,
-      "description": "Each Brotli meta-block begins with ISLAST bit, MLENBYTES, and MLEN (uncompressed length). Position varies."
-    }
+    { "type": "metadata", "name": "Window Size", "variable": "windowDescriptor", "description": "Brotli sliding window size descriptor byte" }
   ],
   "assertions": [
-    {
-      "field": "windowDescriptor",
-      "operator": "custom",
-      "description": "WBITS nibble should correspond to a valid window size (10-24). Values 0x00 and 0xFF are invalid."
-    }
+    { "name": "Window descriptor plausible", "expression": "windowDescriptor <= 127", "severity": "info", "message": "Window descriptor MSB set — verify this is a valid Brotli stream" }
   ],
-  "navigation": {
-    "bookmarks": [
-      { "name": "Window Descriptor", "offset": 0, "description": "Single byte encoding WBITS (window size)" },
-      { "name": "Compressed Data", "offset": 1, "description": "Bit-packed compressed data starts here" }
-    ]
-  },
+  "navigation": { "bookmarks": [{ "name": "Brotli Stream", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" }] },
   "inspector": {
-    "badge": "BR",
-    "primaryField": "windowDescriptor",
-    "showQualityScore": true,
-    "groups": [
-      {
-        "name": "Stream Header",
-        "fields": ["windowDescriptor", "wbits"]
-      }
-    ]
+    "badge": "windowDescriptor", "primaryField": "windowDescriptor", "showQualityScore": true,
+    "groups": [{ "title": "Brotli Header", "icon": "\uE8B7", "fields": ["windowDescriptor"] }]
   },
-  "exportTemplates": [
-    {
-      "name": "Brotli Stream Info (JSON)",
-      "format": "json",
-      "fields": ["windowDescriptor"]
-    }
-  ],
-  "forensic": {
-    "category": "archive",
-    "riskLevel": "low",
-    "suspiciousPatterns": [
-      { "name": "No fixed magic", "condition": "true", "description": "No fixed magic — false positives possible for any binary file", "severity": "warning" },
-      { "name": "Compressed malware payload", "condition": "true", "description": "Brotli streams found in HTTP traffic may indicate compressed malware payloads", "severity": "warning" },
-      { "name": "Decompression bomb risk", "condition": "true", "description": "Decompression bomb risk: very small input expanding to very large output", "severity": "warning" }
-    ]
-  },
+  "exportTemplates": [{ "name": "Brotli Header (JSON)", "format": "json", "fields": ["windowDescriptor"] }],
+  "forensic": { "category": "archive", "riskLevel": "low", "suspiciousPatterns": [] },
   "aiHints": {
-    "analysisContext": "Brotli (.br) has no fixed file-level magic. The first byte is a WBITS window descriptor, not a reliable signature. Detection confidence is low without container context (HTTP Content-Encoding: br). Most common first byte: 0x1B (WBITS=22). Confirm by attempting decompression with libbrotli.",
+    "analysisContext": "Brotli (RFC 7932): no magic bytes. First byte = window descriptor (WBITS-10 in bits 2-4). High entropy. HTTP Content-Encoding: br. Python: import brotli; brotli.decompress(data). CLI: brotli -d file.br. Cannot detect by magic — use extension.",
     "suggestedInspections": [
-      "Check first byte for valid WBITS value (0x0B, 0x1B, 0xCB are most common)",
-      "Attempt decompression with libbrotli or brotli CLI to confirm format",
-      "Check for HTTP context: Brotli is almost always encountered as web-served content",
-      "Look for suspiciously high entropy (>7.5) indicating compressed or encrypted data"
+      "Byte 0: window size (0x1B=4MB default, 0x0B=256KB)",
+      "Verify via decompress attempt — only reliable detection method",
+      "High entropy (7.5-8.0 bits/byte) confirms compressed content"
     ]
   },
-  "software": [
-    "Google Brotli CLI",
-    "7-Zip (plugin)",
-    "nginx/Apache (HTTP encoding)",
-    "Node.js zlib",
-    "Python brotli module"
-  ],
-  "formatRelationships": {
-    "category": "Archives",
-    "extensions": [".br"],
-    "relatedFormats": ["GZIP", "ZSTD", "LZ4", "DEFLATE"],
-    "note": "Brotli is the successor to DEFLATE for web compression. ZSTD is a comparable modern alternative with better standalone file support."
-  },
-  "MimeTypes": [ "application/x-brotli", "application/brotli" ],
-  "UseCases": [
-    "HTTP content encoding for web assets (CSS, JS, HTML)",
-    "Standalone .br file compression",
-    "Embedded compression in container formats"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 45,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 4,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": false
-  },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false,
-    "Algorithm": "LZ77 + Huffman + 2nd-order context modelling",
-    "RFC": "7932",
-    "Endianness": "bit-stream (no fixed byte alignment)"
-  }
+  "software": ["brotli CLI (Google reference)", "curl (--compressed)", "nginx mod_brotli", "Python brotli module"],
+  "formatRelationships": { "category": "Archives", "extensions": [".br"], "relatedFormats": ["GZIP", "ZSTD"],
+    "note": "HTTP compression standard (RFC 7932). ~20% better than gzip. Used in .woff2 fonts. No magic bytes." },
+  "MimeTypes": ["application/x-brotli"],
+  "UseCases": ["HTTP Content-Encoding: br", ".woff2 web font compression", "npm package tarballs", "Static web asset pre-compression"],
+  "QualityMetrics": { "CompletenessScore": 55, "DocumentationLevel": "detailed", "BlocksDefined": 2, "ValidationRules": 1, "LastUpdated": "2026-04-14", "PriorityFormat": false, "AutoRefined": false },
+  "TechnicalDetails": { "Format": "Brotli compressed stream (RFC 7932)", "Magic": "None — no magic bytes", "WindowSize": "Encoded in first byte (WBITS 10-24)", "RFC": "RFC 7932 (IETF, July 2016)" }
 }

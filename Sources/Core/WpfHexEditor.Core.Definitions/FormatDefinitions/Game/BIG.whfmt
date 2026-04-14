@@ -1,59 +1,63 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "EA BIG Archive",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
-    ".big"
+    ".big",
+    ".viv"
   ],
-  "description": "Electronic Arts BIG archive format",
+  "description": "EA BIG is an archive format used by Electronic Arts games since the mid-1990s. The format has three magic variants at offset 0: 'BIGF' (42 49 47 46) for most PC games, 'BIG4' (42 49 47 34) for newer titles, and 'BIGH' (42 49 47 48) for some console ports. After the 4-byte magic: archiveSize (uint32 LE, total file size), fileCount (uint32 LE, number of embedded files), firstFileOffset (uint32 LE, offset to first file entry). The file table follows: each entry has dataOffset (uint32 BE), dataSize (uint32 BE), and a null-terminated filename string. File data is stored uncompressed (no compression in standard BIG). The .viv extension is used by older EA Sports titles (FIFA, Need for Speed) for the same format. Tools: BigGUI, OpenSage.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "EA BIG/BIGF Archive Format",
-      "BIG File Format Specification",
-      "Electronic Arts Game Resource Package"
+      "EA BIG format documentation — OpenSage project"
     ],
     "WebLinks": [
-      "https://rewiki.miraheze.org/wiki/EA_BIG_BIGF_Archive",
-      "https://github.com/TheAssemblyArmada/Thyme-Wiki/blob/master/BIG-File-Format.md",
-      "https://chipgw.com/2014/12/19/the-big-file-format/",
-      "https://github.com/withmorten/big4f"
+      "https://github.com/OpenSAGE/OpenSAGE/wiki/BIG-file-format",
+      "https://wiki.xentax.com/index.php/EA_BIG"
     ]
   },
   "detection": {
-    "signature": "42494746",
-    "offset": 0,
+    "signatures": [
+      { "value": "42494746", "offset": 0, "label": "'BIGF' — EA BIG archive (most common variant)", "weight": 1.0 },
+      { "value": "42494734", "offset": 0, "label": "'BIG4' — EA BIG archive v4", "weight": 1.0 },
+      { "value": "42494748", "offset": 0, "label": "'BIGH' — EA BIG archive (console variant)", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
     "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 1024
+      "minFileSize": 16,
+      "maxSignatureOffset": 0,
+      "note": "EA BIG files start with 'BIGF', 'BIG4', or 'BIGH' (4 bytes). The .viv extension uses the same format."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "fileCount": 0,
-    "totalSize": 0,
-    "compressionMethod": "",
-    "headerCRC": 0,
-    "bigSignature": "",
-    "archiveSize": 0,
-    "numberOfFiles": 0,
-    "firstFileOffset": 0,
-    "formattedSize": ""
+    "bigMagic": "",
+    "bigArchiveSize": 0,
+    "bigFileCount": 0,
+    "bigFirstFileOffset": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "BIG Signature",
+      "name": "BIG Magic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "BIGF magic bytes",
-      "storeAs": "bigSignature",
-      "valueType": "ascii"
+      "opacity": 0.45,
+      "description": "EA BIG archive magic: 4 ASCII bytes at offset 0. 'BIGF' (0x42 0x49 0x47 0x46) = standard BIG format used by Command and Conquer: Generals, Battlefield 1942, and most EA PC titles. 'BIG4' (0x42 0x49 0x47 0x34) = variant used by newer EA titles. 'BIGH' (0x42 0x49 0x47 0x48) = console/high-performance variant. All three variants share the same header and file table structure. Also used as .viv in older EA Sports titles.",
+      "storeAs": "bigMagic",
+      "valueType": "ascii",
+      "valueMap": {
+        "BIGF": "EA BIG archive — standard PC variant",
+        "BIG4": "EA BIG archive — version 4 variant",
+        "BIGH": "EA BIG archive — console/high variant"
+      }
     },
     {
       "type": "field",
@@ -61,21 +65,23 @@
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Total archive size",
-      "storeAs": "archiveSize",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "Total archive file size as uint32 little-endian at offset 4. Should match the actual file size on disk. Used for quick integrity validation — if the stored size differs from the actual file size the archive may be truncated or corrupt.",
+      "storeAs": "bigArchiveSize",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
-      "name": "Number of Files",
+      "name": "File Count",
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Total number of files",
-      "storeAs": "numberOfFiles",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "Number of files stored in the archive as uint32 little-endian at offset 8. Determines the number of file table entries that follow the 16-byte header. Each entry in the file table is variable length due to null-terminated filename strings.",
+      "storeAs": "bigFileCount",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -83,90 +89,113 @@
       "offset": 12,
       "length": 4,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Offset to first file",
-      "storeAs": "firstFileOffset",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "Byte offset to the first file entry's data as uint32 little-endian at offset 12. The file table (index) occupies bytes 16 through firstFileOffset-1. Each table entry: dataOffset(4B BE) + dataSize(4B BE) + filename(null-terminated string). Note: dataOffset and dataSize in the file table are big-endian, unlike the header fields which are little-endian.",
+      "storeAs": "bigFirstFileOffset",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Magic",
+      "variable": "bigMagic",
+      "description": "BIG archive magic (BIGF/BIG4/BIGH)"
     },
     {
       "type": "metadata",
       "name": "File Count",
-      "variable": "fileCount",
-      "description": "File Count"
+      "variable": "bigFileCount",
+      "description": "Number of files in the archive"
     },
     {
       "type": "metadata",
-      "name": "Total Size",
-      "variable": "totalSize",
-      "description": "Total Size"
-    },
-    {
-      "type": "metadata",
-      "name": "Compression Method",
-      "variable": "compressionMethod",
-      "description": "Compression Method"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "Archive Size",
+      "variable": "bigArchiveSize",
+      "description": "Total archive size in bytes"
     }
   ],
+  "assertions": [
+    {
+      "name": "BIG magic valid",
+      "expression": "bigMagic == 'BIGF' || bigMagic == 'BIG4' || bigMagic == 'BIGH'",
+      "severity": "error",
+      "message": "EA BIG archive must start with 'BIGF', 'BIG4', or 'BIGH' magic"
+    },
+    {
+      "name": "File count reasonable",
+      "expression": "bigFileCount < 100000",
+      "severity": "warning",
+      "message": "File count exceeds 100,000 — possible corrupt header"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "BIG Header", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" },
+      { "name": "File Table", "offset": 16, "icon": "\uE8B7", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "bigMagic",
+    "primaryField": "bigFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "BIG Archive Header",
+        "icon": "\uE8B7",
+        "fields": ["bigMagic", "bigArchiveSize", "bigFileCount", "bigFirstFileOffset"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "BIG Header (JSON)",
+      "format": "json",
+      "fields": ["bigMagic", "bigArchiveSize", "bigFileCount", "bigFirstFileOffset"]
+    }
+  ],
+  "forensic": { "category": "game", "riskLevel": "low", "suspiciousPatterns": [] },
+  "aiHints": {
+    "analysisContext": "EA BIG format: magic(4B ASCII: BIGF/BIG4/BIGH) + archiveSize(4B LE) + fileCount(4B LE) + firstFileOffset(4B LE) + fileTable(variable: dataOffset(4B BE)+dataSize(4B BE)+name(CSTR)) + file data. Note: header is LE but table offsets/sizes are BE. Tools: BigGUI (GUI extractor), OpenSage (game engine reimplementation), EABigExtractor. Common in: C&C Generals, Battlefield 1942, NFS, FIFA.",
+    "suggestedInspections": [
+      "Bytes 0-3 (ASCII): 'BIGF'/'BIG4'/'BIGH' — EA BIG magic",
+      "Bytes 4-7 (uint32 LE): total archive size — verify against actual file size",
+      "Bytes 8-11 (uint32 LE): file count",
+      "Bytes 12-15 (uint32 LE): offset to first file data (file table occupies bytes 16 to this offset)"
+    ]
+  },
   "software": [
-    "Emulators",
-    "Game engines"
+    "BigGUI (GUI-based EA BIG extractor)",
+    "OpenSAGE (open-source EA game engine — reads BIG natively)",
+    "EABigExtractor (command-line tool)",
+    "QuickBMS with EA BIG script"
   ],
   "formatRelationships": {
     "category": "Game",
-    "extensions": [
-      ".big"
-    ]
+    "extensions": [".big", ".viv"],
+    "relatedFormats": ["PAK", "VPK"],
+    "note": "EA BIG is used across many EA franchises: Command and Conquer series, Battlefield 1942/Vietnam/2, Need for Speed (as .viv), FIFA, Burnout. BIGF is most common on PC; BIG4/BIGH appear on specific titles and console ports."
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
+  "MimeTypes": ["application/octet-stream"],
   "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
+    "Extracting game assets from EA titles (textures, models, sounds)",
+    "Modding EA games such as C&C Generals, Battlefield 1942",
+    "Game preservation and reverse engineering of EA titles",
+    "Repacking modified assets for EA game mods"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 65,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
-    "AutoRefined": true
+    "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Platform": "Various"
-  },
-  "functions": {
-    "readUInt32LE": "Read header",
-    "calculateCRC32": "Validate",
-    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
-  },
-  "forensic": {
-    "category": "game",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Electronic Arts BIG archive format",
-    "suggestedInspections": [
-      "Validate EA BIG Archive container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
-    ]
+    "Format": "Binary EA BIG archive (Electronic Arts proprietary)",
+    "Magic": "'BIGF', 'BIG4', or 'BIGH' ASCII at offset 0",
+    "Header": "16 bytes: magic(4B) + archiveSize(4B LE) + fileCount(4B LE) + firstFileOffset(4B LE)",
+    "FileTable": "Variable-length entries: dataOffset(4B BE) + dataSize(4B BE) + filename(CStr)",
+    "Endianness": "Header fields are little-endian; file table dataOffset/dataSize are big-endian"
   }
 }

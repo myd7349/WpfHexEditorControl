@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Atari 2600 ROM",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
     ".a26",
     ".bin"
@@ -24,13 +24,23 @@
     ]
   },
   "detection": {
-    "signature": "00",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "Raw ROM data (Atari 2600 — no standard file header)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -131,11 +141,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 33,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -159,5 +169,32 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "romData",
+    "primaryField": "resetVector",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Atari 2600 ROM",
+        "icon": "",
+        "fields": [
+          "romData",
+          "resetVector",
+          "irqVector"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Atari 2600 ROM Header (JSON)",
+      "format": "json",
+      "fields": [
+        "romData",
+        "resetVector",
+        "irqVector"
+      ]
+    }
+  ]
 }

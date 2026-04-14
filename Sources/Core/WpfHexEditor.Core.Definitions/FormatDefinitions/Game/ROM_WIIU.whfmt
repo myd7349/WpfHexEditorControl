@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Nintendo Wii U Image",
-  "version": "1.16",
+  "version": "1.17",
   "extensions": [
     ".wud",
     ".wux"
@@ -24,13 +24,22 @@
     ]
   },
   "detection": {
-    "signature": "57555800",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "57555800",
+        "offset": 0,
+        "label": "0x57555800 — Wii U WUX compressed disc image magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -154,11 +163,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 45,
+    "CompletenessScore": 52,
     "DocumentationLevel": "standard",
     "BlocksDefined": 9,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -183,5 +192,42 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "wuxMagic",
+    "primaryField": "uncompressedSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Nintendo Wii U Image",
+        "icon": "",
+        "fields": [
+          "wuxMagic",
+          "formatVersion",
+          "uncompressedSize",
+          "sectorSize"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Nintendo Wii U Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "wuxMagic",
+        "formatVersion",
+        "uncompressedSize",
+        "sectorSize"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ROM_WIIU valid",
+      "expression": "wuxMagic == 1466000384",
+      "severity": "warning",
+      "message": "WUX magic 0x57555800 invalid — not a valid Wii U WUX compressed disc image"
+    }
+  ]
 }

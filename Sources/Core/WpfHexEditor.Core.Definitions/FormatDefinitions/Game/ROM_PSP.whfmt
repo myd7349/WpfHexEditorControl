@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "PlayStation Portable ISO",
-  "version": "2.52",
+  "version": "2.53",
   "extensions": [
     ".iso",
     ".cso"
@@ -24,13 +24,22 @@
     ]
   },
   "detection": {
-    "signature": "4349534F",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "4349534F",
+        "offset": 0,
+        "label": "'CISO' — PlayStation Portable CSO compressed ISO magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -160,11 +169,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 45,
+    "CompletenessScore": 52,
     "DocumentationLevel": "standard",
     "BlocksDefined": 10,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -188,5 +197,44 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "csoMagic",
+    "primaryField": "uncompressedSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PlayStation Portable ISO",
+        "icon": "",
+        "fields": [
+          "csoMagic",
+          "headerSize",
+          "uncompressedSize",
+          "blockSize",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PlayStation Portable ISO Header (JSON)",
+      "format": "json",
+      "fields": [
+        "csoMagic",
+        "headerSize",
+        "uncompressedSize",
+        "blockSize",
+        "version"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ROM_PSP valid",
+      "expression": "csoMagic == 1230262862",
+      "severity": "warning",
+      "message": "CSO magic 'CISO' (0x4349534F) invalid — not a valid PSP CSO compressed image"
+    }
+  ]
 }

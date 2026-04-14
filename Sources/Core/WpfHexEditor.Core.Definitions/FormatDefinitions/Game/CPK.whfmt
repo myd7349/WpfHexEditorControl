@@ -1,69 +1,65 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "CriWare CPK",
-  "version": "1.14",
+  "formatName": "CRI CPK Archive",
+  "version": "1.15",
   "extensions": [
     ".cpk"
   ],
-  "description": "CRI Middleware CPK archive",
+  "description": "CPK is the CRI Middleware archive format used for packaging game assets in many Japanese games. CPK files start with 4 ASCII bytes 'CPK ' (43 50 4B 20, note trailing space at 0x20). At offset 8, the UTF table header begins with '@UTF' (40 55 54 46). The UTF (Universal Table Format) is a binary table structure with column definitions and row data — it encodes metadata about the CPK archive including file list, content offsets, and compression info. Files within CPK can be compressed using CRI's HCA (for audio) or CRILAYLA compression. CPK is widely used in Atlus, SEGA, and Bandai Namco games: Persona 5, Sonic the Hedgehog (2010s), Tales series, Danganronpa.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "CRIWARE CPK Archive Format",
-      "CRI Middleware Resource Package",
-      "CPK File Structure Specification"
+      "CRI CPK format documentation — Kapla project"
     ],
     "WebLinks": [
-      "https://wiki.vg-resource.com/CPK",
-      "https://amicitia.miraheze.org/wiki/CPK",
-      "https://github.com/esperknight/CriPakTools",
-      "https://github.com/Sewer56/CriFsV2Lib"
+      "https://github.com/nicholasgasior/cpk-tools",
+      "https://wiki.xentax.com/index.php/CRI_CPK_CPK"
     ]
   },
   "detection": {
-    "signature": "43504B20",
-    "offset": 0,
+    "signatures": [
+      { "value": "43504B20", "offset": 0, "label": "'CPK ' — CRI Middleware CPK archive magic (with space)", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
     "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 1024
+      "minFileSize": 32,
+      "maxSignatureOffset": 0,
+      "note": "CPK files start with 'CPK ' (4 bytes including trailing space). The UTF table header '@UTF' appears at offset 8."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "zipFileCount": 0,
-    "zipCentralDirSize": 0,
-    "zipComment": "",
-    "eocdOffset": -1,
-    "isZip64": false,
-    "cpkSignature": "",
-    "headerSize": 0,
-    "fileCount": 0
+    "cpkMagic": "",
+    "cpkUtfMagic": "",
+    "cpkFileCount": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "CPK Signature",
+      "name": "CPK Magic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "CPK magic bytes",
-      "storeAs": "cpkSignature",
+      "opacity": 0.45,
+      "description": "CRI CPK archive magic: 4 ASCII bytes 'CPK ' (0x43 0x50 0x4B 0x20) including a trailing space character at 0x20. Created by CRI Middleware (Japan), a leading game middleware company. CPK archives are used extensively in Japanese games from SEGA, Atlus, and Bandai Namco: Persona 4/5, Danganronpa series, Sonic Generations, Tales of Berseria, Yakuza series. Bytes 4-7 are typically 0x00 padding.",
+      "storeAs": "cpkMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Header Size",
-      "offset": 16,
+      "name": "UTF Table Magic",
+      "offset": 8,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of CPK header",
-      "storeAs": "headerSize",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "UTF table header magic at offset 8: '@UTF' (0x40 0x55 0x54 0x46). The UTF (Universal Table Format) is CRI's binary table structure used to encode the CPK metadata including file list, content offsets, file sizes, and compression type. An encrypted variant uses 0x0F 0xF1 0x5E 0x3D as the UTF magic (XOR encryption with key 0x655F).",
+      "storeAs": "cpkUtfMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -71,76 +67,101 @@
       "offset": 20,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Number of files",
-      "storeAs": "fileCount",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "Number of files in the CPK archive as uint32 little-endian at offset 20. This is part of the UTF table data section following the UTF header. The actual position may vary based on the UTF header layout.",
+      "storeAs": "cpkFileCount",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "metadata",
-      "name": "File Count",
-      "variable": "zipFileCount",
-      "description": "File Count"
+      "name": "Magic",
+      "variable": "cpkMagic",
+      "description": "'CPK ' — CRI Middleware CPK archive magic"
     },
     {
       "type": "metadata",
-      "name": "Archive Size",
-      "variable": "zipCentralDirSize",
-      "description": "Archive Size"
+      "name": "UTF Magic",
+      "variable": "cpkUtfMagic",
+      "description": "'@UTF' — CRI Universal Table Format header"
     }
   ],
+  "assertions": [
+    {
+      "name": "CPK magic valid",
+      "expression": "cpkMagic == 'CPK '",
+      "severity": "error",
+      "message": "CPK archive must start with 'CPK ' (with trailing space) — not a valid CRI CPK archive"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "CPK Header", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" },
+      { "name": "UTF Table", "offset": 8, "icon": "\uE8B7", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "cpkMagic",
+    "primaryField": "cpkFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "CPK Archive Header",
+        "icon": "\uE8B7",
+        "fields": ["cpkMagic", "cpkUtfMagic", "cpkFileCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "CPK Header (JSON)",
+      "format": "json",
+      "fields": ["cpkMagic", "cpkUtfMagic", "cpkFileCount"]
+    }
+  ],
+  "forensic": { "category": "game", "riskLevel": "low", "suspiciousPatterns": [] },
+  "aiHints": {
+    "analysisContext": "CRI CPK format: 'CPK '(4B) + padding(4B) + '@UTF'(4B at offset 8) + UTF table size(4B LE) + UTF data. UTF table: encodes file list with offsets, sizes, compression. Encrypted CPK: XOR key 0x655F applied to UTF data. HCA audio inside CPK. Tools: CripackTool, CriPakTools, Noesis (plugin). Common in: Persona 5, Danganronpa, Yakuza, Sonic games.",
+    "suggestedInspections": [
+      "Bytes 0-3 (ASCII): 'CPK ' — note the trailing space at 0x20",
+      "Bytes 8-11 (ASCII): '@UTF' — CRI Universal Table Format header (or encrypted variant)",
+      "Check for encryption: if bytes 8-11 != '@UTF', apply XOR key 0x655F to decode",
+      "Use CripackTool to extract file list and asset data"
+    ]
+  },
   "software": [
-    "Emulators",
-    "Game engines"
+    "CripackTool (CPK extraction tool)",
+    "CriPakTools (GUI-based CPK extractor)",
+    "Frostbite Tools with CPK plugin",
+    "QuickBMS with CPK script"
   ],
   "formatRelationships": {
     "category": "Game",
-    "extensions": [
-      ".cpk"
-    ]
+    "extensions": [".cpk"],
+    "relatedFormats": ["UNITY3D", "UASSET"],
+    "note": "CPK (CRI Middleware Package) is widely used in Japanese console games. Contains UTF tables, optional CRILAYLA compressed assets, and HCA audio. Used by Persona, Danganronpa, Yakuza, Tales, and Sonic series. CRI Middleware also produces ADX (audio) and USM (video) formats."
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
+  "MimeTypes": ["application/octet-stream"],
   "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
+    "Extracting assets from Japanese console games using CRI Middleware",
+    "Modding Persona, Danganronpa, Yakuza games",
+    "Game reverse engineering for CPK-based titles",
+    "Extracting HCA audio and CRILAYLA-compressed assets"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
+    "CompletenessScore": 58,
+    "DocumentationLevel": "detailed",
     "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
-    "AutoRefined": true
+    "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Platform": "Various"
-  },
-  "functions": {
-    "parseZIPArchive": "Parse ZIP metadata"
-  },
-  "forensic": {
-    "category": "game",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "CRI Middleware CPK archive",
-    "suggestedInspections": [
-      "Validate CriWare CPK container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
-    ]
+    "Format": "Binary CRI Middleware CPK archive",
+    "Magic": "'CPK ' (4 bytes, trailing space 0x20) at offset 0",
+    "UTF": "@UTF table at offset 8: binary table format encoding file metadata",
+    "Encryption": "Encrypted CPK: XOR key 0x655F applied to UTF data; bytes 8-11 differ from '@UTF'",
+    "Compression": "CRILAYLA compression for assets; HCA format for audio"
   }
 }

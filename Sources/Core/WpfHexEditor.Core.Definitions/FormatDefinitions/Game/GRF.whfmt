@@ -1,44 +1,44 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "Game Resource File",
-  "version": "1.13",
+  "formatName": "Ragnarok Online GRF Archive",
+  "version": "1.14",
   "extensions": [
-    ".grf"
+    ".grf",
+    ".gpf"
   ],
-  "description": "Ragnarok Online game resource archive",
+  "description": "GRF (Game Resource File) is the archive format used by Ragnarok Online (Gravity Co., 2002). GRF files start with a 15-byte ASCII signature 'Master of Magic' (4D 61 73 74 65 72 20 6F 66 20 4D 61 67 69 63) at offset 0, followed by a 14-byte encryption key placeholder (typically null bytes for standard GRF, or filled for encrypted content). At offset 29: fileTableOffset (uint32 LE, from offset 46), reserved (4B, should be 0), fileCount (uint32 LE). The version byte at offset 43: 0x02 = GRF2 (zlib compressed file table), 0x01 = GRF1 (legacy format). File table entries for GRF2: compressedSize (4B LE), compressedSizeAligned (4B LE), uncompressedSize (4B LE), flags (1B, bit0=file, bit2=encrypted), offset (4B LE), null-terminated filename.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Ragnarok Online GRF Archive",
-      "Gravity GRF File Format",
-      "GRF Virtual File System"
+      "GRF file format documentation — OpenRagnarok project"
     ],
     "WebLinks": [
-      "https://ragnarokresearchlab.github.io/file-formats/grf/",
-      "https://github.com/rathena/rathena/wiki/GRF",
-      "https://z0q.neocities.org/ragnarok-online-formats/grf/",
-      "https://github.com/vthibault/grf-loader"
+      "https://github.com/rdw-forks/browedit/wiki/GRF-format",
+      "https://wiki.xentax.com/index.php/Gravity_GRF"
     ]
   },
   "detection": {
-    "signature": "4D61737465722066204772617669747920466F7220",
-    "offset": 0,
+    "signatures": [
+      { "value": "4D6173746572206F66204D61676963", "offset": 0, "label": "'Master of Magic' — Ragnarok Online GRF archive magic (15 bytes)", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.5 },
     "validation": {
-      "minFileSize": 21,
-      "maxSignatureOffset": 1024
+      "minFileSize": 50,
+      "maxSignatureOffset": 0,
+      "note": "GRF files start with exactly 'Master of Magic' (15 ASCII bytes). Version byte at offset 43 determines GRF1 (0x01) vs GRF2 (0x02)."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "fileCount": 0,
-    "version": "",
-    "indexOffset": 0,
     "grfSignature": "",
-    "encryptionKey": "",
-    "fileTableOffset": 0
+    "grfFileTableOffset": 0,
+    "grfFileCount": 0,
+    "grfVersion": 0
   },
   "blocks": [
     {
@@ -47,20 +47,9 @@
       "offset": 0,
       "length": 15,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Master of Gravity For",
+      "opacity": 0.45,
+      "description": "GRF archive signature: 15 ASCII bytes 'Master of Magic' (0x4D61737465722 06F66204D61676963). This unusual magic phrase identifies a Gravity Co. Ragnarok Online game resource file. GRF is the primary asset container for Ragnarok Online (2002) and its sequels/private servers. Contains textures (BMP/TGA/PNG), sprites (SPR), models (RSM/RSW), maps (GND/GAT), sounds, and scripts.",
       "storeAs": "grfSignature",
-      "valueType": "ascii"
-    },
-    {
-      "type": "field",
-      "name": "Encryption Key",
-      "offset": 15,
-      "length": 14,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Archive encryption key",
-      "storeAs": "encryptionKey",
       "valueType": "ascii"
     },
     {
@@ -68,84 +57,135 @@
       "name": "File Table Offset",
       "offset": 29,
       "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Offset to the file table from byte 46 (not from start of file) as uint32 little-endian at offset 29. Actual file table position = 46 + fileTableOffset. The file table is zlib-compressed in GRF2 format. This relative offset scheme (from byte 46) is unique to GRF.",
+      "storeAs": "grfFileTableOffset",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "File Count",
+      "offset": 37,
+      "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Offset to file allocation table",
-      "storeAs": "fileTableOffset",
-      "valueType": "uint32"
+      "opacity": 0.35,
+      "description": "Number of files in the GRF archive as uint32 little-endian at offset 37. The actual entry count = storedValue - 7 for GRF2 (the format subtracts a bias of 7 from the stored count).",
+      "storeAs": "grfFileCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "GRF Version",
+      "offset": 43,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "GRF format version byte at offset 43. Value 0x02 = GRF2 (standard Ragnarok Online format, zlib-compressed file table). Value 0x01 = GRF1 (legacy beta format, uncompressed file table). GRF2 is by far the most common format used in all retail Ragnarok Online clients.",
+      "storeAs": "grfVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "GRF1 — legacy format (uncompressed table)",
+        "2": "GRF2 — standard format (zlib-compressed table)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Signature",
+      "variable": "grfSignature",
+      "description": "'Master of Magic' — GRF identifier"
     },
     {
       "type": "metadata",
       "name": "File Count",
-      "variable": "fileCount",
-      "description": "File Count"
-    },
-    {
-      "type": "metadata",
-      "name": "Version",
-      "variable": "version",
-      "description": "Version"
-    },
-    {
-      "type": "metadata",
-      "name": "Index Offset",
-      "variable": "indexOffset",
-      "description": "Index Offset"
+      "variable": "grfFileCount",
+      "description": "Number of files (subtract 7 for actual count in GRF2)"
     }
   ],
+  "assertions": [
+    {
+      "name": "GRF signature valid",
+      "expression": "grfSignature == 'Master of Magic'",
+      "severity": "error",
+      "message": "GRF archive must start with 'Master of Magic' (15 bytes) — not a valid Ragnarok Online GRF file"
+    },
+    {
+      "name": "GRF version valid",
+      "expression": "grfVersion == 1 || grfVersion == 2",
+      "severity": "warning",
+      "message": "GRF version should be 1 (legacy) or 2 (standard) — unknown format variant"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "GRF Header", "offset": 0, "icon": "\uE8B7", "color": "#FF6B6B" },
+      { "name": "File Table Info", "offset": 29, "icon": "\uE8B7", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "grfVersion",
+    "primaryField": "grfFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GRF Archive Header",
+        "icon": "\uE8B7",
+        "fields": ["grfSignature", "grfFileTableOffset", "grfFileCount", "grfVersion"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GRF Header (JSON)",
+      "format": "json",
+      "fields": ["grfSignature", "grfFileTableOffset", "grfFileCount", "grfVersion"]
+    }
+  ],
+  "forensic": { "category": "game", "riskLevel": "low", "suspiciousPatterns": [] },
+  "aiHints": {
+    "analysisContext": "GRF format: 'Master of Magic'(15B) + encryptionKey(14B, usually null) + fileTableOffset(4B LE, relative to offset 46) + reserved(4B) + fileCount(4B LE, actual=stored-7 for GRF2) + GRF_version(1B at offset 43). GRF2 file table: zlib-compressed block at offset (46+fileTableOffset). Each entry: compressedSize(4B)+alignedSize(4B)+uncompressedSize(4B)+flags(1B)+offset(4B)+filename(CStr). Tools: GRFEditor, WinGRF, OpenRO.",
+    "suggestedInspections": [
+      "Bytes 0-14 (ASCII): 'Master of Magic' — Ragnarok Online GRF magic",
+      "Bytes 29-32 (uint32 LE): file table offset (add 46 for absolute position)",
+      "Byte 43: version (1=GRF1 uncompressed, 2=GRF2 zlib compressed)",
+      "File table is zlib-compressed block in GRF2 — decompress to list files"
+    ]
+  },
   "software": [
-    "Emulators",
-    "Game engines"
+    "GRFEditor (Tokeiburu, comprehensive GRF editor)",
+    "WinGRF (legacy GRF browser)",
+    "OpenRO (open-source RO client — reads GRF natively)",
+    "GRFTool (command-line extractor)"
   ],
   "formatRelationships": {
     "category": "Game",
-    "extensions": [
-      ".grf"
-    ]
+    "extensions": [".grf", ".gpf"],
+    "relatedFormats": ["PAK", "VPK"],
+    "note": "GRF is the primary archive format for Ragnarok Online (Gravity Co., 2002). Contains all game assets: sprites, textures, maps, sounds, scripts. .gpf is a patch extension with the same format. Private server communities actively develop GRF tooling."
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
+  "MimeTypes": ["application/octet-stream"],
   "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
+    "Extracting sprites, textures, and maps from Ragnarok Online",
+    "Creating Ragnarok Online private server content modifications",
+    "Game asset analysis for Ragnarok Online clients",
+    "GRF patching for private servers and customizations"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
+    "CompletenessScore": 65,
+    "DocumentationLevel": "detailed",
     "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
-    "AutoRefined": true
+    "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Platform": "Various"
-  },
-  "functions": {
-    "readUInt32LE": "Read game header",
-    "extractASCIIString": "Read file list"
-  },
-  "forensic": {
-    "category": "game",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Ragnarok Online game resource archive",
-    "suggestedInspections": [
-      "Validate Game Resource File container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
-    ]
+    "Format": "Binary Ragnarok Online GRF archive (Gravity Co.)",
+    "Magic": "'Master of Magic' (15 ASCII bytes) at offset 0",
+    "Version": "GRF1 (v1, uncompressed table) or GRF2 (v2, zlib-compressed table)",
+    "FileTable": "zlib-compressed in GRF2; entries: compressedSize+alignedSize+uncompressedSize+flags+offset+CStr name",
+    "Quirk": "fileCount stored as actual+7 in GRF2; fileTableOffset relative to byte 46, not 0"
   }
 }

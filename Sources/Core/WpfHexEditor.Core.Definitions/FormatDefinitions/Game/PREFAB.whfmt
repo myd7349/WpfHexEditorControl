@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Unity Prefab",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".prefab"
   ],
@@ -23,13 +23,23 @@
     ]
   },
   "detection": {
-    "signature": "2559414D4C",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 5,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "2559414D4C",
+        "offset": 0,
+        "label": "'%YAML' — Unity prefab file (YAML-based text format)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -96,11 +106,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -123,5 +133,28 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "yamlHeader",
+    "primaryField": "yamlHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Unity Prefab",
+        "icon": "",
+        "fields": [
+          "yamlHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Unity Prefab Header (JSON)",
+      "format": "json",
+      "fields": [
+        "yamlHeader"
+      ]
+    }
+  ]
 }

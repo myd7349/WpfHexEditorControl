@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Xbox 360 Disc Image",
-  "version": "2.52",
+  "version": "2.53",
   "extensions": [
     ".iso",
     ".xex"
@@ -24,13 +24,22 @@
     ]
   },
   "detection": {
-    "signature": "58455832",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "58455832",
+        "offset": 0,
+        "label": "'XEX2' — Xbox 360 executable format magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -146,11 +155,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 47,
+    "CompletenessScore": 55,
     "DocumentationLevel": "standard",
     "BlocksDefined": 8,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -174,5 +183,42 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "xex2Magic",
+    "primaryField": "peDataOffset",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Xbox 360 Disc Image",
+        "icon": "",
+        "fields": [
+          "xex2Magic",
+          "moduleFlags",
+          "peDataOffset",
+          "securityInfoOffset"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Xbox 360 Disc Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "xex2Magic",
+        "moduleFlags",
+        "peDataOffset",
+        "securityInfoOffset"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ROM_X360 valid",
+      "expression": "xex2Magic == 1482318898",
+      "severity": "warning",
+      "message": "XEX2 magic must be 0x58455832 — not a valid Xbox 360 executable"
+    }
+  ]
 }

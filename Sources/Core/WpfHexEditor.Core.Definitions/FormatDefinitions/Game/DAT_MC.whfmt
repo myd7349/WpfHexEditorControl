@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Minecraft DAT",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".dat"
   ],
@@ -23,13 +23,23 @@
     ]
   },
   "detection": {
-    "signature": "0A",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "0A",
+        "offset": 0,
+        "label": "0x0A — NBT Compound tag type byte (Minecraft data file)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -90,11 +100,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -116,5 +126,28 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "nbtCompoundTag",
+    "primaryField": "nbtCompoundTag",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Minecraft DAT",
+        "icon": "",
+        "fields": [
+          "nbtCompoundTag"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Minecraft DAT Header (JSON)",
+      "format": "json",
+      "fields": [
+        "nbtCompoundTag"
+      ]
+    }
+  ]
 }

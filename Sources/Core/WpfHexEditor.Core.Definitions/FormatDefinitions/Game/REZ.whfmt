@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Game Resource Archive",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
     ".rez"
   ],
@@ -23,13 +23,23 @@
     ]
   },
   "detection": {
-    "signature": "00",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "Raw data — LithTech REZ resource archive (no standard magic)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -104,11 +114,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 21,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -132,5 +142,28 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "header",
+    "primaryField": "header",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Game Resource Archive",
+        "icon": "",
+        "fields": [
+          "header"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Game Resource Archive Header (JSON)",
+      "format": "json",
+      "fields": [
+        "header"
+      ]
+    }
+  ]
 }

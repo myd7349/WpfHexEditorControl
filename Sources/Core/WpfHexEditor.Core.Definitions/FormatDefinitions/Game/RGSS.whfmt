@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "RPG Maker Encrypted Archive",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
     ".rgssad",
     ".rgss2a",
@@ -25,13 +25,22 @@
     ]
   },
   "detection": {
-    "signature": "52475353414400",
     "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 7,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "52475353414400",
+        "offset": 0,
+        "label": "RGSS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -120,11 +129,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 6,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -148,5 +157,38 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "rgssadSignature",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "RPG Maker Encrypted Archive",
+        "icon": "",
+        "fields": [
+          "rgssadSignature",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "RPG Maker Encrypted Archive Header (JSON)",
+      "format": "json",
+      "fields": [
+        "rgssadSignature",
+        "version"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "rgssadSignature != ''",
+      "severity": "warning",
+      "message": "RGSS magic invalid"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "PlayStation 2 Disc Image",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".iso",
     ".bin"
@@ -24,13 +24,22 @@
     ]
   },
   "detection": {
-    "signature": "50534449",
     "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "50534449",
+        "offset": 0,
+        "label": "ROM_PS2.whfmt magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0
   },
   "variables": {
     "currentOffset": 0,
@@ -135,11 +144,11 @@
     "Preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 39,
+    "CompletenessScore": 50,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-01",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -163,5 +172,38 @@
       "Check resource/asset table entries and data block offsets",
       "Inspect compression flags, checksums, and embedded file boundaries"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "ps2IsoMagic",
+    "primaryField": "ps2VolumeSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PlayStation 2 Disc Image",
+        "icon": "",
+        "fields": [
+          "ps2IsoMagic",
+          "ps2VolumeSize"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PlayStation 2 Disc Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "ps2IsoMagic",
+        "ps2VolumeSize"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "ps2IsoMagic != ''",
+      "severity": "warning",
+      "message": "PS2 ISO magic invalid"
+    }
+  ]
 }
