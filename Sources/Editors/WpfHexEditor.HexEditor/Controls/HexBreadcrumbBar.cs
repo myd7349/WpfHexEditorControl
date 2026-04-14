@@ -295,10 +295,20 @@ public sealed class HexBreadcrumbBar : Border
 
         if (seg.Siblings?.Count > 0)
         {
-            // Build ContextMenu with current + siblings
-            var menu = new ContextMenu { MinWidth = 200 };
+            // Build ContextMenu with current + siblings.
+            // Opacity=1 + HasDropShadow=true ensures the popup is fully opaque regardless
+            // of whether BC_Background is a semi-transparent brush in the host theme.
+            var menu = new ContextMenu { MinWidth = 200, Opacity = 1, HasDropShadow = true };
             menu.SetResourceReference(BackgroundProperty, "BC_Background");
             menu.SetResourceReference(ContextMenu.BorderBrushProperty, "BC_SeparatorForeground");
+            // Ensure the Popup host window is opaque (prevents see-through in standalone apps).
+            menu.Loaded += (_, _) =>
+            {
+                if (menu.Background is SolidColorBrush scb && scb.Color.A < 255)
+                    menu.Background = new SolidColorBrush(Color.FromArgb(255, scb.Color.R, scb.Color.G, scb.Color.B));
+                else if (menu.Background == null || menu.Background == Brushes.Transparent)
+                    menu.SetResourceReference(BackgroundProperty, "ToolBarBackground");
+            };
 
             var allItems = new List<BreadcrumbSegment> { seg };
             allItems.AddRange(seg.Siblings);
