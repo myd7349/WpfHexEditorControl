@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Portable Graymap",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".pgm"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "5032",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 2,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "5032",
+        "offset": 0,
+        "label": "PGM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "functions": {
     "extractASCIIString": "Extract width, height, maxval from ASCII header"
@@ -96,11 +105,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -120,5 +129,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "pgmMagic",
+    "primaryField": "header",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Portable Graymap",
+        "icon": "",
+        "fields": [
+          "pgmMagic",
+          "header"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Portable Graymap Header (JSON)",
+      "format": "json",
+      "fields": [
+        "pgmMagic",
+        "header"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "pgmMagic != 0",
+      "severity": "warning",
+      "message": "PGM magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "SPIR-V Binary",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".spv",
     ".spirv"
@@ -19,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "07230203",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "07230203",
+        "offset": 0,
+        "label": "SPIRV magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "machineType": "",
@@ -120,11 +129,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -145,5 +154,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "spirVMagic",
+    "primaryField": "spirVMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "SPIR-V Binary",
+        "icon": "",
+        "fields": [
+          "spirVMagic"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SPIR-V Binary Header (JSON)",
+      "format": "json",
+      "fields": [
+        "spirVMagic"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "spirVMagic != 0",
+      "severity": "warning",
+      "message": "SPIRV magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "ASTC Texture",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".astc"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "13AB5CA1",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "13AB5CA1",
+        "offset": 0,
+        "label": "ASTC magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "machineType": "",
@@ -113,11 +122,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -140,5 +149,40 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "astcMagic",
+    "primaryField": "blockDimensions",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ASTC Texture",
+        "icon": "",
+        "fields": [
+          "astcMagic",
+          "blockDimensions",
+          "imageDimensions"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ASTC Texture Header (JSON)",
+      "format": "json",
+      "fields": [
+        "astcMagic",
+        "blockDimensions",
+        "imageDimensions"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "astcMagic != 0",
+      "severity": "warning",
+      "message": "ASTC magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Portable Bitmap",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".pbm"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "5031",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 2,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "5031",
+        "offset": 0,
+        "label": "PBM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "functions": {
     "extractASCIIString": "Extract width and height from ASCII header"
@@ -96,11 +105,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -120,5 +129,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "pbmMagic",
+    "primaryField": "header",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Portable Bitmap",
+        "icon": "",
+        "fields": [
+          "pbmMagic",
+          "header"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Portable Bitmap Header (JSON)",
+      "format": "json",
+      "fields": [
+        "pbmMagic",
+        "header"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "pbmMagic != 0",
+      "severity": "warning",
+      "message": "PBM magic field is zero — possible detection failure"
+    }
+  ]
 }

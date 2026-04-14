@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "JPEG-LS Lossless",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".jls"
   ],
@@ -22,13 +22,22 @@
     ]
   },
   "detection": {
-    "signature": "FFD8FFF7",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "FFD8FFF7",
+        "offset": 0,
+        "label": "JPEG_LS magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "version": 0,
@@ -100,11 +109,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -127,5 +136,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "jpegLsSoiSof55",
+    "primaryField": "sof55Length",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "JPEG-LS Lossless",
+        "icon": "",
+        "fields": [
+          "jpegLsSoiSof55",
+          "sof55Length"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JPEG-LS Lossless Header (JSON)",
+      "format": "json",
+      "fields": [
+        "jpegLsSoiSof55",
+        "sof55Length"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "jpegLsSoiSof55 != 0",
+      "severity": "warning",
+      "message": "JPEG_LS magic field is zero — possible detection failure"
+    }
+  ]
 }

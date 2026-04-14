@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Ruby Marshal",
-  "version": "1.12",
+  "version": "1.13",
   "extensions": [
     ".marshal"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "0408",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 2,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "0408",
+        "offset": 0,
+        "label": "MARSHAL magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -79,11 +88,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

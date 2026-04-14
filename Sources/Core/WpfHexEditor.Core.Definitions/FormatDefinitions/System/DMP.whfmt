@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Windows Memory Dump",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".dmp"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "504147454455",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 6,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "504147454455",
+        "offset": 0,
+        "label": "DMP magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -101,11 +110,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -126,5 +135,38 @@
       "Check timestamp sequence for gaps or chronological anomalies",
       "Inspect event severity levels and source identifiers"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "dumpSignature",
+    "primaryField": "validDump",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Windows Memory Dump",
+        "icon": "",
+        "fields": [
+          "dumpSignature",
+          "validDump"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Windows Memory Dump Header (JSON)",
+      "format": "json",
+      "fields": [
+        "dumpSignature",
+        "validDump"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "dumpSignature != 0",
+      "severity": "warning",
+      "message": "DMP magic field is zero — possible detection failure"
+    }
+  ]
 }

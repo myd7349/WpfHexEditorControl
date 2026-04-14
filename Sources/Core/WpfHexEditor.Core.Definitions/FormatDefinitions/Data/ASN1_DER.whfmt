@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "ASN.1 DER Encoding",
-  "version": "1.12",
+  "version": "1.13",
   "extensions": [
     ".der",
     ".cer"
@@ -19,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "30",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "30",
+        "offset": 0,
+        "label": "ASN1_DER magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -88,11 +97,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "semantic",
   "formatName": "TOML Configuration",
-  "version": "2.03",
+  "version": "2.4",
   "extensions": [
     ".toml"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "TOML magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -79,11 +88,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 15,
+    "CompletenessScore": 50,
     "DocumentationLevel": "basic",
     "BlocksDefined": 3,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-22",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -140,7 +149,10 @@
       "useTabs": false,
       "trimTrailingWhitespace": true,
       "insertFinalNewline": true,
-      "supportedRules": ["trimTrailingWhitespace", "insertFinalNewline"]
+      "supportedRules": [
+        "trimTrailingWhitespace",
+        "insertFinalNewline"
+      ]
     },
     "foldingRules": {
       "indentBased": true,

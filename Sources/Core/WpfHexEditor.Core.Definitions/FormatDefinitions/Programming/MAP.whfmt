@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Linker MAP File",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".map"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "20",
-    "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "20",
+        "offset": 0,
+        "label": "MAP magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "machineType": "",
@@ -102,11 +111,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -126,5 +135,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "textHeader",
+    "primaryField": "textHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Linker MAP File",
+        "icon": "",
+        "fields": [
+          "textHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Linker MAP File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "textHeader"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "textHeader != 0",
+      "severity": "warning",
+      "message": "MAP magic field is zero — possible detection failure"
+    }
+  ]
 }

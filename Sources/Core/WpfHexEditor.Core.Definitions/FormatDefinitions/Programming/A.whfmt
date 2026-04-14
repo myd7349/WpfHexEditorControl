@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Static Library Archive",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".a"
   ],
@@ -20,13 +20,22 @@
     ]
   },
   "detection": {
-    "signature": "213C617263683E0A",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 8,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "213C617263683E0A",
+        "offset": 0,
+        "label": "A magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "fileCount": 0,
@@ -154,11 +163,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 11,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -180,5 +189,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "archiveSignature",
+    "primaryField": "archiveSignature",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Static Library Archive",
+        "icon": "",
+        "fields": [
+          "archiveSignature"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Static Library Archive Header (JSON)",
+      "format": "json",
+      "fields": [
+        "archiveSignature"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "archiveSignature != 0",
+      "severity": "warning",
+      "message": "A magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "dBASE Database",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".dbf"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "03",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "03",
+        "offset": 0,
+        "label": "DBF magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -122,11 +131,11 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -147,5 +156,40 @@
       "Check B-tree/index page pointers and free page list",
       "Inspect record format, schema tables, and journal state"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "dbfVersion",
+    "primaryField": "lastUpdateDate",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "dBASE Database",
+        "icon": "",
+        "fields": [
+          "dbfVersion",
+          "lastUpdateDate",
+          "recordCount"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "dBASE Database Header (JSON)",
+      "format": "json",
+      "fields": [
+        "dbfVersion",
+        "lastUpdateDate",
+        "recordCount"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "dbfVersion != 0",
+      "severity": "warning",
+      "message": "DBF magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Virtual Hard Disk",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".vhd"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "636F6E6563746978",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 8,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "636F6E6563746978",
+        "offset": 0,
+        "label": "VHD magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -127,11 +136,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -161,5 +170,40 @@
   "functions": {
     "readUInt32LE": "Read disk header",
     "multiply": "Calculate capacity"
-  }
+  },
+  "inspector": {
+    "badge": "vhdCookie",
+    "primaryField": "features",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Virtual Hard Disk",
+        "icon": "",
+        "fields": [
+          "vhdCookie",
+          "features",
+          "formatVersion"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Virtual Hard Disk Header (JSON)",
+      "format": "json",
+      "fields": [
+        "vhdCookie",
+        "features",
+        "formatVersion"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "vhdCookie != 0",
+      "severity": "warning",
+      "message": "VHD magic field is zero — possible detection failure"
+    }
+  ]
 }

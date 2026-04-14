@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Windows Registry File",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".reg"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "57696E646F77732052656769737472792045646974",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 21,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "57696E646F77732052656769737472792045646974",
+        "offset": 0,
+        "label": "REG magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -89,11 +98,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -114,5 +123,36 @@
       "Check timestamp sequence for gaps or chronological anomalies",
       "Inspect event severity levels and source identifiers"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "registryHeader",
+    "primaryField": "registryHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Windows Registry File",
+        "icon": "",
+        "fields": [
+          "registryHeader"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Windows Registry File Header (JSON)",
+      "format": "json",
+      "fields": [
+        "registryHeader"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "registryHeader != 0",
+      "severity": "warning",
+      "message": "REG magic field is zero — possible detection failure"
+    }
+  ]
 }

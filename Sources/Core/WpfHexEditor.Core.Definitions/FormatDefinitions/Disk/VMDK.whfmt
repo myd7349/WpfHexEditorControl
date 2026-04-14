@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "VMware Virtual Disk",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".vmdk"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "4B444D",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 3,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "4B444D",
+        "offset": 0,
+        "label": "VMDK magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "currentOffset": 0,
@@ -115,11 +124,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 6,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -149,5 +158,38 @@
   "functions": {
     "readUInt32LE": "Read disk header",
     "multiply": "Calculate capacity"
-  }
+  },
+  "inspector": {
+    "badge": "vmdkSignature",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "VMware Virtual Disk",
+        "icon": "",
+        "fields": [
+          "vmdkSignature",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "VMware Virtual Disk Header (JSON)",
+      "format": "json",
+      "fields": [
+        "vmdkSignature",
+        "version"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "vmdkSignature != 0",
+      "severity": "warning",
+      "message": "VMDK magic field is zero — possible detection failure"
+    }
+  ]
 }

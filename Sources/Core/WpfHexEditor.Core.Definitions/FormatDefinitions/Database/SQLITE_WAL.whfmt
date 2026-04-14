@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "SQLite Write-Ahead Log",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".wal",
     "-wal"
@@ -19,13 +19,22 @@
     ]
   },
   "detection": {
-    "signature": "377F0682",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "377F0682",
+        "offset": 0,
+        "label": "SQLITE_WAL magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "currentOffset": 0,
@@ -100,11 +109,11 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -125,5 +134,36 @@
       "Check B-tree/index page pointers and free page list",
       "Inspect record format, schema tables, and journal state"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "walMagicNumber",
+    "primaryField": "walMagicNumber",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "SQLite Write-Ahead Log",
+        "icon": "",
+        "fields": [
+          "walMagicNumber"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SQLite Write-Ahead Log Header (JSON)",
+      "format": "json",
+      "fields": [
+        "walMagicNumber"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "walMagicNumber != 0",
+      "severity": "warning",
+      "message": "SQLITE_WAL magic field is zero — possible detection failure"
+    }
+  ]
 }

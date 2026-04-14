@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Linux Shared Object",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
     ".so"
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "7F454C46",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "7F454C46",
+        "offset": 0,
+        "label": "SO magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "vertexCount": 0,
@@ -137,11 +146,11 @@
     "Analysis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 26,
+    "CompletenessScore": 51,
     "DocumentationLevel": "standard",
     "BlocksDefined": 9,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -163,5 +172,36 @@
       "Check symbol/string table integrity and section boundaries",
       "Inspect code section offsets, relocations, and debug info"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "elfMagic",
+    "primaryField": "elfMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Linux Shared Object",
+        "icon": "",
+        "fields": [
+          "elfMagic"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Linux Shared Object Header (JSON)",
+      "format": "json",
+      "fields": [
+        "elfMagic"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "elfMagic != 0",
+      "severity": "warning",
+      "message": "SO magic field is zero — possible detection failure"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Multiple-image Network Graphics",
-  "version": "1.14",
+  "version": "1.15",
   "extensions": [
     ".mng"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "8A4D4E470D0A1A0A",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 8,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "8A4D4E470D0A1A0A",
+        "offset": 0,
+        "label": "MNG magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "packetCount": 0,
@@ -108,11 +117,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -136,5 +145,38 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "mngSignature",
+    "primaryField": "mhdrChunkLength",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Multiple-image Network Graphics",
+        "icon": "",
+        "fields": [
+          "mngSignature",
+          "mhdrChunkLength"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Multiple-image Network Graphics Header (JSON)",
+      "format": "json",
+      "fields": [
+        "mngSignature",
+        "mhdrChunkLength"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "mngSignature != 0",
+      "severity": "warning",
+      "message": "MNG magic field is zero — possible detection failure"
+    }
+  ]
 }

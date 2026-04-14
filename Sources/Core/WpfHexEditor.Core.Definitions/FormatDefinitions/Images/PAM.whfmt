@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Portable Arbitrary Map",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
     ".pam"
   ],
@@ -20,13 +20,22 @@
     ]
   },
   "detection": {
-    "signature": "5037",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 2,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "5037",
+        "offset": 0,
+        "label": "PAM magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Medium"
   },
   "variables": {
     "fileCount": 0,
@@ -112,11 +121,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 6,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -141,5 +150,38 @@
     "readUInt32LE": "Read header",
     "calculateCRC32": "Validate",
     "formatFileSize(var:totalSize)": "Format totalSize as readable size"
-  }
+  },
+  "inspector": {
+    "badge": "pamMagic",
+    "primaryField": "header",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Portable Arbitrary Map",
+        "icon": "",
+        "fields": [
+          "pamMagic",
+          "header"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Portable Arbitrary Map Header (JSON)",
+      "format": "json",
+      "fields": [
+        "pamMagic",
+        "header"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "pamMagic != 0",
+      "severity": "warning",
+      "message": "PAM magic field is zero — possible detection failure"
+    }
+  ]
 }

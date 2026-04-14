@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "OpenEXR Image",
-  "version": "1.15",
+  "version": "1.16",
   "extensions": [
     ".exr"
   ],
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "762F3101",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 4,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "762F3101",
+        "offset": 0,
+        "label": "EXR magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "variables": {
     "width": 0,
@@ -109,11 +118,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
+    "CompletenessScore": 57,
     "DocumentationLevel": "standard",
     "BlocksDefined": 5,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -138,5 +147,38 @@
     "readUInt32LE": "Read dimensions",
     "multiply": "Calculate pixels",
     "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
-  }
+  },
+  "inspector": {
+    "badge": "exrMagic",
+    "primaryField": "version",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "OpenEXR Image",
+        "icon": "",
+        "fields": [
+          "exrMagic",
+          "version"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "OpenEXR Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "exrMagic",
+        "version"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "exrMagic != 0",
+      "severity": "warning",
+      "message": "EXR magic field is zero — possible detection failure"
+    }
+  ]
 }

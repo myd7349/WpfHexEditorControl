@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "APNG Animated Image",
-  "version": "2.32",
+  "version": "2.33",
   "extensions": [
     ".apng",
     ".png"
@@ -23,13 +23,22 @@
     ]
   },
   "detection": {
-    "signature": "89504E470D0A1A0A",
-    "offset": 0,
     "required": true,
     "validation": {
       "minFileSize": 8,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "89504E470D0A1A0A",
+        "offset": 0,
+        "label": "APNG magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong"
   },
   "functions": {
     "readPNGDimensions": "Read image width and height from IHDR chunk",
@@ -136,11 +145,11 @@
     "Web publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
+    "CompletenessScore": 63,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -160,5 +169,40 @@
       "Check pixel data offset, compression type, and scanline alignment",
       "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "pngSignature",
+    "primaryField": "ihdrChunkLength",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "APNG Animated Image",
+        "icon": "",
+        "fields": [
+          "pngSignature",
+          "ihdrChunkLength",
+          "ihdrType"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "APNG Animated Image Header (JSON)",
+      "format": "json",
+      "fields": [
+        "pngSignature",
+        "ihdrChunkLength",
+        "ihdrType"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "pngSignature != 0",
+      "severity": "warning",
+      "message": "APNG magic field is zero — possible detection failure"
+    }
+  ]
 }

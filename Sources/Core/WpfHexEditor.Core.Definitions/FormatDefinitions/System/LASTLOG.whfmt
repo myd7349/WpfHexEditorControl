@@ -1,7 +1,7 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Unix lastlog",
-  "version": "2.42",
+  "version": "2.43",
   "extensions": [
     ""
   ],
@@ -18,13 +18,22 @@
     ]
   },
   "detection": {
-    "signature": "00",
-    "offset": 0,
     "required": false,
     "validation": {
       "minFileSize": 1,
       "maxSignatureOffset": 1024
-    }
+    },
+    "signatures": [
+      {
+        "value": "00",
+        "offset": 0,
+        "label": "LASTLOG magic",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Weak"
   },
   "variables": {
     "currentOffset": 0,
@@ -120,11 +129,11 @@
     "Archive"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 33,
+    "CompletenessScore": 58,
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": true
   },
@@ -146,5 +155,40 @@
       "Check timestamp sequence for gaps or chronological anomalies",
       "Inspect event severity levels and source identifiers"
     ]
-  }
+  },
+  "inspector": {
+    "badge": "timestamp",
+    "primaryField": "line",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Unix lastlog",
+        "icon": "",
+        "fields": [
+          "timestamp",
+          "line",
+          "host"
+        ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Unix lastlog Header (JSON)",
+      "format": "json",
+      "fields": [
+        "timestamp",
+        "line",
+        "host"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "name": "magic valid",
+      "expression": "timestamp != 0",
+      "severity": "warning",
+      "message": "LASTLOG magic field is zero — possible detection failure"
+    }
+  ]
 }
