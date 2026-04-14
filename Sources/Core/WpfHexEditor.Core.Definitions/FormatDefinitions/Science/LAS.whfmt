@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    LAS Well Log
-   Category:  Science
-   Ext:       .las
-   Editor:    hex-editor
-   Desc:      Log ASCII Standard for well log data
-   Variables: currentOffset, timestamp, size, version, type, lasMagic
-   Detection: signature=7E56657273696F6E @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "LAS Well Log",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -79,7 +69,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Science",
     "extensions": [
       ".las"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Microsoft Access Form
-   Category:  Database
-   Ext:       .maf
-   Editor:    hex-editor
-   Desc:      Microsoft Access form module file
-   Variables: currentOffset, pageSize, pageCount, tableCount, version
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Microsoft Access Form",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -82,7 +72,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".maf"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Windows Installer Package
-   Category:  Archives
-   Ext:       .msi
-   Editor:    hex-editor
-   Desc:      Microsoft Windows Installer package (OLE2)
-   Variables: currentOffset, minorVersion, ole2Signature
-   Detection: signature=D0CF11E0A1B11AE1 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Installer Package",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -87,7 +77,7 @@
     "InstallShield",
     "Advanced Installer"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "microsoft_format": true,
     "based_on": "Compound File Binary (CFB)",
     "related": [

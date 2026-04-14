@@ -1,90 +1,76 @@
-/* ============================================================
-   Format:    M4A Audio
-   Category:  Audio
-   Ext:       .m4a, .m4b, .m4p
-   Editor:    audio-viewer
-   Desc:      MPEG-4 Audio - AAC audio container
-   Variables: currentOffset, majorBrand, minorVersion, sampleRate, channels, bitDepth, duration, boxSize, boxType, byteRate, samplesPerSecond
-   Detection: signature=667479704D344120 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "M4A Audio",
-  "version": "1.12",
+  "version": "2.0",
   "extensions": [
     ".m4a",
     ".m4b",
     ".m4p"
   ],
-  "description": "MPEG-4 Audio - AAC audio container",
+  "description": "M4A is an MPEG-4 Part 14 audio file using the ISO Base Media File Format (ISOBMFF) container. The file begins with an 'ftyp' (File Type) box: 4-byte box size (BE), 4-byte type 'ftyp', 4-byte major brand ('M4A ', 'M4B ', or 'M4P '), 4-byte minor version, and a list of 4-byte compatible brand codes. All box/atom sizes are big-endian. Inside the container: 'moov' atom holds movie header, 'trak' and 'mdia' contain codec parameters, 'udta'/'ilst' hold iTunes metadata. Audio is typically AAC-LC (lossy) or ALAC (lossless). M4B adds chapter markers for audiobooks. M4P uses FairPlay DRM.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "MPEG-4 Part 14 - ISO/IEC 14496-14:2003",
-      "M4A Audio Container Format",
-      "MPEG-4 Audio Specification"
+      "MPEG-4 Part 14 — ISO/IEC 14496-14:2003",
+      "ISO Base Media File Format — ISO/IEC 14496-12",
+      "Apple iTunes M4A/M4B format — Apple developer documentation"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/MPEG-4_Part_14",
-      "https://docs.fileformat.com/audio/m4a/",
-      "https://www.file-recovery.com/m4a-signature-format.htm",
-      "https://cloudinary.com/guides/video-formats/what-is-the-m4a-format-understanding-the-difference-between-m4a-mp3-and-wav"
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000234.shtml",
+      "https://wiki.multimedia.cx/index.php/MPEG-4_Container",
+      "https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/"
     ]
   },
   "detection": {
-    "signature": "667479704D344120",
-    "offset": 4,
+    "signatures": [
+      { "value": "667479704D344120", "offset": 4, "label": "ftyp M4A  brand", "weight": 1.0 },
+      { "value": "667479704D344220", "offset": 4, "label": "ftyp M4B  brand (audiobook)", "weight": 1.0 },
+      { "value": "667479704D345020", "offset": 4, "label": "ftyp M4P  brand (DRM)", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 24,
+      "note": "Minimum ftyp box: 4(size) + 4(type) + 4(brand) + 4(version) + 4(compat) = 20 bytes + must have more boxes."
     }
   },
-  "functions": {
-    "readUInt32BE": "Read 32-bit big-endian for box sizes and atom headers",
-    "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat)",
-    "readUInt16BE": "Read 16-bit values for audio configuration",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  },
   "variables": {
-    "currentOffset": 0,
-    "majorBrand": "Unknown",
+    "ftypBoxSize": 0,
+    "ftypBoxType": "",
+    "majorBrand": "",
     "minorVersion": 0,
-    "sampleRate": 0,
-    "channels": 0,
-    "bitDepth": 16,
-    "duration": 0,
-    "boxSize": 0,
-    "boxType": "",
-    "byteRate": 0,
-    "samplesPerSecond": 0
+    "isM4A": false,
+    "isM4B": false,
+    "isM4P": false
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Box Size",
+      "name": "ftyp Box Size",
       "offset": 0,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of ftyp box",
-      "storeAs": "boxSize",
+      "opacity": 0.35,
+      "description": "Size in bytes of the ftyp (File Type) box, as a 32-bit big-endian unsigned integer. Includes the 4-byte size field itself, the 4-byte box type, 4-byte major brand, 4-byte minor version, and all compatible brand entries. Typical ftyp box size is 20-36 bytes.",
+      "storeAs": "ftypBoxSize",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "signature",
-      "name": "Box Type",
+      "name": "ftyp Box Type",
       "offset": 4,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "ftyp box identifier",
-      "storeAs": "boxType",
+      "opacity": 0.45,
+      "description": "ISOBMFF box type identifier: ASCII 'ftyp' (0x66 0x74 0x79 0x70). The 'ftyp' box must be the first box in any MPEG-4 Part 14 file. It declares the file's brand and compatible formats. Without 'ftyp', an MP4-family file may still be valid but lacks explicit format declaration.",
+      "storeAs": "ftypBoxType",
       "valueType": "ascii"
     },
     {
@@ -92,78 +78,225 @@
       "name": "Major Brand",
       "offset": 8,
       "length": 4,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "M4A brand identifier",
+      "color": "#FFE66D",
+      "opacity": 0.40,
+      "description": "Primary format brand as a 4-byte ASCII code identifying the best specification for this file. 'M4A ' (0x4D344120) = iTunes AAC audio, 'M4B ' (0x4D344220) = iTunes audiobook with chapter support, 'M4P ' (0x4D345020) = FairPlay DRM-protected iTunes purchase.",
       "storeAs": "majorBrand",
+      "valueType": "ascii",
+      "valueMap": {
+        "M4A ": "M4A — iTunes AAC audio (Apple lossless or AAC-LC)",
+        "M4B ": "M4B — iTunes audiobook (chapters + bookmarking support)",
+        "M4P ": "M4P — FairPlay DRM-protected iTunes purchase",
+        "mp42": "mp42 — MPEG-4 version 2 base format",
+        "isom": "isom — ISO Base Media File Format",
+        "aac ": "aac  — AAC audio in ISOBMFF container"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Minor version of the major brand specification as a 32-bit big-endian unsigned integer. Informational — decoders should not use this value to determine compatibility. Most iTunes files have minor version 0.",
+      "storeAs": "minorVersion",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Compatible Brand 1",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "First compatible brand — additional format specifications this file is compatible with. Common values: 'M4A ', 'mp42', 'isom'. The compatible brands list continues in 4-byte increments until the ftyp box ends.",
+      "storeAs": "compatBrand1",
       "valueType": "ascii"
     },
     {
-      "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Calculated byte rate"
+      "type": "computeFromVariables",
+      "name": "Is M4A",
+      "expression": "calc:majorBrand == 'M4A '",
+      "storeAs": "isM4A",
+      "description": "True when majorBrand is 'M4A ' — standard iTunes AAC audio file"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is M4B",
+      "expression": "calc:majorBrand == 'M4B '",
+      "storeAs": "isM4B",
+      "description": "True when majorBrand is 'M4B ' — iTunes audiobook with chapter support"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is M4P",
+      "expression": "calc:majorBrand == 'M4P '",
+      "storeAs": "isM4P",
+      "description": "True when majorBrand is 'M4P ' — FairPlay DRM-protected iTunes purchase"
     },
     {
       "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
+      "name": "ftyp Box Size",
+      "variable": "ftypBoxSize",
+      "description": "Size of the ftyp box in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Major Brand",
+      "variable": "majorBrand",
+      "description": "Primary ISOBMFF brand: M4A =audio, M4B =audiobook, M4P =DRM"
+    },
+    {
+      "type": "metadata",
+      "name": "Minor Version",
+      "variable": "minorVersion",
+      "description": "Minor version of the major brand specification"
     }
   ],
-  "software": [
-    "iTunes",
-    "Apple Music",
-    "VLC",
-    "All modern players"
+  "assertions": [
+    {
+      "name": "ftyp box type is 'ftyp'",
+      "expression": "ftypBoxType == 'ftyp'",
+      "severity": "error",
+      "message": "Box type at offset 4 must be 'ftyp' (0x66747970) — not a valid MPEG-4 audio file"
+    },
+    {
+      "name": "Major brand is known M4A variant",
+      "expression": "majorBrand == 'M4A ' || majorBrand == 'M4B ' || majorBrand == 'M4P '",
+      "severity": "warning",
+      "message": "Major brand is not a recognized M4A variant — may be a generic MP4 file rather than iTunes audio"
+    },
+    {
+      "name": "ftyp box size is reasonable",
+      "expression": "ftypBoxSize >= 16 && ftypBoxSize <= 256",
+      "severity": "warning",
+      "message": "ftyp box size outside normal range (16-256 bytes)"
+    }
   ],
-  "format_relationships": {
-    "container_for": [
-      "AAC",
-      "ALAC"
-    ],
-    "based_on": "MP4",
-    "apple_format": true
+  "versionDetection": {
+    "field": "majorBrand",
+    "versions": {
+      "M4A ": "M4A — iTunes AAC audio",
+      "M4B ": "M4B — iTunes audiobook",
+      "M4P ": "M4P — FairPlay DRM audio",
+      "mp42": "MPEG-4 Part 2 base",
+      "isom": "ISOBMFF generic"
+    }
   },
-  "MimeTypes": [
-    "audio/m4a"
-  ],
-  "Software": [
-    "VLC",
-    "Audacity",
-    "Foobar2000",
-    "MediaMonkey",
-    "Winamp"
-  ],
-  "UseCases": [
-    "Music playback",
-    "Audio editing",
-    "Sound production",
-    "Streaming"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ftyp Box",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "AudioFormat": true
+  "inspector": {
+    "badge": "majorBrand",
+    "primaryField": "ftypBoxSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ISOBMFF ftyp Box",
+        "icon": "\uE71B",
+        "fields": ["ftypBoxType", "ftypBoxSize", "majorBrand", "minorVersion"]
+      },
+      {
+        "title": "M4A Variant",
+        "icon": "\uE8A5",
+        "fields": ["isM4A", "isM4B", "isM4P"]
+      }
+    ]
   },
+  "exportTemplates": [
+    {
+      "name": "ftyp Box (JSON)",
+      "format": "json",
+      "fields": ["ftypBoxType", "ftypBoxSize", "majorBrand", "minorVersion", "isM4A", "isM4B", "isM4P"]
+    },
+    {
+      "name": "FTYP_BOX (C struct)",
+      "format": "c-struct",
+      "structName": "isobmff_ftyp_box",
+      "fields": ["ftypBoxSize", "ftypBoxType", "majorBrand", "minorVersion"]
+    }
+  ],
   "forensic": {
     "category": "audio",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "DRM-protected M4P file",
+        "condition": "isM4P == true",
+        "severity": "info",
+        "description": "This is a FairPlay DRM-protected iTunes purchase (M4P). Audio can only be played on authorized devices. Decryption requires Apple authentication."
+      },
+      {
+        "name": "Invalid ftyp box type",
+        "condition": "ftypBoxType != 'ftyp'",
+        "severity": "error",
+        "description": "Box type at offset 4 is not 'ftyp' — either the file does not start with an ftyp box or the header is corrupted."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "MPEG-4 Audio - AAC audio container",
+    "analysisContext": "M4A/ISOBMFF layout (all values big-endian): ftyp_box_size(4,BE) + 'ftyp'(4) + major_brand(4,ASCII: 'M4A '/'M4B '/'M4P ') + minor_version(4,BE) + compatible_brands(4B each, until end of ftyp box). 'moov' box follows ftyp: moov_size(4,BE) + 'moov'(4) + mvhd(movie header, duration in 100ns units) + trak(track) + udta/ilst(iTunes metadata tags). Audio codec info in trak>mdia>minf>stbl>stsd — look for 'mp4a' (AAC) or 'alac' boxes. iTunes tags in udta>meta>ilst: ©nam=title, ©ART=artist, ©alb=album, trkn=track number.",
     "suggestedInspections": [
-      "Validate M4A Audio header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+      "Verify ftyp box: bytes 4-7 must be 0x66747970 ('ftyp')",
+      "Read major brand at offset 8: 'M4A ' (AAC), 'M4B ' (audiobook), 'M4P ' (DRM)",
+      "For M4P: DRM encrypted — cannot extract raw audio without FairPlay authorization",
+      "Navigate to moov>trak>mdia>minf>stbl>stsd to find audio codec box ('mp4a' or 'alac')",
+      "Check udta>meta>ilst for iTunes metadata tags"
     ]
+  },
+  "software": [
+    "iTunes / Apple Music",
+    "QuickTime Player",
+    "VLC media player",
+    "FFmpeg",
+    "foobar2000",
+    "MediaInfo",
+    "Handbrake"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".m4a", ".m4b", ".m4p"],
+    "relatedFormats": ["AAC", "ALAC", "MP4", "AVIF"],
+    "parentFormat": "ISO Base Media File Format (ISOBMFF) — ISO/IEC 14496-12",
+    "note": "M4A is Apple's branding for MPEG-4 audio containers. The file is structurally identical to .mp4 but uses the M4A  brand to signal audio-only content to iTunes."
+  },
+  "MimeTypes": [
+    "audio/m4a",
+    "audio/x-m4a",
+    "audio/mp4"
+  ],
+  "UseCases": [
+    "iTunes Store music purchases",
+    "Apple Music library (AAC-LC at 256 kbps)",
+    "Audiobook distribution (M4B with chapters)",
+    "Apple Lossless (ALAC) archiving",
+    "iPhone/iPad ringtones (.m4r variant)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-14",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "ContainerFormat": "ISOBMFF (ISO Base Media File Format)",
+    "Endianness": "big-endian (all ISOBMFF box fields)",
+    "AudioCodecs": "AAC-LC (lossy), HE-AAC v1/v2, ALAC (lossless)",
+    "DRMSystem": "FairPlay (M4P variant)",
+    "ChapterSupport": true,
+    "MetadataFormat": "iTunes ilst atoms (udta > meta > ilst)"
   }
 }

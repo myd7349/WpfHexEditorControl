@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    APNG Animated Image
-   Category:  Images
-   Ext:       .apng, .png
-   Editor:    image-viewer
-   Desc:      Animated Portable Network Graphics
-   Variables: currentOffset, imageWidth, imageHeight, totalPixels, calculatedCRC32, ihdrCRC, crc32Valid, pngSignature, ihdrChunkLength, ihdrType
-   Detection: signature=89504E470D0A1A0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "APNG Animated Image",
   "version": "2.3",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -122,7 +112,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".apng",

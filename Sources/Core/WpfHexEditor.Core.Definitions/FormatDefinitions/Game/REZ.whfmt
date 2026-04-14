@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Game Resource Archive
-   Category:  Game
-   Ext:       .rez
-   Editor:    hex-editor
-   Desc:      LithTech/various game resource archive
-   Variables: currentOffset, fileCount, totalSize, compressionMethod, headerCRC, header, formattedSize
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Game Resource Archive",
   "version": "1.13",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -91,7 +81,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".rez"

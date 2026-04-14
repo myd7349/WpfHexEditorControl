@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Adobe Flash SWF
-   Category:  Programming
-   Ext:       .swf
-   Editor:    hex-editor
-   Desc:      Adobe Flash/Shockwave Flash file
-   Variables: currentOffset, machineType, sectionCount, entryPoint, swfSignature, version, fileLength
-   Detection: signature=465753 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Adobe Flash SWF",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -96,7 +86,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".swf"

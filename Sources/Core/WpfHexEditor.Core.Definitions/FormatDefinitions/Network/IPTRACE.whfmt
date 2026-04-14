@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    AIX iptrace
-   Category:  Network
-   Ext:       .iptrace
-   Editor:    hex-editor
-   Desc:      AIX iptrace network capture format
-   Variables: currentOffset, fileCount, totalSize, compressionMethod, headerCRC, iptraceSignature, version, endianFlag, packetLength, packetType, interfaceType, formattedSize
-   Detection: signature=69707472616365 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AIX iptrace",
   "version": "1.13",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -150,7 +140,7 @@
     "Wireshark",
     "tcpdump"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Network",
     "extensions": [
       ".iptrace"

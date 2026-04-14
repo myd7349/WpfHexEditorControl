@@ -1,56 +1,58 @@
-﻿/* ============================================================
-   Format:    Rich Text Format
-   Category:  Documents
-   Ext:       .rtf
-   Editor:    hex-editor
-   Desc:      Rich Text Format document
-   Variables: currentOffset, version, title, author, preferredEditor, subject, pages, defaultFont, rtfHeader
-   Detection: signature=7B5C727466 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Rich Text Format",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ".rtf"
+    ".rtf",
+    ".rtx"
   ],
-  "description": "Rich Text Format document",
+  "description": "Rich Text Format (RTF) — a portable, text-based document format developed by Microsoft. An RTF file is an ASCII/UTF-8 text stream of groups (delimited by curly braces {}), control words (\\word), control symbols (\\<char>), and literal text. The mandatory header is the group {\\rtf<N> where N is the RTF version number (always 1 for modern RTF). Control words relevant for parsing: \\ansi/\\mac/\\pc/\\pca (character set), \\deff (default font), \\fonttbl (font table), \\colortbl (color table), \\info (document metadata), \\pard (paragraph reset), \\par (paragraph break), \\pict (picture), \\object (OLE object), \\fldinst/\\fldrslt (field instruction/result), \\u (Unicode character). RTF supports embedding binary objects via \\bin N (N bytes of binary data follow) and \\objdata (hex-encoded OLE stream).",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "document-editor",
   "references": {
     "specifications": [
-      "Rich Text Format Format"
+      "Rich Text Format (RTF) Specification v1.9.1 — Microsoft",
+      "[MS-RTF] Rich Text Format Extensions v10.0 — Microsoft Open Specifications",
+      "RTF Pocket Guide — Sean M. Burke, O'Reilly Media"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/RTF"
+      "https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-rtf/",
+      "https://en.wikipedia.org/wiki/Rich_Text_Format",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000023.shtml",
+      "https://www.biblioscape.com/rtf15_spec.htm"
     ]
   },
   "detection": {
-    "signature": "7B5C727466",
-    "offset": 0,
-    "required": true,
+    "signatures": [
+      {
+        "value": "7B5C727466",
+        "offset": 0,
+        "label": "{\\rtf ASCII header",
+        "weight": 1.0
+      },
+      {
+        "value": "7B5C7274663131",
+        "offset": 0,
+        "label": "{\\rtf11 RTF version 1.1+",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 6.5 },
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "note": "RTF signature is '{\\rtf' = 7B 5C 72 74 66. Must appear at offset 0. Immediately after '{\\rtf' comes the version digit (ASCII '1' = 0x31 for RTF 1.x). The file is valid RTF only if the braces are balanced at top level."
     }
   },
-  "functions": {
-    "extractASCIIString": "Extract RTF control words and text content",
-    "extractUTF8String": "Extract Unicode text from RTF \\uN keywords",
-    "readUInt8": "Read version number and control word parameters"
-  },
   "variables": {
-    "currentOffset": 0,
-    "version": 1,
-    "title": "Unknown",
-    "author": "Unknown",
-    "preferredEditor": "document-editor",
-    "subject": "Unknown",
-    "pages": 0,
-    "defaultFont": 0,
-    "rtfHeader": ""
+    "rtfHeader": "",
+    "rtfVersionByte": 0,
+    "rtfVersion": 0,
+    "hasUnicodeContent": false,
+    "isMalformed": false
   },
   "blocks": [
     {
@@ -59,95 +61,224 @@
       "offset": 0,
       "length": 5,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "{\\rtf signature",
+      "opacity": 0.45,
+      "description": "RTF file signature: '{\\rtf' (0x7B 0x5C 0x72 0x74 0x66). The opening curly brace starts the top-level group; '\\rtf' is the first control word. This 5-byte sequence uniquely identifies all RTF files regardless of version or character set.",
       "storeAs": "rtfHeader",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "RTF Version Byte",
       "offset": 5,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "RTF version number (ASCII)",
-      "storeAs": "version",
-      "valueType": "uint8"
+      "opacity": 0.35,
+      "description": "ASCII digit immediately following '{\\rtf' — the RTF specification major version number. Almost always '1' (0x31 = ASCII 49). Other digits indicate non-standard versions. The full version string may be '1' for RTF 1.x (covering v1.0 through v1.9).",
+      "storeAs": "rtfVersionByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "49": "ASCII '1' — RTF version 1.x (all modern RTF files)",
+        "48": "ASCII '0' — RTF version 0 (obsolete, pre-Word 2.0)"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "RTF Version",
+      "expression": "calc:rtfVersionByte - 48",
+      "storeAs": "rtfVersion",
+      "description": "Numeric RTF version: version byte (ASCII) minus 48 gives the digit (e.g., byte=49 → version=1)"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Version 1",
+      "expression": "calc:rtfVersionByte == 49",
+      "storeAs": "hasUnicodeContent",
+      "description": "RTF 1.x supports Unicode escape sequences (\\uN) — this approximates the Unicode-capable flag"
+    },
+    {
+      "type": "metadata",
+      "name": "RTF Header",
+      "variable": "rtfHeader",
+      "description": "RTF file opening signature ('{\\rtf')"
+    },
+    {
+      "type": "metadata",
+      "name": "RTF Version",
+      "variable": "rtfVersion",
+      "description": "RTF specification major version (numeric)"
+    },
+    {
+      "type": "metadata",
+      "name": "Version Byte",
+      "variable": "rtfVersionByte",
+      "description": "ASCII byte of the version digit ('1' = 0x31 for RTF 1.x)"
     }
   ],
-  "software": [
-    "WordPad",
-    "Microsoft Word",
-    "LibreOffice",
-    "Text editors"
+  "assertions": [
+    {
+      "name": "RTF magic valid",
+      "expression": "rtfHeader == '{\\rtf'",
+      "severity": "error",
+      "message": "RTF signature must be '{\\rtf' (7B 5C 72 74 66) at offset 0 — not a valid RTF file"
+    },
+    {
+      "name": "RTF version is 1",
+      "expression": "rtfVersionByte == 49",
+      "severity": "warning",
+      "message": "RTF version byte is not '1' (0x31) — RTF 1.x is the only widely supported version; other values are non-standard"
+    }
   ],
-  "format_relationships": {
-    "microsoft_format": true,
-    "text_based": true,
-    "predecessor_to": "DOCX",
-    "universal_support": true
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "RTF Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "RTF Body",
+        "offset": 6,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "rtfVersion",
+    "primaryField": "rtfVersionByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "RTF Identity",
+        "icon": "\uE9D9",
+        "fields": ["rtfHeader", "rtfVersionByte", "rtfVersion"]
+      }
+    ]
+  },
+  "versionDetection": {
+    "field": "rtfVersionByte",
+    "versions": {
+      "49": "RTF v1.x (all modern RTF files — Word 2.0 through current)",
+      "48": "RTF v0 (obsolete — pre-Word 2.0)",
+      "50": "RTF v2 (non-standard)"
+    }
+  },
+  "exportTemplates": [
+    {
+      "name": "RTF Header (JSON)",
+      "format": "json",
+      "fields": ["rtfHeader", "rtfVersionByte", "rtfVersion"]
+    },
+    {
+      "name": "Python RTF check",
+      "format": "python-bytes",
+      "fields": ["rtfHeader", "rtfVersionByte"]
+    }
+  ],
+  "forensic": {
+    "category": "document",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Possible OLE object embedding",
+        "condition": "rtfVersionByte == 49",
+        "severity": "info",
+        "description": "RTF 1.x supports \\object groups embedding OLE objects. OLE objects in RTF have been the primary attack vector for many critical vulnerabilities (CVE-2017-11882, CVE-2018-0802 Equation Editor, CVE-2014-1761)."
+      },
+      {
+        "name": "Non-standard RTF version",
+        "condition": "rtfVersionByte != 49",
+        "severity": "warning",
+        "description": "RTF version byte is not '1' (0x31). Uncommon values may indicate a crafted file designed to confuse RTF parsers."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2017-11882: Equation Editor (EQNEDT32.EXE) stack overflow via OLE \\object in RTF",
+      "CVE-2018-0802: Equation Editor font name buffer overflow — same OLE vector",
+      "CVE-2014-1761: RTF listoverridecount/listid confusion leading to memory corruption in Word",
+      "CVE-2010-3333: RTF pFragments stack overflow in Word 2002-2007",
+      "\\\\bin directive abuse: binary payload hidden after \\\\bin N control word",
+      "Unicode obfuscation: \\\\u-1-N constructs or \\\\*\\\\generator spoofing parser state"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "RTF is a text-based format: all content is 7-bit ASCII or escaped Unicode. Structure: balanced curly-brace groups. Key control words to look for: \\object (OLE object — CVE-2017-11882 vector), \\pict (embedded image), \\fldinst (field code — potential command injection), \\bin N (N bytes of raw binary data inline). Hex-encoded OLE data in \\objdata{} or \\picdata{}. Unicode: \\uN? where N is UTF-16 code point. To analyze: extract \\objdata as hex, decode as OLE stream, identify CLSID of embedded OLE server. Tools: rtfobj (oletools), rtf-parser, python-rtf.",
+    "knownVulnerabilities": [
+      "CVE-2017-11882 + CVE-2018-0802: Equation Editor RCE via \\object\\objclass Equation.3 in RTF",
+      "CVE-2010-3333: pFragments stack overflow — most exploited 2010-2012",
+      "CVE-2014-1761: list table corruption enabling arbitrary write — used in Red October APT"
+    ],
+    "suggestedInspections": [
+      "Confirm '{\\rtf1' at offset 0 (7B 5C 72 74 66 31)",
+      "Grep for '\\object' keyword — presence of OLE objects warrants deep inspection",
+      "Extract \\objdata{} hex content, decode, check OLE CLSID: {0003000B-...} = Equation Editor (known exploit target)",
+      "Scan for '\\fldinst' groups containing INCLUDEPICTURE, INCLUDETEXT, or DDE commands",
+      "Look for \\bin N patterns — may hide binary shellcode after N as raw bytes",
+      "Check for obfuscation: excessive \\\\* groups (destinations), \\\\u escape sequences hiding control words"
+    ]
+  },
+  "software": [
+    "Microsoft Word (native format until Word 2007)",
+    "WordPad (Windows built-in)",
+    "LibreOffice Writer",
+    "Apple TextEdit (macOS)",
+    "AbiWord",
+    "oletools/rtfobj (forensic)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".rtf", ".rtx"],
+    "relatedFormats": ["DOC", "DOCX"],
+    "note": "RTF was the cross-platform document interchange format before HTML and OOXML. Still widely supported and used for compatibility. Because RTF is text-based, it can survive email filters that block binary .doc/.exe files — making it a persistent phishing vector."
   },
   "MimeTypes": [
     "application/rtf",
     "text/rtf"
   ],
-  "Software": [
-    "Microsoft Word",
-    "WordPad",
-    "LibreOffice",
-    "TextEdit"
-  ],
   "UseCases": [
-    "Cross-platform documents",
-    "Text formatting",
-    "Legacy compatibility"
+    "Cross-platform document exchange",
+    "Email attachment compatibility (widely supported)",
+    "Legacy document preservation",
+    "Clipboard format for formatted text (Word, WordPad)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "DocumentFormat": true
-  },
-  "forensic": {
-    "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Rich Text Format document",
-    "suggestedInspections": [
-      "Validate Rich Text Format file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
-    ]
+    "DocumentFormat": true,
+    "Encoding": "ASCII text with escaped Unicode",
+    "HasHeader": true,
+    "HeaderSize": "5 bytes fixed ('{\\rtf' minimum)",
+    "MacroCapable": false,
+    "OLECapable": true
   },
   "documentSchema": {
     "engine": "rtf",
     "blockMappings": [
-      { "rtfGroup": "\pard",  "blockKind": "paragraph" },
-      { "rtfGroup": "\trowd", "blockKind": "table-row" },
-      { "rtfGroup": "\pict",  "blockKind": "image" }
+      { "rtfGroup": "\\pard", "blockKind": "paragraph" },
+      { "rtfGroup": "\\trowd", "blockKind": "table-row" },
+      { "rtfGroup": "\\pict", "blockKind": "image" }
     ],
     "serializationRules": {
-      "paragraph":  { "prefix": "\pard\plain ",     "suffix": "\par\n" },
-      "heading":    { "prefix": "\pard\sb240\sa60\b ", "suffix": "\b0\par\n" },
-      "table-row":  { "prefix": "\trowd",             "suffix": "\row\n" },
-      "table-cell": { "prefix": "\pard\intbl ",      "suffix": "\cell\n" }
+      "paragraph": { "prefix": "\\pard\\plain ", "suffix": "\\par\n" },
+      "heading": { "prefix": "\\pard\\sb240\\sa60\\b ", "suffix": "\\b0\\par\n" },
+      "table-row": { "prefix": "\\trowd", "suffix": "\\row\n" },
+      "table-cell": { "prefix": "\\pard\\intbl ", "suffix": "\\cell\n" }
     },
     "attributeSerializationRules": {
-      "bold":          { "wrap": "\b {text}\b0 " },
-      "italic":        { "wrap": "\i {text}\i0 " },
-      "underline":     { "wrap": "\ul {text}\ulnone " },
-      "strikethrough": { "wrap": "\strike {text}\strike0 " },
-      "fontSize":      { "prefix": "\fs{halfPoints} ", "transform": "pointsToHalfPoints" },
-      "align":         { "left": "\ql", "center": "\qc", "right": "\qr", "justify": "\qj" }
+      "bold": { "wrap": "\\b {text}\\b0 " },
+      "italic": { "wrap": "\\i {text}\\i0 " },
+      "underline": { "wrap": "\\ul {text}\\ulnone " },
+      "strikethrough": { "wrap": "\\strike {text}\\strike0 " },
+      "fontSize": { "prefix": "\\fs{halfPoints} ", "transform": "pointsToHalfPoints" },
+      "align": { "left": "\\ql", "center": "\\qc", "right": "\\qr", "justify": "\\qj" }
     }
   }
 }

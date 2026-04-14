@@ -1,20 +1,4 @@
-/* ============================================================
-   Format:    Generic Tile Set (Multi-Engine)
-   Category:  Game
-   Ext:       .til
-   Editor:    tile-editor
-   Desc:      Generic tile graphics blob used by multiple retro and indie game engines.
-              Used by RPG Maker (tileset binary), Tiled Map Editor tile exports,
-              GameMaker tile data, and numerous custom engines.
-              No fixed standard — may start with a 4-byte uint32 LE tile count header
-              or be a pure raw binary tile blob.
-              BPP varies by engine: 2bpp and 4bpp most common.
-   Variables: fileSize, tileCount2bpp, tileCount4bpp, tileCount8bpp,
-              possibleHeaderSize, formattedSize
-   Detection: extension-only (no magic bytes — format is engine-dependent)
-   Updated:   2026-04-13
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Generic Tile Set",
   "version": "2.2",
@@ -63,7 +47,7 @@
   "detection": {
     "required": false,
     "validation": {
-      "min_file_size": 16,
+      "minFileSize": 16,
       "notes": "No magic bytes. Detected by .til extension only. File structure is engine-dependent. Check first 4 bytes: if uint32 LE value equals (fileSize - 4) / bytesPerTile, likely has a tile-count header."
     }
   },
@@ -243,7 +227,7 @@
       "Try TileEditor at multiple BPP values (2, 4, 8) and look for recognizable visual patterns"
     ]
   },
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "parentFormats": ["Engine-specific project files (.rmxp, .rpgproject, .yyp, .tmx)"],
     "relatedFormats": [".chr", ".gfx", ".pal", ".plt", ".tmx", ".yy"],

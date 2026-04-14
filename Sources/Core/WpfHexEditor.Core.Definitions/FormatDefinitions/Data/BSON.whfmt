@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    BSON (Binary JSON)
-   Category:  Data
-   Ext:       .bson
-   Editor:    hex-editor
-   Desc:      Binary JSON format used by MongoDB
-   Variables: currentOffset, machineType, sectionCount, timestamp, entryPoint
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "BSON (Binary JSON)",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -76,7 +66,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".bson"

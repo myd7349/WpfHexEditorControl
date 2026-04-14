@@ -1,154 +1,355 @@
-/* ============================================================
-   Format:    ICO Icon
-   Category:  Images
-   Ext:       .ico
-   Editor:    image-viewer
-   Desc:      Windows Icon format
-   Variables: currentOffset, imageCount, type
-   Detection: signature=00000100 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
-  "formatName": "ICO Icon",
-  "version": "1.11",
+  "formatName": "ICO Windows Icon",
+  "version": "2.0",
   "extensions": [
-    ".ico"
+    ".ico",
+    ".cur"
   ],
-  "description": "Windows Icon format",
+  "description": "Windows Icon container format (ICONDIR). Stores multiple images at different sizes and color depths in a single file. Each image entry can be a Windows BMP-derived DIB or a full PNG (since Vista). Also serves as .cur cursor files when type field = 2. Used as browser favicons and application icons.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "Windows ICO File Format Specification",
-      "Microsoft Icon Format",
-      "ICO/CUR File Structure"
+      "Microsoft ICONDIR / ICONDIRENTRY format (undocumented but derived from Windows SDK headers)",
+      "Raymond Chen — The Old New Thing: ICO format internals",
+      "Kaitai Struct ICO format specification"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/ICO_(file_format)",
       "https://formats.kaitai.io/ico/",
       "https://docs.fileformat.com/image/ico/",
-      "https://learn.microsoft.com/en-us/windows/win32/uxguide/vis-icons"
+      "https://devblogs.microsoft.com/oldnewthing/20101022-00/?p=12473"
     ]
   },
   "detection": {
-    "signature": "00000100",
-    "offset": 0,
+    "signatures": [
+      { "value": "00000100", "offset": 0, "label": "ICO icon file header", "weight": 1.0 },
+      { "value": "00000200", "offset": 0, "label": "CUR cursor file header", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 22,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "readUInt32LE": "Read image count (little-endian)"
+    "readUInt16LE": "Read 16-bit little-endian values from ICONDIR header",
+    "readUInt32LE": "Read 32-bit little-endian image offsets and sizes"
   },
   "variables": {
     "currentOffset": 0,
+    "reserved": 0,
+    "type": 0,
     "imageCount": 0,
-    "type": 0
+    "entryWidth": 0,
+    "entryHeight": 0,
+    "entryColorCount": 0,
+    "entryPlanes": 0,
+    "entryBitCount": 0,
+    "entrySizeInBytes": 0,
+    "entryImageOffset": 0
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Reserved",
+      "name": "Reserved (must be 0)",
       "offset": 0,
       "length": 2,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Must be 0"
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Reserved ICONDIR field — must be zero in all valid ICO and CUR files. Non-zero values indicate file corruption, non-standard creation tools, or embedded data. Bytes 0x00 0x00 in little-endian representation.",
+      "storeAs": "reserved",
+      "valueType": "uint16",
+      "endianness": "little",
+      "validation": {
+        "allowedValues": [0]
+      }
     },
     {
-      "type": "signature",
-      "name": "Type",
+      "type": "field",
+      "name": "Image Type",
       "offset": 2,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "1 for icon, 2 for cursor",
+      "opacity": 0.45,
+      "description": "Identifies whether this file is an icon container (type 1) or a cursor container (type 2). The .ico extension corresponds to type=1 and .cur corresponds to type=2. Any other value is invalid per the Microsoft specification. Stored little-endian.",
       "storeAs": "type",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "1": "ICO — Icon file (.ico)",
+        "2": "CUR — Cursor file (.cur)"
+      }
     },
     {
       "type": "field",
       "name": "Image Count",
       "offset": 4,
       "length": 2,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Number of images in file",
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Number of image entries in the ICONDIR directory, immediately following this header. Each entry is 16 bytes (ICONDIRENTRY). Valid range is 1 to 255 — zero images is technically invalid and values above 255 are unusual (Windows limits display to first 20 or so entries). A typical multi-resolution icon has 6-10 images (16x16, 32x32, 48x48, 64x64, 128x128, 256x256).",
       "storeAs": "imageCount",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "repeating",
+      "name": "Image Directory Entry",
+      "countVar": "imageCount",
+      "offsetFrom": 6,
+      "entrySize": 16,
+      "color": "#FFE66D",
+      "opacity": 0.25,
+      "colorCycle": ["#FFE66D", "#95E1D3", "#C7CEEA", "#FFA07A", "#98D8C8", "#B8B8FF"],
+      "indexVar": "entryIndex",
+      "description": "ICONDIRENTRY structure (16 bytes each). Describes one image stored in the ICO container: its dimensions, color depth, data size, and byte offset from the start of the file.",
+      "fields": [
+        {
+          "name": "Width",
+          "length": 1,
+          "valueType": "uint8",
+          "storeAs": "entryWidth",
+          "description": "Image width in pixels. Value 0 is interpreted as 256 pixels wide (for 256x256 PNG images in the container since Windows Vista)."
+        },
+        {
+          "name": "Height",
+          "length": 1,
+          "valueType": "uint8",
+          "storeAs": "entryHeight",
+          "description": "Image height in pixels. Value 0 is interpreted as 256 pixels tall. ICO images are traditionally square (width == height)."
+        },
+        {
+          "name": "Color Count",
+          "length": 1,
+          "valueType": "uint8",
+          "storeAs": "entryColorCount",
+          "description": "Number of colors in the image palette. Value 0 means the image uses more than 256 colors (true-color 24bpp or 32bpp with alpha). Non-zero values indicate indexed-color image with palette."
+        },
+        {
+          "name": "Reserved Entry",
+          "length": 1,
+          "valueType": "uint8",
+          "description": "Reserved byte — must be 0 in ICO files. In CUR files, this field is unused. Non-zero value indicates non-standard file."
+        },
+        {
+          "name": "Color Planes (ICO) / Hotspot X (CUR)",
+          "length": 2,
+          "valueType": "uint16",
+          "storeAs": "entryPlanes",
+          "endianness": "little",
+          "description": "For ICO: number of color planes (must be 0 or 1 for Windows DIB images). For CUR: the horizontal hotspot pixel X coordinate, measured from left edge of the cursor image."
+        },
+        {
+          "name": "Bits per Pixel (ICO) / Hotspot Y (CUR)",
+          "length": 2,
+          "valueType": "uint16",
+          "storeAs": "entryBitCount",
+          "endianness": "little",
+          "description": "For ICO: bits per pixel of the image data (1, 4, 8, 24, or 32). 32bpp images include an alpha channel. For CUR: the vertical hotspot pixel Y coordinate, measured from top edge.",
+          "valueMap": {
+            "1": "1 bpp — 2-color monochrome",
+            "4": "4 bpp — 16-color palette",
+            "8": "8 bpp — 256-color palette",
+            "24": "24 bpp — True color (RGB)",
+            "32": "32 bpp — True color with alpha (RGBA)"
+          }
+        },
+        {
+          "name": "Image Data Size",
+          "length": 4,
+          "valueType": "uint32",
+          "storeAs": "entrySizeInBytes",
+          "endianness": "little",
+          "description": "Total size in bytes of the image data for this entry, starting at the offset specified in ImageOffset. For BMP-derived DIB entries, includes BITMAPINFOHEADER. For PNG entries (256x256 Vista+ style), this is the full PNG file size."
+        },
+        {
+          "name": "Image Data Offset",
+          "length": 4,
+          "valueType": "uint32",
+          "storeAs": "entryImageOffset",
+          "endianness": "little",
+          "description": "Byte offset from the beginning of the ICO file to the start of this image's raw data. First image typically starts at offset 6 + (imageCount * 16) — immediately after the directory. Offsets must be sequential and non-overlapping."
+        }
+      ]
     },
     {
       "type": "metadata",
-      "name": "Image Count",
+      "name": "Total Images",
       "variable": "imageCount",
-      "description": "Number of icon images in the file"
+      "description": "Total number of icon/cursor image entries in this container file"
+    },
+    {
+      "type": "metadata",
+      "name": "Container Type",
+      "variable": "type",
+      "description": "File type: 1=ICO icon, 2=CUR cursor"
     }
   ],
-  "software": [
-    "Windows",
-    "Icon editors",
-    "GIMP",
-    "Photoshop"
+  "assertions": [
+    {
+      "name": "Reserved field must be zero",
+      "expression": "reserved == 0",
+      "severity": "error",
+      "message": "ICONDIR reserved field (bytes 0-1) must be 0x0000 in all valid ICO/CUR files. Non-zero indicates corruption or non-standard file."
+    },
+    {
+      "name": "Type must be 1 (icon) or 2 (cursor)",
+      "expression": "type == 1 || type == 2",
+      "severity": "error",
+      "message": "ICONDIR type field must be 1 (ICO icon) or 2 (CUR cursor). Any other value is invalid per the Windows specification."
+    },
+    {
+      "name": "Image count must be positive",
+      "expression": "imageCount > 0 && imageCount <= 256",
+      "severity": "warning",
+      "message": "ICO image count should be 1-256. Zero images is invalid; values above 256 are non-standard."
+    }
   ],
-  "format_relationships": {
-    "microsoft_format": true,
-    "related": [
-      "CUR"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ICONDIR Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "First ICONDIRENTRY",
+        "offset": 6,
+        "icon": "\uE8A5",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "First Image Data",
+        "offsetVar": "entryImageOffset",
+        "icon": "\uE790",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "type",
+    "primaryField": "imageCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ICO Directory Header",
+        "icon": "\uE71B",
+        "fields": ["reserved", "type", "imageCount"]
+      },
+      {
+        "title": "First Image Entry",
+        "icon": "\uE790",
+        "fields": ["entryWidth", "entryHeight", "entryColorCount", "entryBitCount", "entrySizeInBytes", "entryImageOffset"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ICO Header (JSON)",
+      "format": "json",
+      "fields": ["reserved", "type", "imageCount", "entryWidth", "entryHeight", "entryColorCount", "entryPlanes", "entryBitCount", "entrySizeInBytes", "entryImageOffset"]
+    },
+    {
+      "name": "ICONDIR (C struct)",
+      "format": "c-struct",
+      "structName": "ICONDIR",
+      "fields": ["reserved", "type", "imageCount"]
+    },
+    {
+      "name": "ICONDIRENTRY (C struct)",
+      "format": "c-struct",
+      "structName": "ICONDIRENTRY",
+      "fields": ["entryWidth", "entryHeight", "entryColorCount", "entryPlanes", "entryBitCount", "entrySizeInBytes", "entryImageOffset"]
+    },
+    {
+      "name": "Python ICO header check",
+      "format": "python-bytes",
+      "fields": ["reserved", "type", "imageCount"]
+    }
+  ],
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Reserved field non-zero",
+        "condition": "reserved != 0",
+        "severity": "warning",
+        "description": "ICONDIR reserved field is non-zero — possible embedded data, file corruption, or non-standard tool"
+      },
+      {
+        "name": "Excessive image count",
+        "condition": "imageCount > 20",
+        "severity": "info",
+        "description": "More than 20 images is unusual for standard ICO files. Could indicate a crafted file attempting to exploit icon parser."
+      },
+      {
+        "name": "Image offset out of directory bounds",
+        "condition": "entryImageOffset < 6 + imageCount * 16",
+        "severity": "error",
+        "description": "Image data offset overlaps with the directory entries — indicates a malformed or crafted ICO file"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "ICO files are simple directory containers. The ICONDIR header (6 bytes) is followed by imageCount ICONDIRENTRY records (16 bytes each), then the actual image data. Each image can be a Windows DIB (BMP-without-file-header) or a full PNG file (since Vista, for 256x256 and larger). CUR files are identical but type=2 and the Planes/BitCount fields encode cursor hotspot coordinates.",
+    "knownVulnerabilities": [
+      "CVE-2004-1305: Windows ICO parser integer overflow in LoadImage API",
+      "Malicious ICO files have historically been used to trigger parser vulnerabilities in browsers and Windows Explorer"
     ],
-    "used_in": "Windows executables"
+    "suggestedInspections": [
+      "Verify reserved field is 0x0000",
+      "Verify type is 1 (icon) or 2 (cursor)",
+      "Check that all image offsets are within file bounds and don't overlap directory",
+      "Check for PNG signature (\\x89PNG) at image data offsets — Vista+ style embedded PNG",
+      "For favicons: maximum size should be 64x64 or 32x32 for browser compatibility"
+    ]
+  },
+  "software": [
+    "Windows Explorer",
+    "GIMP",
+    "IcoFX",
+    "Paint.NET",
+    "Greenfish Icon Editor",
+    "Browsers (favicon)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".ico", ".cur"],
+    "relatedFormats": ["BMP", "PNG", "CUR"],
+    "microsoft_format": true
   },
   "MimeTypes": [
     "image/x-icon",
     "image/vnd.microsoft.icon"
   ],
-  "Software": [
-    "Paint.NET",
-    "GIMP",
-    "IcoFX",
-    "Browsers"
-  ],
   "UseCases": [
-    "Favicons",
-    "Windows icons",
-    "Application icons"
+    "Windows application icons",
+    "Browser favicons",
+    "Windows cursor files",
+    "Multi-resolution icon containers"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 35,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
+    "CompletenessScore": 85,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
     "AutoRefined": false
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "ICO Icon - image format",
-    "suggestedInspections": [
-      "Validate ICO Icon signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
-    ]
-  },
-  "navigation": {
-    "bookmarks": [
-      {
-        "name": "ICO Directory Header",
-        "offsetVar": "currentOffset",
-        "icon": ""
-      }
-    ]
   },
   "TechnicalDetails": {
     "ImagesFormat": true,
-    "Platform": "Windows"
+    "Platform": "Windows (cross-platform for favicons)",
+    "MaxImages": 256,
+    "MaxSize": "256x256 (PNG), no theoretical limit for DIB",
+    "SupportsAlpha": true
   }
 }

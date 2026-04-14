@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Gaussian Cube File
-   Category:  Science
-   Ext:       .cube, .cub
-   Editor:    hex-editor
-   Desc:      Gaussian volumetric data cube format
-   Variables: currentOffset, commentLine1, commentLine2
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Gaussian Cube File",
   "version": "1.13",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -70,7 +60,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Science",
     "extensions": [
       ".cube",

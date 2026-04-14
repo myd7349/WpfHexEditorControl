@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    RealMedia Variable Bitrate
-   Category:  Video
-   Ext:       .rmvb
-   Editor:    hex-editor
-   Desc:      RealMedia variable bitrate container developed by RealNetworks
-   Variables: rmfHeader
-   Detection: signature=2E524D46 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "RealMedia Variable Bitrate",
   "version": "1.13",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -61,7 +51,7 @@
     "VLC",
     "KMPlayer"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".rmvb"

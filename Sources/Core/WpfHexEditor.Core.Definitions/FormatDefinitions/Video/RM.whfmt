@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    RealMedia
-   Category:  Video
-   Ext:       .rm, .ra
-   Editor:    hex-editor
-   Desc:      RealMedia multimedia container format developed by RealNetworks
-   Variables: machineType, sectionCount, entryPoint, rmfHeader
-   Detection: signature=2E524D46 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "RealMedia",
   "version": "1.12",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -77,7 +67,7 @@
     "RealPlayer",
     "VLC"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".rm",

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Microsoft Access 2007+ Database
-   Category:  Database
-   Ext:       .accdb
-   Editor:    hex-editor
-   Desc:      Microsoft Access 2007+ database file
-   Variables: currentOffset, pageSize, pageCount, tableCount, version, aceDbSignature
-   Detection: signature=5374616E64617264204143452044617461626173 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Microsoft Access 2007+ Database",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 20,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -85,7 +75,7 @@
     "Microsoft Access",
     "MS Office"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "microsoft_format": true,
     "successor_to": "MDB",
     "access_2007_plus": true

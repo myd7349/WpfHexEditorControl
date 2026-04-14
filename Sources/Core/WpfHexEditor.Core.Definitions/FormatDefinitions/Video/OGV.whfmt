@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Ogg Video
-   Category:  Video
-   Ext:       .ogv, .ogm
-   Editor:    hex-editor
-   Desc:      Ogg container format for video, part of the Xiph.Org Foundation's Ogg project
-   Variables: oggHeader
-   Detection: signature=4F676753 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Ogg Video",
   "version": "1.13",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -61,7 +51,7 @@
     "Firefox",
     "Web browsers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".ogv",

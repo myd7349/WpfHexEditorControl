@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Sega Saturn Disc Image
-   Category:  Game
-   Ext:       .iso, .bin
-   Editor:    hex-editor
-   Desc:      Sega Saturn CD-ROM disc image format
-   Variables: currentOffset, productNumber, releaseDate, gameTitle, width, height, totalPixels, bitsPerPixel, hardwareId, makerId, version, deviceInfo, areaSymbols, peripherals, bootFilename
-   Detection: signature=534547412053454741534154 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Sega Saturn Disc Image",
   "version": "1.12",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 12,
-      "max_signature_offset": 1024
+      "minFileSize": 12,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -193,7 +183,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".iso",

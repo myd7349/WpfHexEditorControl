@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Digital Video
-   Category:  Video
-   Ext:       .dv, .dif
-   Editor:    hex-editor
-   Desc:      Digital Video format for storing digital video, commonly used in camcorders
-   Variables: width, height, frameRate, duration, dvHeader, totalPixels
-   Detection: signature=1F0700 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Digital Video",
   "version": "1.13",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -86,7 +76,7 @@
     "VLC",
     "FFmpeg"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".dv",

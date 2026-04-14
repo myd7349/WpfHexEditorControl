@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Portable Pixmap
-   Category:  Images
-   Ext:       .ppm
-   Editor:    image-viewer
-   Desc:      Netpbm Portable Pixmap (RGB color)
-   Variables: magicNumber, ppmMagic, header
-   Detection: signature=5033 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Portable Pixmap",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -83,7 +73,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".ppm"

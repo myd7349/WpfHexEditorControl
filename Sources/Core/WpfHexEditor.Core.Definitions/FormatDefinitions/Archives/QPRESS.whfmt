@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Qpress Compression
-   Category:  Archives
-   Ext:       .qp, .qpress
-   Editor:    hex-editor
-   Desc:      Qpress archive format using QuickLZ compression, commonly used for MySQL/MariaDB backups
-   Variables: calculatedCRC32, crc32Valid, originalSize, compressedSize, compressionRatio, qpressMagic, formattedSize
-   Detection: signature=7170730100 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Qpress Compression",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -109,7 +99,7 @@
     "7-Zip",
     "WinRAR"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".qp",

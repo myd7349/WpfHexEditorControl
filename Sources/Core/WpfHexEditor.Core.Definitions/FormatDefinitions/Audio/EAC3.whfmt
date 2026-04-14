@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Dolby Digital Plus
-   Category:  Audio
-   Ext:       .eac3, .ec3
-   Editor:    audio-viewer
-   Desc:      Dolby Digital Plus (Enhanced AC-3) advanced audio codec
-   Variables: sampleRate, channels, bitDepth, duration, eAc3SyncWord, byteRate, samplesPerSecond
-   Detection: signature=0B77 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Dolby Digital Plus",
   "version": "1.13",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -92,7 +82,7 @@
     "VLC",
     "Media players"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Audio",
     "extensions": [
       ".eac3",

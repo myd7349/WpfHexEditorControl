@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    PC Engine/TurboGrafx-16 ROM
-   Category:  Game
-   Ext:       .pce, .sgx
-   Editor:    hex-editor
-   Desc:      PC Engine / TurboGrafx-16 HuCard ROM format (no standard header)
-   Variables: currentOffset, machineType, sectionCount, entryPoint, resetVectorEntry, romBank0
-   Detection: signature=00 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PC Engine/TurboGrafx-16 ROM",
   "version": "2.4",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -90,7 +80,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".pce",

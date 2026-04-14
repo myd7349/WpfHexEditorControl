@@ -1,30 +1,23 @@
-/* ============================================================
-   Format:    TGA Image
-   Category:  Images
-   Ext:       .tga, .tpic
-   Editor:    image-viewer
-   Desc:      Truevision TGA/TARGA image format
-   Variables: currentOffset, idLength, imageType, colorMapType
-   Detection: signature=54525545564953494F4E2D5846494C45 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "TGA Image",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".tga",
-    ".tpic"
+    ".tpic",
+    ".vda",
+    ".icb",
+    ".vst"
   ],
-  "description": "Truevision TGA/TARGA image format",
+  "description": "Truevision TGA/TARGA image format. A raster graphics format with an 18-byte fixed header (for TGA v1) or 18-byte header plus optional variable-length extension area (TGA v2). Key fields: idLength (how many bytes of image identification follow the header), colorMapType (0=none, 1=present), imageType (0-3=uncompressed, 9-11=RLE), xOrigin/yOrigin (display position), imageWidth/imageHeight, pixelDepth (8/16/24/32), imageDescriptor (attribute bits + origin). TGA v2 adds a developer area, extension area, and a 26-byte footer ending in 'TRUEVISION-XFILE.\\0'.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "Truevision TGA File Format Specification Version 2.0",
-      "TARGA Raster Graphics Format",
-      "TGA Image Format"
+      "Truevision TGA File Format Specification Version 2.0 (January 1991)",
+      "TGA File Format Technical Notes — Truevision Inc.",
+      "TARGA Raster Graphics Format Specification"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/Truevision_TGA",
@@ -34,22 +27,49 @@
     ]
   },
   "detection": {
-    "signature": "54525545564953494F4E2D5846494C45",
-    "offset": 0,
-    "required": false,
+    "signatures": [
+      {
+        "value": "54525545564953494F4E2D5846494C452E00",
+        "offset": -18,
+        "label": "TGA v2 footer 'TRUEVISION-XFILE.\\0'",
+        "weight": 1.0
+      },
+      {
+        "value": "00",
+        "offset": 1,
+        "label": "colorMapType=0 (no color map)",
+        "weight": 0.3
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.0, "max": 7.8 },
     "validation": {
-      "min_file_size": 16,
-      "max_signature_offset": 1024
+      "minFileSize": 18,
+      "note": "TGA has no mandatory magic bytes at offset 0. Best identifier: TGA v2 footer at EOF-18 (bytes 8-25 = ASCII 'TRUEVISION-XFILE.' + null). For TGA v1: heuristic based on valid imageType (0,1,2,3,9,10,11) and pixelDepth (8,16,24,32). File extension required for high-confidence detection."
     }
   },
-  "functions": {
-    "extractASCIIString": "Extract image ID and metadata strings"
-  },
   "variables": {
-    "currentOffset": 0,
     "idLength": 0,
+    "colorMapType": 0,
     "imageType": 0,
-    "colorMapType": 0
+    "cmFirstEntry": 0,
+    "cmLength": 0,
+    "cmEntrySize": 0,
+    "xOrigin": 0,
+    "yOrigin": 0,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "pixelDepth": 0,
+    "imageDescriptor": 0,
+    "attributeBits": 0,
+    "hasExtension": false,
+    "hasRleEncoding": false,
+    "totalPixels": 0
+  },
+  "functions": {
+    "extractASCIIString": "Extract image ID field string (idLength bytes after offset 18)"
   },
   "blocks": [
     {
@@ -58,8 +78,8 @@
       "offset": 0,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Length of image ID field",
+      "opacity": 0.35,
+      "description": "Number of bytes in the Image ID field that follows the 18-byte fixed header. Range 0–255. A value of 0 means no Image ID field is present. When nonzero, the Image ID field (a free-form ASCII string or binary data) is located at offset 18 and is idLength bytes long.",
       "storeAs": "idLength",
       "valueType": "uint8"
     },
@@ -69,10 +89,14 @@
       "offset": 1,
       "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "0=no palette, 1=has palette",
+      "opacity": 0.35,
+      "description": "Indicates whether a color map (palette) is present. 0 = no color map, image uses direct RGB/RGBA pixels. 1 = color map present; colormap data follows the Image ID field. Other values are reserved and indicate a non-conformant file.",
       "storeAs": "colorMapType",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "No color map (direct color)",
+        "1": "Color map present (indexed/paletted)"
+      }
     },
     {
       "type": "field",
@@ -80,69 +104,388 @@
       "offset": 2,
       "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Image type code",
+      "opacity": 0.35,
+      "description": "Encoding and color model of the image data. Uncompressed types (0-3, 32-33) store pixel data directly. RLE types (9-11) use run-length encoding. Types 1/9 are color-mapped (indexed). Types 2/10 are true-color RGB/RGBA. Types 3/11 are grayscale. Types 32-33 use Huffman delta compression (rare). Type 0 means no image data in file.",
       "storeAs": "imageType",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "No image data",
+        "1": "Uncompressed — color-mapped (indexed palette)",
+        "2": "Uncompressed — true-color (RGB/RGBA)",
+        "3": "Uncompressed — grayscale",
+        "9": "RLE — color-mapped",
+        "10": "RLE — true-color",
+        "11": "RLE — grayscale",
+        "32": "Huffman delta compression — color-mapped",
+        "33": "Huffman delta + 4-pass — color-mapped"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Color Map First Entry Index",
+      "offset": 3,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.30,
+      "description": "Index of the first color-map entry (little-endian uint16). Usually 0. Only meaningful when colorMapType=1. Allows partial color maps.",
+      "storeAs": "cmFirstEntry",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Color Map Length",
+      "offset": 5,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Total number of color-map entries (little-endian uint16). Multiplied by cmEntrySize/8 gives total color map data bytes. Only meaningful when colorMapType=1.",
+      "storeAs": "cmLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Color Map Entry Size",
+      "offset": 7,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Bit depth of each color-map entry. Typical values: 15=5-5-5 RGB, 16=5-5-5-1 RGBA or 5-6-5, 24=8-8-8 RGB, 32=8-8-8-8 RGBA. Only meaningful when colorMapType=1.",
+      "storeAs": "cmEntrySize",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Not applicable (no color map)",
+        "15": "15-bit 5-5-5 RGB",
+        "16": "16-bit 5-5-5-1 RGBA or 5-6-5 RGB",
+        "24": "24-bit 8-8-8 RGB",
+        "32": "32-bit 8-8-8-8 RGBA"
+      }
+    },
+    {
+      "type": "field",
+      "name": "X Origin",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Horizontal display coordinate of the lower-left corner of the image (little-endian int16). Used when placing the image on a display device at a specific position. Usually 0.",
+      "storeAs": "xOrigin",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Y Origin",
+      "offset": 10,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Vertical display coordinate of the lower-left corner of the image (little-endian int16). Nonzero origin means the image is offset vertically on the display device. Usually 0.",
+      "storeAs": "yOrigin",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Image Width",
+      "offset": 12,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.40,
+      "description": "Width of the image in pixels (little-endian uint16). Maximum 65535 pixels wide. Combined with imageHeight determines the total pixel count.",
+      "storeAs": "imageWidth",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Image Height",
+      "offset": 14,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "Height of the image in pixels (little-endian uint16). Maximum 65535 pixels tall.",
+      "storeAs": "imageHeight",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Pixel Depth",
+      "offset": 16,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Bits per pixel for the stored pixel data. For true-color: 16 (5-5-5 or 5-6-5), 24 (8-8-8 RGB), 32 (8-8-8-8 RGBA). For color-mapped: 8 (index into palette). For grayscale: 8 or 16.",
+      "storeAs": "pixelDepth",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "1-bit monochrome (rare)",
+        "8": "8-bit (grayscale or palette index)",
+        "15": "15-bit 5-5-5 RGB (1 bit unused)",
+        "16": "16-bit 5-5-5-1 RGBA or 5-6-5 RGB",
+        "24": "24-bit 8-8-8 RGB",
+        "32": "32-bit 8-8-8-8 RGBA"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Image Descriptor",
+      "offset": 17,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.35,
+      "description": "Packed image descriptor byte. Bits 3-0: attribute bits (number of alpha channel bits per pixel or overlay bits for 16-bit pixels). Bits 5-4: image origin — bit 4=left-to-right order (0=right-to-left), bit 5=top-to-bottom order (0=bottom-to-top). Bits 7-6: interleaving flag (0=non-interleaved, 1=2-way, 2=4-way). Most TGA files: 0x00 (bottom-left origin) or 0x20 (top-left origin).",
+      "storeAs": "imageDescriptor",
+      "valueType": "uint8",
+      "bitfields": [
+        { "name": "Attribute Bits", "bits": "3:0", "description": "Number of attribute (alpha) bits per pixel. 0 for no alpha, 8 for 32-bit RGBA, etc." },
+        { "name": "Left-to-Right Order", "bits": "4", "description": "Pixel storage order: 0=right-to-left, 1=left-to-right" },
+        { "name": "Top-to-Bottom Order", "bits": "5", "description": "Scanline storage order: 0=bottom-to-top (standard), 1=top-to-bottom" },
+        { "name": "Interleaving", "bits": "7:6", "description": "0=non-interleaved, 1=2-way even/odd interleaving, 2=4-way interleaving, 3=reserved" }
+      ]
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Has RLE Encoding",
+      "expression": "calc:imageType == 9 || imageType == 10 || imageType == 11",
+      "storeAs": "hasRleEncoding",
+      "description": "True when the image data uses run-length encoding (imageType 9, 10, or 11)"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Pixels",
+      "expression": "calc:imageWidth * imageHeight",
+      "storeAs": "totalPixels",
+      "description": "Total pixel count: width × height"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Attribute Bits Count",
+      "expression": "calc:imageDescriptor & 15",
+      "storeAs": "attributeBits",
+      "description": "Number of attribute (alpha) bits per pixel extracted from image descriptor bits 3:0"
     },
     {
       "type": "metadata",
       "name": "Image Type",
       "variable": "imageType",
-      "description": "TGA image type code"
+      "description": "TGA image encoding and color model type"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "imageWidth",
+      "description": "Image width in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width × Height pixel count"
+    },
+    {
+      "type": "metadata",
+      "name": "Pixel Depth",
+      "variable": "pixelDepth",
+      "description": "Bits per pixel"
+    },
+    {
+      "type": "metadata",
+      "name": "Has RLE",
+      "variable": "hasRleEncoding",
+      "description": "True when run-length encoding is used"
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "Color map type valid",
+      "expression": "colorMapType == 0 || colorMapType == 1",
+      "severity": "error",
+      "message": "colorMapType must be 0 (no color map) or 1 (color map present) — any other value is invalid per TGA specification"
+    },
+    {
+      "name": "Image type valid",
+      "expression": "imageType == 0 || imageType == 1 || imageType == 2 || imageType == 3 || imageType == 9 || imageType == 10 || imageType == 11 || imageType == 32 || imageType == 33",
+      "severity": "error",
+      "message": "imageType is not a recognized TGA image type (valid: 0,1,2,3,9,10,11,32,33)"
+    },
+    {
+      "name": "Pixel depth valid",
+      "expression": "pixelDepth == 1 || pixelDepth == 8 || pixelDepth == 15 || pixelDepth == 16 || pixelDepth == 24 || pixelDepth == 32",
+      "severity": "warning",
+      "message": "Unusual pixel depth — standard TGA supports 8, 15, 16, 24, or 32 bits per pixel"
+    },
+    {
+      "name": "Image dimensions non-zero",
+      "expression": "imageWidth > 0 && imageHeight > 0",
+      "severity": "error",
+      "message": "Image width and height must both be non-zero for a valid image"
+    }
   ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".tga",
-      ".tpic"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "TGA Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Image ID Field",
+        "offsetVar": "idLength",
+        "offsetAdd": 18,
+        "icon": "\uE8A5",
+        "color": "#95E1D3"
+      },
+      {
+        "name": "Pixel Data",
+        "offsetAdd": 18,
+        "icon": "\uE9D9",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "image/tga"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 33,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "imageType",
+    "primaryField": "imageWidth",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Image Encoding",
+        "icon": "\uE9D9",
+        "fields": ["colorMapType", "imageType", "pixelDepth", "hasRleEncoding"]
+      },
+      {
+        "title": "Dimensions",
+        "icon": "\uE80A",
+        "fields": ["imageWidth", "imageHeight", "totalPixels", "xOrigin", "yOrigin"]
+      },
+      {
+        "title": "Color Map",
+        "icon": "\uE790",
+        "fields": ["cmFirstEntry", "cmLength", "cmEntrySize"]
+      },
+      {
+        "title": "Image Descriptor",
+        "icon": "\uE8A5",
+        "fields": ["imageDescriptor", "attributeBits", "idLength"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
+  "exportTemplates": [
+    {
+      "name": "TGA Header Analysis (JSON)",
+      "format": "json",
+      "fields": ["idLength", "colorMapType", "imageType", "imageWidth", "imageHeight", "pixelDepth", "imageDescriptor", "hasRleEncoding", "totalPixels"]
+    },
+    {
+      "name": "TARGA_HEADER (C struct)",
+      "format": "c-struct",
+      "structName": "TARGA_HEADER",
+      "fields": ["idLength", "colorMapType", "imageType", "cmFirstEntry", "cmLength", "cmEntrySize", "xOrigin", "yOrigin", "imageWidth", "imageHeight", "pixelDepth", "imageDescriptor"]
+    },
+    {
+      "name": "Python TGA type check",
+      "format": "python-bytes",
+      "fields": ["colorMapType", "imageType", "pixelDepth"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid color map type",
+        "condition": "colorMapType != 0 && colorMapType != 1",
+        "severity": "error",
+        "description": "colorMapType is not 0 or 1 — indicates a corrupted or non-TGA file."
+      },
+      {
+        "name": "Zero image dimensions",
+        "condition": "imageWidth == 0 || imageHeight == 0",
+        "severity": "error",
+        "description": "Width or height is zero — cannot be a valid TGA image; possible truncation or header corruption."
+      },
+      {
+        "name": "Very large image (potential DoS)",
+        "condition": "totalPixels > 16777216",
+        "severity": "warning",
+        "description": "Image exceeds 16 megapixels (e.g., 4096x4096). Decoding such a TGA without size validation may cause out-of-memory errors in parsers."
+      },
+      {
+        "name": "Unexpected RLE with color map",
+        "condition": "imageType == 9 && colorMapType == 0",
+        "severity": "warning",
+        "description": "imageType 9 (RLE color-mapped) requires colorMapType=1 but no color map is declared."
+      }
+    ],
+    "knownExploitVectors": [
+      "Integer overflow in width×height×pixelDepth allocation leading to heap underallocation",
+      "RLE decoder run-length overflow writing past allocated buffer",
+      "Negative coordinates (xOrigin/yOrigin as signed) causing out-of-bounds display writes",
+      "TGA v2 extension area offset pointer crafted to point outside file boundaries"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Truevision TGA/TARGA image format",
+    "analysisContext": "TGA/TARGA image — 18-byte fixed header, no mandatory magic (v1). Key fields: offset 0=idLength, offset 1=colorMapType (0/1), offset 2=imageType (encoding+color model), offsets 12-15=width/height (LE uint16), offset 16=pixelDepth, offset 17=imageDescriptor. Image pixel data starts at offset 18+idLength+(cmLength*cmEntrySize/8). TGA v2 adds a 26-byte footer at EOF: 4B extension offset (LE uint32) + 4B developer offset (LE uint32) + 'TRUEVISION-XFILE.\\0' (18B). Scan from EOF-18 to detect v2.",
+    "knownVulnerabilities": [
+      "CVE-2007-0030 (Photoshop TGA): malformed TGA triggered stack-based buffer overflow",
+      "Multiple game engine TGA parsers vulnerable to oversized RLE run counts",
+      "Integer overflow: width=0xFFFF × height=0xFFFF × 4 bytes = ~16GB allocation"
+    ],
     "suggestedInspections": [
-      "Validate TGA Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Check offset 1 (colorMapType) and offset 2 (imageType) for valid values",
+      "Verify offset 16 pixelDepth matches the image type (e.g., 8 for indexed, 24/32 for true-color)",
+      "Check imageDescriptor bits 5-4 for pixel origin (0x20 = top-left, 0x00 = bottom-left)",
+      "For v2: scan EOF-26 for extension area offset, EOF-22 for developer area offset, EOF-18 for 'TRUEVISION-XFILE'",
+      "Validate RLE runs: each run packet controls 1-128 pixels; total decoded pixels must equal width×height",
+      "Check for steganographic payloads in the Image ID field or extension area"
     ]
+  },
+  "software": [
+    "Adobe Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView",
+    "3ds Max (legacy)",
+    "id Software game engines (Doom, Quake textures)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".tga", ".tpic", ".vda", ".icb", ".vst"],
+    "note": "TGA predates PNG and BMP as a game/rendering industry format. Replaced by PNG for web; still used in game texture pipelines (Unity, Unreal accept TGA)."
+  },
+  "MimeTypes": [
+    "image/tga",
+    "image/x-tga",
+    "image/x-targa"
+  ],
+  "UseCases": [
+    "Game development texture assets",
+    "Rendering pipeline intermediate format",
+    "Legacy 3D modeling software (3ds Max, Maya, Lightwave)",
+    "Medical imaging (early systems)",
+    "Scientific visualization"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 16,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": "8/16/24/32",
+    "Endianness": "little-endian",
+    "Compression": "none or RLE (run-length encoding)",
+    "HasColorMap": "optional (colorMapType=1)",
+    "HasHeader": true,
+    "HeaderSize": "18 bytes fixed + optional Image ID + optional color map"
   }
 }

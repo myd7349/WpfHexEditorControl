@@ -1,70 +1,91 @@
-/* ============================================================
-   Format:    Mach-O Executable
-   Category:  Executables
-   Editor:    hex-editor
-   Desc:      Mach Object - macOS/iOS executable format
-   Variables: currentOffset, magic, cpuType, cpuSubtype, fileType, loadCommands, is64Bit, entryPoint, machOMagic32Bit
-   Detection: signature=FEEDFACE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Mach-O Executable",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ""
+    "",
+    ".dylib",
+    ".o",
+    ".bundle",
+    ".kext",
+    ".dSYM"
   ],
-  "description": "Mach Object - macOS/iOS executable format",
+  "description": "Mach Object (Mach-O) binary format — Apple's native executable format for macOS, iOS, iPadOS, watchOS, and visionOS. Supports 32-bit and 64-bit architectures in both little-endian and big-endian byte orders. Universal (Fat) binaries use a separate header (0xCAFEBABE) to combine multiple architecture slices in one file.",
   "category": "Executables",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Mach-O Programming Topics",
-      "OS X ABI Mach-O File Format Reference"
+      "Apple OS X ABI Mach-O File Format Reference",
+      "Mach-O Programming Topics (Apple Developer Documentation)",
+      "XNU kernel source: EXTERNAL_HEADERS/mach-o/loader.h"
     ],
     "WebLinks": [
       "https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/MachOTopics/",
-      "https://en.wikipedia.org/wiki/Mach-O"
+      "https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/loader.h",
+      "https://en.wikipedia.org/wiki/Mach-O",
+      "https://ipsw.me/docs/mach-o"
     ]
   },
   "detection": {
-    "signature": "FEEDFACE",
-    "offset": 0,
+    "signatures": [
+      { "value": "FEEDFACE", "offset": 0, "label": "Mach-O 32-bit little-endian (x86, ARM)", "weight": 1.0 },
+      { "value": "FEEDFACF", "offset": 0, "label": "Mach-O 64-bit little-endian (x86_64, ARM64)", "weight": 1.0 },
+      { "value": "CEFAEDFE", "offset": 0, "label": "Mach-O 32-bit big-endian (PowerPC)", "weight": 1.0 },
+      { "value": "CFFAEDFE", "offset": 0, "label": "Mach-O 64-bit big-endian (PowerPC64)", "weight": 1.0 },
+      { "value": "CAFEBABE", "offset": 0, "label": "Universal/Fat binary (multiple arch slices)", "weight": 0.9 },
+      { "value": "CAFEBABF", "offset": 0, "label": "Universal/Fat binary 64-bit offsets", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 28,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "readUInt32BE": "Read 32-bit big-endian for magic, CPU type, file type",
-    "readUInt32LE": "Read 32-bit little-endian (depends on endianness)",
-    "readUInt64BE": "Read 64-bit values in 64-bit Mach-O files",
-    "calculateSHA256": "Calculate SHA256 hash for code signing verification"
+    "readUInt32LE": "Read 32-bit little-endian values from Mach-O header fields",
+    "readUInt32BE": "Read 32-bit big-endian for magic detection and BE Mach-O files",
+    "readUInt64LE": "Read 64-bit values in 64-bit Mach-O files (entry point, section sizes)",
+    "calculateSHA256": "Calculate SHA-256 hash for code signing verification"
   },
   "variables": {
     "currentOffset": 0,
-    "magic": "Unknown",
-    "cpuType": "Unknown",
-    "cpuSubtype": "Unknown",
-    "fileType": "Unknown",
-    "loadCommands": 0,
+    "machMagic": 0,
+    "cpuType": 0,
+    "cpuSubtype": 0,
+    "fileType": 0,
+    "loadCommandCount": 0,
+    "sizeOfCmds": 0,
+    "flags": 0,
     "is64Bit": false,
-    "entryPoint": 0,
-    "machOMagic32Bit": ""
+    "isBigEndian": false,
+    "isFatBinary": false,
+    "reservedField": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "Mach-O Magic (32-bit)",
+      "name": "Mach-O Magic Number",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "0xFEEDFACE for 32-bit, 0xFEEDFACF for 64-bit",
-      "storeAs": "machOMagic32Bit",
-      "valueType": "uint32"
+      "opacity": 0.45,
+      "description": "4-byte magic number identifying the binary format and byte order. 0xFEEDFACE = 32-bit LE (Intel x86/ARM), 0xFEEDFACF = 64-bit LE (x86_64/ARM64, most common modern format), 0xCEFAEDFE = 32-bit BE (PowerPC, big-endian byte-swapped), 0xCFFAEDFE = 64-bit BE (PowerPC64). 0xCAFEBABE = Universal/Fat binary (multiple architecture slices). The byte order of all subsequent fields is determined by whether the magic reads in native or swapped order.",
+      "storeAs": "machMagic",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "4277009102": "0xFEEDFACE — 32-bit little-endian (x86, ARM v7)",
+        "4277009103": "0xFEEDFACF — 64-bit little-endian (x86_64, ARM64) [most common]",
+        "3472551422": "0xCEFAEDFE — 32-bit big-endian (PowerPC, byte-swapped)",
+        "3472551423": "0xCFFAEDFE — 64-bit big-endian (PowerPC64, byte-swapped)",
+        "3405691582": "0xCAFEBABE — Universal/Fat binary (multi-arch container)",
+        "3405691583": "0xCAFEBABF — Universal/Fat binary with 64-bit file offsets"
+      }
     },
     {
       "type": "field",
@@ -72,10 +93,21 @@
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Target CPU architecture",
+      "opacity": 0.35,
+      "description": "Target CPU architecture identifier. High bit (bit 31) set indicates 64-bit variant — e.g., ARM64 = 0x0000000C | 0x01000000 = 0x0100000C. The architecture determines instruction set, calling convention, and ABI. Value 0xFFFFFFFF (-1) in Universal binary arch list means 'any architecture'.",
       "storeAs": "cpuType",
-      "valueType": "ascii"
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "7": "CPU_TYPE_X86 (i386, 32-bit Intel)",
+        "16777223": "CPU_TYPE_X86_64 (x86_64, 64-bit Intel/AMD)",
+        "12": "CPU_TYPE_ARM (ARM v6/v7, 32-bit)",
+        "16777228": "CPU_TYPE_ARM64 (Apple Silicon, AArch64)",
+        "16777229": "CPU_TYPE_ARM64_32 (watchOS arm64_32)",
+        "18": "CPU_TYPE_POWERPC (PowerPC 32-bit)",
+        "16777234": "CPU_TYPE_POWERPC64 (PowerPC 64-bit)",
+        "4294967295": "CPU_TYPE_ANY (Universal binary entry)"
+      }
     },
     {
       "type": "field",
@@ -84,9 +116,10 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Machine specifier",
+      "description": "CPU subtype specifier within the CPU type family. For ARM64: 0=all, 2=ARM64E (pointer authentication). For x86_64: 3=x86_64_all, 8=x86_64_haswell. For ARM: 9=ARMv7, 11=ARMv7s, 12=ARMv7k. Bits 25-24 may encode thread-local variable usage flags.",
       "storeAs": "cpuSubtype",
-      "valueType": "ascii"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
@@ -94,65 +127,307 @@
       "offset": 12,
       "length": 4,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Object, Execute, Library, etc.",
+      "opacity": 0.35,
+      "description": "Mach-O file type determining how the binary is used. MH_EXECUTE (2) is a standard executable launched by the OS. MH_DYLIB (6) is a shared dynamic library loaded at runtime. MH_BUNDLE (8) is a loadable plug-in. MH_OBJECT (1) is a compiler-generated relocatable object file. MH_DSYM (0xA) is a debug symbols file.",
       "storeAs": "fileType",
-      "valueType": "ascii"
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "1": "MH_OBJECT — Relocatable object file (.o)",
+        "2": "MH_EXECUTE — Demand-paged executable",
+        "3": "MH_FVMLIB — Fixed VM shared library (obsolete)",
+        "4": "MH_CORE — Core dump file",
+        "5": "MH_PRELOAD — Preloaded executable",
+        "6": "MH_DYLIB — Shared dynamic library (.dylib)",
+        "7": "MH_DYLINKER — Dynamic link editor (/usr/lib/dyld)",
+        "8": "MH_BUNDLE — Loadable bundle plug-in",
+        "9": "MH_DYLIB_STUB — Shared library stub (no __TEXT)",
+        "10": "MH_DSYM — Debug symbol companion file (.dSYM)",
+        "11": "MH_KEXT_BUNDLE — Kernel extension bundle"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Load Commands",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Count of load command structures that immediately follow the mach_header (or mach_header_64 for 64-bit). Each load command has a variable size encoded in its second field. Load commands describe segments (LC_SEGMENT_64), dynamic libraries (LC_LOAD_DYLIB), the entry point (LC_MAIN or LC_UNIXTHREAD), code signature (LC_CODE_SIGNATURE), and more.",
+      "storeAs": "loadCommandCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Size of All Load Commands",
+      "offset": 20,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Total byte size of all load command structures combined, starting immediately after the Mach-O header. For a 32-bit Mach-O header (28 bytes), the first load command begins at offset 28. For 64-bit (32 bytes), first load command at offset 32. This value determines the boundary between the header region and the first section data.",
+      "storeAs": "sizeOfCmds",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Flags",
+      "offset": 24,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "Bitmask of Mach-O flags indicating how the binary was linked and what features it uses. Critical for security analysis: MH_PIE (bit 21) indicates Address Space Layout Randomization (ASLR) enabled. MH_DYLDLINK (bit 2) indicates dynamic linking. MH_NOUNDEFS (bit 0) means all symbol references are resolved.",
+      "storeAs": "flags",
+      "valueType": "uint32",
+      "endianness": "little",
+      "bitfields": [
+        { "bit": 0, "name": "MH_NOUNDEFS", "description": "No undefined symbols — all external references resolved at link time", "valueMap": { "0": "Unresolved symbols may exist", "1": "All symbols fully resolved" } },
+        { "bit": 1, "name": "MH_INCRLINK", "description": "Incrementally linked (partial link output)" },
+        { "bit": 2, "name": "MH_DYLDLINK", "description": "Input to the dynamic linker — linked with dyld", "valueMap": { "0": "Not dynamically linked", "1": "Dynamic library dependencies present" } },
+        { "bit": 3, "name": "MH_BINDATLOAD", "description": "Undefined references bound when image is loaded" },
+        { "bit": 4, "name": "MH_PREBOUND", "description": "Dynamic undefined references prebound (deprecated)" },
+        { "bit": 7, "name": "MH_TWOLEVEL", "description": "Uses two-level namespace symbol binding", "valueMap": { "0": "Flat namespace", "1": "Two-level namespace (modern default)" } },
+        { "bit": 12, "name": "MH_WEAK_DEFINES", "description": "Binary declares weak-defined symbols" },
+        { "bit": 13, "name": "MH_BINDS_TO_WEAK", "description": "Binary uses weak-defined symbols from dylibs" },
+        { "bit": 19, "name": "MH_NO_HEAP_EXECUTION", "description": "Stack and heap execution disabled (NX bit)", "valueMap": { "0": "Heap/stack execution may be possible", "1": "Heap and stack non-executable" } },
+        { "bit": 20, "name": "MH_APP_EXTENSION_SAFE", "description": "Binary is safe to use in App Extensions" },
+        { "bit": 21, "name": "MH_PIE", "description": "Position-Independent Executable — enables ASLR. Required for all modern macOS/iOS apps.", "valueMap": { "0": "Fixed load address (no ASLR) — security concern", "1": "PIE enabled — loads at random address" } },
+        { "bit": 23, "name": "MH_HAS_TLV_DESCRIPTORS", "description": "Binary uses thread-local variable descriptors" },
+        { "bit": 25, "name": "MH_NLIST_OUTOFSYNC_WITH_DYLDINFO", "description": "nlist symbol table out of sync with dyld info" }
+      ]
+    },
+    {
+      "type": "conditional",
+      "name": "Reserved Field (64-bit only)",
+      "condition": { "field": "machMagic", "operator": "eq", "value": 4277009103 },
+      "trueLabel": "Reserved (64-bit header padding)",
+      "falseLabel": "No reserved field (32-bit header)",
+      "offset": 28,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.2,
+      "description": "4-byte reserved/padding field present only in 64-bit Mach-O headers (mach_header_64). Must be 0. This field pads the 64-bit header to 32 bytes total, aligning load commands on an 8-byte boundary for 64-bit performance.",
+      "storeAs": "reservedField",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "64-bit Binary",
+      "variable": "is64Bit",
+      "description": "True if this is a 64-bit Mach-O (magic 0xFEEDFACF or 0xCFFAEDFE). The header size is 32 bytes for 64-bit vs 28 bytes for 32-bit."
+    },
+    {
+      "type": "metadata",
+      "name": "Big-Endian Binary",
+      "variable": "isBigEndian",
+      "description": "True if byte order is big-endian (magic 0xCEFAEDFE or 0xCFFAEDFE). Applies to PowerPC Mach-O files."
+    },
+    {
+      "type": "metadata",
+      "name": "Universal/Fat Binary",
+      "variable": "isFatBinary",
+      "description": "True if this is a Universal (Fat) binary containing multiple architecture slices (magic 0xCAFEBABE)"
+    },
+    {
+      "type": "metadata",
+      "name": "Load Command Count",
+      "variable": "loadCommandCount",
+      "description": "Number of load commands encoding segments, dylib dependencies, code signature, entry point, and other binary properties"
     }
   ],
-  "software": [
-    "macOS",
-    "iOS",
-    "Xcode",
-    "otool",
-    "lipo"
+  "versionDetection": {
+    "field": "machMagic",
+    "map": {
+      "4277009102": "32-bit LE (FEEDFACE)",
+      "4277009103": "64-bit LE (FEEDFACF)",
+      "3472551422": "32-bit BE (CEFAEDFE)",
+      "3472551423": "64-bit BE (CFFAEDFE)",
+      "3405691582": "Fat binary (CAFEBABE)"
+    }
+  },
+  "assertions": [
+    {
+      "name": "Valid Mach-O magic number",
+      "expression": "machMagic == 4277009102 || machMagic == 4277009103 || machMagic == 3472551422 || machMagic == 3472551423 || machMagic == 3405691582 || machMagic == 3405691583",
+      "severity": "error",
+      "message": "Magic number does not match any known Mach-O variant (FEEDFACE/FEEDFACF/CEFAEDFE/CFFAEDFE/CAFEBABE/CAFEBABF)"
+    },
+    {
+      "name": "Load command count is reasonable",
+      "expression": "loadCommandCount > 0 && loadCommandCount < 1024",
+      "severity": "warning",
+      "message": "Load command count is outside the expected range 1-1023 — may indicate file truncation or corruption"
+    },
+    {
+      "name": "PIE flag present for executables",
+      "expression": "fileType != 2 || (flags & 2097152) != 0",
+      "severity": "warning",
+      "message": "Executable (MH_EXECUTE) does not have PIE flag (bit 21 of flags) — ASLR is not enabled. This is a security concern on modern macOS/iOS."
+    },
+    {
+      "name": "Reserved field is zero (64-bit)",
+      "expression": "machMagic != 4277009103 || reservedField == 0",
+      "severity": "info",
+      "message": "64-bit Mach-O reserved field should be 0. Non-zero may indicate non-standard toolchain."
+    }
   ],
-  "format_relationships": {
-    "apple_format": true,
-    "replaces": "a.out on macOS",
-    "related": [
-      "DYLIB"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Mach-O Header",
+        "offset": 0,
+        "icon": "\uE8A5",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Load Commands",
+        "offset": 28,
+        "icon": "\uE7EF",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-executable"
-  ],
-  "Software": [
-    "IDA Pro",
-    "Ghidra",
-    "PE Explorer",
-    "Dependency Walker",
-    "CFF Explorer"
-  ],
-  "UseCases": [
-    "Program execution",
-    "Reverse engineering",
-    "Analysis",
-    "Debugging"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "fileType",
+    "primaryField": "loadCommandCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Binary Identity",
+        "icon": "\uE8A5",
+        "fields": ["machMagic", "is64Bit", "isBigEndian", "isFatBinary"]
+      },
+      {
+        "title": "CPU Architecture",
+        "icon": "\uE7EF",
+        "fields": ["cpuType", "cpuSubtype"]
+      },
+      {
+        "title": "Binary Type",
+        "icon": "\uE946",
+        "fields": ["fileType", "loadCommandCount", "sizeOfCmds"]
+      },
+      {
+        "title": "Security Flags",
+        "icon": "\uE72E",
+        "fields": ["flags"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ExecutablesFormat": true
-  },
+  "exportTemplates": [
+    {
+      "name": "Mach-O Header Summary (JSON)",
+      "format": "json",
+      "fields": ["machMagic", "cpuType", "cpuSubtype", "fileType", "loadCommandCount", "sizeOfCmds", "flags", "is64Bit", "isBigEndian", "isFatBinary"]
+    },
+    {
+      "name": "mach_header_64 (C struct)",
+      "format": "c-struct",
+      "structName": "mach_header_64",
+      "fields": ["machMagic", "cpuType", "cpuSubtype", "fileType", "loadCommandCount", "sizeOfCmds", "flags", "reservedField"]
+    },
+    {
+      "name": "Python Mach-O magic check",
+      "format": "python-bytes",
+      "fields": ["machMagic", "cpuType", "fileType"]
+    }
+  ],
   "forensic": {
     "category": "executable",
     "riskLevel": "high",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "No PIE flag on executable",
+        "condition": "fileType == 2 && (flags & 2097152) == 0",
+        "severity": "warning",
+        "description": "MH_EXECUTE binary without MH_PIE flag — ASLR disabled. Modern macOS enforces PIE; absence suggests old or intentionally modified binary."
+      },
+      {
+        "name": "Unusually high load command count",
+        "condition": "loadCommandCount > 100",
+        "severity": "warning",
+        "description": "Very high load command count (> 100) is unusual and may indicate a crafted binary or binary rewriting tool artifact."
+      },
+      {
+        "name": "Heap execution not disabled",
+        "condition": "(flags & 524288) == 0",
+        "severity": "info",
+        "description": "MH_NO_HEAP_EXECUTION flag (bit 19) is not set — stack/heap may be executable. Modern secure binaries set this flag."
+      },
+      {
+        "name": "Fat binary with many slices",
+        "condition": "isFatBinary == true && loadCommandCount > 5",
+        "severity": "info",
+        "description": "Universal binary with more than 5 architecture slices is unusual — standard Apple Universal binaries contain 2 slices (ARM64 + x86_64)."
+      }
+    ],
+    "knownExploitVectors": [
+      "Code injection via writable and executable __DATA segments",
+      "Library injection via DYLD_INSERT_LIBRARIES environment variable",
+      "Dylib hijacking — placing malicious dylib in load path before legitimate one",
+      "Mach-O binary rewriting to bypass Gatekeeper notarization checks"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Mach Object - macOS/iOS executable format",
+    "analysisContext": "Mach-O is Apple's native binary format. The 7 magic values distinguish: 32/64-bit, LE/BE byte order, and Universal (Fat) binaries. Key security fields: flags MH_PIE (bit 21, ASLR), MH_NO_HEAP_EXECUTION (bit 19, NX), fileType (2=executable, 6=dylib, 8=bundle). Load commands encode the binary's segment layout, dylib dependencies, and code signature. ARM64E binaries (cpuSubtype=2) use pointer authentication (PAC) for additional control-flow integrity.",
+    "knownVulnerabilities": [
+      "CVE-2020-9934: TCC bypass via dylib injection on macOS",
+      "DYLD_INSERT_LIBRARIES injection for unsigned binaries",
+      "Mach-O parser differential vulnerabilities in sandbox and security tooling"
+    ],
     "suggestedInspections": [
-      "Verify Mach-O Executable signature, section table, and entry point",
-      "Check import/export tables for suspicious library references",
-      "Inspect section entropy for packing, encryption, or hollowing"
+      "Check MH_PIE flag (bit 21) — absent on executables is a hardening gap",
+      "Check MH_NO_HEAP_EXECUTION flag (bit 19) — absent means stack/heap may execute",
+      "Inspect LC_CODE_SIGNATURE load command for Gatekeeper notarization",
+      "Look for LC_LOAD_WEAK_DYLIB commands — optional dylibs that are hijackable",
+      "ARM64E: verify cpuSubtype=2 for pointer authentication (PAC) support"
     ]
+  },
+  "software": [
+    "macOS system binaries",
+    "iOS apps (IPA)",
+    "Xcode (clang/ld)",
+    "otool",
+    "lipo",
+    "codesign",
+    "IDA Pro",
+    "Ghidra",
+    "Hopper"
+  ],
+  "formatRelationships": {
+    "category": "Executables",
+    "extensions": ["", ".dylib", ".o", ".bundle", ".kext"],
+    "relatedFormats": ["DYLIB", "ELF", "PE_EXE"],
+    "apple_format": true
+  },
+  "MimeTypes": [
+    "application/x-mach-binary",
+    "application/x-executable"
+  ],
+  "UseCases": [
+    "macOS / iOS application execution",
+    "Dynamic library loading (.dylib)",
+    "Kernel extensions (.kext)",
+    "Reverse engineering and security research"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 12,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ExecutablesFormat": true,
+    "Platform": "macOS, iOS, iPadOS, watchOS, tvOS, visionOS",
+    "Supports32Bit": true,
+    "Supports64Bit": true,
+    "SupportsFatBinary": true,
+    "HeaderSize32": "28 bytes",
+    "HeaderSize64": "32 bytes"
   }
 }

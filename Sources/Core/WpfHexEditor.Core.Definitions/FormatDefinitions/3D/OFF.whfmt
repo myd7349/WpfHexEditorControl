@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Object File Format
-   Category:  3D
-   Ext:       .off
-   Editor:    hex-editor
-   Desc:      Geomview Object File Format
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, offHeader, formattedSize
-   Detection: signature=4F46460A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Object File Format",
   "version": "1.13",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -98,7 +88,7 @@
     "Blender",
     "3D viewers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "3D",
     "extensions": [
       ".off"

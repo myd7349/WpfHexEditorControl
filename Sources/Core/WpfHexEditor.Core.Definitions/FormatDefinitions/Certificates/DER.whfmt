@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    DER Certificate
-   Category:  Certificates
-   Ext:       .der, .cer, .crt
-   Editor:    hex-editor
-   Desc:      Distinguished Encoding Rules - X.509 certificate
-   Variables: currentOffset, version, serialNumber, issuer, subject, asn1Sequence, length
-   Detection: signature=3082 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "DER Certificate",
   "version": "1.11",
@@ -39,8 +29,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -98,7 +88,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Certificates",
     "extensions": [
       ".der",

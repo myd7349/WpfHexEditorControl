@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Blender 3D File
-   Category:  3D
-   Ext:       .blend
-   Editor:    hex-editor
-   Desc:      Blender 3D scene/model file
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, blenderSignature, pointerSize, endianness, version, formattedSize
-   Detection: signature=424C454E444552 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Blender 3D File",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -121,7 +111,7 @@
   "software": [
     "Blender"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "3D",
     "extensions": [
       ".blend"

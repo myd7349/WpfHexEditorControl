@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    YUV4MPEG2
-   Category:  Video
-   Ext:       .y4m
-   Editor:    hex-editor
-   Desc:      YUV4MPEG2 uncompressed video format used by the mjpegtools project
-   Variables: videoWidth, videoHeight, frameRate, durationSeconds, codec, y4mHeader
-   Detection: signature=595556344D50454732 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "YUV4MPEG2",
   "version": "2.3",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 9,
-      "max_signature_offset": 1024
+      "minFileSize": 9,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -90,7 +80,7 @@
     "FFmpeg",
     "YUV tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".y4m"

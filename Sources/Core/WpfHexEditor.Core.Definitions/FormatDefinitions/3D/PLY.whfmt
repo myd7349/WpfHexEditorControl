@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Polygon File Format
-   Category:  3D
-   Ext:       .ply
-   Editor:    hex-editor
-   Desc:      Stanford PLY 3D mesh format
-   Variables: currentOffset, dimensions, dataType, arrayCount, plyHeader, formatLine
-   Detection: signature=706C790A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Polygon File Format",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -91,7 +81,7 @@
     "Blender",
     "CloudCompare"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "3D",
     "extensions": [
       ".ply"

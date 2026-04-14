@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    HL7 Message
-   Category:  Medical
-   Ext:       .hl7, .txt
-   Editor:    hex-editor
-   Desc:      Health Level 7 medical messaging format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, hl7Magic
-   Detection: signature=4D53487C @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "HL7 Message",
   "version": "1.11",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -73,7 +63,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Medical",
     "extensions": [
       ".hl7",

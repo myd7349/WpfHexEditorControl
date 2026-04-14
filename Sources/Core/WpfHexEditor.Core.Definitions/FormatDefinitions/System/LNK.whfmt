@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Windows Shortcut
-   Category:  System
-   Ext:       .lnk
-   Editor:    hex-editor
-   Desc:      Windows shell link (shortcut)
-   Variables: currentOffset, flags, attributes, targetSize, iconIndex, headerSize, linkClsid, linkFlags
-   Detection: signature=4C0000000114020000000000C0000000 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Shortcut",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 16,
-      "max_signature_offset": 1024
+      "minFileSize": 16,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -98,7 +88,7 @@
     "LNK analyzers",
     "Forensic tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "microsoft_format": true,
     "shell_link": true,
     "forensic_value": true

@@ -1,14 +1,4 @@
-/*
-   ============================================================
-   Format:    Java Source File
-   Category:  Programming
-   Ext:       .java
-   Editor:    code-editor
-   Desc:      Java programming language source file.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "Java Source File",
   "version": "2.1",

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Duke Nukem GRP
-   Category:  Game
-   Ext:       .grp
-   Editor:    hex-editor
-   Desc:      Duke Nukem 3D GRP resource archive
-   Variables: currentOffset, fileCount, totalSize, version, grpSignature, numberOfFiles, formattedSize
-   Detection: signature=4B656E53696C766572696D616E @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Duke Nukem GRP",
   "version": "1.13",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 13,
-      "max_signature_offset": 1024
+      "minFileSize": 13,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -96,7 +86,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".grp"

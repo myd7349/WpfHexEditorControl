@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Jupiter Tessellation
-   Category:  CAD
-   Ext:       .jt
-   Editor:    hex-editor
-   Desc:      Siemens JT 3D CAD format
-   Variables: currentOffset, versionHeader, jtVersion
-   Detection: signature=56657273696F6E20 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Jupiter Tessellation",
   "version": "1.13",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -69,7 +59,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "CAD",
     "extensions": [
       ".jt"

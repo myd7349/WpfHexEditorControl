@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    CATIA Part
-   Category:  CAD
-   Ext:       .catpart
-   Editor:    hex-editor
-   Desc:      CATIA V5 part file
-   Variables: currentOffset, machineType, sectionCount, entryPoint, catiaMagic
-   Detection: signature=56350500 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "CATIA Part",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -72,7 +62,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "CAD",
     "extensions": [
       ".catpart"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Xbox Series X/S Package
-   Category:  Game
-   Ext:       .xvd, .msixvc
-   Editor:    hex-editor
-   Desc:      Xbox Series X/S optimized package format (enhanced XVD)
-   Variables: currentOffset, crc32Valid, originalSize, compressionRatio, xvdSignature, formatVersion, packageFlags, compressionType, contentSize, contentId
-   Detection: signature=6D737863 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Xbox Series X/S Package",
   "version": "2.4",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -138,7 +128,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".xvd",

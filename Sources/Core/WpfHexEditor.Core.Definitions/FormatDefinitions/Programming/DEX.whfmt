@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Android DEX File
-   Category:  Programming
-   Ext:       .dex
-   Editor:    hex-editor
-   Desc:      Dalvik Executable - Android bytecode
-   Variables: currentOffset, version, checksum, sha1, fileSize, headerSize, stringIds, typeIds, methodIds, classIds, dexMagic, sha1Signature, formattedSize
-   Detection: signature=6465780A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Android DEX File",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -128,7 +118,7 @@
     "Dalvik VM",
     "Android tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "android_format": true,
     "contained_in": "APK",
     "replaces": "Java CLASS on Android",

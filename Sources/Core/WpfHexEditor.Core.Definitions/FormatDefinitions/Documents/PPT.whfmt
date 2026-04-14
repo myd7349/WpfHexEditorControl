@@ -1,58 +1,59 @@
-/* ============================================================
-   Format:    PowerPoint Presentation (Legacy)
-   Category:  Documents
-   Ext:       .ppt
-   Editor:    hex-editor
-   Desc:      Microsoft PowerPoint 97-2003 presentation (OLE2)
-   Variables: currentOffset, machineType, sectionCount, entryPoint, ole2Signature, minorVersion
-   Detection: signature=D0CF11E0A1B11AE1 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PowerPoint Presentation (Legacy)",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ".ppt"
+    ".ppt",
+    ".pps",
+    ".pot"
   ],
-  "description": "Microsoft PowerPoint 97-2003 presentation (OLE2)",
+  "description": "Microsoft PowerPoint 97-2003 presentation (.ppt) stored in the OLE2 Compound File Binary (CFB) container format. Shares the 8-byte CFB magic (D0CF11E0A1B11AE1) with .doc, .xls, .msg, and other legacy Office formats. Disambiguation from other CFB formats requires checking: (1) root entry CLSID {64818D10-4F9B-11CF-86EA-00AA00B929E8} (PowerPoint 97-2003), or (2) the presence of a stream named 'PowerPoint Document' in the CFB directory. The 'PowerPoint Document' stream contains a sequence of PowerPoint records (each prefixed by a 4-byte record header: recType uint16 LE + recLen uint32 LE). Key PowerPoint record types: 0x0FF (DocumentContainer), 0xF78A (PersistDirectory), 0x0FA1 (SlideContainer).",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "PowerPoint Presentation (Legacy) Format"
+      "[MS-CFB] Compound File Binary Format — Microsoft Open Specifications",
+      "[MS-PPT] PowerPoint Binary File Format (.ppt) v9.0 — Microsoft Open Specifications",
+      "OLE2 Compound Document File Format"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/PPT"
+      "https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-ppt/",
+      "https://en.wikipedia.org/wiki/Microsoft_PowerPoint",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000511.shtml"
     ]
   },
   "detection": {
     "signature": "D0CF11E0A1B11AE1",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.0 },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 512,
+      "note": "OLE2/CFB magic. Disambiguate as .ppt by checking root entry CLSID in directory stream or presence of 'PowerPoint Document' stream. Extension-based disambiguation is the simplest approach."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "machineType": "",
-    "sectionCount": 0,
-    "entryPoint": 0,
     "ole2Signature": "",
-    "minorVersion": 0
+    "minorVersion": 0,
+    "majorVersion": 0,
+    "byteOrder": 0,
+    "sectorSizeExp": 0,
+    "fatSectorCount": 0,
+    "firstDirSector": 0,
+    "miniStreamCutoff": 0,
+    "isPPT97": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "OLE2 Signature",
+      "name": "OLE2/CFB Magic",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Microsoft Office OLE2/CFB header",
+      "opacity": 0.45,
+      "description": "OLE2 Compound File Binary magic: D0 CF 11 E0 A1 B1 1A E1. Shared by all legacy Office formats (.doc, .xls, .ppt, .msg, .pub, .mpp). PowerPoint-specific identification requires further inspection of the directory stream.",
       "storeAs": "ole2Signature",
       "valueType": "ascii"
     },
@@ -62,77 +63,271 @@
       "offset": 24,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Format minor version",
+      "opacity": 0.30,
+      "description": "CFB minor version (little-endian uint16). Always 0x003E (62) for all valid OLE2/CFB files.",
       "storeAs": "minorVersion",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "62": "0x003E — standard (all OLE2/CFB files)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 26,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "CFB major version (little-endian uint16). 3 = 512-byte sectors (standard), 4 = 4096-byte sectors (large file mode, rare for .ppt).",
+      "storeAs": "majorVersion",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "3": "Version 3 — 512-byte sectors (standard, Office 97-2003)",
+        "4": "Version 4 — 4096-byte sectors (large file mode)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Byte Order",
+      "offset": 28,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.25,
+      "description": "Byte order mark: must be 0xFFFE (little-endian). The only valid value for OLE2/CFB.",
+      "storeAs": "byteOrder",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "65534": "0xFFFE — little-endian (required)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Sector Size Exponent",
+      "offset": 30,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Power-of-2 sector size: 9 = 512 bytes (version 3), 12 = 4096 bytes (version 4).",
+      "storeAs": "sectorSizeExp",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "9": "512-byte sectors",
+        "12": "4096-byte sectors"
+      }
+    },
+    {
+      "type": "field",
+      "name": "FAT Sector Count",
+      "offset": 44,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Total number of FAT (File Allocation Table) sectors in the container. The FAT stores the sector chain for all streams.",
+      "storeAs": "fatSectorCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Directory Sector",
+      "offset": 48,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Sector index of the first directory stream sector. Directory sector offset = (firstDirSector+1) × sectorSize.",
+      "storeAs": "firstDirSector",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Mini Stream Cutoff",
+      "offset": 56,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Streams smaller than this byte size (default 4096) use the mini stream. Standard CFB value is 0x1000 (4096).",
+      "storeAs": "miniStreamCutoff",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is PPT 97+ Format",
+      "expression": "calc:majorVersion == 3 && minorVersion == 62",
+      "storeAs": "isPPT97",
+      "description": "True when standard CFB v3/minor 0x3E — the expected PowerPoint 97-2003 container"
     },
     {
       "type": "metadata",
-      "name": "Machine",
-      "variable": "machineType",
-      "description": "Machine"
+      "name": "CFB Major Version",
+      "variable": "majorVersion",
+      "description": "OLE2 CFB major version"
     },
     {
       "type": "metadata",
-      "name": "Sections",
-      "variable": "sectionCount",
-      "description": "Sections"
+      "name": "First Directory Sector",
+      "variable": "firstDirSector",
+      "description": "Sector index for the CFB directory"
+    },
+    {
+      "type": "metadata",
+      "name": "Is PPT 97 Format",
+      "variable": "isPPT97",
+      "description": "True when standard OLE2 v3 container"
     }
   ],
-  "software": [
-    "Microsoft PowerPoint",
-    "LibreOffice Impress",
-    "Apache OpenOffice Impress",
-    "Google Slides"
+  "assertions": [
+    {
+      "name": "OLE2 magic valid",
+      "expression": "minorVersion == 62",
+      "severity": "error",
+      "message": "CFB minor version must be 0x003E (62) — this is not a valid OLE2 container"
+    },
+    {
+      "name": "Major version is 3 or 4",
+      "expression": "majorVersion == 3 || majorVersion == 4",
+      "severity": "error",
+      "message": "OLE2 CFB major version must be 3 or 4"
+    },
+    {
+      "name": "Byte order is 0xFFFE",
+      "expression": "byteOrder == 65534",
+      "severity": "error",
+      "message": "OLE2 byte order must be 0xFFFE (little-endian)"
+    }
   ],
-  "format_relationships": {
-    "category": "Documents",
-    "extensions": [
-      ".ppt"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "CFB Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Directory Stream",
+        "offsetVar": "firstDirSector",
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/ppt"
-  ],
-  "Software": [
-    "Microsoft PowerPoint",
-    "LibreOffice Impress",
-    "Apache OpenOffice Impress",
-    "Google Slides"
-  ],
-  "UseCases": [
-    "Document viewing",
-    "Reading",
-    "Publishing",
-    "Archival"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "majorVersion",
+    "primaryField": "firstDirSector",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "CFB Container",
+        "icon": "\uE9D9",
+        "fields": ["ole2Signature", "majorVersion", "minorVersion", "byteOrder"]
+      },
+      {
+        "title": "Sector Layout",
+        "icon": "\uE8A5",
+        "fields": ["sectorSizeExp", "fatSectorCount", "firstDirSector", "miniStreamCutoff"]
+      },
+      {
+        "title": "PowerPoint Format",
+        "icon": "\uE8B7",
+        "fields": ["isPPT97"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "DocumentFormat": true
-  },
-  "functions": {
-    "readUInt32LE": "Read executable header"
-  },
+  "exportTemplates": [
+    {
+      "name": "OLE2 Header (JSON)",
+      "format": "json",
+      "fields": ["majorVersion", "minorVersion", "byteOrder", "sectorSizeExp", "fatSectorCount", "firstDirSector", "isPPT97"]
+    },
+    {
+      "name": "Python OLE2 check",
+      "format": "python-bytes",
+      "fields": ["ole2Signature", "majorVersion", "minorVersion"]
+    }
+  ],
   "forensic": {
     "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "VBA macro stream present",
+        "condition": "majorVersion == 3 || majorVersion == 4",
+        "severity": "info",
+        "description": "Legacy .ppt format can embed VBA macros in a 'VBA' stream inside the 'Macros' storage. PowerPoint macros have been used in malware campaigns (e.g., macro-based downloaders). Use oletools/olevba to extract."
+      },
+      {
+        "name": "Invalid byte order",
+        "condition": "byteOrder != 65534",
+        "severity": "error",
+        "description": "OLE2 byte order field is not 0xFFFE — file is corrupt or crafted."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2009-0556: PowerPoint .ppt sound object remote code execution",
+      "CVE-2014-4114: 'Sandworm' — OLE packager object in .ppt loads remote executable",
+      "CVE-2017-0261: PostScript UAF in PowerPoint EPS image handling",
+      "VBA AutoOpen/AutoRun macros executing PowerShell downloaders on file open"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Microsoft PowerPoint 97-2003 presentation (OLE2)",
+    "analysisContext": "Legacy .ppt = OLE2 CFB container. PowerPoint data in 'PowerPoint Document' stream. Record-based format: each record = recHeader (4B: verAndInstance 4b + recType 12b LE uint16 + recLen uint32 LE). Key record types: 0x03E8=DocumentContainer, 0x03F0=PersistDirectory, 0x0FA1=SlideContainer, 0x0FB5=NotesContainer. Parse directory stream to locate 'PowerPoint Document' stream start sector, then walk FAT chain to read full stream. Tools: oletools (olemeta, oleid, olevba), python-pptx for PPTX, OffVis for binary PPT inspection.",
+    "knownVulnerabilities": [
+      "CVE-2014-4114 (Sandworm): OLE packager shell link object — write+execute arbitrary file",
+      "CVE-2017-0261: EPS parsing PostScript use-after-free in Office PPT/DOC",
+      "CVE-2009-0556: PowerPoint slide timing buffer overflow"
+    ],
     "suggestedInspections": [
-      "Validate PowerPoint Presentation (Legacy) file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
+      "Confirm OLE2 magic D0 CF 11 E0 A1 B1 1A E1 at offset 0",
+      "Walk directory stream: find 'PowerPoint Document' stream for content, 'VBA'/'Macros' for macros",
+      "Check root entry CLSID for PowerPoint: {64818D10-4F9B-11CF-86EA-00AA00B929E8}",
+      "Look for '\\x01Ole10Native' stream — indicates embedded OLE object (CVE-2014-4114 vector)",
+      "Scan 'PowerPoint Document' stream for record type 0x138B (ExternalObject) or ActiveX references"
     ]
+  },
+  "software": [
+    "Microsoft PowerPoint 97-2003",
+    "LibreOffice Impress",
+    "Apache OpenOffice Impress",
+    "Google Slides (import)",
+    "oletools (forensic)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".ppt", ".pps", ".pot"],
+    "relatedFormats": ["PPTX", "DOC", "XLS"],
+    "note": "Replaced by OOXML .pptx from Office 2007. Same CFB container as .doc and .xls — magic bytes do not distinguish between them."
+  },
+  "MimeTypes": [
+    "application/vnd.ms-powerpoint",
+    "application/mspowerpoint"
+  ],
+  "UseCases": [
+    "Legacy presentation compatibility",
+    "Corporate archival (pre-2007 Office)",
+    "Forensic malware analysis",
+    "Legacy embedded content analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Endianness": "little-endian",
+    "Container": "OLE2 Compound File Binary (CFB)",
+    "HasHeader": true,
+    "HeaderSize": "512 bytes (CFB header)",
+    "MacroCapable": true
   }
 }

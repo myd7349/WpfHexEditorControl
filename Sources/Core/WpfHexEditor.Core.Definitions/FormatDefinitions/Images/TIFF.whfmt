@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    TIFF Image
-   Category:  Images
-   Ext:       .tif, .tiff
-   Editor:    image-viewer
-   Desc:      Tagged Image File Format (TIFF) is a flexible, adaptable file format for handling images and data within a single file. The file begins with a 2-byte byte order indicator (II for little-endian or MM for big-endian), followed by a magic number 42 (0x002A), and a 4-byte offset to the first Image File Directory (IFD). Each IFD entry is 12 bytes containing a tag ID, data type, count, and value/offset.
-   Variables: currentOffset, byteOrderMark, byteOrderName, tiffMagicNumber, ifdOffset, ifdEntryCount, ifd0TagId, ifd0TagType, ifd0TagCount, ifd0TagValue, ifd1TagId, ifd1TagType, ifd1TagCount, ifd1TagValue, tiffWidth, tiffHeight, tiffBitsPerSample, tiffCompression, tiffCompressionName, tiffPhotometric, tiffPhotometricName, tiffSamplesPerPixel, totalPixels, estimatedUncompressedSize, isLittleEndian, formattedSize
-   Detection: signature=49492A00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "TIFF Image",
   "version": "2.0",
@@ -16,32 +6,38 @@
     ".tif",
     ".tiff"
   ],
-  "description": "Tagged Image File Format (TIFF) is a flexible, adaptable file format for handling images and data within a single file. The file begins with a 2-byte byte order indicator (II for little-endian or MM for big-endian), followed by a magic number 42 (0x002A), and a 4-byte offset to the first Image File Directory (IFD). Each IFD entry is 12 bytes containing a tag ID, data type, count, and value/offset.",
+  "description": "Tagged Image File Format (TIFF) — flexible raster image container used in professional photography, medical imaging, and print production. The 8-byte fixed header contains the byte-order mark (II=little-endian / MM=big-endian), a magic number (42=standard TIFF / 43=BigTIFF for files >4GB), and a pointer to the first Image File Directory. IFD entries are 12-byte records encoding tag type, data type, count, and value/offset. Supports uncompressed, LZW, JPEG, Deflate (Adobe), PackBits, and CCITT compression methods.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "TIFF Revision 6.0 Specification",
-      "RFC 3302 - Tag Image File Format",
-      "Adobe TIFF Supplement 2 (Adobe Photoshop TIFF Technical Notes)"
+      "TIFF Revision 6.0 Final — June 3, 1992 (Adobe Systems)",
+      "BigTIFF Design — libtiff.gitlab.io/bigtiff",
+      "RFC 3302 — image/tiff MIME type registration",
+      "Adobe TIFF Technical Notes 1-3 (Photoshop TIFF supplements)"
     ],
     "WebLinks": [
       "https://www.adobe.io/open/standards/TIFF.html",
       "https://www.ietf.org/rfc/rfc3302.txt",
-      "https://en.wikipedia.org/wiki/TIFF"
+      "https://en.wikipedia.org/wiki/TIFF",
+      "https://libtiff.gitlab.io/libtiff/bigtiff.html"
     ]
   },
   "detection": {
-    "signature": "49492A00",
-    "offset": 0,
-    "required": true,
+    "signatures": [
+      { "value": "49492A00", "offset": 0, "label": "TIFF Little-Endian (Intel)", "weight": 1.0 },
+      { "value": "4D4D002A", "offset": 0, "label": "TIFF Big-Endian (Motorola)", "weight": 1.0 },
+      { "value": "49492B00", "offset": 0, "label": "BigTIFF Little-Endian", "weight": 0.9 },
+      { "value": "4D4D002B", "offset": 0, "label": "BigTIFF Big-Endian", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
     "validation": {
       "minFileSize": 8,
-      "maxSignatureOffset": 0,
-      "alternateSignatures": [
-        "4D4D002A"
-      ]
+      "maxSignatureOffset": 0
     }
   },
   "variables": {
@@ -70,12 +66,13 @@
     "totalPixels": 0,
     "estimatedUncompressedSize": 0,
     "isLittleEndian": false,
+    "isBigTiff": false,
     "formattedSize": ""
   },
   "functions": {
-    "parseTIFFIFD(var:ifdOffset)": "Parse TIFF Image File Directory at the specified offset, reading all 12-byte IFD entries and extracting common tags (width, height, bits per sample, compression, photometric interpretation)",
-    "computeFromVariables(tiffWidth * tiffHeight, totalPixels)": "Calculate total pixel count from image width and height dimensions",
-    "computeFromVariables(totalPixels * tiffBitsPerSample * tiffSamplesPerPixel / 8, estimatedUncompressedSize)": "Estimate uncompressed image data size in bytes from pixel count, bit depth, and samples per pixel",
+    "parseTIFFIFD(var:ifdOffset)": "Parse TIFF Image File Directory at the specified offset, reading all 12-byte IFD entries and extracting common tags: ImageWidth (256), ImageLength (257), BitsPerSample (258), Compression (259), PhotometricInterpretation (262), SamplesPerPixel (277)",
+    "computeFromVariables(tiffWidth * tiffHeight, totalPixels)": "Calculate total pixel count from width × height",
+    "computeFromVariables(totalPixels * tiffBitsPerSample * tiffSamplesPerPixel / 8, estimatedUncompressedSize)": "Estimate raw uncompressed image data size in bytes",
     "formatFileSize(var:estimatedUncompressedSize)": "Format estimated uncompressed image size as human-readable string (KB, MB, etc.)"
   },
   "blocks": [
@@ -85,17 +82,14 @@
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Two-byte byte order indicator that determines the endianness of all subsequent integer values in the file. 0x4949 ('II') indicates Intel byte order (little-endian), 0x4D4D ('MM') indicates Motorola byte order (big-endian). This must be the first field in the file.",
+      "opacity": 0.45,
+      "description": "Two-byte byte-order indicator determining the endianness of all subsequent integer values in the TIFF file. 0x4949 ('II') = Intel byte order (little-endian), all multi-byte values stored least-significant byte first. 0x4D4D ('MM') = Motorola byte order (big-endian), most-significant byte first. This byte order applies globally to every tag, IFD offset, and data value in the file.",
       "storeAs": "byteOrderMark",
       "valueType": "uint16",
       "endianness": "big",
-      "validation": {
-        "expectedValue": "0x4949"
-      },
       "valueMap": {
-        "18761": "Little-Endian (II - Intel)",
-        "19789": "Big-Endian (MM - Motorola)"
+        "18761": "II — Little-Endian (Intel / Windows)",
+        "19789": "MM — Big-Endian (Motorola / Classic Mac)"
       }
     },
     {
@@ -104,17 +98,14 @@
       "offset": 2,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Magic number that identifies the file as TIFF format. Always 42 (0x002A) for standard TIFF. The value 42 was chosen for its deep philosophical significance according to the TIFF specification authors. The byte order of this field is determined by the preceding byte order mark.",
+      "opacity": 0.35,
+      "description": "Magic number distinguishing TIFF version from BigTIFF. Standard TIFF is always 42 (0x002A) — the value chosen for its philosophical significance per the TIFF 6.0 specification authors. BigTIFF (introduced by libtiff for files >4GB) uses 43 (0x002B) and has a slightly different header structure: 8-byte offsets instead of 4-byte. The byte order for this field is determined by the preceding Byte Order Mark.",
       "storeAs": "tiffMagicNumber",
       "valueType": "uint16",
       "endianness": "little",
-      "validation": {
-        "expectedValue": "0x002A"
-      },
       "valueMap": {
-        "42": "Standard TIFF (Version 42)",
-        "43": "BigTIFF (Version 43)"
+        "42": "Standard TIFF (magic = 42, IFD offsets are 32-bit)",
+        "43": "BigTIFF (magic = 43, IFD offsets are 64-bit, supports files >4GB)"
       }
     },
     {
@@ -123,8 +114,8 @@
       "offset": 4,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Offset in bytes from the beginning of the file to the first Image File Directory (IFD). The IFD contains the metadata entries (tags) that describe the image. This value is typically 8 for files where the IFD immediately follows the header, but can point anywhere in the file.",
+      "opacity": 0.30,
+      "description": "Byte offset from the beginning of the file to the first Image File Directory (IFD0). Must be on a word boundary (even offset). For files where the IFD immediately follows the 8-byte header this is 8. Can point to any location in the file — TIFF allows arbitrary ordering of IFDs and image data. A value of 0 means there are no IFDs (empty TIFF).",
       "storeAs": "ifdOffset",
       "valueType": "uint32",
       "endianness": "little"
@@ -135,98 +126,118 @@
       "offset": 8,
       "length": 2,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Number of 12-byte IFD entries that follow. Each entry defines a tag with its type, count, and value. Typical TIFF files contain 10-30 IFD entries describing image dimensions, compression, color space, strip layout, and other properties.",
+      "opacity": 0.30,
+      "description": "Number of 12-byte directory entries (tags) in the first IFD. IFD entries must be sorted in ascending order by tag ID. Typical single-image TIFFs contain 10-30 entries covering: image dimensions, compression, color space, strip layout, resolution, and optional metadata (EXIF, GPS, XMP, ICC profile).",
       "storeAs": "ifdEntryCount",
       "valueType": "uint16",
       "endianness": "little"
     },
     {
       "type": "field",
-      "name": "IFD Entry #0 - Tag ID",
+      "name": "IFD Entry #0 — Tag ID",
       "offset": 10,
       "length": 2,
       "color": "#FFA07A",
-      "opacity": 0.3,
-      "description": "Tag identifier for the first IFD entry. TIFF tags are 16-bit unsigned integers that identify the field. Common baseline tags include: 256 (ImageWidth), 257 (ImageLength), 258 (BitsPerSample), 259 (Compression), 262 (PhotometricInterpretation).",
+      "opacity": 0.30,
+      "description": "Tag identifier for the first IFD directory entry. TIFF tag IDs are 16-bit unsigned integers. Baseline TIFF tags start at 254. Entries must appear in numerically ascending tag-ID order. The first entry is most commonly 254 (NewSubfileType) or 256 (ImageWidth) depending on the creating application.",
       "storeAs": "ifd0TagId",
       "valueType": "uint16",
       "endianness": "little",
       "valueMap": {
-        "254": "NewSubfileType",
-        "255": "SubfileType",
-        "256": "ImageWidth",
-        "257": "ImageLength",
-        "258": "BitsPerSample",
-        "259": "Compression",
-        "262": "PhotometricInterpretation",
-        "273": "StripOffsets",
-        "277": "SamplesPerPixel",
-        "278": "RowsPerStrip",
-        "279": "StripByteCounts",
-        "282": "XResolution",
-        "283": "YResolution",
-        "296": "ResolutionUnit"
+        "254": "NewSubfileType — Subfile data descriptor",
+        "255": "SubfileType — Deprecated; use NewSubfileType",
+        "256": "ImageWidth — Width of image in pixels",
+        "257": "ImageLength — Height of image in pixels",
+        "258": "BitsPerSample — Bits per color component",
+        "259": "Compression — Compression scheme applied",
+        "262": "PhotometricInterpretation — Color space",
+        "263": "Threshholding — Bilevel/dithering method",
+        "266": "FillOrder — Bit fill order within bytes",
+        "269": "DocumentName — Original document filename",
+        "270": "ImageDescription — Image description text",
+        "273": "StripOffsets — Byte offsets to strip data",
+        "274": "Orientation — Image orientation flags",
+        "277": "SamplesPerPixel — Components per pixel",
+        "278": "RowsPerStrip — Rows per data strip",
+        "279": "StripByteCounts — Bytes per compressed strip",
+        "282": "XResolution — Horizontal pixels per ResolutionUnit",
+        "283": "YResolution — Vertical pixels per ResolutionUnit",
+        "284": "PlanarConfiguration — Chunky vs planar storage",
+        "296": "ResolutionUnit — Unit for X/Y resolution fields",
+        "305": "Software — Creator software name/version",
+        "306": "DateTime — Last modification date/time",
+        "315": "Artist — Creator of the image",
+        "316": "HostComputer — Computer on which image was created",
+        "317": "Predictor — LZW/Deflate prediction scheme",
+        "320": "ColorMap — Color palette for indexed images",
+        "322": "TileWidth — Width of tiled data",
+        "323": "TileLength — Height of tiled data",
+        "324": "TileOffsets — Byte offsets to tile data",
+        "325": "TileByteCounts — Bytes per compressed tile",
+        "338": "ExtraSamples — Alpha/premultiplied alpha specification",
+        "339": "SampleFormat — How to interpret sample data",
+        "34665": "ExifIFD — Pointer to EXIF metadata IFD",
+        "34853": "GPSIFD — Pointer to GPS metadata IFD"
       }
     },
     {
       "type": "field",
-      "name": "IFD Entry #0 - Data Type",
+      "name": "IFD Entry #0 — Data Type",
       "offset": 12,
       "length": 2,
       "color": "#C7CEEA",
-      "opacity": 0.3,
-      "description": "Data type for this IFD entry's value. TIFF defines several data types with specific byte sizes: BYTE (1 byte), ASCII (1 byte), SHORT (2 bytes), LONG (4 bytes), RATIONAL (8 bytes - two LONGs representing numerator/denominator).",
+      "opacity": 0.30,
+      "description": "Data type code for the first IFD entry value. The type determines how the value/count fields are interpreted and what byte size each value occupies. RATIONAL (type 5) represents a fraction as two LONG values (numerator/denominator). UNDEFINED (type 7) is raw binary data with codec-specific interpretation.",
       "storeAs": "ifd0TagType",
       "valueType": "uint16",
       "endianness": "little",
       "valueMap": {
-        "1": "BYTE (8-bit unsigned)",
-        "2": "ASCII (7-bit ASCII + NUL)",
-        "3": "SHORT (16-bit unsigned)",
-        "4": "LONG (32-bit unsigned)",
-        "5": "RATIONAL (two LONGs)",
-        "6": "SBYTE (8-bit signed)",
-        "7": "UNDEFINED (8-bit byte)",
-        "8": "SSHORT (16-bit signed)",
-        "9": "SLONG (32-bit signed)",
-        "10": "SRATIONAL (two SLONGs)",
-        "11": "FLOAT (32-bit IEEE)",
-        "12": "DOUBLE (64-bit IEEE)"
+        "1": "BYTE — 8-bit unsigned integer",
+        "2": "ASCII — 7-bit ASCII characters + NUL terminator",
+        "3": "SHORT — 16-bit unsigned integer",
+        "4": "LONG — 32-bit unsigned integer",
+        "5": "RATIONAL — Two LONGs: numerator/denominator",
+        "6": "SBYTE — 8-bit signed integer",
+        "7": "UNDEFINED — 8-bit byte (type application-defined)",
+        "8": "SSHORT — 16-bit signed integer",
+        "9": "SLONG — 32-bit signed integer",
+        "10": "SRATIONAL — Two SLONGs: numerator/denominator",
+        "11": "FLOAT — IEEE 754 32-bit single-precision",
+        "12": "DOUBLE — IEEE 754 64-bit double-precision"
       }
     },
     {
       "type": "field",
-      "name": "IFD Entry #0 - Value Count",
+      "name": "IFD Entry #0 — Value Count",
       "offset": 14,
       "length": 4,
       "color": "#B8B8FF",
-      "opacity": 0.3,
-      "description": "Number of values of the indicated data type. Not the number of bytes. For example, a count of 3 with type SHORT means 3 SHORT values (6 bytes total). If the total byte count exceeds 4, the value field contains an offset to the actual data.",
+      "opacity": 0.30,
+      "description": "Number of values (not bytes) of the specified type for this IFD entry. For a SHORT with count=1 the value fits in the 4-byte value field. For a STRING (ASCII) the count includes the NUL terminator. For RATIONAL with count=1 the 8-byte value must be stored at a separately referenced offset.",
       "storeAs": "ifd0TagCount",
       "valueType": "uint32",
       "endianness": "little"
     },
     {
       "type": "field",
-      "name": "IFD Entry #0 - Value/Offset",
+      "name": "IFD Entry #0 — Value / Offset",
       "offset": 18,
       "length": 4,
       "color": "#FF6B9D",
-      "opacity": 0.3,
-      "description": "If the value fits in 4 bytes (based on type and count), this field contains the value directly, left-justified. Otherwise, this field contains an offset from the beginning of the TIFF file to the position where the values are stored.",
+      "opacity": 0.30,
+      "description": "Contains the tag value directly if all values fit in 4 bytes, otherwise contains a file offset to the values. Values shorter than 4 bytes are left-justified (low-order bytes first for LE TIFFs). For example, a single SHORT occupies the first 2 bytes with the remaining 2 bytes undefined.",
       "storeAs": "ifd0TagValue",
       "valueType": "uint32",
       "endianness": "little"
     },
     {
       "type": "field",
-      "name": "IFD Entry #1 - Tag ID",
+      "name": "IFD Entry #1 — Tag ID",
       "offset": 22,
       "length": 2,
       "color": "#C44569",
-      "opacity": 0.3,
-      "description": "Tag identifier for the second IFD entry. IFD entries must be sorted in ascending order by tag ID per the TIFF specification. The second entry typically contains ImageLength (257) or another early baseline tag.",
+      "opacity": 0.30,
+      "description": "Tag identifier for the second IFD entry. Per TIFF 6.0 specification, all IFD entries must appear in ascending order by tag ID. The second entry is typically ImageWidth (256) or ImageLength (257) in minimal TIFFs.",
       "storeAs": "ifd1TagId",
       "valueType": "uint16",
       "endianness": "little",
@@ -238,23 +249,25 @@
         "259": "Compression",
         "262": "PhotometricInterpretation",
         "273": "StripOffsets",
-        "277": "SamplesPerPixel"
+        "277": "SamplesPerPixel",
+        "278": "RowsPerStrip",
+        "279": "StripByteCounts"
       }
     },
     {
       "type": "field",
-      "name": "IFD Entry #1 - Data Type",
+      "name": "IFD Entry #1 — Data Type",
       "offset": 24,
       "length": 2,
       "color": "#98D8C8",
-      "opacity": 0.3,
-      "description": "Data type for the second IFD entry. Same type codes as entry #0. Image dimension tags (ImageWidth, ImageLength) typically use SHORT (3) or LONG (4) depending on the image size.",
+      "opacity": 0.30,
+      "description": "Data type for the second IFD entry. Dimension tags (ImageWidth, ImageLength) use SHORT (3) for images up to 65535 pixels or LONG (4) for larger images. Most modern TIFF writers use LONG for all dimension tags.",
       "storeAs": "ifd1TagType",
       "valueType": "uint16",
       "endianness": "little",
       "valueMap": {
         "1": "BYTE (8-bit unsigned)",
-        "2": "ASCII (7-bit ASCII + NUL)",
+        "2": "ASCII (7-bit + NUL)",
         "3": "SHORT (16-bit unsigned)",
         "4": "LONG (32-bit unsigned)",
         "5": "RATIONAL (two LONGs)"
@@ -262,167 +275,357 @@
     },
     {
       "type": "field",
-      "name": "IFD Entry #1 - Value Count",
+      "name": "IFD Entry #1 — Value Count",
       "offset": 26,
       "length": 4,
       "color": "#A8E6CF",
-      "opacity": 0.3,
-      "description": "Number of values for the second IFD entry. For single-value tags like ImageWidth or ImageLength, this is typically 1.",
+      "opacity": 0.30,
+      "description": "Number of values for the second IFD entry. For scalar dimension tags (ImageWidth, ImageLength) count is always 1. For multi-component tags like BitsPerSample in RGB (3 samples), count equals the number of samples.",
       "storeAs": "ifd1TagCount",
       "valueType": "uint32",
       "endianness": "little"
     },
     {
       "type": "field",
-      "name": "IFD Entry #1 - Value/Offset",
+      "name": "IFD Entry #1 — Value / Offset",
       "offset": 30,
       "length": 4,
       "color": "#DDA0DD",
-      "opacity": 0.3,
-      "description": "Value or offset for the second IFD entry. For dimension tags with count=1 and type SHORT or LONG, this contains the actual image dimension value directly.",
+      "opacity": 0.30,
+      "description": "Value or file offset for the second IFD entry. For single SHORT or LONG dimensions (count=1), this contains the actual pixel count directly (e.g., 0x00000800 = 2048 pixels). For type=SHORT the value fits in the lower 2 bytes.",
       "storeAs": "ifd1TagValue",
       "valueType": "uint32",
       "endianness": "little"
     },
     {
       "type": "computeFromVariables",
+      "name": "Is BigTIFF",
+      "expression": "calc:tiffMagicNumber == 43",
+      "storeAs": "isBigTiff",
+      "description": "True if magic number is 43 — indicates BigTIFF format with 64-bit IFD offsets supporting files >4GB"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Little Endian",
+      "expression": "calc:byteOrderMark == 18761",
+      "storeAs": "isLittleEndian",
+      "description": "True if byte order mark is 0x4949 (II / Intel), meaning all multi-byte values use little-endian byte order"
+    },
+    {
+      "type": "computeFromVariables",
       "name": "Total Pixel Count",
       "expression": "tiffWidth * tiffHeight",
       "storeAs": "totalPixels",
-      "description": "Calculates the total number of pixels in the TIFF image by multiplying width by height. Used to estimate memory requirements and uncompressed data size."
+      "description": "Total number of pixels (width × height) — used to estimate uncompressed memory footprint"
     },
     {
       "type": "computeFromVariables",
       "name": "Estimated Uncompressed Size",
       "expression": "totalPixels * tiffBitsPerSample * tiffSamplesPerPixel / 8",
       "storeAs": "estimatedUncompressedSize",
-      "description": "Estimates the uncompressed image data size in bytes by multiplying total pixels by bits per sample by samples per pixel, then dividing by 8 to convert bits to bytes."
+      "description": "Estimated raw image data size in bytes = pixels × bits_per_sample × samples_per_pixel / 8. Actual file may be smaller (compressed) or larger (multi-strip overhead)."
     },
     {
       "type": "conditional",
       "name": "Byte Order Detection",
       "condition": "byteOrderMark == 18761",
-      "trueLabel": "This TIFF file uses little-endian (Intel) byte order - all multi-byte values are stored least-significant byte first",
-      "falseLabel": "This TIFF file uses big-endian (Motorola) byte order - all multi-byte values are stored most-significant byte first",
-      "description": "Determines the byte order used throughout the file. Little-endian (II/0x4949) is more common on Intel/Windows platforms, big-endian (MM/0x4D4D) on Motorola/Mac platforms."
-    },
-    {
-      "type": "conditional",
-      "name": "Compression Detection",
-      "condition": "tiffCompression == 1",
-      "trueLabel": "This TIFF image is uncompressed - pixel data is stored directly without compression",
-      "falseLabel": "This TIFF image uses compression - actual data size will be smaller than the uncompressed estimate",
-      "description": "Checks whether the image data is stored uncompressed (compression type 1) or uses one of the supported compression schemes."
+      "trueLabel": "TIFF file uses little-endian (Intel/II) byte order — all multi-byte values stored LSB first",
+      "falseLabel": "TIFF file uses big-endian (Motorola/MM) byte order — all multi-byte values stored MSB first",
+      "description": "Determines byte order used throughout the file. Little-endian (II) is more common on Windows/Intel platforms; big-endian (MM) on classic Mac and scanner output."
     },
     {
       "type": "metadata",
       "name": "Byte Order",
-      "variable": "byteOrderName",
-      "description": "Endianness of the TIFF file: Little-Endian (II) or Big-Endian (MM), determining how all multi-byte integers are read"
+      "variable": "byteOrderMark",
+      "description": "Endianness of TIFF values: 18761=Little-Endian (II), 19789=Big-Endian (MM)"
+    },
+    {
+      "type": "metadata",
+      "name": "TIFF Version",
+      "variable": "tiffMagicNumber",
+      "description": "TIFF variant: 42=standard TIFF, 43=BigTIFF (>4GB files with 64-bit IFD offsets)"
     },
     {
       "type": "metadata",
       "name": "First IFD Offset",
       "variable": "ifdOffset",
-      "description": "Byte offset from file start to the first Image File Directory containing the image metadata tags"
+      "description": "File offset to the first Image File Directory containing all image metadata tags"
     },
     {
       "type": "metadata",
       "name": "IFD Entry Count",
       "variable": "ifdEntryCount",
-      "description": "Number of 12-byte tag entries in the first IFD, each describing an image property"
+      "description": "Number of 12-byte tag entries in the first IFD"
     },
     {
       "type": "metadata",
       "name": "Image Width",
       "variable": "tiffWidth",
-      "description": "TIFF image width in pixels extracted from IFD tag 256 (ImageWidth)"
+      "description": "Image width in pixels from IFD tag 256 (ImageWidth)"
     },
     {
       "type": "metadata",
       "name": "Image Height",
       "variable": "tiffHeight",
-      "description": "TIFF image height in pixels extracted from IFD tag 257 (ImageLength)"
+      "description": "Image height in pixels from IFD tag 257 (ImageLength)"
     },
     {
       "type": "metadata",
       "name": "Bits Per Sample",
       "variable": "tiffBitsPerSample",
-      "description": "Number of bits per color component extracted from IFD tag 258 (BitsPerSample)"
+      "description": "Bits per color component from IFD tag 258 (typical: 8 or 16)"
     },
     {
       "type": "metadata",
-      "name": "Compression Method",
+      "name": "Compression",
       "variable": "tiffCompressionName",
-      "description": "Human-readable compression method name from IFD tag 259 (Compression)"
+      "description": "Compression method name from IFD tag 259 (Uncompressed, LZW, JPEG, Deflate, PackBits, CCITT)"
     },
     {
       "type": "metadata",
-      "name": "Photometric Interpretation",
+      "name": "Photometric",
       "variable": "tiffPhotometricName",
-      "description": "Color space interpretation from IFD tag 262: WhiteIsZero, BlackIsZero, RGB, Palette, etc."
+      "description": "Color space from IFD tag 262 (WhiteIsZero, BlackIsZero, RGB, Palette, TransparencyMask, CMYK, YCbCr, CIELab)"
     },
     {
       "type": "metadata",
       "name": "Total Pixels",
       "variable": "totalPixels",
-      "description": "Total pixel count computed as tiffWidth * tiffHeight"
+      "description": "Total pixel count (width × height) for memory estimation"
     },
     {
       "type": "metadata",
-      "name": "Estimated Uncompressed Size",
+      "name": "Est. Uncompressed Size",
       "variable": "formattedSize",
-      "description": "Human-readable estimated uncompressed image data size"
+      "description": "Human-readable estimated raw image size"
     }
   ],
+  "assertions": [
+    {
+      "name": "Byte order mark valid",
+      "expression": "byteOrderMark == 18761 || byteOrderMark == 19789",
+      "severity": "error",
+      "message": "Byte order mark must be 0x4949 (II, little-endian) or 0x4D4D (MM, big-endian) — not a valid TIFF file"
+    },
+    {
+      "name": "TIFF magic number valid",
+      "expression": "tiffMagicNumber == 42 || tiffMagicNumber == 43",
+      "severity": "error",
+      "message": "TIFF magic number must be 42 (standard TIFF) or 43 (BigTIFF) — file is malformed or not a TIFF"
+    },
+    {
+      "name": "First IFD offset in bounds",
+      "expression": "ifdOffset >= 8",
+      "severity": "warning",
+      "message": "First IFD offset < 8 overlaps the TIFF header — file is likely corrupted or crafted"
+    },
+    {
+      "name": "IFD entry count reasonable",
+      "expression": "ifdEntryCount > 0 && ifdEntryCount < 1000",
+      "severity": "warning",
+      "message": "IFD entry count is 0 or unusually high — may indicate a corrupted or crafted TIFF"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "TIFF Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "TIFF Magic / Version",
+        "offset": 2,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "First IFD",
+        "offsetVar": "ifdOffset",
+        "icon": "\uE9D9",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "IFD Entry #0",
+        "offset": 10,
+        "icon": "\uE8B7",
+        "color": "#FFA07A"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "tiffCompressionName",
+    "primaryField": "estimatedUncompressedSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "TIFF Header",
+        "icon": "\uE71B",
+        "fields": ["byteOrderMark", "tiffMagicNumber", "ifdOffset", "isBigTiff", "isLittleEndian"]
+      },
+      {
+        "title": "Image Dimensions",
+        "icon": "\uE946",
+        "fields": ["tiffWidth", "tiffHeight", "tiffBitsPerSample", "tiffSamplesPerPixel", "totalPixels"]
+      },
+      {
+        "title": "Color & Encoding",
+        "icon": "\uE771",
+        "fields": ["tiffCompressionName", "tiffPhotometricName"]
+      },
+      {
+        "title": "IFD Structure",
+        "icon": "\uE9D9",
+        "fields": ["ifdEntryCount", "ifd0TagId", "ifd0TagType", "ifd0TagValue"]
+      },
+      {
+        "title": "Memory Estimate",
+        "icon": "\uE8F4",
+        "fields": ["estimatedUncompressedSize", "formattedSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "TIFF Header Summary (JSON)",
+      "format": "json",
+      "fields": ["byteOrderMark", "tiffMagicNumber", "ifdOffset", "ifdEntryCount", "tiffWidth", "tiffHeight", "tiffBitsPerSample", "tiffSamplesPerPixel", "tiffCompressionName", "tiffPhotometricName", "isBigTiff"]
+    },
+    {
+      "name": "tiff_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "tiff_header",
+      "fields": ["byteOrderMark", "tiffMagicNumber", "ifdOffset"]
+    },
+    {
+      "name": "IFD Entry #0 (C struct)",
+      "format": "c-struct",
+      "structName": "tiff_ifd_entry",
+      "fields": ["ifd0TagId", "ifd0TagType", "ifd0TagCount", "ifd0TagValue"]
+    },
+    {
+      "name": "Python TIFF magic check",
+      "format": "python-bytes",
+      "fields": ["byteOrderMark", "tiffMagicNumber", "ifdOffset"]
+    }
+  ],
+  "versionDetection": {
+    "field": "tiffMagicNumber",
+    "map": {
+      "42": "Standard TIFF (32-bit IFD offsets)",
+      "43": "BigTIFF (64-bit IFD offsets, >4GB)"
+    }
+  },
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Tagged Image File Format (TIFF) is a flexible, adaptable file format for handling images and data within a s...",
-    "suggestedInspections": [
-      "Validate TIFF Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid byte order mark",
+        "condition": "byteOrderMark != 18761 && byteOrderMark != 19789",
+        "severity": "error",
+        "description": "Byte order mark is neither II (0x4949) nor MM (0x4D4D) — file header is corrupted or crafted to confuse parsers"
+      },
+      {
+        "name": "IFD offset too small",
+        "condition": "ifdOffset < 8",
+        "severity": "error",
+        "description": "First IFD offset points inside the TIFF fixed header — file is malformed. Exploits in libtiff parsers have leveraged invalid IFD offsets for heap corruption."
+      },
+      {
+        "name": "Zero IFD entry count",
+        "condition": "ifdEntryCount == 0",
+        "severity": "warning",
+        "description": "IFD contains no entries — TIFF with no tags is degenerate. Could indicate partial file truncation or a crafted minimal TIFF used as a container."
+      },
+      {
+        "name": "Unusually large uncompressed size",
+        "condition": "estimatedUncompressedSize > 104857600",
+        "severity": "info",
+        "description": "Estimated uncompressed image exceeds 100MB — high memory requirement for decoders. TIFF decompression bombs can exhaust memory in image processing pipelines."
+      },
+      {
+        "name": "BigTIFF variant",
+        "condition": "tiffMagicNumber == 43",
+        "severity": "info",
+        "description": "BigTIFF file detected — requires a BigTIFF-capable parser. Many TIFF viewers and forensic tools do not support BigTIFF and may misparse the file."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2023-40745 — libtiff TIFFReadRGBATileExt heap buffer overflow via crafted IFD",
+      "CVE-2022-48281 — libtiff processCropSelections divide-by-zero via zero tile dimensions",
+      "TIFF IFD loop — IFD next-IFD pointer forms a cycle causing infinite parser loops",
+      "Integer overflow in StripByteCounts computation leading to allocator underalloc"
     ]
   },
-  "MimeTypes": [
-    "image/tiff"
-  ],
-  "Software": [
+  "aiHints": {
+    "analysisContext": "TIFF header is 8 bytes: 2-byte byte-order (II=LE/MM=BE) + 2-byte magic (42=TIFF/43=BigTIFF) + 4-byte IFD offset. All IFD parsing must respect the byte-order mark. IFD entries are 12-byte records: tag(2)+type(2)+count(4)+value/offset(4). Key image tags: 256=width, 257=height, 258=bits/sample, 259=compression (1=none,5=LZW,6=old JPEG,7=JPEG,8=Adobe Deflate,32773=PackBits), 262=photometric (0=WhiteIsZero,1=BlackIsZero,2=RGB,3=Palette,4=Mask,5=CMYK,6=YCbCr,8=CIELab), 277=samplesPerPixel.",
+    "knownVulnerabilities": [
+      "CVE-2023-40745: libtiff heap buffer overflow in TIFFReadRGBATileExt via crafted tile IFD",
+      "CVE-2022-48281: libtiff divide-by-zero via zero SamplesPerPixel or BitsPerSample",
+      "IFD pointer loop: crafted NextIFD chain causes infinite recursion in naive parsers",
+      "Integer overflow: StripByteCounts sum overflow leads to heap underallocation"
+    ],
+    "suggestedInspections": [
+      "Verify byte order mark is exactly 0x4949 or 0x4D4D",
+      "Verify magic is 42 (TIFF) or 43 (BigTIFF) — mismatch indicates corruption or manipulation",
+      "Verify IFD offset >= 8 and within file bounds",
+      "Check IFD entry tags are in ascending sorted order — violation is a spec violation",
+      "Verify Compression tag value is one of: 1 (none), 5 (LZW), 7 (JPEG), 8 (Deflate), 32773 (PackBits)",
+      "Check estimated uncompressed size vs available memory — TIFF decompression bombs possible",
+      "Scan for embedded EXIF IFD (tag 34665) and GPS IFD (tag 34853) for metadata forensics"
+    ]
+  },
+  "software": [
     "Adobe Photoshop",
     "GIMP",
-    "Preview",
-    "IrfanView"
+    "libtiff",
+    "ImageMagick",
+    "Pillow (Python)",
+    "IrfanView",
+    "Preview (macOS)",
+    "darktable"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".tif", ".tiff"],
+    "relatedFormats": ["JPEG", "PNG", "BMP", "GIF"],
+    "variants": ["BigTIFF", "TIFF/EP", "GeoTIFF", "TIFF/IT"]
+  },
+  "MimeTypes": [
+    "image/tiff",
+    "image/x-tiff"
   ],
   "UseCases": [
-    "Professional photography",
-    "Scanning",
-    "Print",
-    "Medical imaging"
+    "Professional photography (RAW-equivalent quality storage)",
+    "Scanning (multi-page document TIFF)",
+    "Medical imaging (DICOM supplement)",
+    "GIS / Geospatial (GeoTIFF)",
+    "Print production (CMYK TIFF)",
+    "Digital preservation archiving"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 91,
     "DocumentationLevel": "comprehensive",
-    "BlocksDefined": 26,
-    "ValidationRules": 3,
-    "LastUpdated": "2026-02-24",
+    "BlocksDefined": 27,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "ImageFormat": true,
     "Endianness": "variable (determined by byte order mark)",
-    "HeaderSize": 8,
-    "IFDEntrySize": 12,
-    "ColorSpace": "RGB, CMYK, Lab, YCbCr, Grayscale",
-    "CompressionMethods": "Uncompressed, CCITT, LZW, JPEG, PackBits, Deflate",
+    "HeaderSize": "8 bytes (standard TIFF) / 16 bytes (BigTIFF)",
+    "IFDEntrySize": "12 bytes (standard) / 20 bytes (BigTIFF)",
+    "ColorSpaces": "RGB, CMYK, Lab, YCbCr, Grayscale, Palette, Mask",
+    "CompressionMethods": "None (1), CCITT (2-4), LZW (5), JPEG (6/7), Adobe Deflate (8), PackBits (32773)",
     "LosslessCompression": true,
-    "MaxBitDepth": 16,
+    "MaxBitDepth": 32,
     "SupportsMultiPage": true,
     "SupportsTransparency": true,
-    "TagBasedFormat": true
+    "TagBasedFormat": true,
+    "VariantBigTIFF": "Supports files >4GB with 64-bit offsets (magic=43)"
   }
 }

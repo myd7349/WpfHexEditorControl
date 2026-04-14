@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Apache Avro
-   Category:  Data
-   Ext:       .avro
-   Editor:    hex-editor
-   Desc:      Apache Avro binary data format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, avroMagic
-   Detection: signature=4F626A01 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Apache Avro",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -72,7 +62,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".avro"

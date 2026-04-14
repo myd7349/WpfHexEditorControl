@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Program Database
-   Category:  Programming
-   Ext:       .pdb
-   Editor:    hex-editor
-   Desc:      Microsoft Program Database file containing debug symbols and debugging information for binaries
-   Variables: pageSize, pageCount, tableCount, version, pdbSignature
-   Detection: signature=4D6963726F736F667420432F43 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Program Database",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 13,
-      "max_signature_offset": 1024
+      "minFileSize": 13,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -112,7 +102,7 @@
     "WinDbg",
     "IDA Pro"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "microsoft_format": true,
     "associated_with": [
       "EXE",

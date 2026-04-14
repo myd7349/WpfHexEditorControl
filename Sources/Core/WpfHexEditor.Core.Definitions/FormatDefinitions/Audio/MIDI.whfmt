@@ -1,172 +1,351 @@
-/* ============================================================
-   Format:    MIDI Audio
-   Category:  Audio
-   Ext:       .mid, .midi
-   Editor:    audio-viewer
-   Desc:      Musical Instrument Digital Interface file
-   Variables: currentOffset, headerLength, format, tracks, division, timeDivision, midiHeader
-   Detection: signature=4D546864 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "MIDI Audio",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
     ".mid",
     ".midi"
   ],
-  "description": "Musical Instrument Digital Interface file",
+  "description": "Standard MIDI File (SMF) — a sequencing file format for storing MIDI event data defined by the MIDI Manufacturers Association. An SMF file consists of a mandatory MThd header chunk followed by one or more MTrk track chunks. All integers are big-endian. The MThd chunk encodes: format type (0=single track, 1=multi-track synchronous, 2=multi-track independent), track count, and time division. Track chunks contain variable-length delta-time encoded MIDI events. MIDI does not store actual audio samples — it encodes musical performance instructions (note on/off, pitch bend, control change, program change, system exclusive).",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "audio-viewer",
   "references": {
     "specifications": [
-      "Standard MIDI File (SMF) Format",
-      "MIDI 1.0 Specification",
-      "Musical Instrument Digital Interface Standard"
+      "Standard MIDI File 1.0 — MIDI Manufacturers Association (1988)",
+      "MIDI 1.0 Specification — MMA/AMEI",
+      "MIDI 2.0 Specification — MIDI Manufacturers Association (2020)"
     ],
     "WebLinks": [
+      "https://www.midi.org/specifications-old/item/standard-midi-files-smf",
       "https://en.wikipedia.org/wiki/MIDI",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000119.shtml",
-      "https://www.file-recovery.com/mid-signature-format.htm",
-      "https://docs.fileformat.com/audio/mid/"
+      "https://midi.org/midi-1-0-core-specifications"
     ]
   },
   "detection": {
     "signature": "4D546864",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.5, "max": 6.5 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 14,
+      "maxSignatureOffset": 0,
+      "note": "Minimum valid SMF: 8-byte MThd header + 6-byte body = 14 bytes. A real SMF also needs at least one MTrk chunk."
     }
   },
-  "functions": {
-    "readUInt32BE": "Read 32-bit big-endian for chunk sizes",
-    "readUInt16BE": "Read 16-bit big-endian for format type, track count, and division",
-    "extractASCIIString": "Extract chunk identifiers (MThd, MTrk)"
-  },
   "variables": {
-    "currentOffset": 0,
-    "headerLength": 6,
-    "format": 0,
-    "tracks": 0,
+    "midiHeader": "",
+    "headerLength": 0,
+    "midiFormat": 0,
+    "trackCount": 0,
     "division": 0,
-    "timeDivision": "Ticks per quarter note",
-    "midiHeader": ""
+    "isTicksPerBeat": false,
+    "ticksPerBeat": 0,
+    "smpteFrameRate": 0,
+    "smpteTicksPerFrame": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "MIDI Header",
+      "name": "MThd Chunk ID",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "MThd chunk identifier",
+      "opacity": 0.45,
+      "description": "MIDI header chunk identifier: ASCII 'MThd' (0x4D 0x54 0x68 0x64). Every valid Standard MIDI File must begin with this exact 4-byte sequence. The chunk-based structure was designed so parsers can skip unknown chunk types by reading the size field and seeking past them.",
       "storeAs": "midiHeader",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "MThd"
+      }
     },
     {
       "type": "field",
-      "name": "Header Length",
+      "name": "Header Chunk Length",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Header data length (6)",
+      "opacity": 0.35,
+      "description": "Size in bytes of the MThd chunk body as a 32-bit big-endian unsigned integer. Must be exactly 6 for all currently defined MIDI formats (covering the 6 bytes: format + numTracks + division). Future MIDI revisions could extend this — parsers must use this length to seek to the end of the MThd body rather than assuming exactly 6 bytes.",
       "storeAs": "headerLength",
       "valueType": "uint32",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "expectedValue": 6
+      }
     },
     {
       "type": "field",
-      "name": "Format",
+      "name": "MIDI Format",
       "offset": 8,
       "length": 2,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "0=single, 1=multiple, 2=patterns",
-      "storeAs": "format",
+      "opacity": 0.35,
+      "description": "MIDI file format type as a 16-bit big-endian unsigned integer. Determines how the MTrk track chunks are organized. Format 0 contains all events for all channels in a single track. Format 1 contains multiple synchronous tracks (e.g., one per instrument) that share a common tempo map. Format 2 contains multiple independent tracks each with its own tempo and timing.",
+      "storeAs": "midiFormat",
       "valueType": "uint16",
-      "endianness": "big"
+      "endianness": "big",
+      "valueMap": {
+        "0": "Format 0 — single multi-channel track (all events in one MTrk)",
+        "1": "Format 1 — multiple synchronous tracks sharing a common tempo map",
+        "2": "Format 2 — multiple independent tracks with separate tempos"
+      }
     },
     {
       "type": "field",
-      "name": "Tracks",
+      "name": "Number of Tracks",
       "offset": 10,
       "length": 2,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Number of track chunks",
-      "storeAs": "tracks",
+      "opacity": 0.35,
+      "description": "Total number of MTrk track chunks in the file as a 16-bit big-endian unsigned integer. For Format 0 files this must be exactly 1. For Format 1/2 the first MTrk is typically the tempo/time-signature track (no channel events), followed by instrument tracks. This count must match the actual number of MTrk chunks that follow.",
+      "storeAs": "trackCount",
       "valueType": "uint16",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Division",
+      "name": "Time Division",
       "offset": 12,
       "length": 2,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
-      "description": "Time division",
+      "color": "#FFA07A",
+      "opacity": 0.35,
+      "description": "Timing resolution for MIDI events as a 16-bit big-endian unsigned integer. Bit 15 determines the interpretation mode. If bit 15 is 0 (clear): bits 14-0 encode ticks per quarter note (PPQ/PPQN), commonly 96, 120, 240, or 480. If bit 15 is 1 (set): bits 14-8 encode negative SMPTE frame rate (-24, -25, -29, -30 for 24fps/25fps/29.97fps/30fps) and bits 7-0 encode ticks per SMPTE frame.",
       "storeAs": "division",
       "valueType": "uint16",
-      "endianness": "big"
+      "endianness": "big",
+      "bitfields": [
+        {
+          "name": "Time Division Mode",
+          "bits": "15",
+          "description": "0 = ticks per quarter note (metrical time, most common); 1 = SMPTE time code (absolute time)"
+        },
+        {
+          "name": "Ticks per Quarter Note / SMPTE High Byte",
+          "bits": "14-8",
+          "description": "If bit 15=0: upper bits of ticks per quarter note (full 15-bit value). If bit 15=1: negative SMPTE frame rate (-24, -25, -29, -30)"
+        },
+        {
+          "name": "Ticks per Quarter Note Low / SMPTE Ticks per Frame",
+          "bits": "7-0",
+          "description": "If bit 15=0: lower 8 bits of ticks per quarter note. If bit 15=1: ticks per SMPTE frame (4, 8, 10, 25, 40, 80, 100)"
+        }
+      ]
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Ticks Per Beat",
+      "expression": "calc:(division & 32768) == 0",
+      "storeAs": "isTicksPerBeat",
+      "description": "True when bit 15 of division is 0 — file uses metrical (ticks per quarter note) timing"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Ticks Per Beat (PPQ)",
+      "expression": "calc:isTicksPerBeat ? (division & 32767) : 0",
+      "storeAs": "ticksPerBeat",
+      "description": "Ticks per quarter note (PPQ/PPQN) when using metrical timing. Common values: 96, 120, 240, 480. Higher values give better timing resolution."
+    },
+    {
+      "type": "metadata",
+      "name": "MIDI Format",
+      "variable": "midiFormat",
+      "description": "0=single track, 1=multi-track sync, 2=multi-track independent"
+    },
+    {
+      "type": "metadata",
+      "name": "Track Count",
+      "variable": "trackCount",
+      "description": "Number of MTrk chunks (Format 0 must have exactly 1)"
+    },
+    {
+      "type": "metadata",
+      "name": "Time Division",
+      "variable": "division",
+      "description": "Timing resolution: bit 15=0 means ticks/beat; bit 15=1 means SMPTE"
+    },
+    {
+      "type": "metadata",
+      "name": "Ticks Per Beat",
+      "variable": "ticksPerBeat",
+      "description": "PPQ (pulses per quarter note) for metrical-time files"
     }
   ],
-  "software": [
-    "VLC Media Player",
-    "foobar2000"
+  "assertions": [
+    {
+      "name": "MThd signature valid",
+      "expression": "midiHeader == 'MThd'",
+      "severity": "error",
+      "message": "MIDI file must start with 'MThd' (0x4D546864) — not a valid Standard MIDI File"
+    },
+    {
+      "name": "Header length must be 6",
+      "expression": "headerLength == 6",
+      "severity": "warning",
+      "message": "MThd header length should be 6 — other values indicate a non-standard MIDI extension"
+    },
+    {
+      "name": "Format is valid",
+      "expression": "midiFormat == 0 || midiFormat == 1 || midiFormat == 2",
+      "severity": "error",
+      "message": "MIDI format must be 0, 1, or 2 — other values are undefined"
+    },
+    {
+      "name": "Format 0 must have exactly one track",
+      "expression": "midiFormat != 0 || trackCount == 1",
+      "severity": "error",
+      "message": "MIDI Format 0 files must have exactly 1 MTrk track chunk"
+    },
+    {
+      "name": "Division is non-zero",
+      "expression": "division != 0",
+      "severity": "error",
+      "message": "Time division must be non-zero — value of 0 is invalid"
+    }
   ],
-  "format_relationships": {
-    "category": "Audio",
-    "extensions": [
-      ".mid",
-      ".midi"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "MThd Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "MIDI Body",
+        "offset": 14,
+        "icon": "\uE767",
+        "color": "#4ECDC4"
+      }
     ]
+  },
+  "inspector": {
+    "badge": "midiFormat",
+    "primaryField": "trackCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Header Identity",
+        "icon": "\uE71B",
+        "fields": ["midiHeader", "headerLength", "midiFormat"]
+      },
+      {
+        "title": "Timing",
+        "icon": "\uE787",
+        "fields": ["division", "isTicksPerBeat", "ticksPerBeat"]
+      },
+      {
+        "title": "Structure",
+        "icon": "\uE9D9",
+        "fields": ["trackCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "MIDI Header (JSON)",
+      "format": "json",
+      "fields": ["midiHeader", "headerLength", "midiFormat", "trackCount", "division", "isTicksPerBeat", "ticksPerBeat"]
+    },
+    {
+      "name": "MIDI_HEADER_CHUNK (C struct)",
+      "format": "c-struct",
+      "structName": "midi_header_chunk",
+      "fields": ["midiHeader", "headerLength", "midiFormat", "trackCount", "division"]
+    }
+  ],
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid MIDI format",
+        "condition": "midiFormat > 2",
+        "severity": "warning",
+        "description": "MIDI format values 3-65535 are undefined. A non-standard format value may indicate a malformed or proprietary SMF variant."
+      },
+      {
+        "name": "Format 0 with multiple tracks",
+        "condition": "midiFormat == 0 && trackCount != 1",
+        "severity": "error",
+        "description": "Format 0 MIDI files must contain exactly one MTrk chunk. Multiple tracks in a Format 0 file violates the SMF specification."
+      },
+      {
+        "name": "Zero division",
+        "condition": "division == 0",
+        "severity": "error",
+        "description": "Time division of 0 is invalid — causes division-by-zero in tempo calculation in all known MIDI implementations."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2020-3910/3911: Apple CoreMIDI heap overflows in SMF track chunk parsing",
+      "Malformed variable-length quantity (VLQ) delta times with missing terminal byte can cause infinite loops",
+      "SysEx events with length > available data can cause out-of-bounds reads in naive parsers"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Standard MIDI File (SMF) layout (all values big-endian): MThd(4) + chunkLength(4,BE,must=6) + format(2,BE,0/1/2) + numTracks(2,BE) + division(2,BE). If division bit15=0: bits14-0 = ticks per quarter note (PPQ). If bit15=1: bits14-8 = -SMPTE rate, bits7-0 = ticks/frame. First MTrk chunk follows at offset 14: 'MTrk'(4) + trackLength(4,BE) + events. Events are delta-time (VLQ encoded) + MIDI event bytes. Common status bytes: 0x90=Note On, 0x80=Note Off, 0xB0=Control Change, 0xFF=Meta event (FF 51 03 xx xx xx = Set Tempo, FF 2F 00 = End of Track).",
+    "knownVulnerabilities": [
+      "CVE-2020-3910: Apple CoreMIDI heap overflow in SMF MTrk chunk parsing",
+      "VLQ (variable-length quantity) without termination byte causes infinite loop in malformed files",
+      "SysEx (0xF0) with missing 0xF7 terminator can cause OOB reads"
+    ],
+    "suggestedInspections": [
+      "Verify 'MThd' at offset 0 (4D 54 68 64)",
+      "Read header length at offset 4 (BE uint32) — should be 6",
+      "Check format (offset 8): 0, 1, or 2 only",
+      "For Format 0: track count must be 1",
+      "Check division (offset 12): bit 15 = 0 for PPQ, 1 for SMPTE",
+      "Scan for MTrk chunks after offset 14 — verify count matches trackCount",
+      "Check for FF 2F 00 (End of Track) meta event at end of each MTrk"
+    ]
+  },
+  "software": [
+    "FL Studio",
+    "GarageBand",
+    "Logic Pro",
+    "Cubase",
+    "Ableton Live",
+    "MuseScore",
+    "VLC media player",
+    "Windows Media Player"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".mid", ".midi"],
+    "relatedFormats": ["XMF", "RMI", "SMF"],
+    "note": "MIDI does not store audio samples. It encodes musical performance data (note events, controller values, program changes). Playback quality depends on the synthesizer or soundfont used."
   },
   "MimeTypes": [
     "audio/midi",
-    "audio/x-midi"
-  ],
-  "Software": [
-    "FL Studio",
-    "GarageBand",
-    "VLC",
-    "MuseScore"
+    "audio/x-midi",
+    "audio/mid"
   ],
   "UseCases": [
-    "Music production",
-    "Synthesizers",
-    "Game audio",
-    "MIDI sequencing"
+    "Music composition and sequencing",
+    "Video game music (XG/GM soundtracks)",
+    "Karaoke systems",
+    "MIDI hardware control (synthesizers, keyboards)",
+    "Music notation software export"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 50,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 5,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "AudioFormat": true
-  },
-  "forensic": {
-    "category": "audio",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Musical Instrument Digital Interface file",
-    "suggestedInspections": [
-      "Validate MIDI Audio header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
-    ]
+    "AudioFormat": false,
+    "SequencerFormat": true,
+    "Endianness": "big-endian",
+    "ChunkBased": true,
+    "MandatoryFirstChunk": "MThd (14 bytes total)",
+    "TrackChunkID": "MTrk",
+    "EventEncoding": "Variable-length delta time (VLQ) + MIDI status byte + data"
   }
 }

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Multiple-image Network Graphics
-   Category:  Images
-   Ext:       .mng
-   Editor:    image-viewer
-   Desc:      MNG animation format (PNG-based)
-   Variables: packetCount, snaplen, linkType, version, mngSignature, mhdrChunkLength
-   Detection: signature=8A4D4E470D0A1A0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Multiple-image Network Graphics",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -95,7 +85,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".mng"

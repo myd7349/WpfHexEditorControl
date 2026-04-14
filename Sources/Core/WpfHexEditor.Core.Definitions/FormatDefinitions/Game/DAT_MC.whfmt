@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Minecraft DAT
-   Category:  Game
-   Ext:       .dat
-   Editor:    hex-editor
-   Desc:      Minecraft data file (NBT format)
-   Variables: currentOffset, machineType, sectionCount, entryPoint, nbtCompoundTag
-   Detection: signature=0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Minecraft DAT",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -77,7 +67,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".dat"

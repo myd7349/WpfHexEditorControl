@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Material Exchange Format
-   Category:  Video
-   Ext:       .mxf
-   Editor:    hex-editor
-   Desc:      SMPTE standard container format for professional digital video and audio media
-   Variables: dimensions, dataType, arrayCount, mxfPartitionPack
-   Detection: signature=060E2B34020501010D0102010102 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Material Exchange Format",
   "version": "2.3",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 14,
-      "max_signature_offset": 1024
+      "minFileSize": 14,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -84,7 +74,7 @@
     "DaVinci Resolve",
     "FFmpeg"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "smpte_standard": "SMPTE 377M",
     "professional_format": true,
     "alternative_to": "MOV for broadcast"

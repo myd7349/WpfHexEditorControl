@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Amazon Kindle eBook
-   Category:  Documents
-   Ext:       .azw, .azw3
-   Editor:    hex-editor
-   Desc:      Amazon Kindle format - Based on Mobipocket
-   Variables: currentOffset, databaseName, title, author, preferredEditor, recordCount, kindleFormat, hasdrm, pdbName, azwType
-   Detection: signature=424F4F4B @ offset 60
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Amazon Kindle eBook",
   "version": "1.10",
@@ -33,8 +23,8 @@
     "offset": 60,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -84,7 +74,7 @@
     "Kindle for PC",
     "Kindle for Mac"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Documents",
     "extensions": [
       ".azw",

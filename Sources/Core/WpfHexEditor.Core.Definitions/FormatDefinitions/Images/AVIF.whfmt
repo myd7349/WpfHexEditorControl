@@ -1,74 +1,89 @@
-/* ============================================================
-   Format:    AVIF Image
-   Category:  Images
-   Ext:       .avif
-   Editor:    image-viewer
-   Desc:      AV1 Image File Format - Modern image format
-   Variables: currentOffset, boxSize, majorBrand, boxType
-   Detection: signature=66747970 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AVIF Image",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
-    ".avif"
+    ".avif",
+    ".avifs"
   ],
-  "description": "AV1 Image File Format - Modern image format",
+  "description": "AV1 Image File Format (AVIF) — a modern still image and image sequence format based on the AV1 video codec and ISO Base Media File Format (ISOBMFF/MP4) container. Files begin with a File Type Box (ftyp box): 4-byte BE uint32 box size + 4-byte ASCII box type 'ftyp' + 4-byte major brand (typically 'avif' for still images or 'avis' for image sequences) + 4-byte minor version + compatible brands list. The image data is stored in an mdat box as AV1 bitstream. Metadata and structure are in ItemProperties boxes (iprp) containing ImageSpatialExtentsProperty (ispe) for dimensions. All box sizes are big-endian. AVIF supports HDR, wide color gamut, transparency, and lossless modes.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "Microsoft AVI RIFF File Format",
-      "Audio Video Interleave Format"
+      "AVIF Image Format Specification — Alliance for Open Media",
+      "ISO/IEC 23008-12:2022 — HEIF Image File Format (base)",
+      "AV1 Bitstream Specification — Alliance for Open Media",
+      "ISO Base Media File Format (ISOBMFF) — ISO/IEC 14496-12"
     ],
     "WebLinks": [
-      "https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference",
-      "https://en.wikipedia.org/wiki/Audio_Video_Interleave"
+      "https://aomediacodec.github.io/av1-avif/",
+      "https://en.wikipedia.org/wiki/AVIF",
+      "https://caniuse.com/avif",
+      "https://jakearchibald.com/2020/avif-has-landed/"
     ]
   },
   "detection": {
-    "signature": "66747970",
-    "offset": 4,
-    "required": true,
+    "signatures": [
+      {
+        "value": "66747970",
+        "offset": 4,
+        "label": "ftyp box type marker",
+        "weight": 0.5
+      },
+      {
+        "value": "61766966",
+        "offset": 8,
+        "label": "major brand 'avif' (still image)",
+        "weight": 1.0
+      },
+      {
+        "value": "61766973",
+        "offset": 8,
+        "label": "major brand 'avis' (image sequence)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 5.0, "max": 7.8 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 16,
+      "note": "AVIF detection requires 'ftyp' at offset 4 (bytes 04-07 = 66 74 79 70) AND major brand 'avif' or 'avis' at offset 8 (bytes 08-11 = 61 76 69 66 or 61 76 69 73). The box size at offset 0 is BE uint32 and indicates the ftyp box length. Compatible brands at offsets 16+ may also include 'mif1', 'miaf', 'MA1B', 'MA1A'."
     }
   },
-  "functions": {
-    "readUInt32BE": "Read box sizes (big-endian)",
-    "extractASCIIString": "Extract brand identifiers"
-  },
   "variables": {
-    "currentOffset": 0,
     "boxSize": 0,
+    "boxType": "",
     "majorBrand": "",
-    "boxType": ""
+    "minorVersion": 0,
+    "isAVIFBrand": false,
+    "isAVISBrand": false,
+    "isImageSequence": false
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Box Size",
+      "name": "ftyp Box Size",
       "offset": 0,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of ftyp box",
+      "opacity": 0.30,
+      "description": "Size of the ftyp (File Type) box in bytes, as a 32-bit big-endian unsigned integer. Includes this 4-byte size field. Typical values: 24 (avif + version + 1 compatible brand) to 36 (3 compatible brands). If this value is 1, a 64-bit extended size follows (rare for ftyp).",
       "storeAs": "boxSize",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "signature",
-      "name": "Box Type",
+      "name": "Box Type: ftyp",
       "offset": 4,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "ftyp box identifier",
+      "opacity": 0.45,
+      "description": "Four-character box type identifier. Must be 'ftyp' (0x66 0x74 0x79 0x70) for a valid AVIF file. The ftyp box is the mandatory first box and identifies the file's ISOBMFF profile.",
       "storeAs": "boxType",
       "valueType": "ascii"
     },
@@ -78,75 +93,245 @@
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "avif brand",
+      "opacity": 0.40,
+      "description": "Four-character major brand identifier declaring the primary file format spec. 'avif' (0x61766966) = AV1 still image. 'avis' (0x61766973) = AV1 image sequence. 'heic' or 'heis' = HEIF/HEIC (different codec). 'mif1' = generic HEIF multi-image.",
       "storeAs": "majorBrand",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "valueMap": {
+        "avif": "AV1 still image (AVIF)",
+        "avis": "AV1 image sequence (AVIF animated)",
+        "heic": "HEVC still image (HEIC — not AVIF)",
+        "heis": "HEVC image sequence (HEIC — not AVIF)",
+        "mif1": "Multi-Image File (HEIF generic)",
+        "MA1B": "AVIF baseline profile marker",
+        "MA1A": "AVIF advanced profile marker"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 12,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Minor version number of the major brand specification (big-endian uint32). Typically 0. This field is informational and usually not required for parsing.",
+      "storeAs": "minorVersion",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is AVIF Still Image",
+      "expression": "calc:majorBrand == 1635017574",
+      "storeAs": "isAVIFBrand",
+      "description": "True when major brand is 'avif' (0x61766966 = 1635017574 decimal) — still image AVIF"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is AVIF Sequence",
+      "expression": "calc:majorBrand == 1635017587",
+      "storeAs": "isAVISBrand",
+      "description": "True when major brand is 'avis' (0x61766973 = 1635017587 decimal) — animated/sequence AVIF"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Image Sequence",
+      "expression": "calc:isAVISBrand",
+      "storeAs": "isImageSequence",
+      "description": "True when file is an AVIF image sequence (animated AVIF, similar to animated HEIF)"
     },
     {
       "type": "metadata",
-      "name": "Box Size",
-      "variable": "boxSize",
-      "description": "Size of ftyp box"
+      "name": "Box Type",
+      "variable": "boxType",
+      "description": "ISOBMFF box type (must be 'ftyp')"
     },
     {
       "type": "metadata",
       "name": "Major Brand",
       "variable": "majorBrand",
-      "description": "AVIF brand identifier"
+      "description": "File format brand: 'avif'=still, 'avis'=sequence"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Still Image",
+      "variable": "isAVIFBrand",
+      "description": "True for still image AVIF (brand='avif')"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Image Sequence",
+      "variable": "isImageSequence",
+      "description": "True for animated/sequence AVIF (brand='avis')"
     }
   ],
-  "software": [
-    "Chrome",
-    "Firefox",
-    "Modern image editors"
+  "assertions": [
+    {
+      "name": "ftyp box type is valid",
+      "expression": "boxType == 'ftyp'",
+      "severity": "error",
+      "message": "Box type at offset 4 must be 'ftyp' — this is not a valid ISOBMFF/AVIF file"
+    },
+    {
+      "name": "Major brand is AVIF or AVIS",
+      "expression": "isAVIFBrand || isAVISBrand",
+      "severity": "error",
+      "message": "Major brand must be 'avif' (still image) or 'avis' (image sequence) for a valid AVIF file"
+    },
+    {
+      "name": "ftyp box size reasonable",
+      "expression": "boxSize >= 16 && boxSize <= 256",
+      "severity": "warning",
+      "message": "ftyp box size is outside normal range (16-256 bytes) — may indicate a corrupted box header"
+    }
   ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".avif"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ftyp Box Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Major Brand",
+        "offset": 8,
+        "icon": "\uE8A5",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Compatible Brands",
+        "offset": 16,
+        "icon": "\uE790",
+        "color": "#95E1D3"
+      }
     ]
   },
-  "MimeTypes": [
-    "image/avif"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "majorBrand",
+    "primaryField": "isImageSequence",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Type Box",
+        "icon": "\uE9D9",
+        "fields": ["boxType", "boxSize", "majorBrand", "minorVersion"]
+      },
+      {
+        "title": "Format Type",
+        "icon": "\uE8A5",
+        "fields": ["isAVIFBrand", "isAVISBrand", "isImageSequence"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
+  "versionDetection": {
+    "field": "majorBrand",
+    "versions": {
+      "avif": "AVIF Still Image (single frame, AV1 codec)",
+      "avis": "AVIF Image Sequence (animated, AV1 codec)",
+      "heic": "HEIC Still Image (HEVC codec — not AVIF)",
+      "MA1B": "AVIF Baseline Profile",
+      "MA1A": "AVIF Advanced Profile"
+    }
   },
+  "exportTemplates": [
+    {
+      "name": "AVIF ftyp Box (JSON)",
+      "format": "json",
+      "fields": ["boxType", "boxSize", "majorBrand", "minorVersion", "isAVIFBrand", "isAVISBrand", "isImageSequence"]
+    },
+    {
+      "name": "Python AVIF brand check",
+      "format": "python-bytes",
+      "fields": ["boxType", "majorBrand"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Non-AVIF brand in .avif file",
+        "condition": "boxType == 'ftyp' && !isAVIFBrand && !isAVISBrand",
+        "severity": "warning",
+        "description": "ftyp box present but major brand is neither 'avif' nor 'avis' — this may be a HEIF/HEIC or other ISOBMFF file with an .avif extension."
+      },
+      {
+        "name": "Missing ftyp box",
+        "condition": "boxType != 'ftyp'",
+        "severity": "error",
+        "description": "First box is not ftyp — this violates the ISOBMFF specification. The file may be truncated, corrupt, or a bare AV1 bitstream mistakenly given an .avif extension."
+      },
+      {
+        "name": "Very small ftyp box",
+        "condition": "boxSize < 16",
+        "severity": "error",
+        "description": "ftyp box size is less than 16 bytes (minimum: 4 size + 4 type + 4 brand + 4 version). Indicates header corruption."
+      }
+    ],
+    "knownExploitVectors": [
+      "ISOBMFF box size integer overflow: crafted boxSize=0 means 'extends to EOF' — can cause parser to read unbounded data",
+      "AV1 bitstream vulnerabilities in hardware decoders (CVE-2022-22293, etc.)",
+      "Malicious compatible brands list crafted to spoof other format detections"
+    ]
   },
   "aiHints": {
-    "analysisContext": "AV1 Image File Format - Modern image format",
+    "analysisContext": "AVIF uses ISOBMFF container format. File structure: ftyp box (offset 0) → meta/moov boxes → mdat box (AV1 payload). To parse: read box size (BE uint32 at 0), box type ASCII at 4, major brand at 8. For dimensions: look for 'ispe' (ImageSpatialExtentsProperty) box nested inside 'iprp'→'ipco' boxes. AV1 bitstream inside mdat starts with AV1 temporal delimiter OBU (0x12). AVIF supports: 8/10/12-bit depth, BT.709/BT.2020 color, alpha plane, HDR (PQ/HLG), lossless (QP=0).",
+    "knownVulnerabilities": [
+      "CVE-2021-22060: libavif heap overflow via negative ispe dimensions",
+      "CVE-2022-22293: Samsung Exynos AV1 hardware decoder memory corruption",
+      "Box size = 1 (extended size) not handled in some parsers — 64-bit size field not read"
+    ],
     "suggestedInspections": [
-      "Validate AVIF Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Confirm bytes 4-7 = 66 74 79 70 ('ftyp') and bytes 8-11 = 61 76 69 66 ('avif') or 61 76 69 73 ('avis')",
+      "Read ftyp box size at offset 0 (BE uint32) and scan compatible brands from offset 16 to offset 0+boxSize",
+      "Look for 'meta' box after ftyp: contains 'hdlr', 'pitm', 'iloc', 'iinf', 'iprp' boxes",
+      "Within 'iprp'→'ipco': find 'ispe' for image dimensions (BE uint32 width at +4, height at +8)",
+      "Check for 'colr' box for ICC profile or nclx color space specification",
+      "For animated AVIF (avis): verify 'moov' box contains multiple samples"
     ]
+  },
+  "software": [
+    "Chrome 85+ (native decode)",
+    "Firefox 93+ (native decode)",
+    "Safari 16+ (native decode)",
+    "libavif (reference implementation)",
+    "FFmpeg (encode/decode)",
+    "GIMP 2.10.22+ (via plugin)",
+    "ImageMagick",
+    "Squoosh"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".avif", ".avifs"],
+    "relatedFormats": ["HEIC", "JPEG", "WEBP"],
+    "note": "AVIF uses the same ISOBMFF container as HEIC but with AV1 codec instead of HEVC. Competing with JPEG XL for next-generation image format. AVIF has broad browser support; JPEG XL does not (as of 2024)."
+  },
+  "MimeTypes": [
+    "image/avif",
+    "image/avif-sequence"
+  ],
+  "UseCases": [
+    "Web images replacing JPEG (25-50% smaller at same quality)",
+    "HDR photography display (10/12-bit, wide gamut)",
+    "Animated images (replacing GIF/WebP animations)",
+    "Lossless web graphics replacing PNG"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Endianness": "big-endian (ISOBMFF)",
+    "Compression": "AV1 codec (lossy or lossless)",
+    "Container": "ISOBMFF / ISO Base Media File Format (ISO 14496-12)",
+    "HasHeader": true,
+    "HeaderSize": "variable (ftyp box, typically 24-36 bytes)"
   }
 }

@@ -1,58 +1,59 @@
-/* ============================================================
-   Format:    Excel Workbook (Legacy)
-   Category:  Documents
-   Ext:       .xls
-   Editor:    hex-editor
-   Desc:      Microsoft Excel 97-2003 workbook (OLE2)
-   Variables: currentOffset, machineType, sectionCount, entryPoint, ole2Signature, minorVersion
-   Detection: signature=D0CF11E0A1B11AE1 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Excel Workbook (Legacy)",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ".xls"
+    ".xls",
+    ".xlt",
+    ".xlm"
   ],
-  "description": "Microsoft Excel 97-2003 workbook (OLE2)",
+  "description": "Microsoft Excel 97-2003 workbook (.xls) stored in the OLE2 Compound File Binary (CFB) container. Shares the 8-byte CFB magic (D0CF11E0A1B11AE1) with .doc and .ppt. Excel-specific identification: root entry CLSID {00020820-0000-0000-C000-000000000046} or the 'Workbook' stream (Excel 97+) or 'Book' stream (Excel 5.0/95) in the CFB directory. The 'Workbook' stream contains BIFF8 (Binary Interchange File Format 8) records: each record has a 2-byte type (uint16 LE) + 2-byte length (uint16 LE) + variable-length data. Key BIFF8 records: 0x0009=BOF (Beginning of File — version discriminator), 0x0085=BoundSheet8 (sheet names), 0x003C=CONTINUE, 0x00E0=XF (Cell formatting), 0x02BD=SharedStr (shared strings table).",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Excel Workbook (Legacy) Format"
+      "[MS-CFB] Compound File Binary Format — Microsoft Open Specifications",
+      "[MS-XLS] Excel Binary File Format (.xls) BIFF8 v10.0 — Microsoft Open Specifications",
+      "OLE2 Compound Document File Format"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/XLS"
+      "https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/",
+      "https://en.wikipedia.org/wiki/Microsoft_Excel",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000510.shtml"
     ]
   },
   "detection": {
     "signature": "D0CF11E0A1B11AE1",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.0 },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 512,
+      "note": "OLE2/CFB magic. Disambiguate as .xls by: (1) root entry CLSID {00020820-...} or (2) 'Workbook'/'Book' stream in directory. First BIFF8 record in Workbook stream is BOF (type=0x0809, subtype 0x0500=workbook, 0x0010=worksheet, 0x0020=chart)."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "machineType": "",
-    "sectionCount": 0,
-    "entryPoint": 0,
     "ole2Signature": "",
-    "minorVersion": 0
+    "minorVersion": 0,
+    "majorVersion": 0,
+    "byteOrder": 0,
+    "sectorSizeExp": 0,
+    "fatSectorCount": 0,
+    "firstDirSector": 0,
+    "miniStreamCutoff": 0,
+    "isXLS97": false
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "OLE2 Signature",
+      "name": "OLE2/CFB Magic",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Microsoft Office OLE2/CFB header",
+      "opacity": 0.45,
+      "description": "OLE2 Compound File Binary magic: D0 CF 11 E0 A1 B1 1A E1. Shared by all legacy Office formats. Excel-specific content is in the 'Workbook' or 'Book' stream within the CFB directory.",
       "storeAs": "ole2Signature",
       "valueType": "ascii"
     },
@@ -62,77 +63,274 @@
       "offset": 24,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Format minor version",
+      "opacity": 0.30,
+      "description": "CFB minor version (LE uint16). Must be 0x003E (62) for all valid OLE2/CFB files.",
       "storeAs": "minorVersion",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "62": "0x003E — standard (all valid OLE2/CFB files)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 26,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "CFB major version (LE uint16). 3 = 512-byte sectors (Office 97-2003), 4 = 4096-byte sectors.",
+      "storeAs": "majorVersion",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "3": "Version 3 — 512-byte sectors (standard)",
+        "4": "Version 4 — 4096-byte sectors (large files)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Byte Order",
+      "offset": 28,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.25,
+      "description": "Byte order mark: must be 0xFFFE (little-endian). OLE2/CFB is always little-endian.",
+      "storeAs": "byteOrder",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "65534": "0xFFFE — little-endian (required)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Sector Size Exponent",
+      "offset": 30,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Power-of-2 sector size: 9 = 512 bytes, 12 = 4096 bytes.",
+      "storeAs": "sectorSizeExp",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "9": "512-byte sectors (standard)",
+        "12": "4096-byte sectors"
+      }
+    },
+    {
+      "type": "field",
+      "name": "FAT Sector Count",
+      "offset": 44,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Number of FAT sectors in the container. FAT maps sector chain for all streams.",
+      "storeAs": "fatSectorCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Directory Sector",
+      "offset": 48,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Sector index of the first directory stream sector. Byte offset = (firstDirSector+1) × sectorSize.",
+      "storeAs": "firstDirSector",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Mini Stream Cutoff",
+      "offset": 56,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Streams smaller than this size (default 4096 bytes) use the mini FAT stream. Standard is 0x1000.",
+      "storeAs": "miniStreamCutoff",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is XLS 97+ Format",
+      "expression": "calc:majorVersion == 3 && minorVersion == 62",
+      "storeAs": "isXLS97",
+      "description": "True for standard OLE2 v3 container — the expected Excel 97-2003 format"
     },
     {
       "type": "metadata",
-      "name": "Machine",
-      "variable": "machineType",
-      "description": "Machine"
+      "name": "CFB Major Version",
+      "variable": "majorVersion",
+      "description": "OLE2 CFB major version"
     },
     {
       "type": "metadata",
-      "name": "Sections",
-      "variable": "sectionCount",
-      "description": "Sections"
+      "name": "First Directory Sector",
+      "variable": "firstDirSector",
+      "description": "Sector index of CFB directory"
+    },
+    {
+      "type": "metadata",
+      "name": "Is XLS 97 Format",
+      "variable": "isXLS97",
+      "description": "True when standard OLE2 v3 CFB container"
     }
   ],
-  "software": [
-    "Microsoft Excel",
-    "LibreOffice Calc",
-    "Apache OpenOffice Calc",
-    "Google Sheets"
+  "assertions": [
+    {
+      "name": "CFB minor version valid",
+      "expression": "minorVersion == 62",
+      "severity": "error",
+      "message": "CFB minor version must be 0x003E (62) — not a valid OLE2 container"
+    },
+    {
+      "name": "CFB major version valid",
+      "expression": "majorVersion == 3 || majorVersion == 4",
+      "severity": "error",
+      "message": "CFB major version must be 3 or 4"
+    },
+    {
+      "name": "Byte order little-endian",
+      "expression": "byteOrder == 65534",
+      "severity": "error",
+      "message": "OLE2 byte order must be 0xFFFE"
+    }
   ],
-  "format_relationships": {
-    "category": "Documents",
-    "extensions": [
-      ".xls"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "CFB Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Directory Stream",
+        "offsetVar": "firstDirSector",
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/xls"
-  ],
-  "Software": [
-    "Microsoft Excel",
-    "LibreOffice Calc",
-    "Apache OpenOffice Calc",
-    "Google Sheets"
-  ],
-  "UseCases": [
-    "Document viewing",
-    "Reading",
-    "Publishing",
-    "Archival"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "majorVersion",
+    "primaryField": "firstDirSector",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "CFB Container",
+        "icon": "\uE9D9",
+        "fields": ["ole2Signature", "majorVersion", "minorVersion", "byteOrder"]
+      },
+      {
+        "title": "Sector Layout",
+        "icon": "\uE8A5",
+        "fields": ["sectorSizeExp", "fatSectorCount", "firstDirSector", "miniStreamCutoff"]
+      },
+      {
+        "title": "Excel Format",
+        "icon": "\uE8B7",
+        "fields": ["isXLS97"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "DocumentFormat": true
-  },
-  "functions": {
-    "readUInt32LE": "Read executable header"
-  },
+  "exportTemplates": [
+    {
+      "name": "OLE2 Header (JSON)",
+      "format": "json",
+      "fields": ["majorVersion", "minorVersion", "byteOrder", "sectorSizeExp", "fatSectorCount", "firstDirSector", "isXLS97"]
+    },
+    {
+      "name": "Python OLE2 check",
+      "format": "python-bytes",
+      "fields": ["ole2Signature", "majorVersion", "minorVersion"]
+    }
+  ],
   "forensic": {
     "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "VBA macro stream",
+        "condition": "majorVersion == 3 || majorVersion == 4",
+        "severity": "info",
+        "description": "Excel .xls files can embed VBA macros in a 'VBA' stream. Excel macros have been the primary delivery vehicle for financial malware (Emotet, TrickBot, Dridex, Ursnif downloaders). Use olevba to extract and analyze."
+      },
+      {
+        "name": "Invalid CFB byte order",
+        "condition": "byteOrder != 65534",
+        "severity": "error",
+        "description": "OLE2 byte order is not 0xFFFE — file is corrupt or non-conformant."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2017-8570: .xls with OLE packager embedding .sct (scriptlet) file — MSOffice RCE",
+      "CVE-2012-0158: MSCOMCTL.OCX ListView exploit triggered in Excel via embedded control",
+      "XLM macro (Excel 4.0 macros) in 'Macro' sheet — commonly abused in modern malware (2020-2022) to evade VBA detection",
+      "DDEAUTO formula in cells triggering system command execution",
+      "CVE-2018-0802: Equation Editor OLE object in Excel cells"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Microsoft Excel 97-2003 workbook (OLE2)",
+    "analysisContext": "Legacy .xls = OLE2 CFB container. Excel data in 'Workbook' (Excel 97+) or 'Book' (Excel 5/95) stream. BIFF8 record format: type uint16 LE (2B) + length uint16 LE (2B) + data (length bytes). First record must be BOF type 0x0809: version bytes at BOF+4 LE uint16 — 0x0600=BIFF8 (Excel 97-2003), 0x0500=BIFF5 (Excel 5/95). Stream offset = (firstDirSector+1) × 512. Macros in 'VBA' stream (inside storage named 'Macros' or '_VBA_PROJECT_CUR'). XLM/Excel 4.0 macros in dedicated 'Macro' sheets in Workbook stream BoundSheet records with hidden=2. Tools: oletools, xlrd, python-xlrd.",
+    "knownVulnerabilities": [
+      "CVE-2017-8570: OLE packager .sct scriptlet in .xls — file write + execute chain",
+      "XLM (Excel 4.0) macros: EXEC(), CALL() functions execute arbitrary code — not blocked by VBA macro warnings in older Office",
+      "CVE-2018-0802: Equation Editor OLE object heap overflow"
+    ],
     "suggestedInspections": [
-      "Validate Excel Workbook (Legacy) file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
+      "Confirm OLE2 magic D0 CF 11 E0 A1 B1 1A E1",
+      "Find 'Workbook' stream in CFB directory; first 4B = BOF record (type=0x0809, length follows)",
+      "Check BOF version at Workbook+4: 0x0600 = BIFF8 (Excel 97-2003)",
+      "Scan for 'VBA'/'_VBA_PROJECT_CUR' storage in CFB directory (macro indicator)",
+      "Search BoundSheet8 records (type=0x0085) — hidden=2 in bit 1-4 of grbit field indicates hidden macro sheet",
+      "Look for DDEAUTO formula patterns in FORMULA/LABELSST records (formula starting with '=')"
     ]
+  },
+  "software": [
+    "Microsoft Excel 97-2003",
+    "LibreOffice Calc",
+    "Apache OpenOffice Calc",
+    "Google Sheets (import)",
+    "oletools (forensic)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".xls", ".xlt", ".xlm"],
+    "relatedFormats": ["XLSX", "DOC", "PPT"],
+    "note": "Excel 97-2003 BIFF8 format. Replaced by OOXML .xlsx from Office 2007. Shares OLE2/CFB container with .doc and .ppt. XLM (Excel 4.0) macro sheets are still parseable in modern Excel — a security concern."
+  },
+  "MimeTypes": [
+    "application/vnd.ms-excel",
+    "application/msexcel"
+  ],
+  "UseCases": [
+    "Legacy spreadsheet compatibility",
+    "Corporate archival (pre-2007 Office)",
+    "Forensic malware analysis (common malware delivery vector)",
+    "Financial data archiving"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Endianness": "little-endian",
+    "Container": "OLE2 Compound File Binary (CFB)",
+    "HasHeader": true,
+    "HeaderSize": "512 bytes (CFB header)",
+    "InternalFormat": "BIFF8 (Binary Interchange File Format version 8)",
+    "MacroCapable": true
   }
 }

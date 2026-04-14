@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    XFS Filesystem
-   Category:  Disk
-   Ext:       .xfs
-   Editor:    hex-editor
-   Desc:      XFS high-performance journaling filesystem
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=58465342 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "XFS Filesystem",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -81,7 +71,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".xfs"

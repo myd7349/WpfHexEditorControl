@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    MPEG Transport Stream
-   Category:  Video
-   Ext:       .ts, .tsv, .tsa
-   Editor:    hex-editor
-   Desc:      MPEG-2 Transport Stream container format used for broadcasting and streaming
-   Variables: currentOffset, syncByte, transportError, payloadStart, packetPID, continuityCounter
-   Detection: signature=47 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "MPEG Transport Stream",
   "version": "1.10",
@@ -39,8 +29,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -75,7 +65,7 @@
     "VLC",
     "TV software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".ts",

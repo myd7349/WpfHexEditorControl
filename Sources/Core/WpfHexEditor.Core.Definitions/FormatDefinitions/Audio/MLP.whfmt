@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Meridian Lossless Packing
-   Category:  Audio
-   Ext:       .mlp
-   Editor:    audio-viewer
-   Desc:      Meridian Lossless Packing lossless audio compression for DVD-Audio
-   Variables: crc32Valid, originalSize, compressionRatio, mlpSyncWord
-   Detection: signature=18E371F3 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Meridian Lossless Packing",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 4,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -76,7 +66,7 @@
     "Dolby TrueHD players",
     "Blu-ray players"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Audio",
     "extensions": [
       ".mlp"

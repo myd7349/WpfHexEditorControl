@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    SolidWorks Assembly
-   Category:  CAD
-   Ext:       .sldasm
-   Editor:    hex-editor
-   Desc:      SolidWorks assembly file (OLE2 Compound Document)
-   Variables: currentOffset, version, entityCount, layerCount, ole2Signature, minorVersion, majorVersion
-   Detection: signature=D0CF11E0A1B11AE1 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "SolidWorks Assembly",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -96,7 +86,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "CAD",
     "extensions": [
       ".sldasm"

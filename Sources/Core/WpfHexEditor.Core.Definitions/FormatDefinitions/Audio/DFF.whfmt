@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    DSD Interchange File Format
-   Category:  Audio
-   Ext:       .dff
-   Editor:    audio-viewer
-   Desc:      Philips DSDIFF format for Direct Stream Digital audio interchange
-   Variables: currentOffset, formSize, formType, formatVersion, sampleRate, channels, channelType, dffHeader, samplesPerSecond
-   Detection: signature=46524D38 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "DSD Interchange File Format",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -82,7 +72,7 @@
     "Foobar2000",
     "Audiophile software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Audio",
     "extensions": [
       ".dff"

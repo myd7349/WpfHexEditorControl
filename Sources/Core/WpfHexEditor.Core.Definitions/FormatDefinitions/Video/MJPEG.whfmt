@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Motion JPEG
-   Category:  Video
-   Ext:       .mjpeg, .mjpg
-   Editor:    hex-editor
-   Desc:      Motion JPEG video format where each frame is a separate JPEG image
-   Variables: jpegWidth, jpegHeight, jpegComponents, frameRate, jpegSoiMarker, totalPixels
-   Detection: signature=FFD8FF @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Motion JPEG",
   "version": "1.13",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -85,7 +75,7 @@
     "VLC",
     "Surveillance software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".mjpeg",

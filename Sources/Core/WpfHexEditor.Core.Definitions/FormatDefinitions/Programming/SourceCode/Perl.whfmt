@@ -1,14 +1,4 @@
-/*
-   ============================================================
-   Format:    Perl Script
-   Category:  Programming
-   Ext:       .pl, .pm, .pod
-   Editor:    code-editor
-   Desc:      Perl scripting language source files and modules.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "Perl Script",
   "version": "2.1",

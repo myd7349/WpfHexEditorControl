@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    ISO Disk Image
-   Category:  Disk
-   Ext:       .iso
-   Editor:    hex-editor
-   Desc:      ISO 9660 CD/DVD image format
-   Variables: currentOffset, volumeIdentifier, systemIdentifier, publisher, volumeSize, blockSize, pathTableSize, hasJoliet, hasRockRidge, primaryVolumeDescriptor, volumeDescriptorType
-   Detection: signature=4344303031 @ offset 32769
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ISO Disk Image",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 32769,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -91,7 +81,7 @@
     "Windows Explorer",
     "ImgBurn"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "iso_9660_standard": true,
     "extensions": [
       "Joliet",

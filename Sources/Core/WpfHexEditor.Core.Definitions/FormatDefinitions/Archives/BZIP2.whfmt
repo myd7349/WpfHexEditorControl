@@ -1,134 +1,352 @@
-/* ============================================================
-   Format:    BZIP2 Compressed File
-   Category:  Archives
-   Ext:       .bz2, .bzip2
-   Editor:    hex-editor
-   Desc:      BZIP2 compression format
-   Variables: currentOffset, blockSize, dataCRC, bzip2Signature
-   Detection: signature=425A68 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "BZIP2 Compressed File",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
     ".bz2",
-    ".bzip2"
+    ".bzip2",
+    ".tbz2",
+    ".tbz"
   ],
-  "description": "BZIP2 compression format",
+  "description": "BZIP2 lossless compression format. Uses Burrows-Wheeler Block Sorting Transform (BWT) followed by Move-to-Front transform and Huffman coding. Produces smaller files than DEFLATE for most data at the cost of higher CPU usage.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "PKWARE APPNOTE.TXT - ZIP File Format Specification",
-      "ISO/IEC 21320-1:2015 - Document Container File"
+      "Julian Seward's bzip2 source code and documentation",
+      "BZIP2 File Format Specification (informal, derived from source)"
     ],
     "WebLinks": [
-      "https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT",
-      "https://en.wikipedia.org/wiki/ZIP_(file_format)",
-      "https://www.iso.org/standard/60101.html"
+      "https://sourceware.org/bzip2/",
+      "https://en.wikipedia.org/wiki/Bzip2",
+      "https://github.com/dsnet/compress/blob/master/doc/bzip2-format.pdf"
     ]
   },
   "detection": {
     "signature": "425A68",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 7.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 14,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "calculateCRC32": "Calculate CRC-32 of compressed data blocks"
+    "calculateCRC32": "Calculate CRC-32 of compressed data blocks",
+    "formatBlockSize(var:blockSizeKB)": "Format block size as human-readable KB value"
   },
   "variables": {
     "currentOffset": 0,
     "blockSize": 0,
+    "blockSizeKB": 0,
     "dataCRC": 0,
-    "bzip2Signature": ""
+    "streamCRC": 0,
+    "bzip2Signature": "",
+    "blockMagic": "",
+    "blockCRC": 0,
+    "randomizedBit": 0,
+    "origPtr": 0,
+    "huffmanTrees": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "BZIP2 Signature",
+      "name": "BZIP2 Stream Identifier",
       "offset": 0,
       "length": 3,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "BZh magic bytes",
+      "opacity": 0.45,
+      "description": "BZh — BZIP2 stream header magic bytes. Three ASCII characters: 'B' (0x42), 'Z' (0x5A), 'h' (0x68). The 'h' stands for 'huffman-coding-corrected', distinguishing BZIP2 from the older BZIP1 format which used 0x30 ('0') in this position.",
       "storeAs": "bzip2Signature",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Block Size",
+      "name": "Block Size Multiplier",
       "offset": 3,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Block size (1-9) * 100KB",
+      "opacity": 0.35,
+      "description": "ASCII digit '1' through '9' specifying the compression block size as a multiple of 100KB. The block size determines the BWT window size and directly affects compression ratio — larger blocks compress better but require more memory (100KB to 900KB for compression, 3.5x for decompression). ASCII '1'=0x31=49, '9'=0x39=57.",
       "storeAs": "blockSize",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "49": "100 KB block size  ('1')",
+        "50": "200 KB block size  ('2')",
+        "51": "300 KB block size  ('3')",
+        "52": "400 KB block size  ('4')",
+        "53": "500 KB block size  ('5')",
+        "54": "600 KB block size  ('6')",
+        "55": "700 KB block size  ('7')",
+        "56": "800 KB block size  ('8')",
+        "57": "900 KB block size  ('9') — maximum compression"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Block Magic — Pi Bytes",
+      "offset": 4,
+      "length": 6,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "First 6 bytes of a BZIP2 data block magic number. The 48-bit sequence encodes the digits of pi: 0x314159265359 = decimal 53,714,198,353,753. This 'pi magic' marks the start of each BWT-compressed data block within the stream.",
+      "storeAs": "blockMagic",
+      "valueType": "bytes",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Block CRC-32 Checksum",
+      "offset": 10,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.35,
+      "description": "CRC-32 checksum of the uncompressed data in this specific block. Computed before BWT transformation. The CRC is stored in big-endian byte order — a notable exception in a format that otherwise uses bit-stream encoding. Verified during decompression; mismatch indicates block corruption.",
+      "storeAs": "blockCRC",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Randomized Flag",
+      "offset": 14,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Single bit flag (0 or 1) indicating whether the block data has been 'randomized' — a compatibility mechanism from BZIP1 where highly repetitive data would be slightly perturbed to improve Huffman coding. Modern BZIP2 always sets this to 0. A value of 1 in modern files is suspicious.",
+      "storeAs": "randomizedBit",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Not randomized (standard BZIP2)",
+        "1": "Randomized (BZIP1 compatibility — unusual in modern files)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "BWT Original Pointer",
+      "offset": 15,
+      "length": 3,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "24-bit integer (big-endian, bit-packed) containing the 'original pointer' — the position in the Burrows-Wheeler Transform sorted block that corresponds to the original data's starting position. Required for BWT inversion during decompression. Valid range: 0 to (blockSize - 1).",
+      "storeAs": "origPtr",
+      "valueType": "bytes",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Huffman Tree Count",
+      "offset": 18,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Number of Huffman coding trees used in this block (2 to 6). BZIP2 uses multiple Huffman trees and switches between them every 50 symbols to improve compression of data with varying symbol distributions. More trees = potentially better compression but larger overhead.",
+      "storeAs": "huffmanTrees",
+      "valueType": "uint8",
+      "validation": {
+        "minValue": 2,
+        "maxValue": 6
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Block Size KB",
+      "expression": "calc:(blockSize - 48) * 100",
+      "storeAs": "blockSizeKB",
+      "description": "Block size in kilobytes computed from the ASCII digit: (ASCII value - 48) * 100KB. Values range from 100KB (digit '1') to 900KB (digit '9')."
     },
     {
       "type": "metadata",
-      "name": "Block Size (KB)",
-      "variable": "blockSize",
-      "description": "Compression block size in kilobytes (100-900KB)"
+      "name": "Compression Block Size",
+      "variable": "blockSizeKB",
+      "description": "BWT compression window size in kilobytes. Larger values produce better compression ratios but require more RAM during both compression and decompression."
+    },
+    {
+      "type": "metadata",
+      "name": "Block CRC Value",
+      "variable": "blockCRC",
+      "description": "CRC-32 checksum of the first block's uncompressed data for integrity verification"
+    },
+    {
+      "type": "metadata",
+      "name": "Randomization Status",
+      "variable": "randomizedBit",
+      "description": "Indicates whether BZIP1-era data randomization was applied. Should always be 0 in files created by modern bzip2."
+    },
+    {
+      "type": "metadata",
+      "name": "Huffman Tree Count",
+      "variable": "huffmanTrees",
+      "description": "Number of Huffman coding trees (2-6) used for entropy coding in the first data block"
     }
   ],
-  "software": [
-    "bzip2",
-    "7-Zip",
-    "PeaZip"
+  "checksums": [
+    {
+      "name": "Block CRC-32 (first block)",
+      "algorithm": "crc32",
+      "dataRange": { "fixedOffset": 4, "fixedLength": 6 },
+      "storedAt": { "fixedOffset": 10, "length": 4, "endianness": "big" },
+      "storedType": "uint32",
+      "severity": "warning"
+    }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".bz2",
-      ".bzip2"
+  "assertions": [
+    {
+      "name": "BZh stream identifier present",
+      "expression": "bzip2Signature == 'BZh'",
+      "severity": "error",
+      "message": "BZIP2 stream identifier 'BZh' (0x42 0x5A 0x68) is missing or corrupted — not a valid BZIP2 file"
+    },
+    {
+      "name": "Block size digit in valid range",
+      "expression": "blockSize >= 49 && blockSize <= 57",
+      "severity": "error",
+      "message": "Block size character must be ASCII '1' (0x31) through '9' (0x39). Found an invalid value — file may be truncated or corrupted."
+    },
+    {
+      "name": "Huffman tree count valid",
+      "expression": "huffmanTrees >= 2 && huffmanTrees <= 6",
+      "severity": "warning",
+      "message": "Huffman tree count must be 2-6 per BZIP2 specification. Out-of-range value indicates data corruption."
+    },
+    {
+      "name": "Randomized flag is standard",
+      "expression": "randomizedBit == 0",
+      "severity": "info",
+      "message": "Block randomization flag is set (value 1). This is a BZIP1-era feature not used by modern bzip2. The file may have been created by very old software."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Stream Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "First Block Header",
+        "offset": 4,
+        "icon": "\uE8A5",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-bzip2"
-  ],
-  "Software": [
-    "bzip2",
-    "7-Zip",
-    "PeaZip",
-    "tar"
-  ],
-  "UseCases": [
-    "High compression",
-    "Linux archives",
-    "Source code distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": false
+  "inspector": {
+    "badge": "blockSizeKB",
+    "primaryField": "blockSizeKB",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Stream Header",
+        "icon": "\uE71B",
+        "fields": ["bzip2Signature", "blockSize", "blockSizeKB"]
+      },
+      {
+        "title": "First Block",
+        "icon": "\uE8A5",
+        "fields": ["blockMagic", "blockCRC", "randomizedBit", "origPtr"]
+      },
+      {
+        "title": "Huffman Configuration",
+        "icon": "\uE9D9",
+        "fields": ["huffmanTrees"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "CompressionMethod": "Burrows-Wheeler",
-    "ArchivesFormat": true
-  },
+  "exportTemplates": [
+    {
+      "name": "BZIP2 Stream Header (JSON)",
+      "format": "json",
+      "fields": ["bzip2Signature", "blockSize", "blockSizeKB", "blockMagic", "blockCRC", "randomizedBit", "huffmanTrees"]
+    },
+    {
+      "name": "BZIP2 Stream Header (C struct)",
+      "format": "c-struct",
+      "structName": "BZIP2_STREAM_HEADER",
+      "fields": ["bzip2Signature", "blockSize", "blockMagic", "blockCRC", "randomizedBit", "origPtr"]
+    },
+    {
+      "name": "Python BZIP2 magic check",
+      "format": "python-bytes",
+      "fields": ["bzip2Signature", "blockSize"]
+    }
+  ],
   "forensic": {
     "category": "archive",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Randomization flag set",
+        "condition": "randomizedBit != 0",
+        "severity": "info",
+        "description": "Block randomization flag is set — unusual in modern BZIP2 files, possible sign of very old software or file manipulation"
+      },
+      {
+        "name": "Invalid block size digit",
+        "condition": "blockSize < 49 || blockSize > 57",
+        "severity": "error",
+        "description": "Block size byte is not an ASCII digit '1'-'9' — file is corrupted or not a genuine BZIP2 stream"
+      },
+      {
+        "name": "Too many Huffman trees",
+        "condition": "huffmanTrees > 6",
+        "severity": "warning",
+        "description": "Huffman tree count exceeds BZIP2 specification maximum of 6 — indicates data corruption or stream manipulation"
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "BZIP2 compression format",
+    "analysisContext": "BZIP2 is a single-file compressor (not an archiver). A .bz2 file contains exactly one compressed data stream. To compress multiple files, BZIP2 is typically combined with tar (.tar.bz2 / .tbz2). Key distinguishing property: extremely high output entropy (near 8.0 bits/byte) due to Huffman entropy coding — useful for distinguishing from encrypted data which looks similar.",
+    "knownVulnerabilities": [
+      "bzip2 1.0.6 CVE-2016-3189: use-after-free during decompression of malformed data",
+      "Decompression bombs: legitimate BZIP2 compression ratios can reach 50:1 for repetitive data"
+    ],
     "suggestedInspections": [
-      "Verify BZIP2 Compressed File file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Verify block size digit is '1'-'9' — invalid values indicate corruption",
+      "Check randomization flag (should be 0 in modern files)",
+      "For security scanning: decompress and inspect content, BZIP2 is often used to bypass AV signature matching",
+      "Compare stream CRC at end-of-stream with decompressed content to verify integrity"
     ]
+  },
+  "software": [
+    "bzip2 (reference implementation)",
+    "7-Zip",
+    "PeaZip",
+    "tar (combined as .tbz2)"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".bz2", ".bzip2", ".tbz2", ".tbz"],
+    "relatedFormats": ["GZIP", "XZ", "LZMA", "ZSTD"]
+  },
+  "MimeTypes": [
+    "application/x-bzip2",
+    "application/x-bzip"
+  ],
+  "UseCases": [
+    "High-ratio lossless compression",
+    "Linux package distribution (.deb, .rpm source)",
+    "Source code tarballs (.tar.bz2)",
+    "Database dump compression"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 12,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "Burrows-Wheeler Transform + Move-to-Front + Huffman",
+    "ArchivesFormat": false,
+    "SupportsMultipleFiles": false,
+    "MaxBlockSize": "900KB",
+    "TypicalCompressionRatio": "3:1 to 8:1"
   }
 }

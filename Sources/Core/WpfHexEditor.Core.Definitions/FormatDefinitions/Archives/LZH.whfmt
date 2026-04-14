@@ -1,30 +1,20 @@
-/* ============================================================
-   Format:    LZH Archive
-   Category:  Archives
-   Ext:       .lzh, .lha
-   Editor:    hex-editor
-   Desc:      LHA/LZH compressed archive
-   Variables: currentOffset, headerSize, headerChecksum, methodID, methodId
-   Detection: signature=2D6C68 @ offset 2
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "LZH Archive",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".lzh",
     ".lha"
   ],
-  "description": "LHA/LZH compressed archive",
+  "description": "LHA/LZH — a compressed archive format created by Haruyasu Yoshizaki (1988) and widely popular in Japan, on Amiga systems, and in early PC software distribution. The format has three header levels (0, 1, 2) with slightly different layouts. The Level-0 header starts with: headerSize (1B), headerChecksum (1B), method ID (5B ASCII, e.g., '-lh5-'), compressed size (4B LE), original size (4B LE), DOS timestamp (4B LE), file attribute (1B), header level (1B), filename length (1B), filename (N bytes), CRC-16 of uncompressed data (2B LE). Common compression methods: -lh0-=stored, -lh4--lh7-=LZSS+Huffman, -lhd-=directory entry. The archive ends when headerSize=0.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "LHA/LZH Archive Format - Haruyasu Yoshizaki",
-      "LZH Compression Algorithm Specification",
-      "LZSS and Huffman Encoding in LHA"
+      "LHA/LZH Format Specification — Haruyasu Yoshizaki",
+      "LHA Technical Documentation — lha.sourceforge.jp",
+      "LZSS and Huffman Encoding in LHA — Yoshizaki 1988"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/LHA_(file_format)",
@@ -37,21 +27,30 @@
     "signature": "2D6C68",
     "offset": 2,
     "required": true,
+    "Strength": "Strong",
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 22,
+      "maxSignatureOffset": 2
     }
   },
-  "functions": {
-    "calculateCRC32": "Calculate header checksum",
-    "extractASCIIString": "Extract compression method ID"
-  },
   "variables": {
-    "currentOffset": 0,
     "headerSize": 0,
     "headerChecksum": 0,
-    "methodID": "",
-    "methodId": ""
+    "methodId": "",
+    "compressedSize": 0,
+    "originalSize": 0,
+    "timestamp": 0,
+    "attribute": 0,
+    "headerLevel": 0,
+    "filenameLength": 0,
+    "crc16": 0,
+    "isDirectory": false,
+    "filename": ""
+  },
+  "functions": {
+    "calculateChecksum": "Calculate sum of all header bytes (mod 256) and verify against headerChecksum",
+    "calculateCRC16": "Calculate CRC-16 (0x8005) of uncompressed data and verify against crc16 field",
+    "extractASCIIString": "Extract compression method ID and filename strings"
   },
   "blocks": [
     {
@@ -60,10 +59,13 @@
       "offset": 0,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Size of header",
+      "opacity": 0.35,
+      "description": "Size of the fixed portion of the level-0 or level-1 header in bytes (uint8). This is the byte count starting after the 2-byte header (i.e., does not include itself or the headerChecksum byte). For end-of-archive, this value is 0. Typical value for a simple file entry is 22-25 bytes (before optional extended headers).",
       "storeAs": "headerSize",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "0 — End of archive marker"
+      }
     },
     {
       "type": "field",
@@ -71,87 +73,375 @@
       "offset": 1,
       "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Header checksum",
+      "opacity": 0.30,
+      "description": "Simple additive checksum of the header bytes following this field (level-0/level-1). Computed as the sum of all subsequent header bytes modulo 256. Used to detect header corruption. Level-2 headers do not use this checksum field — they use a CRC-16 of the entire header instead.",
       "storeAs": "headerChecksum",
       "valueType": "uint8"
     },
     {
       "type": "signature",
-      "name": "Method ID",
+      "name": "Compression Method ID",
       "offset": 2,
-      "length": 3,
+      "length": 5,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "-lh compression method",
+      "opacity": 0.45,
+      "description": "5-byte ASCII compression method identifier. The standard format is '-lhN-' where N is a single digit (0-9) or letter (d=directory). This field is the primary signature for LZH detection (bytes at offset 2-4 are '-lh'). The method determines the decompression algorithm applied to the compressed data.",
       "storeAs": "methodId",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "valueMap": {
+        "-lh0-": "-lh0- — Stored (no compression)",
+        "-lh1-": "-lh1- — LZS + 4k sliding window (original lharc 1.x method)",
+        "-lh2-": "-lh2- — LZS + 8k sliding window",
+        "-lh3-": "-lh3- — LZS + 8k sliding window (lharc 2.x)",
+        "-lh4-": "-lh4- — LZSS + Huffman (4k dictionary)",
+        "-lh5-": "-lh5- — LZSS + Huffman (8k dictionary, most common LHA method)",
+        "-lh6-": "-lh6- — LZSS + Huffman (32k dictionary)",
+        "-lh7-": "-lh7- — LZSS + Huffman (64k dictionary)",
+        "-lhd-": "-lhd- — Directory entry (no data, just directory name)",
+        "-lz4-": "-lz4- — Stored (LZ4-compatible method ID, rare)",
+        "-lz5-": "-lz5- — LZ5 method"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Compressed Size",
+      "offset": 7,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Size of the compressed data in the archive in bytes (little-endian 32-bit). Immediately follows the file header block. For method -lh0- (stored), this equals originalSize. For directory entries (-lhd-), this is typically 0.",
+      "storeAs": "compressedSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Original (Uncompressed) Size",
+      "offset": 11,
+      "length": 4,
+      "color": "#45B7D1",
+      "opacity": 0.30,
+      "description": "Original uncompressed file size in bytes (little-endian 32-bit). Used to allocate output buffer during extraction. For directory entries, this is 0.",
+      "storeAs": "originalSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Timestamp (DOS packed)",
+      "offset": 15,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.30,
+      "description": "File modification timestamp in MS-DOS packed date/time format (little-endian 32-bit). Upper 16 bits = date (bits 15-9=year-1980, bits 8-5=month, bits 4-0=day). Lower 16 bits = time (bits 15-11=hour, bits 10-5=minute, bits 4-0=2-second steps).",
+      "storeAs": "timestamp",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "File Attribute",
+      "offset": 19,
+      "length": 1,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "MS-DOS file attribute byte. Bit flags: bit 0=read-only, bit 1=hidden, bit 2=system, bit 3=volume label, bit 4=directory, bit 5=archive.",
+      "storeAs": "attribute",
+      "valueType": "uint8",
+      "bitfields": [
+        { "bit": 0, "name": "ReadOnly", "description": "File is read-only" },
+        { "bit": 1, "name": "Hidden", "description": "File is hidden from directory listing" },
+        { "bit": 2, "name": "System", "description": "File is a system file" },
+        { "bit": 4, "name": "Directory", "description": "Entry is a directory" },
+        { "bit": 5, "name": "Archive", "description": "File has been modified since last backup" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Header Level",
+      "offset": 20,
+      "length": 1,
+      "color": "#FF8C69",
+      "opacity": 0.30,
+      "description": "Header format level: 0 (original lharc), 1 (extended), or 2 (new extended with 2-byte header size). Level 0 and 1 are most common. Level 2 uses a different layout: the first 2 bytes are a 16-bit header size (LE) instead of headerSize+checksum.",
+      "storeAs": "headerLevel",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Level 0 — Original lharc format (checksum-based)",
+        "1": "Level 1 — Extended header format (most common)",
+        "2": "Level 2 — New extended format (CRC-16 protected header)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Filename Length",
+      "offset": 21,
+      "length": 1,
+      "color": "#87CEEB",
+      "opacity": 0.30,
+      "description": "Length of the filename field that follows (in bytes, 0-255). The filename is a null-free byte sequence; no null terminator. In level-1/2 headers, extended headers may contain a longer filename or OS-2/Unix path information.",
+      "storeAs": "filenameLength",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "CRC-16 of Uncompressed Data",
+      "offset": 22,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.35,
+      "description": "CRC-16 checksum of the original (uncompressed) file content. Uses CRC-16 polynomial 0x8005 (big-endian bit processing). Used to verify extraction integrity — if the decompressed data CRC does not match this field, the file is corrupted. For directory entries (-lhd-), this is typically 0.",
+      "storeAs": "crc16",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Directory Entry",
+      "expression": "calc:methodId == '-lhd-' || (attribute & 16) != 0",
+      "storeAs": "isDirectory",
+      "description": "True if this header describes a directory entry (method '-lhd-' or directory attribute bit set)"
     },
     {
       "type": "metadata",
       "name": "Header Size",
       "variable": "headerSize",
-      "description": "Size of the LZH header"
+      "description": "Header byte count (0=end of archive)"
     },
     {
       "type": "metadata",
-      "name": "Compression Method",
-      "variable": "methodID",
-      "description": "Compression method identifier (e.g., -lh5-, -lh6-)"
+      "name": "Method ID",
+      "variable": "methodId",
+      "description": "Compression method identifier (e.g., -lh5-, -lh0-)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compressed Size",
+      "variable": "compressedSize",
+      "description": "Compressed data size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Uncompressed file size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Level",
+      "variable": "headerLevel",
+      "description": "Header format level: 0=original, 1=extended, 2=new extended"
+    },
+    {
+      "type": "metadata",
+      "name": "Filename Length",
+      "variable": "filenameLength",
+      "description": "Length of the stored filename (bytes)"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC-16",
+      "variable": "crc16",
+      "description": "CRC-16 checksum of uncompressed data for integrity verification"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Directory",
+      "variable": "isDirectory",
+      "description": "True if entry is a directory (method -lhd- or directory attribute)"
     }
   ],
-  "software": [
-    "LHA",
-    "7-Zip",
-    "WinRAR"
+  "assertions": [
+    {
+      "name": "LZH method ID contains -lh",
+      "expression": "methodId[0] == '-' && methodId[1] == 'l' && methodId[2] == 'h'",
+      "severity": "error",
+      "message": "Method ID at offset 2 must start with '-lh' — not a valid LZH archive header"
+    },
+    {
+      "name": "Header level recognized",
+      "expression": "headerLevel == 0 || headerLevel == 1 || headerLevel == 2",
+      "severity": "warning",
+      "message": "Header level must be 0, 1, or 2 — unrecognized header level indicates non-standard LZH format"
+    },
+    {
+      "name": "End of archive check",
+      "expression": "headerSize > 0",
+      "severity": "info",
+      "message": "Header size is 0 — this marks the end of the LZH archive"
+    }
   ],
-  "format_relationships": {
-    "legacy_format": true,
-    "popular_in": "Japan",
-    "related": [
-      "LHA"
+  "checksums": [
+    {
+      "name": "Header Additive Checksum",
+      "algorithm": "sum8",
+      "note": "Sum of all header bytes following the checksum field, modulo 256. Only for level-0 and level-1 headers.",
+      "dataRange": { "fixedOffset": 2, "lengthVar": "headerSize" },
+      "storedAt": { "fixedOffset": 1, "length": 1 },
+      "storedType": "uint8",
+      "severity": "warning"
+    },
+    {
+      "name": "File Data CRC-16",
+      "algorithm": "crc16",
+      "note": "CRC-16 (polynomial 0x8005) of the fully decompressed file data.",
+      "dataRange": { "description": "Decompressed output of the compressed data block" },
+      "storedAt": { "fixedOffset": 22, "length": 2, "endianness": "little" },
+      "storedType": "uint16",
+      "severity": "warning"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "First File Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Method ID (-lhN-)",
+        "offset": 2,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "File Sizes",
+        "offset": 7,
+        "icon": "\uE9D9",
+        "color": "#FFE66D"
+      },
+      {
+        "name": "CRC-16",
+        "offset": 22,
+        "icon": "\uE72E",
+        "color": "#98D8C8"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-lzh-compressed"
-  ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
-  "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "methodId",
+    "primaryField": "originalSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "\uE71B",
+        "fields": ["headerSize", "headerChecksum", "methodId", "headerLevel"]
+      },
+      {
+        "title": "File Data",
+        "icon": "\uE9D9",
+        "fields": ["compressedSize", "originalSize", "filenameLength", "isDirectory"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE72E",
+        "fields": ["crc16", "attribute"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
+  "exportTemplates": [
+    {
+      "name": "LZH File Header (JSON)",
+      "format": "json",
+      "fields": ["headerSize", "methodId", "compressedSize", "originalSize", "timestamp", "attribute", "headerLevel", "filenameLength", "crc16", "isDirectory"]
+    },
+    {
+      "name": "lzh_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "lzh_header",
+      "fields": ["headerSize", "headerChecksum", "methodId", "compressedSize", "originalSize", "timestamp", "attribute", "headerLevel", "filenameLength"]
+    },
+    {
+      "name": "Python LZH check",
+      "format": "python-bytes",
+      "fields": ["headerSize", "methodId", "compressedSize", "originalSize"]
+    }
+  ],
   "forensic": {
     "category": "archive",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Unknown compression method",
+        "condition": "methodId != '-lh0-' && methodId != '-lh1-' && methodId != '-lh2-' && methodId != '-lh3-' && methodId != '-lh4-' && methodId != '-lh5-' && methodId != '-lh6-' && methodId != '-lh7-' && methodId != '-lhd-'",
+        "severity": "warning",
+        "description": "Compression method ID is not in the known -lh0- to -lh7- or -lhd- set. May indicate a custom LZH variant or crafted archive."
+      },
+      {
+        "name": "Invalid header level",
+        "condition": "headerLevel > 2",
+        "severity": "warning",
+        "description": "Header level > 2 is not defined in the LZH specification. Indicates a non-standard format or corrupted header."
+      },
+      {
+        "name": "Compressed larger than original",
+        "condition": "compressedSize > originalSize && originalSize > 0",
+        "severity": "info",
+        "description": "Compressed size exceeds original size. Possible if compression expanded the data (rare, occurs with pre-compressed or random data), or indicates a header error."
+      }
+    ]
   },
   "aiHints": {
-    "analysisContext": "LHA/LZH compressed archive",
+    "analysisContext": "LZH level-0 header layout: headerSize(1) + checksum(1) + methodID(5,'-lhN-') + compressedSize(4,LE) + originalSize(4,LE) + timestamp(4,LE,DOS) + attribute(1) + level(1) + filenameLen(1) + filename(N bytes) + CRC16(2,LE). Detection: bytes at offset 2-4 are 0x2D 0x6C 0x68 ('-lh'). End of archive: headerSize == 0. Level-1 headers add extended headers after the base header. Level-2 uses a 2-byte LE header size at offset 0 instead of single-byte. Most common method: -lh5- (8k dictionary LZSS+Huffman). CRC-16 polynomial: 0x8005.",
+    "knownVulnerabilities": [
+      "CVE-2006-4335 to CVE-2006-4338: Multiple buffer overflows in lha 1.14 via crafted headers",
+      "Path traversal via ../ or absolute paths in LZH filenames (pre-2006 lha versions)",
+      "Integer overflow in compressedSize + originalSize causing allocator underalloc"
+    ],
     "suggestedInspections": [
-      "Verify LZH Archive file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
+      "Verify bytes at offset 2-4 are 0x2D 0x6C 0x68 ('-lh')",
+      "Verify headerLevel is 0, 1, or 2",
+      "Validate headerChecksum: sum bytes 2..headerSize+2 mod 256 should equal byte at offset 1",
+      "Check methodId is one of: -lh0-, -lh1-, -lh2-, -lh3-, -lh4-, -lh5-, -lh6-, -lh7-, -lhd-",
+      "Scan stored filename (after filenameLength bytes) for path traversal (../ or absolute paths)",
+      "Verify CRC-16 of decompressed data matches crc16 field"
     ]
+  },
+  "software": [
+    "LHA (Haruyasu Yoshizaki)",
+    "lha (Unix port, jca02266)",
+    "7-Zip",
+    "WinRAR",
+    "The Unarchiver (macOS)",
+    "PeaZip"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".lzh", ".lha"],
+    "relatedFormats": ["ZIP", "ARJ", "RAR"],
+    "popularIn": "Japan (dominant archive format until ~2000), Amiga community"
+  },
+  "MimeTypes": [
+    "application/x-lzh-compressed",
+    "application/x-lha"
+  ],
+  "UseCases": [
+    "Japanese software distribution (dominant format in Japan 1990-2000)",
+    "Amiga software archives (.lha extension common on Amiga)",
+    "Legacy PC BBS software distribution",
+    "Digital preservation of 1990s Japanese software"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 14,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ArchiveFormat": true,
+    "CompressionAlgorithm": "LZSS (LZ77 variant) + Adaptive Huffman coding",
+    "Endianness": "little-endian",
+    "SignatureLocation": "Offset 2 (not offset 0) — bytes 0-1 are header size and checksum",
+    "HeaderLevels": "0 (original), 1 (extended), 2 (new extended with CRC)",
+    "ChecksumType": "Additive modulo-256 (level-0/1), CRC-16 (level-2)",
+    "DataIntegrityCheck": "CRC-16 of decompressed content (polynomial 0x8005)",
+    "SupportsDirectories": true,
+    "SupportsEncryption": false,
+    "MaxFileSize": "4GB (32-bit size field)"
   }
 }

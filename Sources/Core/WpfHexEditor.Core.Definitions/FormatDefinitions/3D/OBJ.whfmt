@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Wavefront OBJ
-   Category:  3D
-   Ext:       .obj
-   Editor:    hex-editor
-   Desc:      Wavefront 3D object format (text-based)
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, commentOrVertex, formattedSize
-   Detection: signature=23 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Wavefront OBJ",
   "version": "1.13",
@@ -35,8 +25,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -91,7 +81,7 @@
     "3ds Max",
     "All 3D software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "wavefront_format": true,
     "text_based": true,
     "universal_support": true,

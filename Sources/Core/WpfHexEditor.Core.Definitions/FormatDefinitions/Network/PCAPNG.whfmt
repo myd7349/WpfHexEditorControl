@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    PCAPNG Network Capture
-   Category:  Network
-   Ext:       .pcapng
-   Editor:    hex-editor
-   Desc:      PCAP Next Generation - Enhanced packet capture format
-   Variables: currentOffset, packetCount, snaplen, linkType, version, sectionHeaderBlock, blockTotalLength, byteOrderMagic
-   Detection: signature=0A0D0D0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PCAPNG Network Capture",
   "version": "1.12",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -111,7 +101,7 @@
     "tcpdump 4.x+",
     "Modern capture tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "successor_to": "PCAP",
     "more_features": true,
     "extensible": true

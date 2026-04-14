@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    sFlow
-   Category:  Network
-   Ext:       .sflow
-   Editor:    hex-editor
-   Desc:      sFlow network monitoring - Sampled flow data
-   Variables: currentOffset, version, agentAddress, sampleCount, uptime, sflowVersion, agentAddressType, subAgentId, sequenceNumber, systemUptime, numberOfSamples
-   Detection: signature=00000005 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "sFlow",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -144,7 +134,7 @@
     "Wireshark",
     "tcpdump"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Network",
     "extensions": [
       ".sflow"

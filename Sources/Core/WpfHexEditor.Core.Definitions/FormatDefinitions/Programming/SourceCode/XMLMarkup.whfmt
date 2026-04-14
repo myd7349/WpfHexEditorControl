@@ -1,14 +1,4 @@
-/*
-   ============================================================
-   Format:    XML Markup Source File
-   Category:  Programming
-   Ext:       .xsl, .xslt, .xhtml, .svg, .tasks, .targets, .props
-   Editor:    code-editor
-   Desc:      XML-derived markup source files: XSLT, XHTML, SVG, and MSBuild project files (.tasks, .targets, .props).
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "semantic",
   "formatName": "XML Markup Source File",
   "version": "2.1",

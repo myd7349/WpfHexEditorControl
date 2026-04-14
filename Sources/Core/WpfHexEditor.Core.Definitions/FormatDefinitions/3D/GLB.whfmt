@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Binary glTF
-   Category:  3D
-   Ext:       .glb
-   Editor:    hex-editor
-   Desc:      Khronos glTF binary format
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, gltfSignature, version, length, formattedSize
-   Detection: signature=676C5446 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Binary glTF",
   "version": "1.13",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -112,7 +102,7 @@
     "Babylon.js",
     "Model viewers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "3D",
     "extensions": [
       ".glb"

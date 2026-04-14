@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    IPS Patch
-   Category:  Game
-   Ext:       .ips
-   Editor:    hex-editor
-   Desc:      International Patching System (IPS) format - Classic ROM patching format
-   Variables: currentOffset, firstRecordSize, machineType, sectionCount, entryPoint, ipsHeader, firstRecordOffset, firstRecordData
-   Detection: signature=5041544348 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "IPS Patch",
   "version": "1.10",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -114,7 +104,7 @@
     "Floating IPS",
     "UniPatcher"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".ips"

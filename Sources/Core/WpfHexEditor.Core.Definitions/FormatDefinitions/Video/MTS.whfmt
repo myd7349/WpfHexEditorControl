@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    AVCHD Video
-   Category:  Video
-   Ext:       .mts, .m2ts
-   Editor:    hex-editor
-   Desc:      AVCHD (Advanced Video Coding High Definition) video format used by camcorders
-   Variables: width, height, frameRate, duration, syncByte, totalPixels
-   Detection: signature=47 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AVCHD Video",
   "version": "1.12",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -86,7 +76,7 @@
     "VLC",
     "Media players"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".mts",

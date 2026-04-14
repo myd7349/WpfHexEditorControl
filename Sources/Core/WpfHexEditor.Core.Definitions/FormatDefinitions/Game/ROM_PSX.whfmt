@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    PlayStation EXE
-   Category:  Game
-   Ext:       .exe, .psx
-   Editor:    hex-editor
-   Desc:      PlayStation 1 (PSX/PS1) executable format (PS-X EXE)
-   Variables: currentOffset, loadAddress, fileSize, machineType, sectionCount, timestamp, entryPoint, psXExeMagic, initialPc, initialGp, memfillStart, memfillSize, initialSp, marker, formattedSize
-   Detection: signature=50532D58204558450000000000000000 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PlayStation EXE",
   "version": "1.12",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 16,
-      "max_signature_offset": 1024
+      "minFileSize": 16,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -221,7 +211,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".exe",

@@ -1,13 +1,4 @@
-/* ============================================================
-   Format:    PFRO Registry Data
-   Category:  System
-   Editor:    hex-editor
-   Desc:      PendingFileRenameOperations - Delayed file operations
-   Variables: currentOffset, timestamp, size, version, type, operationCount, firstSourcePathLength, firstSourcePath, firstTargetPathLength, firstTargetPath, operationFlags
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PFRO Registry Data",
   "version": "1.12",
@@ -31,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -138,7 +129,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "System",
     "extensions": [
       ""

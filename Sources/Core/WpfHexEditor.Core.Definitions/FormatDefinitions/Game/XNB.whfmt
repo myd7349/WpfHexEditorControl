@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    XNA Game Studio
-   Category:  Game
-   Ext:       .xnb
-   Editor:    hex-editor
-   Desc:      Microsoft XNA compiled content file
-   Variables: currentOffset, fileCount, version, indexOffset, xnbSignature, targetPlatform, formatVersion, flags
-   Detection: signature=584E42 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "XNA Game Studio",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -119,7 +109,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".xnb"

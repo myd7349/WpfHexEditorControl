@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Linker MAP File
-   Category:  Programming
-   Ext:       .map
-   Editor:    hex-editor
-   Desc:      Linker MAP file containing memory map and symbol information from the linking process (text format)
-   Variables: machineType, sectionCount, entryPoint, textHeader
-   Detection: signature=20 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Linker MAP File",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -89,7 +79,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".map"

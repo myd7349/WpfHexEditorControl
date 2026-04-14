@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    NTFS Filesystem
-   Category:  Disk
-   Ext:       .ntfs
-   Editor:    hex-editor
-   Desc:      Windows NT File System
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=4E54465320202020 @ offset 3
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "NTFS Filesystem",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 3,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -81,7 +71,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".ntfs"

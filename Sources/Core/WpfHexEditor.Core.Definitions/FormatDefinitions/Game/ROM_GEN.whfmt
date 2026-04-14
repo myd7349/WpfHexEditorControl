@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Sega Genesis/Mega Drive ROM
-   Category:  Game
-   Ext:       .md, .bin, .gen, .smd
-   Editor:    hex-editor
-   Desc:      Sega Genesis / Mega Drive ROM cartridge format
-   Variables: currentOffset, domesticTitle, overseasTitle, checksum, romEnd, machineType, sectionCount, entryPoint, consoleName, copyright, serialNumber, deviceSupport, romStart, ramStart, ramEnd, backupRamInfo, sramStart, sramEnd, modemData, notes, countryCodes
-   Detection: signature=5345474120 @ offset 256
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Sega Genesis/Mega Drive ROM",
   "version": "1.11",
@@ -40,8 +30,8 @@
     "offset": 256,
     "required": false,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -273,7 +263,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".md",

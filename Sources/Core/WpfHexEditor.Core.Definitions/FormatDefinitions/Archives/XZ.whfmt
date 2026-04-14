@@ -1,141 +1,315 @@
-/* ============================================================
-   Format:    XZ Compressed File
-   Category:  Archives
-   Ext:       .xz
-   Editor:    hex-editor
-   Desc:      XZ/LZMA2 compression format
-   Variables: currentOffset, streamFlags, headerCRC, crcValid, xzMagic
-   Detection: signature=FD377A585A00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "XZ Compressed File",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
-    ".xz"
+    ".xz",
+    ".txz"
   ],
-  "description": "XZ/LZMA2 compression format",
+  "description": "XZ general-purpose lossless compression using LZMA2. Supersedes .lzma with stream framing, integrity checksums, multi-block support. The 12-byte stream header consists of a 6-byte magic + 2-byte stream flags + 4-byte CRC-32 of the stream flags. Stream flags encode the integrity check type used for block verification.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "XZ File Format Specification 1.0.0",
+      "XZ File Format Specification 1.0.0 — tukaani.org/xz/xz-file-format-1.0.0.txt",
       "LZMA2 Compression Algorithm",
       "XZ Utils Documentation"
     ],
     "WebLinks": [
       "https://xz.tukaani.org/format/",
+      "https://tukaani.org/xz/xz-file-format-1.0.0.txt",
       "https://en.wikipedia.org/wiki/XZ_Utils",
-      "https://www.kernel.org/doc/html/latest/staging/xz.html",
-      "https://en.wikipedia.org/wiki/LZMA"
+      "https://www.kernel.org/doc/html/latest/staging/xz.html"
     ]
   },
   "detection": {
     "signature": "FD377A585A00",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 7.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
+      "minFileSize": 32,
+      "maxSignatureOffset": 0
     }
   },
   "functions": {
-    "calculateCRC32": "Calculate CRC-32 of stream header",
-    "validateCRC32": "Validate stream header integrity"
+    "calculateCRC32": "Calculate CRC-32 of stream flags (2 bytes at offset 6)",
+    "validateCRC32": "Validate stream header CRC-32 at offset 8"
   },
   "variables": {
     "currentOffset": 0,
     "streamFlags": 0,
+    "checkType": 0,
     "headerCRC": 0,
     "crcValid": false,
-    "xzMagic": ""
+    "xzMagic": "",
+    "streamFlagsMSB": 0,
+    "streamFlagsLSB": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "XZ Magic",
+      "name": "XZ Stream Magic",
       "offset": 0,
       "length": 6,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "XZ file magic bytes",
+      "opacity": 0.45,
+      "description": "6-byte XZ stream magic: 0xFD 0x37 0x7A 0x58 0x5A 0x00. The ASCII-readable portion '7zXZ' (bytes 1-4) is visible in hex editors. The leading 0xFD sets the high bit to detect 7-bit transmission corruption. The trailing 0x00 completes the signature and prevents false detection of plain text starting with '7zXZ'.",
       "storeAs": "xzMagic",
-      "valueType": "ascii"
+      "valueType": "bytes"
     },
     {
       "type": "field",
-      "name": "Stream Flags",
+      "name": "Stream Flags — High Byte (Reserved)",
       "offset": 6,
-      "length": 2,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "High byte of the 2-byte Stream Flags field. Per XZ specification, this byte must be 0x00. A non-zero value indicates a future XZ format revision or a corrupted/crafted file. Current XZ decoders reject non-zero values here.",
+      "storeAs": "streamFlagsMSB",
+      "valueType": "uint8",
+      "validation": {
+        "allowedValues": [0]
+      }
+    },
+    {
+      "type": "field",
+      "name": "Stream Flags — Check Type",
+      "offset": 7,
+      "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Stream header flags",
-      "storeAs": "streamFlags",
-      "valueType": "uint16"
+      "opacity": 0.35,
+      "description": "Low byte of Stream Flags encoding the integrity check type applied to each block's uncompressed data. Only the lower 4 bits (nibble) are defined; the upper 4 bits must be 0. The check type is verified independently for each block in the stream. Value 0x04 (CRC-32) is the most common default.",
+      "storeAs": "streamFlagsLSB",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "0x00 — No integrity check (check size = 0 bytes)",
+        "1": "0x01 — CRC-32 (check size = 4 bytes)",
+        "4": "0x04 — CRC-64 (check size = 8 bytes) [most common]",
+        "10": "0x0A — SHA-256 (check size = 32 bytes)"
+      },
+      "bitfields": [
+        { "bit": 3, "name": "CheckType3", "description": "Bit 3 of check type nibble" },
+        { "bit": 2, "name": "CheckType2", "description": "Bit 2 of check type nibble" },
+        { "bit": 1, "name": "CheckType1", "description": "Bit 1 of check type nibble" },
+        { "bit": 0, "name": "CheckType0", "description": "Bit 0 of check type nibble" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Stream Header CRC-32",
+      "offset": 8,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.35,
+      "description": "CRC-32 checksum of the Stream Flags bytes (the 2 bytes at offsets 6-7). Stored in little-endian byte order. Used to verify that the stream flags were not corrupted during transmission. The CRC polynomial is the standard IEEE 802.3 polynomial (0xEDB88320).",
+      "storeAs": "headerCRC",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "metadata",
-      "name": "Stream Flags",
-      "variable": "streamFlags",
-      "description": "XZ stream header configuration flags"
+      "name": "Stream Magic",
+      "variable": "xzMagic",
+      "description": "6-byte XZ stream identification magic (0xFD 37 7A 58 5A 00)"
     },
     {
       "type": "metadata",
-      "name": "Header CRC Valid",
+      "name": "Integrity Check Type",
+      "variable": "streamFlagsLSB",
+      "description": "Block integrity check algorithm: 0=none, 1=CRC-32, 4=CRC-64, 10=SHA-256"
+    },
+    {
+      "type": "metadata",
+      "name": "Header CRC-32 Valid",
       "variable": "crcValid",
-      "description": "Stream header CRC-32 validation result"
+      "description": "Result of validating the stream header CRC-32 against the computed CRC over the stream flags bytes"
     }
   ],
-  "software": [
-    "xz",
-    "7-Zip",
-    "PeaZip"
+  "checksums": [
+    {
+      "name": "Stream Header CRC-32",
+      "algorithm": "crc32",
+      "dataRange": { "fixedOffset": 6, "fixedLength": 2 },
+      "storedAt": { "fixedOffset": 8, "length": 4, "endianness": "little" },
+      "storedType": "uint32",
+      "severity": "error"
+    }
   ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".xz"
+  "assertions": [
+    {
+      "name": "XZ magic signature valid",
+      "expression": "xzMagic == '\\xFD7zXZ\\x00'",
+      "severity": "error",
+      "message": "XZ stream magic (0xFD 37 7A 58 5A 00) is invalid — not a valid XZ file"
+    },
+    {
+      "name": "Stream flags MSB must be zero",
+      "expression": "streamFlagsMSB == 0",
+      "severity": "error",
+      "message": "Stream Flags high byte must be 0x00 — non-zero value indicates unsupported XZ format revision or corrupted file"
+    },
+    {
+      "name": "Check type is known",
+      "expression": "streamFlagsLSB == 0 || streamFlagsLSB == 1 || streamFlagsLSB == 4 || streamFlagsLSB == 10",
+      "severity": "warning",
+      "message": "Stream Flags check type nibble contains an unrecognized value — only 0x00, 0x01, 0x04, 0x0A are defined"
+    },
+    {
+      "name": "Stream flags upper nibble is zero",
+      "expression": "(streamFlagsLSB & 240) == 0",
+      "severity": "error",
+      "message": "Stream Flags upper 4 bits must be zero — non-zero reserved bits indicate non-standard or corrupted stream"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Stream Header",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Stream Flags",
+        "offset": 6,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Stream Header CRC-32",
+        "offset": 8,
+        "icon": "\uE72E",
+        "color": "#FF6B9D"
+      },
+      {
+        "name": "First Block",
+        "offset": 12,
+        "icon": "\uE8B7",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-xz"
+  "inspector": {
+    "badge": "streamFlagsLSB",
+    "primaryField": "crcValid",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Stream Header",
+        "icon": "\uE71B",
+        "fields": ["xzMagic", "streamFlagsMSB", "streamFlagsLSB"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE72E",
+        "fields": ["headerCRC", "crcValid"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "XZ Stream Header (JSON)",
+      "format": "json",
+      "fields": ["xzMagic", "streamFlagsMSB", "streamFlagsLSB", "headerCRC", "crcValid"]
+    },
+    {
+      "name": "xz_stream_header (C struct)",
+      "format": "c-struct",
+      "structName": "xz_stream_header",
+      "fields": ["xzMagic", "streamFlagsMSB", "streamFlagsLSB", "headerCRC"]
+    },
+    {
+      "name": "Python XZ magic check",
+      "format": "python-bytes",
+      "fields": ["xzMagic", "streamFlagsLSB"]
+    }
   ],
-  "Software": [
-    "xz-utils",
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Stream flags MSB non-zero",
+        "condition": "streamFlagsMSB != 0",
+        "severity": "error",
+        "description": "XZ Stream Flags high byte must be 0x00. Non-zero value indicates unsupported XZ version or file manipulation."
+      },
+      {
+        "name": "Unknown check type",
+        "condition": "streamFlagsLSB != 0 && streamFlagsLSB != 1 && streamFlagsLSB != 4 && streamFlagsLSB != 10",
+        "severity": "warning",
+        "description": "Unrecognized integrity check type in Stream Flags — file may use a future XZ revision or be crafted"
+      },
+      {
+        "name": "No integrity checking",
+        "condition": "streamFlagsLSB == 0",
+        "severity": "info",
+        "description": "XZ stream uses check type 0 (no integrity check) — data corruption cannot be detected by the XZ decompressor"
+      },
+      {
+        "name": "Header CRC mismatch",
+        "condition": "crcValid == false",
+        "severity": "error",
+        "description": "Stream header CRC-32 does not match — stream flags are corrupted or intentionally modified"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "XZ stream header is 12 bytes: 6-byte magic (0xFD 37 7A 58 5A 00) + 2-byte stream flags + 4-byte CRC-32 of stream flags. Stream Flags low byte encodes the integrity check type used per-block (0=none, 1=CRC-32, 4=CRC-64, 10=SHA-256). The high byte is always 0. XZ is the standard format for Linux kernel tarballs (.tar.xz) and many Linux distributions' package systems (Arch, Fedora).",
+    "knownVulnerabilities": [
+      "CVE-2024-3094: backdoor in xz-utils 5.6.0/5.6.1 (liblzma) compromised SSH servers on certain Linux distros",
+      "XZ header with check type 0 (no integrity check) can mask data corruption or tampering"
+    ],
+    "suggestedInspections": [
+      "Verify stream magic is exactly 0xFD 37 7A 58 5A 00",
+      "Verify stream flags MSB is 0x00",
+      "Verify stream flags lower nibble is 0, 1, 4, or 10",
+      "Verify stream header CRC-32 at offset 8 matches CRC of bytes 6-7",
+      "Check for CVE-2024-3094 if from xz-utils 5.6.0/5.6.1 — inspect linked liblzma"
+    ]
+  },
+  "software": [
+    "xz-utils (Lasse Collin)",
     "7-Zip",
-    "PeaZip"
+    "PeaZip",
+    "Python lzma module",
+    "tar (combined as .tar.xz/.txz)"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".xz", ".txz"],
+    "relatedFormats": ["LZMA", "7Z", "BZIP2"],
+    "supersedesFormat": "LZMA"
+  },
+  "MimeTypes": [
+    "application/x-xz",
+    "application/x-xz-compressed-tar"
   ],
   "UseCases": [
-    "Modern compression",
-    "Linux packages",
-    "Kernel archives"
+    "Linux kernel and distribution packages (.tar.xz)",
+    "Arch Linux package format (.pkg.tar.xz)",
+    "Fedora/RHEL RPM payload compression",
+    "High-ratio software distribution archives"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
+    "CompletenessScore": 82,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 7,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "CompressionMethod": "LZMA2",
-    "ArchivesFormat": true
-  },
-  "forensic": {
-    "category": "archive",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "XZ/LZMA2 compression format",
-    "suggestedInspections": [
-      "Verify XZ Compressed File file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
-    ]
+    "ArchivesFormat": false,
+    "SupportsIntegrityCheck": true,
+    "CheckTypes": "None, CRC-32, CRC-64, SHA-256",
+    "SupportsMultipleBlocks": true,
+    "StreamHeaderSize": "12 bytes",
+    "StreamFooterSize": "12 bytes"
   }
 }

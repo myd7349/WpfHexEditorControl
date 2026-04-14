@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    AutoCAD Drawing
-   Category:  CAD
-   Ext:       .dwg
-   Editor:    hex-editor
-   Desc:      AutoCAD native drawing format
-   Variables: currentOffset, version, entityCount, layerCount, dwgVersion
-   Detection: signature=41433130 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AutoCAD Drawing",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -80,7 +70,7 @@
     "LibreCAD",
     "DWG viewers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "autodesk_format": true,
     "proprietary": true,
     "industry_standard": "CAD",

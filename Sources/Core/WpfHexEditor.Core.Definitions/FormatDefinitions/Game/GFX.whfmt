@@ -1,19 +1,4 @@
-/* ============================================================
-   Format:    GBA / SNES Raw Tile Graphics
-   Category:  Game
-   Ext:       .gfx
-   Editor:    tile-editor
-   Desc:      Raw tile graphics blob extracted from Game Boy Advance or SNES ROM.
-              No file header — pure binary tile data at offset 0.
-              GBA most common: 4bpp (32 bytes/tile 8x8), MSB-first packed.
-              SNES: 4bpp interleaved 2-plane (32 bytes/tile) or 2bpp (16 bytes/tile).
-              GBA 8bpp mode: 64 bytes per tile.
-   Variables: fileSize, tileCount4bpp, tileCount2bpp, tileCount8bpp,
-              defaultBytesPerTile, formattedSize
-   Detection: extension-only (no magic bytes)
-   Updated:   2026-04-13
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "GBA / SNES Raw Tile Graphics",
   "version": "2.2",
@@ -62,7 +47,7 @@
   "detection": {
     "required": false,
     "validation": {
-      "min_file_size": 32,
+      "minFileSize": 32,
       "notes": "No magic bytes. Detected by .gfx extension only. File size should ideally be a multiple of 32 (4bpp tile size) or 16 (2bpp tile size)."
     }
   },
@@ -253,7 +238,7 @@
       "Pattern at bytes 0–3 of each 32-byte block: low nibble = pixel column 0, high nibble = pixel column 1"
     ]
   },
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "parentFormats": [".gba (GBA ROM — GFX data embedded, often LZ77 compressed)", ".smc / .sfc (SNES ROM)"],
     "relatedFormats": [".chr", ".til", ".gba", ".smc", ".sfc"],

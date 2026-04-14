@@ -1,141 +1,390 @@
-/* ============================================================
-   Format:    ACE Archive
-   Category:  Archives
-   Ext:       .ace
-   Editor:    hex-editor
-   Desc:      ACE compressed archive format
-   Variables: currentOffset, headerCRC, crcValid, aceSignature, headerCrc
-   Detection: signature=2A2A4143452A2A @ offset 7
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ACE Archive",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ".ace"
+    ".ace",
+    ".c00",
+    ".c01"
   ],
-  "description": "ACE compressed archive format",
+  "description": "ACE is a proprietary compressed archive format created by WinACE software (Marcel Lemke). The ACE main archive header structure: bytes 0-1 = CRC-16 of header (LE uint16), bytes 2-3 = header size (LE uint16), byte 4 = header type (0=archive/main, 1=file), bytes 5-6 = flags (LE uint16), bytes 7-13 = '**ACE**' signature (7 bytes ASCII), byte 14 = version needed to extract, byte 15 = host OS, byte 16 = volume attribute, bytes 17-20 = creation timestamp (MS-DOS format, LE uint32), bytes 21-24 = reserved CRC-32, bytes 25-26 = ACE version (creator), byte 27 = reserved. ACE 2.0 added AES encryption. The format was abandoned after WinACE was discontinued (2007); the ACE.dll had the path traversal vulnerability CVE-2018-20250 used by WinRAR to open .ace archives.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "WinACE Archive Format Specification",
-      "ACE Compression Algorithm",
-      "ACE Archive File Structure"
+      "WinACE Archive Format — reverse-engineered by acefile project",
+      "ACE Format Technical Notes — Dr. Marcel Lemke",
+      "acefile Python library documentation"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/ACE_(compressed_file_format)",
+      "https://github.com/droe/acefile",
       "http://fileformats.archiveteam.org/wiki/ACE",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000338.shtml",
-      "https://github.com/droe/acefile"
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000338.shtml"
     ]
   },
   "detection": {
     "signature": "2A2A4143452A2A",
     "offset": 7,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.5, "max": 8.0 },
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 28,
+      "note": "ACE signature '**ACE**' (2A 2A 41 43 45 2A 2A) at offset 7. Header type at offset 4 must be 0 (archive main header) or 1 (file header). Header CRC-16 at offset 0 covers bytes 4 onwards."
     }
   },
-  "functions": {
-    "validateCRC32": "Validate header CRC-16 integrity"
-  },
   "variables": {
-    "currentOffset": 0,
-    "headerCRC": 0,
-    "crcValid": false,
+    "headerCrc": 0,
+    "headerSize": 0,
+    "headerType": 0,
+    "headerFlags": 0,
     "aceSignature": "",
-    "headerCrc": 0
+    "versionNeeded": 0,
+    "hostOS": 0,
+    "volumeAttribute": 0,
+    "timestamp": 0,
+    "aceVersion": 0,
+    "isEncrypted": false,
+    "isMultiVolume": false
   },
   "blocks": [
+    {
+      "type": "field",
+      "name": "Header CRC-16",
+      "offset": 0,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "CRC-16 checksum of this header (little-endian uint16). Covers header bytes starting at offset 4 (header type) through the end of the header. Used to verify header integrity. CRC-16 with polynomial 0x8408 (CCITT reflected).",
+      "storeAs": "headerCrc",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Size",
+      "offset": 2,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Size of this header in bytes (little-endian uint16). Includes all fixed and variable-length header fields but excludes the first 4 bytes (CRC-16 + headerSize fields). Minimum main header size: ~24 bytes.",
+      "storeAs": "headerSize",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Type",
+      "offset": 4,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Type of this ACE header block. 0 = archive main header (first block in any ACE file). 1 = file header (precedes compressed file data). 2 = recovery record (error correction). 5 = new recovery record.",
+      "storeAs": "headerType",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Main archive header",
+        "1": "File header",
+        "2": "Recovery record",
+        "5": "New recovery record"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Header Flags",
+      "offset": 5,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Archive-level flags (little-endian uint16). Bit 0: archive is a multi-volume set. Bit 1: archive has a comment. Bit 2: recovery record present. Bit 7: archive is locked (no modification allowed). Bit 8: AES encryption used (ACE 2.0+). Bit 9: first volume. Bit 10: version required is higher than this reader's version.",
+      "storeAs": "headerFlags",
+      "valueType": "uint16",
+      "endianness": "little",
+      "bitfields": [
+        { "name": "Multi-Volume", "bits": "0", "description": "Archive spans multiple volumes" },
+        { "name": "Has Comment", "bits": "1", "description": "Archive has a comment block" },
+        { "name": "Recovery Record", "bits": "2", "description": "Recovery record present for error correction" },
+        { "name": "Locked", "bits": "7", "description": "Archive is locked (cannot be modified)" },
+        { "name": "AES Encrypted", "bits": "8", "description": "Archive uses AES encryption (ACE 2.0+)" },
+        { "name": "First Volume", "bits": "9", "description": "This is the first volume of a multi-volume set" }
+      ]
+    },
     {
       "type": "signature",
       "name": "ACE Signature",
       "offset": 7,
       "length": 7,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "**ACE** signature",
+      "opacity": 0.45,
+      "description": "ACE archive identifier '**ACE**' (0x2A 0x2A 0x41 0x43 0x45 0x2A 0x2A). This 7-byte sequence at offset 7 uniquely identifies ACE archives. The signature is deliberately placed at offset 7 (not 0) to allow the preceding CRC and size fields.",
       "storeAs": "aceSignature",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Header CRC",
-      "offset": 0,
+      "name": "Version Needed",
+      "offset": 14,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Minimum ACE version needed to extract this archive (uint8). Common values: 10 (v1.0), 20 (v2.0 — AES encryption), 50 (v5.0).",
+      "storeAs": "versionNeeded",
+      "valueType": "uint8",
+      "valueMap": {
+        "10": "ACE 1.0",
+        "20": "ACE 2.0 (AES encryption support required)",
+        "50": "ACE 5.0"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Host OS",
+      "offset": 15,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Operating system on which the archive was created (uint8). Relevant for file attribute interpretation.",
+      "storeAs": "hostOS",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "MS-DOS",
+        "2": "Windows",
+        "3": "Unix",
+        "5": "BeOS",
+        "10": "Windows NT"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Volume Attribute",
+      "offset": 16,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Volume attribute byte (uint8). Used with multi-volume ACE archives to identify volume ordering.",
+      "storeAs": "volumeAttribute",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Archive Timestamp",
+      "offset": 17,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.25,
+      "description": "Archive creation timestamp in MS-DOS date/time format (little-endian uint32). MS-DOS format: bits 31-25=year-1980, bits 24-21=month (1-12), bits 20-16=day, bits 15-11=hour, bits 10-5=minute/2, bits 4-0=second/2.",
+      "storeAs": "timestamp",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "ACE Version Created By",
+      "offset": 25,
       "length": 2,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Header CRC-16",
-      "storeAs": "headerCrc",
-      "valueType": "uint16"
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "ACE version that created this archive (little-endian uint16). E.g., 0x0014 = v2.0, 0x000A = v1.0.",
+      "storeAs": "aceVersion",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "10": "ACE v1.0",
+        "20": "ACE v2.0",
+        "50": "ACE v5.0"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Encrypted",
+      "expression": "calc:(headerFlags & 256) != 0",
+      "storeAs": "isEncrypted",
+      "description": "True when AES Encrypted flag (bit 8) is set in headerFlags"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is Multi-Volume",
+      "expression": "calc:(headerFlags & 1) != 0",
+      "storeAs": "isMultiVolume",
+      "description": "True when Multi-Volume flag (bit 0) is set in headerFlags"
     },
     {
       "type": "metadata",
-      "name": "Header CRC",
-      "variable": "headerCRC",
-      "description": "CRC-16 checksum of header"
+      "name": "ACE Signature",
+      "variable": "aceSignature",
+      "description": "ACE archive identifier ('**ACE**')"
     },
     {
       "type": "metadata",
-      "name": "CRC Valid",
-      "variable": "crcValid",
-      "description": "Header integrity validation result"
+      "name": "Version Needed",
+      "variable": "versionNeeded",
+      "description": "Minimum ACE version to extract"
+    },
+    {
+      "type": "metadata",
+      "name": "Is Encrypted",
+      "variable": "isEncrypted",
+      "description": "True when AES encryption is used (ACE 2.0+)"
+    },
+    {
+      "type": "metadata",
+      "name": "Host OS",
+      "variable": "hostOS",
+      "description": "OS that created the archive"
     }
   ],
-  "software": [
-    "WinACE (discontinued)",
-    "7-Zip"
+  "assertions": [
+    {
+      "name": "ACE signature valid",
+      "expression": "aceSignature == '**ACE**'",
+      "severity": "error",
+      "message": "ACE signature '**ACE**' must be at offset 7 (2A 2A 41 43 45 2A 2A) — not a valid ACE archive"
+    },
+    {
+      "name": "Header type is main (0)",
+      "expression": "headerType == 0 || headerType == 1 || headerType == 2 || headerType == 5",
+      "severity": "warning",
+      "message": "ACE header type must be 0 (main), 1 (file), 2 (recovery), or 5 (new recovery)"
+    },
+    {
+      "name": "Header size non-zero",
+      "expression": "headerSize > 0",
+      "severity": "error",
+      "message": "ACE header size must be greater than 0"
+    }
   ],
-  "format_relationships": {
-    "proprietary": true,
-    "discontinued": true,
-    "security_issues": "CVE-2018-20250"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ACE Main Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "ACE Signature",
+        "offset": 7,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "versionNeeded",
+    "primaryField": "isEncrypted",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Archive Header",
+        "icon": "\uE9D9",
+        "fields": ["aceSignature", "headerType", "headerSize", "headerCrc"]
+      },
+      {
+        "title": "Archive Properties",
+        "icon": "\uE8A5",
+        "fields": ["versionNeeded", "aceVersion", "hostOS", "timestamp"]
+      },
+      {
+        "title": "Archive Flags",
+        "icon": "\uE790",
+        "fields": ["headerFlags", "isEncrypted", "isMultiVolume"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ACE Header (JSON)",
+      "format": "json",
+      "fields": ["aceSignature", "headerType", "headerSize", "headerCrc", "headerFlags", "versionNeeded", "hostOS", "aceVersion", "isEncrypted", "isMultiVolume"]
+    },
+    {
+      "name": "Python ACE check",
+      "format": "python-bytes",
+      "fields": ["aceSignature", "headerType", "versionNeeded"]
+    }
+  ],
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "ACE encryption present",
+        "condition": "isEncrypted",
+        "severity": "info",
+        "description": "Archive uses AES encryption (ACE 2.0+ flag). Encrypted ACE archives cannot be inspected without the password."
+      },
+      {
+        "name": "Multi-volume archive",
+        "condition": "isMultiVolume",
+        "severity": "info",
+        "description": "Multi-volume ACE archive — additional .c00, .c01, etc. continuation volumes expected."
+      },
+      {
+        "name": "ACE version 2.0+ with encryption flag",
+        "condition": "isEncrypted && versionNeeded >= 20",
+        "severity": "warning",
+        "description": "ACE 2.0 AES encryption — WinACE used 256-bit AES but the implementation details were closed-source."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2018-20250: WinRAR ACE path traversal — crafted filename with '../' extracts files outside target directory (actively exploited in the wild 2019)",
+      "CVE-2018-20251: WinRAR ACE absolute path — files with absolute paths like C:\\Windows\\",
+      "CVE-2018-20252: WinRAR ACE out-of-bounds write in header parsing",
+      "CVE-2018-20253: WinRAR ACE out-of-bounds write in Large Header parsing",
+      "ACE.dll was the only WinRAR component not open-source — could not be patched, had to be removed entirely"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "ACE archive header: offset 0-1=CRC-16 (LE), offset 2-3=headerSize (LE uint16), offset 4=headerType (0=main), offset 5-6=headerFlags (LE uint16), offset 7-13='**ACE**' (7B ASCII), offset 14=versionNeeded, offset 15=hostOS, offset 16=volumeAttr, offset 17-20=timestamp (LE uint32 DOS), offset 21-24=reserved CRC-32, offset 25-26=versionCreatedBy (LE uint16), offset 27=reserved. File entries follow main header with headerType=1. ACE uses LZ+Huffman compression. CVE-2018-20250 was caused by unasp library not validating file paths — any '**ACE**' file targeting WinRAR users before 5.70 was exploitable.",
+    "knownVulnerabilities": [
+      "CVE-2018-20250: Path traversal in unasp.dll ACE extractor (WinRAR <= 5.61) — actively exploited by APT groups (BLACKSQUAD, etc.)",
+      "CVE-2018-20251/20252/20253: Related WinRAR ACE parsing OOB writes"
+    ],
+    "suggestedInspections": [
+      "Confirm '**ACE**' at offset 7 (2A 2A 41 43 45 2A 2A)",
+      "Check headerType at offset 4: 0=main, 1=file entries follow",
+      "Read headerFlags at offset 5-6 (LE uint16): bit 8=AES encryption, bit 0=multi-volume",
+      "For file entries (headerType=1): check filename field for path traversal ('..\\', '../', absolute paths)",
+      "Check versionNeeded (offset 14): value ≥20 means ACE 2.0 AES encryption required",
+      "Validate CRC-16 at offset 0 against header bytes 4+headerSize"
+    ]
+  },
+  "software": [
+    "WinACE (discontinued 2007)",
+    "7-Zip (extraction only, no creation)",
+    "acefile (Python, open source)",
+    "PeaZip (extraction)"
+  ],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".ace", ".c00", ".c01"],
+    "note": "ACE was discontinued after WinACE's developer stopped development in 2007. WinRAR dropped ACE support (removed unasp.dll) in version 5.70 (February 2019) following discovery of CVE-2018-20250. Effectively obsolete but files still circulate in legacy archives."
   },
   "MimeTypes": [
     "application/x-ace-compressed"
   ],
-  "Software": [
-    "7-Zip",
-    "WinRAR",
-    "WinZip",
-    "PeaZip",
-    "The Unarchiver"
-  ],
   "UseCases": [
-    "File compression",
-    "Archive storage",
-    "Backup",
-    "Distribution"
+    "Legacy compressed archive extraction (pre-2007)",
+    "Forensic analysis of historical malware droppers",
+    "Digital archive preservation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 13,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": false,
-    "AutoRefined": true
+    "AutoRefined": false
   },
   "TechnicalDetails": {
     "ArchivesFormat": true,
-    "SupportsEncryption": false
-  },
-  "forensic": {
-    "category": "archive",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "ACE compressed archive format",
-    "suggestedInspections": [
-      "Verify ACE Archive file header, compression method, and stored CRCs",
-      "Check central directory or entry table for consistency",
-      "Inspect individual entry sizes for truncation or overflow"
-    ]
+    "Endianness": "little-endian",
+    "Compression": "LZ + Huffman + optional LZP",
+    "HasHeader": true,
+    "HeaderSize": "variable (minimum ~28 bytes main header)",
+    "Encryption": "AES-256 (ACE 2.0+)"
   }
 }

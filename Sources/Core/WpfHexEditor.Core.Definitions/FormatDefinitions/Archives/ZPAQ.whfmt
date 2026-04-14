@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    ZPAQ Archive
-   Category:  Archives
-   Ext:       .zpaq
-   Editor:    hex-editor
-   Desc:      ZPAQ incremental archiver format
-   Variables: currentOffset, fileCount, totalSize, compressionMethod, headerCRC, zpaqMagic, formattedSize
-   Detection: signature=7A5041517E @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ZPAQ Archive",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -91,7 +81,7 @@
     "ZPAQ",
     "Compression benchmarks"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".zpaq"

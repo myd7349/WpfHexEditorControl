@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    macOS Dynamic Library
-   Category:  Programming
-   Ext:       .dylib
-   Editor:    hex-editor
-   Desc:      macOS Dynamic Library using Mach-O (Mach Object) file format for dynamic linking
-   Variables: fileCount, totalSize, compressionMethod, headerCRC, machOMagic32Bit, formattedSize
-   Detection: signature=FEEDFACE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "macOS Dynamic Library",
   "version": "1.13",
@@ -34,8 +24,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -115,7 +105,7 @@
     "iOS",
     "Dynamic linker"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "apple_format": true,
     "mach_o_based": true,
     "equivalent_to": "DLL (Windows) / SO (Linux)"

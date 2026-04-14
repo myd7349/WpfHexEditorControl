@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    XYZ Chemical Format
-   Category:  Science
-   Ext:       .xyz
-   Editor:    hex-editor
-   Desc:      XYZ chemical file format with atom coordinates
-   Variables: currentOffset, dimensions, dataType, arrayCount, atomCount
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "XYZ Chemical Format",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -78,7 +68,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Science",
     "extensions": [
       ".xyz"

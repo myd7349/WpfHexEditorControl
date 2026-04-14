@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    QuickTime Movie
-   Category:  Video
-   Ext:       .mov, .qt
-   Editor:    hex-editor
-   Desc:      Apple QuickTime Movie format based on the atom/box container structure that became the ancestor of ISO Base Media File Format (ISOBMFF). Files typically begin with a File Type Box (ftyp) with major brand 'qt  ', though legacy MOV files may start with 'moov', 'wide', or 'mdat' atoms. All data is organized in nested atoms, each prefixed by a 32-bit size and 4-byte type code.
-   Variables: currentOffset, firstAtomSize, firstAtomType, ftypBrand, brandName, ftypMinorVer, compatBrand1, compatBrand2, compatBrand3, compatBrand4, nextAtomSize, nextAtomType, nextAtomTypeName, payloadSize, totalFileSize, formattedFileSize, isLegacyFormat, hasExtendedSize
-   Detection: signature=6674797071742020 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "QuickTime Movie",
   "version": "2.0",
@@ -307,11 +297,11 @@
     "ProRes workflows"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 91,
     "DocumentationLevel": "comprehensive",
     "BlocksDefined": 20,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-14",
     "PriorityFormat": true,
     "AutoRefined": false
   },
@@ -327,17 +317,118 @@
     "MaxFileSize": "Unlimited (64-bit extended sizes)",
     "primary_extension": ".mov"
   },
+  "assertions": [
+    {
+      "name": "First atom size is reasonable",
+      "expression": "firstAtomSize > 0 && firstAtomSize < 268435456",
+      "severity": "warning",
+      "message": "First atom size is 0 or > 256MB — may indicate a malformed QuickTime file or extended 64-bit size (value=1)"
+    },
+    {
+      "name": "First atom type is known",
+      "expression": "firstAtomType == 'ftyp' || firstAtomType == 'moov' || firstAtomType == 'wide' || firstAtomType == 'mdat' || firstAtomType == 'free'",
+      "severity": "warning",
+      "message": "Unknown first atom type — expected ftyp, moov, wide, mdat, or free for a valid QuickTime file"
+    },
+    {
+      "name": "Brand is known QuickTime variant",
+      "expression": "ftypBrand == 'qt  ' || ftypBrand == 'isom' || ftypBrand == 'iso2' || ftypBrand == 'mp41' || ftypBrand == 'mp42' || ftypBrand == 'M4V ' || isLegacyFormat",
+      "severity": "info",
+      "message": "Major brand is not a commonly recognized QuickTime/MPEG-4 brand — may be a specialized QuickTime variant"
+    }
+  ],
+  "versionDetection": {
+    "field": "ftypBrand",
+    "versions": {
+      "qt  ": "QuickTime Movie (Apple native)",
+      "isom": "ISO Base Media File Format",
+      "iso2": "ISO Base Media File v2",
+      "mp41": "MPEG-4 Part 14 v1",
+      "mp42": "MPEG-4 Part 14 v2",
+      "M4V ": "iTunes Video",
+      "M4A ": "iTunes Audio"
+    }
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "First Atom",
+        "offset": 0,
+        "icon": "\uE71B",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "ftyp Major Brand",
+        "offset": 8,
+        "icon": "\uE8B7",
+        "color": "#95E1D3"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "ftypBrand",
+    "primaryField": "firstAtomType",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "QuickTime Identity",
+        "icon": "\uE71B",
+        "fields": ["firstAtomType", "ftypBrand", "brandName", "ftypMinorVer"]
+      },
+      {
+        "title": "Compatible Brands",
+        "icon": "\uE8B7",
+        "fields": ["compatBrand1", "compatBrand2", "compatBrand3", "compatBrand4"]
+      },
+      {
+        "title": "Next Atom",
+        "icon": "\uE9D9",
+        "fields": ["nextAtomType", "nextAtomTypeName", "nextAtomSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ftyp Atom (JSON)",
+      "format": "json",
+      "fields": ["firstAtomType", "firstAtomSize", "ftypBrand", "ftypMinorVer", "compatBrand1", "compatBrand2", "compatBrand3", "compatBrand4", "isLegacyFormat"]
+    }
+  ],
   "forensic": {
     "category": "video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Legacy QuickTime without ftyp",
+        "condition": "isLegacyFormat == 1",
+        "severity": "info",
+        "description": "File uses legacy QuickTime format without ftyp atom. Legacy MOV files may not be playable on non-Apple software. Common in files from QuickTime 6 and earlier."
+      },
+      {
+        "name": "Extended 64-bit size used",
+        "condition": "firstAtomSize == 1",
+        "severity": "info",
+        "description": "First atom uses 64-bit extended size (atom size field = 1). File likely exceeds 4 GB. Real size is stored at offset 8 as uint64 BE. Verify player support for large QuickTime files."
+      }
+    ],
+    "knownExploitVectors": [
+      "CVE-2016-4600: QuickTime for Windows memory corruption via crafted moov atom",
+      "CVE-2010-1799: QuickTime heap overflow via crafted MPEG-4 track with malformed stss atom",
+      "Atom size == 0 (extends to EOF) can confuse parsers that calculate next atom offset as current + size"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Apple QuickTime Movie format based on the atom/box container structure that became the ancestor of ISO Base ...",
+    "analysisContext": "QuickTime/MOV layout (all BE): atom_size(4,BE) + atom_type(4,ASCII) + payload. First atom typically 'ftyp': size(4,BE) + 'ftyp'(4) + majorBrand(4,ASCII) + minorVersion(4,BE) + compatBrands(4B each). 'qt  ' brand = QuickTime. After ftyp comes 'moov' (movie metadata) or 'mdat' (raw media data). moov atom contains: mvhd (movie header: timescale, duration), trak (track: tkhd=track header, mdia>minf>stbl>stsd for codec). Video codec in stsd: 'avc1'=H.264, 'hvc1'=H.265/HEVC, 'ap4h'=ProRes 4444, 'apch'=ProRes 422 HQ, 'apcn'=ProRes 422. 'free' atoms are padding. 'wide' (8 bytes) precedes large mdat for alignment. Atom size=1 means next 8 bytes are 64-bit size (for >4GB files).",
+    "knownVulnerabilities": [
+      "CVE-2016-4600: QuickTime Windows moov atom heap corruption",
+      "CVE-2010-1799: Malformed stss atom heap overflow in QuickTime"
+    ],
     "suggestedInspections": [
-      "Validate QuickTime Movie container magic, box/atom sizes, and codec FourCC",
-      "Check track/stream layout, frame index, and timing fields",
-      "Inspect audio-video sync, keyframe distribution, and metadata"
+      "Verify first atom: size(4,BE) at 0, type(4,ASCII) at 4 — expect 'ftyp' for modern MOV",
+      "Read major brand at offset 8: 'qt  ' = QuickTime, 'isom' = generic ISOBMFF",
+      "For legacy MOV (no ftyp): scan for 'moov' atom to find movie metadata",
+      "Check atom size == 1 at offset 0 for 64-bit extended size (large files)",
+      "Navigate moov > trak > mdia > minf > stbl > stsd to find video codec FourCC"
     ]
   }
 }

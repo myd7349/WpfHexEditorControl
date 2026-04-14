@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    PGP Message
-   Category:  Crypto
-   Ext:       .pgp, .asc
-   Editor:    hex-editor
-   Desc:      Pretty Good Privacy encrypted/signed message
-   Variables: currentOffset, machineType, sectionCount, entryPoint, pgpAsciiArmor
-   Detection: signature=2D2D2D2D2D424547494E20504750 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PGP Message",
   "version": "1.11",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 14,
-      "max_signature_offset": 1024
+      "minFileSize": 14,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -78,7 +68,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Crypto",
     "extensions": [
       ".pgp",

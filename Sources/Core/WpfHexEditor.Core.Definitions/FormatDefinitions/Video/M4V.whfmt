@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    iTunes Video
-   Category:  Video
-   Ext:       .m4v
-   Editor:    hex-editor
-   Desc:      MPEG-4 video container developed by Apple for iTunes Store
-   Variables: width, height, frameRate, duration, fileTypeBox, totalPixels
-   Detection: signature=66747970 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "iTunes Video",
   "version": "1.13",
@@ -36,8 +26,8 @@
     "offset": 4,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -84,7 +74,7 @@
     "Apple TV",
     "VLC"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".m4v"

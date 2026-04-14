@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Fujifilm Raw Image
-   Category:  Images
-   Ext:       .raf
-   Editor:    image-viewer
-   Desc:      Fujifilm RAW camera image
-   Variables: currentOffset, width, height, totalPixels, bitsPerPixel, rafSignature
-   Detection: signature=46554A4946494C4D @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Fujifilm Raw Image",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -84,7 +74,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".raf"

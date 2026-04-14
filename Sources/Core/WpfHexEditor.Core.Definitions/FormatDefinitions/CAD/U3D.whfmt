@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Universal 3D
-   Category:  CAD
-   Ext:       .u3d
-   Editor:    hex-editor
-   Desc:      Universal 3D ECMA-363 format
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, u3dSignature, majorVersion, minorVersion, formattedSize
-   Detection: signature=55334400 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Universal 3D",
   "version": "1.13",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -110,7 +100,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "CAD",
     "extensions": [
       ".u3d"

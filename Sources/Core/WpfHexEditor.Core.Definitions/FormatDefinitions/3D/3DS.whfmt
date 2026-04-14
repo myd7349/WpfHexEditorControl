@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    3D Studio Model
-   Category:  3D
-   Ext:       .3ds
-   Editor:    hex-editor
-   Desc:      Autodesk 3D Studio mesh format
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, primaryChunkId, chunkLength, formattedSize
-   Detection: signature=4D4D @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "3D Studio Model",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -99,7 +89,7 @@
     "Blender",
     "Maya"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "3D",
     "extensions": [
       ".3ds"

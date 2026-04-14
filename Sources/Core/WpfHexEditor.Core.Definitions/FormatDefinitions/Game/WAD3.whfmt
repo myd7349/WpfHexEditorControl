@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Half-Life WAD
-   Category:  Game
-   Ext:       .wad
-   Editor:    hex-editor
-   Desc:      Half-Life WAD3 texture archive
-   Variables: currentOffset, fileCount, version, indexOffset, wad3Signature, numberOfLumps, directoryOffset
-   Detection: signature=57414433 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Half-Life WAD",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -107,7 +97,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".wad"

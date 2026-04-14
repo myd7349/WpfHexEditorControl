@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Tripos Mol2
-   Category:  Science
-   Ext:       .mol2
-   Editor:    hex-editor
-   Desc:      Tripos Mol2 molecular structure format
-   Variables: currentOffset, atomCount, bondCount, moleculeName, mol2Magic
-   Detection: signature=4054524950 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Tripos Mol2",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -72,7 +62,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Science",
     "extensions": [
       ".mol2"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    MPEG Video
-   Category:  Video
-   Ext:       .mpg, .mpeg, .m2v
-   Editor:    hex-editor
-   Desc:      MPEG-1/2 video stream
-   Variables: currentOffset, width, height, aspectRatio, frameRate, bitrate, vbvBufferSize, mpegSequenceHeader, pictureSize, totalPixels
-   Detection: signature=000001B3 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "MPEG Video",
   "version": "1.11",
@@ -39,8 +29,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -96,7 +86,7 @@
     "VLC Media Player",
     "Media Player Classic"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".mpg",

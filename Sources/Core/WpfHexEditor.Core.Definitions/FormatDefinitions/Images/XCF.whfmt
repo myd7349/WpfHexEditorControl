@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    GIMP Image
-   Category:  Images
-   Ext:       .xcf
-   Editor:    image-viewer
-   Desc:      GIMP native image format (eXperimental Computing Facility)
-   Variables: currentOffset, version, xcfSignature
-   Detection: signature=67696D702078636620 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "GIMP Image",
   "version": "1.10",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 9,
-      "max_signature_offset": 1024
+      "minFileSize": 9,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -83,7 +73,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".xcf"

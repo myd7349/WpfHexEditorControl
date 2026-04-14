@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Portable Bitmap
-   Category:  Images
-   Ext:       .pbm
-   Editor:    image-viewer
-   Desc:      Netpbm Portable Bitmap (monochrome)
-   Variables: magicNumber, pbmMagic, header
-   Detection: signature=5031 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Portable Bitmap",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -83,7 +73,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".pbm"

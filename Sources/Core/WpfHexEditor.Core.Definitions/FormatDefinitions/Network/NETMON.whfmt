@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Microsoft Network Monitor
-   Category:  Network
-   Ext:       .cap
-   Editor:    hex-editor
-   Desc:      Microsoft Network Monitor capture format
-   Variables: currentOffset, packetCount, snaplen, linkType, version, netmonSignature, versionMinor, versionMajor, networkType, timeDelta, frameTableOffset, frameTableLength
-   Detection: signature=474D4255 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Microsoft Network Monitor",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -151,7 +141,7 @@
     "Wireshark",
     "tcpdump"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Network",
     "extensions": [
       ".cap"

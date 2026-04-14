@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Unix Core Dump
-   Category:  System
-   Ext:       .core, .dump
-   Editor:    hex-editor
-   Desc:      Unix/Linux core dump file - Process memory snapshot
-   Variables: currentOffset, timestamp, size, version, type, elfMagic, class, endianness, elfVersion, osAbi, machine, entryPoint
-   Detection: signature=7F454C46 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Unix Core Dump",
   "version": "1.12",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -174,7 +164,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "System",
     "extensions": [
       ".core",

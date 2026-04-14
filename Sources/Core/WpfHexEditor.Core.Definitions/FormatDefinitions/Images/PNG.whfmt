@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    PNG Image
-   Category:  Images
-   Ext:       .png
-   Editor:    image-viewer
-   Desc:      Portable Network Graphics (PNG) is a lossless raster image format that uses DEFLATE compression. The file begins with an 8-byte signature followed by a series of typed chunks. The first chunk must be IHDR, which contains the image dimensions, bit depth, color type, and rendering methods.
-   Variables: currentOffset, pngSignature, ihdrChunkLength, ihdrChunkType, imageWidth, imageHeight, bitDepth, colorType, compressionMethod, filterMethod, interlaceMethod, ihdrCrc, calculatedCRC32, crc32Valid, totalPixels, colorTypeName, bitsPerPixel, hasAlphaChannel, isIndexedColor, samplesPerPixel, formattedSize
-   Detection: signature=89504E470D0A1A0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PNG Image",
   "version": "2.0",
@@ -325,34 +315,192 @@
       "description": "Result of CRC-32 integrity check: true if computed CRC matches stored CRC at offset 29"
     }
   ],
-  "assertions": [
+  "checksums": [
     {
-      "name": "PNG magic",
-      "expression": "pngSignature == -8552249625308161526",
-      "severity": "error",
-      "message": "Invalid PNG signature"
+      "name": "IHDR Chunk CRC-32",
+      "algorithm": "crc32",
+      "dataRange": { "fixedOffset": 12, "fixedLength": 17 },
+      "storedAt": { "fixedOffset": 29, "length": 4, "endianness": "big" },
+      "storedType": "uint32",
+      "severity": "error"
     }
   ],
-  "navigation": {
+  "assertions": [
+    {
+      "name": "PNG signature valid",
+      "expression": "pngSignature == '\\x89PNG\\r\\n\\x1A\\n'",
+      "severity": "error",
+      "message": "PNG magic signature is invalid — not a valid PNG file or transmission damage detected"
+    },
+    {
+      "name": "IHDR chunk length is 13",
+      "expression": "ihdrChunkLength == 13",
+      "severity": "error",
+      "message": "IHDR chunk data length must be exactly 13 bytes. Any other value indicates a malformed or crafted file."
+    },
+    {
+      "name": "IHDR chunk type is IHDR",
+      "expression": "ihdrChunkType == 'IHDR'",
+      "severity": "error",
+      "message": "First PNG chunk must be IHDR. A different chunk type indicates invalid chunk ordering."
+    },
+    {
+      "name": "Image dimensions non-zero",
+      "expression": "imageWidth > 0 && imageHeight > 0",
+      "severity": "error",
+      "message": "PNG image width and height must both be greater than 0. Zero dimensions violate the specification."
+    },
+    {
+      "name": "Color type valid",
+      "expression": "colorType == 0 || colorType == 2 || colorType == 3 || colorType == 4 || colorType == 6",
+      "severity": "error",
+      "message": "PNG color type must be 0 (grayscale), 2 (RGB), 3 (indexed), 4 (grayscale+alpha), or 6 (RGBA)"
+    },
+    {
+      "name": "Compression method is 0",
+      "expression": "compressionMethod == 0",
+      "severity": "error",
+      "message": "PNG compression method must be 0 (DEFLATE). Non-zero values are undefined."
+    },
+    {
+      "name": "Interlace method is 0 or 1",
+      "expression": "interlaceMethod == 0 || interlaceMethod == 1",
+      "severity": "error",
+      "message": "PNG interlace method must be 0 (no interlace) or 1 (Adam7). Any other value is invalid."
+    }
+  ],
+    "navigation": {
     "bookmarks": [
       {
-        "name": "IHDR chunk",
+        "name": "PNG File Signature",
+        "offset": 0,
+        "icon": "",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "IHDR Chunk",
         "offset": 8,
-        "icon": ""
+        "icon": "",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "IHDR Data",
+        "offset": 16,
+        "icon": "",
+        "color": "#FFE66D"
       }
     ]
   },
+  "inspector": {
+    "badge": "colorTypeName",
+    "primaryField": "imageWidth",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Signature",
+        "icon": "",
+        "fields": ["pngSignature"]
+      },
+      {
+        "title": "IHDR Chunk Header",
+        "icon": "",
+        "fields": ["ihdrChunkLength", "ihdrChunkType", "ihdrCrc", "crc32Valid"]
+      },
+      {
+        "title": "Image Dimensions",
+        "icon": "",
+        "fields": ["imageWidth", "imageHeight", "totalPixels"]
+      },
+      {
+        "title": "Color Profile",
+        "icon": "",
+        "fields": ["bitDepth", "colorType", "colorTypeName", "bitsPerPixel", "hasAlphaChannel", "isIndexedColor", "samplesPerPixel"]
+      },
+      {
+        "title": "Rendering Methods",
+        "icon": "",
+        "fields": ["compressionMethod", "filterMethod", "interlaceMethod"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PNG IHDR Summary (JSON)",
+      "format": "json",
+      "fields": ["imageWidth", "imageHeight", "bitDepth", "colorType", "compressionMethod", "filterMethod", "interlaceMethod", "totalPixels", "bitsPerPixel", "hasAlphaChannel", "crc32Valid"]
+    },
+    {
+      "name": "PNG IHDR Chunk (C struct)",
+      "format": "c-struct",
+      "structName": "PNG_IHDR_CHUNK",
+      "fields": ["ihdrChunkLength", "ihdrChunkType", "imageWidth", "imageHeight", "bitDepth", "colorType", "compressionMethod", "filterMethod", "interlaceMethod", "ihdrCrc"]
+    },
+    {
+      "name": "PNG Dimensions (CSV)",
+      "format": "csv",
+      "fields": ["imageWidth", "imageHeight", "bitDepth", "colorType", "totalPixels", "bitsPerPixel"]
+    },
+    {
+      "name": "Python PNG magic check",
+      "format": "python-bytes",
+      "fields": ["pngSignature", "ihdrChunkType"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Extremely large dimensions",
+        "condition": "imageWidth > 65535 || imageHeight > 65535",
+        "severity": "warning",
+        "description": "Unusually large PNG dimensions (> 65535px) may trigger decompression memory exhaustion in vulnerable parsers"
+      },
+      {
+        "name": "Potential decompression bomb",
+        "condition": "imageWidth > 4096 && imageHeight > 4096 && (colorType == 2 || colorType == 6)",
+        "severity": "info",
+        "description": "Large high-color PNG may expand to significant memory: e.g. 32000x32000 RGBA = 4GB uncompressed"
+      },
+      {
+        "name": "Non-standard filter method",
+        "condition": "filterMethod != 0",
+        "severity": "warning",
+        "description": "Only filter method 0 is defined in PNG spec — non-zero indicates malformed or crafted file"
+      },
+      {
+        "name": "Non-standard compression method",
+        "condition": "compressionMethod != 0",
+        "severity": "error",
+        "description": "Only compression method 0 (DEFLATE/zlib) is defined in PNG spec — indicates malformed file"
+      },
+      {
+        "name": "IHDR CRC validation failed",
+        "condition": "crc32Valid == false",
+        "severity": "error",
+        "description": "IHDR chunk CRC-32 mismatch — header data is corrupted or intentionally modified"
+      }
+    ],
+    "knownExploitVectors": [
+      "PNG decompression bombs via extremely large uncompressed dimensions",
+      "Chunk length integer overflow in parsers with insufficient bounds checking",
+      "tEXt/iTXt metadata chunk abuse for hidden data or injection",
+      "Palette (PLTE) chunk manipulation for steganography"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Portable Network Graphics (PNG) is a lossless raster image format that uses DEFLATE compression. The file be...",
+    "analysisContext": "PNG is a chunk-based lossless format: 8-byte signature + (Length+Type+Data+CRC-32) chunks. The mandatory IHDR at offset 8 defines all image properties. Key fields: imageWidth/imageHeight (decompression bomb risk), colorType (alpha/indexed), interlaceMethod (Adam7=progressive). IDAT chunk(s) hold DEFLATE-compressed filtered scanline data. All multi-byte values are big-endian.",
+    "knownVulnerabilities": [
+      "CVE-2021-29390: libpng integer overflow in spng_decode_chunks",
+      "PNG decompression bombs: tiny compressed file expands to GB of RGBA scanline data",
+      "LSB steganography in RGBA channels — undetectable without statistical analysis"
+    ],
     "suggestedInspections": [
-      "Validate PNG Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Verify IHDR CRC-32 matches computed CRC over bytes 12-28 (crc32Valid field)",
+      "Compute imageWidth * imageHeight * (bitsPerPixel/8) — values > 500MB are suspicious",
+      "Scan for tEXt/iTXt/zTXt chunks after IHDR — unvalidated metadata, used for steganography",
+      "Verify IEND chunk is present and is the last chunk in the file",
+      "For indexed-color (colorType=3): verify PLTE chunk is present before first IDAT"
     ]
   },
   "MimeTypes": [
@@ -373,11 +521,11 @@
     "Transparency support"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
+    "CompletenessScore": 95,
     "DocumentationLevel": "comprehensive",
     "BlocksDefined": 21,
-    "ValidationRules": 3,
-    "LastUpdated": "2026-02-24",
+    "ValidationRules": 7,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": true,
     "AutoRefined": false
   },

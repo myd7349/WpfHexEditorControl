@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Unix Compress
-   Category:  Archives
-   Ext:       .z
-   Editor:    hex-editor
-   Desc:      Unix compress (.Z) format - LZW compression
-   Variables: currentOffset, calculatedCRC32, crc32Valid, originalSize, compressedSize, compressionRatio, compressMagic, compressionMode, formattedSize
-   Detection: signature=1F9D @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Unix Compress",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -104,7 +94,7 @@
     "compress/uncompress",
     "7-Zip"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".z"

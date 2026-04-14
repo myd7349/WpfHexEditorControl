@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    ASTC Texture
-   Category:  Images
-   Ext:       .astc
-   Editor:    image-viewer
-   Desc:      Adaptive Scalable Texture Compression
-   Variables: machineType, sectionCount, entryPoint, astcMagic, blockDimensions, imageDimensions
-   Detection: signature=13AB5CA1 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ASTC Texture",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -100,7 +90,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".astc"

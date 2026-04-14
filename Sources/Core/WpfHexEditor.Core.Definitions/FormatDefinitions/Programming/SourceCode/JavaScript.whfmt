@@ -1,14 +1,4 @@
-/*
-   ============================================================
-   Format:    JavaScript Source File
-   Category:  Programming
-   Ext:       .js, .mjs, .cjs, .jsx
-   Editor:    code-editor
-   Desc:      JavaScript programming language source file (ECMAScript).
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "JavaScript Source File",
   "version": "2.1",

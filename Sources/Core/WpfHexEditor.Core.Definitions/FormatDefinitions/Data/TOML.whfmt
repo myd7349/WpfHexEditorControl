@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    TOML Configuration
-   Category:  Data
-   Ext:       .toml
-   Editor:    code-editor
-   Desc:      Tom's Obvious, Minimal Language configuration format
-   Variables: currentOffset, machineType, sectionCount, entryPoint
-   Detection: signature=00 @ offset 0
-   Updated:   2026-03-22
-   ============================================================ */
-{
+﻿{
   "diffMode": "semantic",
   "formatName": "TOML Configuration",
   "version": "2.0",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -69,7 +59,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".toml"

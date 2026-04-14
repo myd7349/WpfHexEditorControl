@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Static Library Archive
-   Category:  Programming
-   Ext:       .a
-   Editor:    hex-editor
-   Desc:      Unix static library archive (ar format) containing compiled object files for static linking
-   Variables: fileCount, totalSize, compressionMethod, headerCRC, archiveSignature, formattedSize
-   Detection: signature=213C617263683E0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Static Library Archive",
   "version": "1.12",
@@ -34,8 +24,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -141,7 +131,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".a"

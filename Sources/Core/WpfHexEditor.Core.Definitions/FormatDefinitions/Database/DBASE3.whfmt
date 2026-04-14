@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    dBASE III Database
-   Category:  Database
-   Ext:       .dbf
-   Editor:    hex-editor
-   Desc:      dBASE III database table format
-   Variables: currentOffset, pageSize, pageCount, tableCount, version
-   Detection: signature=03 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "dBASE III Database",
   "version": "1.10",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -82,7 +72,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".dbf"

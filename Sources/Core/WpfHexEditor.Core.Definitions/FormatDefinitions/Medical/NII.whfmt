@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    NIfTI Medical Image
-   Category:  Medical
-   Ext:       .nii
-   Editor:    hex-editor
-   Desc:      Neuroimaging Informatics Technology Initiative
-   Variables: currentOffset, width, height, slices, bitDepth, headerSize, totalPixels
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "NIfTI Medical Image",
   "version": "2.4",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -94,7 +84,7 @@
     "AFNI",
     "3D Slicer"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "nifti_format": true,
     "successor_to": "ANALYZE",
     "neuroimaging_standard": true

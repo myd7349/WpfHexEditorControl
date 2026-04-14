@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Canon RAW (CRW)
-   Category:  Images
-   Ext:       .crw
-   Editor:    image-viewer
-   Desc:      Canon RAW format (older cameras)
-   Variables: machineType, sectionCount, entryPoint, crwHeader
-   Detection: signature=49491A000000484541 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Canon RAW (CRW)",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 9,
-      "max_signature_offset": 1024
+      "minFileSize": 9,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -76,7 +66,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".crw"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    ZOO Archive
-   Category:  Archives
-   Ext:       .zoo
-   Editor:    hex-editor
-   Desc:      ZOO compressed archive format
-   Variables: currentOffset, archiveStart, zooMagic
-   Detection: signature=5A4F4F20 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ZOO Archive",
   "version": "1.10",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -84,7 +74,7 @@
     "7-Zip",
     "Legacy archivers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".zoo"

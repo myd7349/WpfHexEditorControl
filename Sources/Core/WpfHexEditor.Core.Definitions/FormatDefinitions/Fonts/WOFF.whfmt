@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Web Open Font Format
-   Category:  Fonts
-   Ext:       .woff
-   Editor:    hex-editor
-   Desc:      WOFF - Web font format
-   Variables: currentOffset, numGlyphs, unitsPerEm, fontName, tableCount, woffSignature, flavor, length, numTables
-   Detection: signature=774F4646 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Web Open Font Format",
   "version": "1.11",
@@ -34,8 +24,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -122,7 +112,7 @@
   "software": [
     "Web browsers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Fonts",
     "extensions": [
       ".woff"

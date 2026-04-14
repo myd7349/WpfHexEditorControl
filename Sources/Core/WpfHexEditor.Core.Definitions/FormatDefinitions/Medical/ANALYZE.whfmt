@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Analyze 7.5 Image
-   Category:  Medical
-   Ext:       .hdr, .img
-   Editor:    hex-editor
-   Desc:      Analyze 7.5 medical image format
-   Variables: currentOffset, width, height, totalPixels, bitsPerPixel, headerSize, dataType, databaseName
-   Detection: signature=5C010000 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Analyze 7.5 Image",
   "version": "1.12",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -104,7 +94,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Medical",
     "extensions": [
       ".hdr",

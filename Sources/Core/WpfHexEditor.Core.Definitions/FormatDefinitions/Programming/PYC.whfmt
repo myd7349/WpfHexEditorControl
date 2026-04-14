@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Python Compiled Bytecode
-   Category:  Programming
-   Ext:       .pyc, .pyo
-   Editor:    hex-editor
-   Desc:      Python compiled bytecode file
-   Variables: currentOffset, magicNumber, pythonVersion, timestamp, sourceFileSize, sourceFile, codeObjects, fileSize, formattedSize
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Python Compiled Bytecode",
   "version": "2.3",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -99,7 +89,7 @@
     "Python interpreter",
     "CPython"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "python_format": true,
     "generated_from": ".py files",
     "cached_in": "__pycache__"

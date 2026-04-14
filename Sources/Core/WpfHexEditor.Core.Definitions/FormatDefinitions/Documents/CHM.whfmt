@@ -1,55 +1,48 @@
-/* ============================================================
-   Format:    Compiled HTML Help
-   Category:  Documents
-   Ext:       .chm
-   Editor:    hex-editor
-   Desc:      Microsoft Compiled HTML Help file
-   Variables: currentOffset, version, headerLength, totalLength, languageID, title, files, itsfSignature
-   Detection: signature=49545346 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Compiled HTML Help",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".chm"
   ],
-  "description": "Microsoft Compiled HTML Help file",
+  "description": "Microsoft Compiled HTML Help (CHM) — a proprietary file format for compiled hypertext help systems. Built on the ITSF (ITS File System) container format. The ITSF header starts at offset 0 with the 4-byte magic 'ITSF', followed by a version field (always 3), a header length (always 96 for CHM v3), total content length, an unknown field (usually -1), and a LCID (Windows language identifier). The internal structure contains a virtual file system similar to a FAT-like directory tree, storing compressed HTML content in a proprietary LZX-compressed container ('::DataSpace/NameList', '::DataSpace/Storage/MSCompressed'). CHM files are mounted by hh.exe (Windows HTML Help viewer) and Internet Explorer.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Compiled HTML Help Format"
+      "ITSF/ITS File System Format — Matthew Russotto's reverse-engineered specification",
+      "Microsoft HTML Help 1.4 SDK Documentation",
+      "Open-Source ITSF Implementation — chmlib"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/CHM"
+      "https://www.nongnu.org/chmlib/",
+      "https://en.wikipedia.org/wiki/Microsoft_Compiled_HTML_Help",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000448.shtml",
+      "http://www.russotto.net/chm/itsfformat.html"
     ]
   },
   "detection": {
     "signature": "49545346",
     "offset": 0,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.0 },
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 96,
+      "note": "CHM signature is 'ITSF' (0x49 0x54 0x53 0x46). Version at offset 4 (LE uint32) should be 3. Header length at offset 8 should be 96 for CHM v3."
     }
   },
-  "functions": {
-    "readUInt32LE": "Read 32-bit little-endian for ITSF header fields (version, size, timestamp)",
-    "extractUTF8String": "Extract CHM title and topic names from internal files",
-    "readUInt64LE": "Read 64-bit directory and content section offsets"
-  },
   "variables": {
-    "currentOffset": 0,
-    "version": 3,
+    "itsfSignature": "",
+    "version": 0,
     "headerLength": 0,
     "totalLength": 0,
+    "unknown": 0,
     "languageID": 0,
-    "title": "Unknown",
-    "files": 0,
-    "itsfSignature": ""
+    "directoryOffset": 0,
+    "contentOffset": 0,
+    "isVersion3": false
   },
   "blocks": [
     {
@@ -58,21 +51,26 @@
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "ITSF magic bytes",
+      "opacity": 0.45,
+      "description": "ITSF magic bytes: 'ITSF' (0x49 0x54 0x53 0x46 = ASCII I, T, S, F). ITSF stands for 'ITS File System' — the container format used by Microsoft HTML Help. All CHM files begin with these 4 bytes.",
       "storeAs": "itsfSignature",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "ITSF Version",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Format version",
+      "opacity": 0.35,
+      "description": "ITSF format version (little-endian uint32). Always 3 for all known CHM files created by Microsoft HTML Help Workshop. Version 2 was used by an older ITS/IT format that was the precursor to CHM.",
       "storeAs": "version",
-      "valueType": "ascii"
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "2": "ITSF v2 — older ITS/IT format (rare)",
+        "3": "ITSF v3 — standard CHM (HTML Help Workshop)"
+      }
     },
     {
       "type": "field",
@@ -80,62 +78,241 @@
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Length of header",
+      "opacity": 0.30,
+      "description": "Total length of the ITSF header in bytes (little-endian uint32). For ITSF version 3, this must be 96. The header contains all the offset and length information to locate the directory listing and content sections.",
       "storeAs": "headerLength",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "96": "96 bytes — standard ITSF v3 header"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Total File Length",
+      "offset": 12,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.25,
+      "description": "Total length of all file data in bytes (little-endian uint32). Should equal the actual file size on disk. A mismatch may indicate a truncated or corrupted CHM file.",
+      "storeAs": "totalLength",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Unknown (-1)",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.20,
+      "description": "Unknown field (little-endian int32). Always -1 (0xFFFFFFFF) in all known valid CHM files. May be a reserved field or timestamp related.",
+      "storeAs": "unknown",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Language ID (LCID)",
+      "offset": 20,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Windows Language Code Identifier (LCID) for the CHM file (little-endian uint32). Determines the system code page used by hh.exe to display content. Common values: 0x0409=English (US), 0x040C=French, 0x0407=German, 0x0411=Japanese.",
+      "storeAs": "languageID",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "1033": "0x0409 — English (United States)",
+        "1036": "0x040C — French (France)",
+        "1031": "0x0407 — German (Germany)",
+        "1041": "0x0411 — Japanese (Japan)",
+        "2052": "0x0804 — Chinese (Simplified)",
+        "1028": "0x0404 — Chinese (Traditional)",
+        "1049": "0x0419 — Russian"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is ITSF v3",
+      "expression": "calc:version == 3 && headerLength == 96",
+      "storeAs": "isVersion3",
+      "description": "True when this is standard ITSF v3 with 96-byte header — all normal CHM files"
+    },
+    {
+      "type": "metadata",
+      "name": "ITSF Version",
+      "variable": "version",
+      "description": "ITSF format version (3 = standard CHM)"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Length",
+      "variable": "headerLength",
+      "description": "ITSF header size in bytes (96 for v3)"
+    },
+    {
+      "type": "metadata",
+      "name": "Language ID",
+      "variable": "languageID",
+      "description": "Windows LCID for content display language"
+    },
+    {
+      "type": "metadata",
+      "name": "Total File Length",
+      "variable": "totalLength",
+      "description": "Declared total file size in bytes"
     }
   ],
-  "software": [
-    "Microsoft HTML Help Workshop",
-    "xCHM",
-    "CHM Viewer",
-    "Sumatra PDF"
+  "assertions": [
+    {
+      "name": "ITSF signature valid",
+      "expression": "itsfSignature == 'ITSF'",
+      "severity": "error",
+      "message": "CHM signature must be 'ITSF' (49 54 53 46) — not a valid CHM file"
+    },
+    {
+      "name": "ITSF version is 3",
+      "expression": "version == 3 || version == 2",
+      "severity": "warning",
+      "message": "ITSF version should be 2 or 3 for known CHM formats"
+    },
+    {
+      "name": "Header length is 96 for v3",
+      "expression": "version != 3 || headerLength == 96",
+      "severity": "error",
+      "message": "ITSF v3 header length must be exactly 96 bytes"
+    }
   ],
-  "format_relationships": {
-    "microsoft_format": true,
-    "html_based": true,
-    "compressed": true,
-    "replaces": "HLP"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ITSF Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Header Body",
+        "offset": 24,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
+    ]
   },
-  "MimeTypes": [
-    "application/chm"
-  ],
-  "Software": [
-    "Microsoft HTML Help Workshop",
-    "xCHM",
-    "CHM Viewer",
-    "Sumatra PDF"
-  ],
-  "UseCases": [
-    "Document viewing",
-    "Reading",
-    "Publishing",
-    "Archival"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "version",
+    "primaryField": "languageID",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ITSF Header",
+        "icon": "\uE9D9",
+        "fields": ["itsfSignature", "version", "headerLength", "isVersion3"]
+      },
+      {
+        "title": "Content Info",
+        "icon": "\uE8A5",
+        "fields": ["totalLength", "languageID", "unknown"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "DocumentFormat": true
-  },
+  "exportTemplates": [
+    {
+      "name": "CHM ITSF Header (JSON)",
+      "format": "json",
+      "fields": ["itsfSignature", "version", "headerLength", "totalLength", "languageID", "isVersion3"]
+    },
+    {
+      "name": "Python CHM check",
+      "format": "python-bytes",
+      "fields": ["itsfSignature", "version"]
+    }
+  ],
   "forensic": {
     "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "CHM file can execute code",
+        "condition": "version == 3",
+        "severity": "info",
+        "description": "CHM files are rendered by Internet Explorer's Trident engine and can contain JavaScript, VBScript, and ActiveX controls. CHM files have been used to deliver malware (APT actors use CHM files as initial access payloads)."
+      },
+      {
+        "name": "Non-standard ITSF version",
+        "condition": "version != 3 && version != 2",
+        "severity": "warning",
+        "description": "ITSF version is not 2 or 3 — may indicate a corrupt or non-standard CHM file."
+      },
+      {
+        "name": "Header length mismatch",
+        "condition": "version == 3 && headerLength != 96",
+        "severity": "error",
+        "description": "ITSF v3 header length must be 96 bytes. A different value indicates header corruption."
+      }
+    ],
+    "knownExploitVectors": [
+      "CHM files render HTML with JavaScript/VBScript in IE's Trident engine — script-based malware delivery",
+      "CVE-2010-1885: HtmlHelp shortcut vulnerability — .chm can open arbitrary programs via shortcut object",
+      "CHM as APT delivery vector: GrimAgent, Lazarus Group, TA505 used CHM droppers (2021-2023)",
+      "CHM can call ShellExecute via script: <OBJECT type='application/x-oleobject' classid='clsid:...'> CreateObject('WScript.Shell').Run(cmd)",
+      "Path traversal in CHM internal file names targeting extract-to-disk operations"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Microsoft Compiled HTML Help file",
+    "analysisContext": "CHM = ITSF v3 container. Header (96B): 'ITSF' (4B) + version (4B LE uint32 = 3) + headerLen (4B = 96) + totalLen (4B) + unknown/timestamp (4B + 4B) + LCID (4B). Offsets 24-55: ITSF Header Section 0 (GUID + offset pair). Offsets 56-87: ITSF Header Section 1 (content section info). Offset 88: LE uint64 directory section offset. Offset 96: LE uint64 content section offset. Internal file system: directory at directoryOffset, LZX-compressed content at contentOffset. Key virtual files: '/#SYSTEM' (CHM metadata), '/#TOPICS' (topic list), '/#WINDOWS' (window definitions), '/#TOCIDX' (TOC), '/$FIftiMain' (full-text search index). Tools: chmlib, extract_chmLib, 7-Zip (can extract CHM), python-chm.",
+    "knownVulnerabilities": [
+      "CVE-2010-1885: HTML Help shortcut object executing arbitrary applications",
+      "Multiple CHM-based APT campaigns (2022): Lazarus (North Korea), APT41 (China) used CHM droppers with embedded PowerShell"
+    ],
     "suggestedInspections": [
-      "Validate Compiled HTML Help file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
+      "Confirm 'ITSF' at offset 0 (49 54 53 46) and version=3 at offset 4",
+      "Check LCID at offset 20 for language identification",
+      "Extract internal HTML files and scan for JavaScript/VBScript content",
+      "Look for <OBJECT> tags with ActiveX CLSIDs — potential arbitrary code execution",
+      "Scan for ShellExecute, CreateObject, WScript.Shell patterns in scripts",
+      "Check '/#SYSTEM' internal file for CHM metadata including default topic path"
     ]
+  },
+  "software": [
+    "Microsoft HTML Help Workshop (creator)",
+    "hh.exe (Windows HTML Help viewer)",
+    "xCHM (Linux/macOS viewer)",
+    "ChmSee",
+    "Sumatra PDF (CHM support)",
+    "7-Zip (extraction)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".chm"],
+    "note": "CHM replaced the older WinHelp (.hlp) format from Windows 98 onward. Rendered by Trident (IE engine) — security context depends on file location (mark-of-the-web). CHM from network shares or internet zones has restricted script execution. Local CHM files execute scripts with full local permissions."
+  },
+  "MimeTypes": [
+    "application/vnd.ms-htmlhelp",
+    "application/x-chm"
+  ],
+  "UseCases": [
+    "Windows application help documentation",
+    "Software manuals and technical references",
+    "Legacy Windows SDK documentation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Endianness": "little-endian",
+    "Container": "ITSF v3 (ITS File System)",
+    "Compression": "LZX (internal content compression)",
+    "HasHeader": true,
+    "HeaderSize": "96 bytes (ITSF v3)",
+    "ScriptCapable": true
   }
 }

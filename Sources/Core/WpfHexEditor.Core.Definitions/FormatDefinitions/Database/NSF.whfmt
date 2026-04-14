@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Lotus Notes NSF Database
-   Category:  Database
-   Ext:       .nsf
-   Editor:    hex-editor
-   Desc:      IBM Lotus Notes/Domino database format
-   Variables: currentOffset, pageSize, pageCount, tableCount, version
-   Detection: signature=1A0000 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Lotus Notes NSF Database",
   "version": "1.10",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -82,7 +72,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".nsf"

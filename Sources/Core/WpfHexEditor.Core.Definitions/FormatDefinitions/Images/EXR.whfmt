@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    OpenEXR Image
-   Category:  Images
-   Ext:       .exr
-   Editor:    image-viewer
-   Desc:      OpenEXR High Dynamic Range image format
-   Variables: width, height, totalPixels, bitsPerPixel, exrMagic, version
-   Detection: signature=762F3101 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "OpenEXR Image",
   "version": "1.13",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -96,7 +86,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".exr"

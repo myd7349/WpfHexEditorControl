@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    NumPy Array
-   Category:  Science
-   Ext:       .npy
-   Editor:    hex-editor
-   Desc:      NumPy array binary format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, numpyMagic
-   Detection: signature=934E554D5059 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "NumPy Array",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
+      "minFileSize": 6,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -72,7 +62,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Science",
     "extensions": [
       ".npy"

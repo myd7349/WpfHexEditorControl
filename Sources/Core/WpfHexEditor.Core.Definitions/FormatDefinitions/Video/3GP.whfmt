@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    3GPP Multimedia
-   Category:  Video
-   Ext:       .3gp, .3g2
-   Editor:    hex-editor
-   Desc:      3rd Generation Partnership Project multimedia format
-   Variables: currentOffset, majorBrand, minorVersion, width, height, duration, videoCodec, audioCodec, boxSize, boxType, totalPixels
-   Detection: signature=66747970 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "3GPP Multimedia",
   "version": "1.11",
@@ -38,8 +28,8 @@
     "offset": 4,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -108,7 +98,7 @@
     "VLC",
     "Media players"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".3gp",

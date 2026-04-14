@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    ZFS Filesystem
-   Category:  Disk
-   Ext:       .zfs
-   Editor:    hex-editor
-   Desc:      Zettabyte File System
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=00000000000000000CBAD1BA @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "ZFS Filesystem",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 12,
-      "max_signature_offset": 1024
+      "minFileSize": 12,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -81,7 +71,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".zfs"

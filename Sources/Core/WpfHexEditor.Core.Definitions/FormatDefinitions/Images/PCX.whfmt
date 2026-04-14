@@ -1,55 +1,76 @@
-/* ============================================================
-   Format:    PCX Image
-   Category:  Images
-   Ext:       .pcx
-   Editor:    image-viewer
-   Desc:      ZSoft PC Paintbrush image format
-   Variables: currentOffset, version, bitsPerPixel, pcxManufacturer, encoding
-   Detection: signature=0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PCX Image",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
-    ".pcx"
+    ".pcx",
+    ".pcc"
   ],
-  "description": "ZSoft PC Paintbrush image format",
+  "description": "ZSoft PC Paintbrush (PCX) image format. A raster image format with a fixed 128-byte header. Key fields: offset 0=manufacturer (always 0x0A for ZSoft), offset 1=version (0-5), offset 2=encoding (1=RLE), offset 3=bits per pixel per plane, offsets 4-11=image window (xMin,yMin,xMax,yMax as LE int16), offsets 12-15=DPI, offsets 16-63=16-color palette (EGA palette, 48 bytes), offset 64=reserved (0), offset 65=nPlanes (1,3,4), offset 66=bytesPerLine (LE uint16), offset 68=paletteType, offsets 70-127=filler zeros. Pixel data follows header. For 256-color images (version 5, 8 bits, 1 plane): a 769-byte block at EOF (-769) contains 0x0C + 768 bytes RGB palette.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "ZSoft PCX File Format Technical Reference Manual",
-      "PC Paintbrush (PCX) Format Specification",
-      "PCX RLE Compression Format"
+      "ZSoft PCX File Format Technical Reference Manual v1.2",
+      "PC Paintbrush (PCX) Format Specification — ZSoft Corporation 1990",
+      "PCX v5 — 256-color with extended VGA palette"
     ],
     "WebLinks": [
       "https://www.fileformat.info/format/pcx/egff.htm",
       "http://fileformats.archiveteam.org/wiki/PCX",
       "https://en.wikipedia.org/wiki/PCX",
-      "https://loc.gov/preservation/digital/formats/fdd/fdd000585.shtml"
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000585.shtml"
     ]
   },
   "detection": {
-    "signature": "0A",
-    "offset": 0,
-    "required": true,
+    "signatures": [
+      {
+        "value": "0A",
+        "offset": 0,
+        "label": "ZSoft manufacturer byte",
+        "weight": 0.5
+      },
+      {
+        "value": "0A05",
+        "offset": 0,
+        "label": "PCX v5 (manufacturer + version)",
+        "weight": 0.8
+      },
+      {
+        "value": "0A03",
+        "offset": 0,
+        "label": "PCX v3 (manufacturer + version)",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 128,
+      "note": "PCX manufacturer byte (offset 0) must be 0x0A. Version (offset 1) must be 0,2,3,4, or 5. Encoding (offset 2) should be 0 (none) or 1 (RLE). Detection by extension + header validation is strongly recommended."
     }
   },
-  "functions": {
-    "readUInt32LE": "Read PCX dimensions and metadata"
-  },
   "variables": {
-    "currentOffset": 0,
-    "version": 0,
-    "bitsPerPixel": 0,
     "pcxManufacturer": 0,
-    "encoding": 0
+    "version": 0,
+    "encoding": 0,
+    "bitsPerPixel": 0,
+    "xMin": 0,
+    "yMin": 0,
+    "xMax": 0,
+    "yMax": 0,
+    "hDPI": 0,
+    "vDPI": 0,
+    "nPlanes": 0,
+    "bytesPerLine": 0,
+    "paletteType": 0,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "totalPixels": 0,
+    "hasExtendedPalette": false
   },
   "blocks": [
     {
@@ -58,8 +79,8 @@
       "offset": 0,
       "length": 1,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "ZSoft (0x0A)",
+      "opacity": 0.45,
+      "description": "ZSoft manufacturer identifier — must always be 0x0A (decimal 10) for all valid PCX files. Any other value means this is not a PCX file. This single byte is the only mandatory magic byte in the PCX format.",
       "storeAs": "pcxManufacturer",
       "valueType": "uint8"
     },
@@ -69,10 +90,17 @@
       "offset": 1,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "PCX version number",
+      "opacity": 0.35,
+      "description": "PCX format version number. Determines supported features. Version 5 (0x05) is the most common and supports 256-color VGA images with extended palette.",
       "storeAs": "version",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "v0 — PC Paintbrush 2.5 (2-color EGA)",
+        "2": "v2 — PC Paintbrush 2.8 with palette info",
+        "3": "v3 — PC Paintbrush 2.8 without valid palette",
+        "4": "v4 — PC Paintbrush for Windows (no 256-color)",
+        "5": "v5 — PC Paintbrush 3.0+ (256-color VGA palette)"
+      }
     },
     {
       "type": "field",
@@ -80,10 +108,14 @@
       "offset": 2,
       "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "1=RLE encoding",
+      "opacity": 0.35,
+      "description": "Pixel data encoding method. 0 = no encoding (uncompressed, rare). 1 = RLE (run-length encoding — all practical PCX files). Other values are not defined by the specification.",
       "storeAs": "encoding",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Uncompressed (no encoding)",
+        "1": "RLE (run-length encoding — standard)"
+      }
     },
     {
       "type": "field",
@@ -91,74 +123,379 @@
       "offset": 3,
       "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Bits per pixel per plane",
+      "opacity": 0.35,
+      "description": "Number of bits per pixel per color plane. Combined with nPlanes: total bits per pixel = bitsPerPixel × nPlanes. Common combinations: 1-bit × 4 planes = 16-color EGA, 8-bit × 1 plane = 256-color or grayscale, 8-bit × 3 planes = 24-bit true-color.",
       "storeAs": "bitsPerPixel",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "1-bit per plane (monochrome or EGA)",
+        "2": "2-bit per plane (4 colors per plane)",
+        "4": "4-bit per plane (16 colors per plane — EGA)",
+        "8": "8-bit per plane (256 colors or 24-bit with 3 planes)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "X Minimum",
+      "offset": 4,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Left edge of image in pixels, as little-endian int16. Usually 0 for images starting at the screen left edge.",
+      "storeAs": "xMin",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Y Minimum",
+      "offset": 6,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Top edge of image in pixels, as little-endian int16. Usually 0 for images starting at the screen top edge.",
+      "storeAs": "yMin",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "X Maximum",
+      "offset": 8,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Right edge of image in pixels (inclusive), as little-endian int16. Image width = xMax - xMin + 1.",
+      "storeAs": "xMax",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Y Maximum",
+      "offset": 10,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.25,
+      "description": "Bottom edge of image in pixels (inclusive), as little-endian int16. Image height = yMax - yMin + 1.",
+      "storeAs": "yMax",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Horizontal DPI",
+      "offset": 12,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Horizontal resolution in dots per inch (little-endian uint16). Typical values: 72, 96, 300, 600. May be unreliable in older files (set to screen resolution rather than true print DPI).",
+      "storeAs": "hDPI",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Vertical DPI",
+      "offset": 14,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.25,
+      "description": "Vertical resolution in dots per inch (little-endian uint16). Should match hDPI for square pixels.",
+      "storeAs": "vDPI",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Color Planes",
+      "offset": 65,
+      "length": 1,
+      "color": "#FFA07A",
+      "opacity": 0.30,
+      "description": "Number of color planes in the image. Combined with bitsPerPixel to determine total bit depth: 1=monochrome or 256-color (with 8-bit), 3=24-bit true color (3× 8-bit planes), 4=32-bit color or 16-color EGA (4× 1-bit planes).",
+      "storeAs": "nPlanes",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "1 plane (monochrome, grayscale, or 256-color indexed)",
+        "3": "3 planes (24-bit true-color RGB)",
+        "4": "4 planes (16-color EGA or 32-bit RGBA)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Bytes Per Line",
+      "offset": 66,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.30,
+      "description": "Number of bytes per scan line per color plane (little-endian uint16). Must be an even number. Actual bytes per decoded line per plane. Should equal ceil((xMax - xMin + 1) * bitsPerPixel / 8) rounded up to an even number.",
+      "storeAs": "bytesPerLine",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Palette Type",
+      "offset": 68,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.25,
+      "description": "How the color palette should be interpreted. 1 = color/grayscale (default for virtually all files). 2 = grayscale only. Used by applications to determine correct display mode.",
+      "storeAs": "paletteType",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "1": "Color or grayscale",
+        "2": "Grayscale only"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Image Width",
+      "expression": "calc:xMax - xMin + 1",
+      "storeAs": "imageWidth",
+      "description": "Computed image width in pixels: xMax - xMin + 1"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Image Height",
+      "expression": "calc:yMax - yMin + 1",
+      "storeAs": "imageHeight",
+      "description": "Computed image height in pixels: yMax - yMin + 1"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Pixels",
+      "expression": "calc:imageWidth * imageHeight",
+      "storeAs": "totalPixels",
+      "description": "Total pixel count = imageWidth × imageHeight"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Has Extended 256-Color Palette",
+      "expression": "calc:version == 5 && bitsPerPixel == 8 && nPlanes == 1",
+      "storeAs": "hasExtendedPalette",
+      "description": "True for PCX v5 with 8 bits per pixel and 1 color plane — file likely has a 769-byte extended palette at EOF-769"
     },
     {
       "type": "metadata",
-      "name": "PCX Version",
+      "name": "Version",
       "variable": "version",
-      "description": "PCX format version number"
+      "description": "PCX format version (0=v2.5, 2=v2.8w/palette, 3=v2.8w/o palette, 4=Windows, 5=v3.0)"
     },
     {
       "type": "metadata",
-      "name": "Bits Per Pixel",
+      "name": "Image Width",
+      "variable": "imageWidth",
+      "description": "Computed pixel width (xMax - xMin + 1)"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height",
+      "variable": "imageHeight",
+      "description": "Computed pixel height (yMax - yMin + 1)"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width × Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
       "variable": "bitsPerPixel",
-      "description": "Color depth (bits per pixel)"
+      "description": "Bits per pixel per plane"
+    },
+    {
+      "type": "metadata",
+      "name": "Has 256-Color Palette",
+      "variable": "hasExtendedPalette",
+      "description": "True for v5 8-bit 1-plane images with VGA palette at EOF"
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "Manufacturer byte is 0x0A",
+      "expression": "pcxManufacturer == 10",
+      "severity": "error",
+      "message": "PCX manufacturer byte must be 0x0A (10) — any other value means this is not a valid PCX file"
+    },
+    {
+      "name": "Version is valid",
+      "expression": "version == 0 || version == 2 || version == 3 || version == 4 || version == 5",
+      "severity": "error",
+      "message": "PCX version must be 0, 2, 3, 4, or 5 — other values are not defined in the PCX specification"
+    },
+    {
+      "name": "Encoding is RLE or none",
+      "expression": "encoding == 0 || encoding == 1",
+      "severity": "warning",
+      "message": "PCX encoding should be 0 (none) or 1 (RLE) — other values are undefined"
+    },
+    {
+      "name": "Image dimensions valid",
+      "expression": "xMax >= xMin && yMax >= yMin",
+      "severity": "error",
+      "message": "PCX xMax must be >= xMin and yMax must be >= yMin for valid image dimensions"
+    }
   ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".pcx"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "PCX Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "EGA Palette (16 colors)",
+        "offset": 16,
+        "icon": "\uE790",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Pixel Data",
+        "offset": 128,
+        "icon": "\uE80A",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "image/pcx"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "version",
+    "primaryField": "imageWidth",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Format ID",
+        "icon": "\uE9D9",
+        "fields": ["pcxManufacturer", "version", "encoding"]
+      },
+      {
+        "title": "Image Geometry",
+        "icon": "\uE80A",
+        "fields": ["imageWidth", "imageHeight", "totalPixels", "xMin", "yMin", "xMax", "yMax"]
+      },
+      {
+        "title": "Color Encoding",
+        "icon": "\uE790",
+        "fields": ["bitsPerPixel", "nPlanes", "paletteType", "hasExtendedPalette"]
+      },
+      {
+        "title": "Resolution",
+        "icon": "\uE8A5",
+        "fields": ["hDPI", "vDPI", "bytesPerLine"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
+  "exportTemplates": [
+    {
+      "name": "PCX Header Analysis (JSON)",
+      "format": "json",
+      "fields": ["pcxManufacturer", "version", "encoding", "bitsPerPixel", "xMin", "yMin", "xMax", "yMax", "nPlanes", "bytesPerLine", "paletteType", "imageWidth", "imageHeight", "totalPixels", "hasExtendedPalette"]
+    },
+    {
+      "name": "PCXHEADER (C struct)",
+      "format": "c-struct",
+      "structName": "PCXHEADER",
+      "fields": ["pcxManufacturer", "version", "encoding", "bitsPerPixel", "xMin", "yMin", "xMax", "yMax", "hDPI", "vDPI", "nPlanes", "bytesPerLine", "paletteType"]
+    },
+    {
+      "name": "Python PCX check",
+      "format": "python-bytes",
+      "fields": ["pcxManufacturer", "version", "encoding"]
+    }
+  ],
   "forensic": {
     "category": "image",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid manufacturer byte",
+        "condition": "pcxManufacturer != 10",
+        "severity": "error",
+        "description": "Manufacturer byte is not 0x0A — this is not a PCX file or the header is corrupt."
+      },
+      {
+        "name": "Zero image dimensions",
+        "condition": "imageWidth == 0 || imageHeight == 0",
+        "severity": "error",
+        "description": "Computed image dimensions are zero — xMax < xMin or yMax < yMin indicates corrupt geometry."
+      },
+      {
+        "name": "RLE run overflow",
+        "condition": "bytesPerLine == 0",
+        "severity": "warning",
+        "description": "bytesPerLine is zero — RLE decoder will have no target line length, leading to undefined behavior."
+      },
+      {
+        "name": "Oversized image",
+        "condition": "totalPixels > 16777216",
+        "severity": "warning",
+        "description": "Image exceeds 16 megapixels (e.g., 4096×4096). PCX RLE decoders may not bound-check the output buffer for large images."
+      }
+    ],
+    "knownExploitVectors": [
+      "PCX RLE decoder: run-count byte 0xC0-0xFF encodes a run of up to 63 pixels; no output-bound check leads to heap overflow",
+      "bytesPerLine field underreported causing incomplete line reads and corrupted offsets into subsequent lines",
+      "Integer overflow in totalPixels × nPlanes × bitsPerPixel for allocation size calculation"
+    ]
   },
   "aiHints": {
-    "analysisContext": "ZSoft PC Paintbrush image format",
+    "analysisContext": "PCX image format. Fixed 128-byte header. Manufacturer must be 0x0A at offset 0. Version (offset 1): 0=v2.5, 2/3=v2.8, 4=Windows, 5=VGA. Image coordinates: offsets 4-11 as LE int16 pairs (xMin,yMin,xMax,yMax); width=xMax-xMin+1, height=yMax-yMin+1. Color planes at offset 65, bytesPerLine at offset 66 (LE uint16). Pixel data starts at offset 128. For v5 8-bit 1-plane images: extended 256-color palette is at EOF-769 (0x0C marker byte + 256×RGB triples). RLE encoding: byte 0xC0-0xFF = run of (byte & 0x3F) pixels of next byte; byte < 0xC0 = literal pixel.",
+    "knownVulnerabilities": [
+      "CVE-2007-5960 (PCX decoding): PCX parsers in multiple image libraries had RLE run-past-buffer overflows",
+      "libpcx and early GIMP PCX plugin had integer overflow in image dimension parsing"
+    ],
     "suggestedInspections": [
-      "Validate PCX Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+      "Verify offset 0 = 0x0A (manufacturer) and offset 1 in {0,2,3,4,5} (version)",
+      "Compute image size: xMax-xMin+1 × yMax-yMin+1 from LE uint16 pairs at offsets 4-11",
+      "Check nPlanes (offset 65) and bitsPerPixel (offset 3) to determine color depth",
+      "For v5 8-bit 1-plane: check EOF-769 for 0x0C marker (extended 256-color palette present)",
+      "Validate bytesPerLine (offset 66) equals ceil((xMax-xMin+1)*bitsPerPixel/8) rounded to even",
+      "Scan EGA palette at offsets 16-63 for 16×RGB triples"
     ]
+  },
+  "software": [
+    "ZSoft PC Paintbrush",
+    "Adobe Photoshop (legacy import)",
+    "GIMP",
+    "IrfanView",
+    "XnView",
+    "Paint.NET (via plugin)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".pcx", ".pcc"],
+    "note": "PCX was the dominant raster format for DOS-era PC software (1982-1995). Superseded by GIF, then PNG. Still encountered in legacy game assets and scanned document archives."
+  },
+  "MimeTypes": [
+    "image/pcx",
+    "image/x-pcx"
+  ],
+  "UseCases": [
+    "Legacy DOS game artwork and sprites",
+    "Scanned document archives (pre-1995)",
+    "Legacy graphics software output",
+    "Retro computing preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 18,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-13",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Endianness": "little-endian",
+    "Compression": "RLE (run-length encoding, encoding=1)",
+    "HasHeader": true,
+    "HeaderSize": "128 bytes fixed",
+    "ExtendedPaletteSize": "769 bytes at EOF (version 5 only)"
   }
 }

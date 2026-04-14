@@ -1,18 +1,4 @@
-/* ============================================================
-   Format:    NES / Game Boy Character ROM
-   Category:  Game
-   Ext:       .chr
-   Editor:    tile-editor
-   Desc:      Raw tile graphics dump from NES or Game Boy cartridge CHR ROM.
-              No file header — pure binary 2bpp tile data starting at offset 0.
-              Each 8x8 tile = 16 bytes (2-plane: plane-0 bytes 0–7, plane-1 bytes 8–15).
-              8KB banks (0x2000 bytes) = 512 tiles per bank.
-   Variables: fileSize, bankCount, tileCount, bytesPerTile, bankSize, bppMode,
-              planesPerTile, formattedSize, formattedTileCount, formattedBankCount
-   Detection: extension-only (no magic bytes)
-   Updated:   2026-04-13
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "NES / Game Boy Character ROM",
   "version": "2.2",
@@ -61,7 +47,7 @@
   "detection": {
     "required": false,
     "validation": {
-      "min_file_size": 16,
+      "minFileSize": 16,
       "notes": "No magic bytes. Detected by .chr extension only. File size should be a multiple of 16 (bytes per tile) or 8192 (bytes per bank)."
     }
   },
@@ -273,7 +259,7 @@
     "BGB (Game Boy emulator)",
     "WpfHexEditor TileEditor"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "parentFormats": [".nes (iNES ROM — CHR data starts at offset 16 + PRG_size)"],
     "relatedFormats": [".nes", ".gb", ".gbc", ".gba", ".gfx", ".til"],

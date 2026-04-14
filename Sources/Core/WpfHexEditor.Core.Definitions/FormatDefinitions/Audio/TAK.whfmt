@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Tom's Audio Kompressor
-   Category:  Audio
-   Ext:       .tak
-   Editor:    audio-viewer
-   Desc:      TAK lossless audio compression format with high compression ratios
-   Variables: sampleRate, channels, bitDepth, duration, takHeader, byteRate, samplesPerSecond
-   Detection: signature=7442614B @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Tom's Audio Kompressor",
   "version": "1.13",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -90,7 +80,7 @@
     "TAK decoder",
     "Foobar2000"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Audio",
     "extensions": [
       ".tak"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Windows Media Video
-   Category:  Video
-   Ext:       .wmv, .wma, .asf
-   Editor:    hex-editor
-   Desc:      Windows Media Video/Audio format (ASF container)
-   Variables: currentOffset, objectSize, headerObjects, width, height, duration, bitrate, videoCodec, asfHeaderGuid, totalPixels
-   Detection: signature=3026B2758E66CF11 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Media Video",
   "version": "1.11",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -92,7 +82,7 @@
     "Windows Media Player",
     "VLC"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".wmv",

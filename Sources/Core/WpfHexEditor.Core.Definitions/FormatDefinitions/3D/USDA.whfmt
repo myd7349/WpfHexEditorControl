@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    USD ASCII
-   Category:  3D
-   Ext:       .usda
-   Editor:    hex-editor
-   Desc:      Pixar USD ASCII text format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, usdaHeader
-   Detection: signature=23757364612031 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "USD ASCII",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -72,7 +62,7 @@
     "Pixar USD tools",
     "Text editors"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "3D",
     "extensions": [
       ".usda"

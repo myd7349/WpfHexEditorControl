@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Cloud Point File
-   Category:  CAD
-   Ext:       .cxf
-   Editor:    hex-editor
-   Desc:      3D point cloud exchange format
-   Variables: currentOffset, fileSize, version, format, pointCloudHeader, formattedSize
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Cloud Point File",
   "version": "2.4",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -79,7 +69,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "CAD",
     "extensions": [
       ".cxf"

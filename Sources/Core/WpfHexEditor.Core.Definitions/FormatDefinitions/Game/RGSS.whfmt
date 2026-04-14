@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    RPG Maker Encrypted Archive
-   Category:  Game
-   Ext:       .rgssad, .rgss2a, .rgss3a
-   Editor:    hex-editor
-   Desc:      RPG Maker encrypted game archive
-   Variables: currentOffset, fileCount, totalSize, compressionMethod, headerCRC, rgssadSignature, version, formattedSize
-   Detection: signature=52475353414400 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "RPG Maker Encrypted Archive",
   "version": "1.13",
@@ -39,8 +29,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -105,7 +95,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".rgssad",

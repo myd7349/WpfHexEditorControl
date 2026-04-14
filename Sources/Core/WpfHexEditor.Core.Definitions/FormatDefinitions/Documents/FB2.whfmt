@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    FictionBook 2.0
-   Category:  Documents
-   Ext:       .fb2
-   Editor:    hex-editor
-   Desc:      FictionBook 2.0 e-book format, XML-based format popular in Russia for fiction books
-   Variables: currentOffset, title, author, preferredEditor, publisher, language, genre, date, xmlDeclaration
-   Detection: signature=3C3F786D6C @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "FictionBook 2.0",
   "version": "1.10",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -89,7 +79,7 @@
     "Cool Reader",
     "Sumatra PDF"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Documents",
     "extensions": [
       ".fb2"

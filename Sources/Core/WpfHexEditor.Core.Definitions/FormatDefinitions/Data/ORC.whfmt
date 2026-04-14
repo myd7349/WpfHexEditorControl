@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Apache ORC
-   Category:  Data
-   Ext:       .orc
-   Editor:    hex-editor
-   Desc:      Apache Optimized Row Columnar file format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, orcMagic
-   Detection: signature=4F5243 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Apache ORC",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -72,7 +62,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".orc"

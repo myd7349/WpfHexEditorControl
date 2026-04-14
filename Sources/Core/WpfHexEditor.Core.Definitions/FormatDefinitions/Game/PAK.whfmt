@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Game Package Archive
-   Category:  Game
-   Ext:       .pak
-   Editor:    hex-editor
-   Desc:      Generic game asset package
-   Variables: currentOffset, fileCount, totalSize, compressionMethod, headerCRC, pakSignature, formattedSize
-   Detection: signature=5041434B @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Game Package Archive",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -92,7 +82,7 @@
     "Game extractors",
     "7-Zip"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".pak"

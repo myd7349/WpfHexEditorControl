@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Btrfs Filesystem
-   Category:  Disk
-   Ext:       .btrfs
-   Editor:    hex-editor
-   Desc:      B-tree Filesystem with copy-on-write
-   Variables: currentOffset, fileSize, version, format, formattedSize
-   Detection: signature=5F42486D5F4D @ offset 65600
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Btrfs Filesystem",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 65600,
     "required": true,
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
+      "minFileSize": 6,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -81,7 +71,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Disk",
     "extensions": [
       ".btrfs"

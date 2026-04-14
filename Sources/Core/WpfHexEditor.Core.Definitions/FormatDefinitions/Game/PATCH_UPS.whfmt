@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    UPS Patch
-   Category:  Game
-   Ext:       .ups
-   Editor:    hex-editor
-   Desc:      Universal Patching System (UPS) format - Enhanced ROM patching with CRC32 validation and bidirectional support
-   Variables: currentOffset, srcSizeByte1, machineType, sectionCount, entryPoint, upsMagic, patchDataStart, patchDataRegion
-   Detection: signature=55505331 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "UPS Patch",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -114,7 +104,7 @@
     "Lunar IPS",
     "Rom patcher tools"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "successor_to": "IPS",
     "supports_larger_files": true,
     "crc_validation": true,

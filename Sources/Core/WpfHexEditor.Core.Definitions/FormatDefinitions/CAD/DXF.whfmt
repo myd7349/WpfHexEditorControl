@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    AutoCAD DXF
-   Category:  CAD
-   Ext:       .dxf
-   Editor:    hex-editor
-   Desc:      Drawing Exchange Format - CAD interchange
-   Variables: currentOffset, version, entityCount, layerCount, sectionCode
-   Detection: signature=3020 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "AutoCAD DXF",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -81,7 +71,7 @@
     "QCAD",
     "All CAD software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "autodesk_format": true,
     "open_format": true,
     "interchange_for": "DWG",

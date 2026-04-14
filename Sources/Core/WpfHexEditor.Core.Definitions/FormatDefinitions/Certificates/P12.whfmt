@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    PKCS#12 Certificate
-   Category:  Certificates
-   Ext:       .p12, .pfx
-   Editor:    hex-editor
-   Desc:      Personal Information Exchange - Certificate bundle
-   Variables: currentOffset, version, serialNumber, issuer, subject, asn1Sequence
-   Detection: signature=3082 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "PKCS#12 Certificate",
   "version": "1.11",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -85,7 +75,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Certificates",
     "extensions": [
       ".p12",

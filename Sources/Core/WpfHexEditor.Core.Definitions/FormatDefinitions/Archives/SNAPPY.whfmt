@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Snappy Compression
-   Category:  Archives
-   Ext:       .snappy, .sz
-   Editor:    hex-editor
-   Desc:      Snappy compressed stream format developed by Google, optimized for speed rather than compression ratio
-   Variables: chunkType, chunkLength, streamIdentifier
-   Detection: signature=FF06000073 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Snappy Compression",
   "version": "1.10",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -98,7 +88,7 @@
     "Hadoop",
     "Databases"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".snappy",

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Khronos Texture 2
-   Category:  Images
-   Ext:       .ktx2
-   Editor:    image-viewer
-   Desc:      Khronos Texture 2.0 format with Basis Universal
-   Variables: vkFormat, ktx2Identifier, typeSize
-   Detection: signature=AB4B54582032300D0A1A0A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Khronos Texture 2",
   "version": "1.11",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 11,
-      "max_signature_offset": 1024
+      "minFileSize": 11,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -94,7 +84,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".ktx2"

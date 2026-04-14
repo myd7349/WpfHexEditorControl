@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    NRRD Medical Image
-   Category:  Medical
-   Ext:       .nrrd, .nhdr
-   Editor:    hex-editor
-   Desc:      Nearly Raw Raster Data medical imaging format
-   Variables: currentOffset, width, height, slices, bitDepth, nrrdMagic, version, totalPixels
-   Detection: signature=4E525244303030 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "NRRD Medical Image",
   "version": "1.12",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 7,
-      "max_signature_offset": 1024
+      "minFileSize": 7,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -105,7 +95,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Medical",
     "extensions": [
       ".nrrd",

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Brotli Compression
-   Category:  Archives
-   Ext:       .br
-   Editor:    hex-editor
-   Desc:      Brotli compressed format developed by Google, used for web compression and file compression
-   Variables: windowBits
-   Detection: signature=CE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Brotli Compression",
   "version": "1.10",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -79,7 +69,7 @@
     "7-Zip",
     "WinRAR"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".br"

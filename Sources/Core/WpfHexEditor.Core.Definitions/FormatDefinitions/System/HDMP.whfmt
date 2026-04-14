@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Windows Heap Dump
-   Category:  System
-   Ext:       .hdmp
-   Editor:    hex-editor
-   Desc:      Windows heap dump file - Heap memory analysis
-   Variables: currentOffset, timestamp, size, version, type, heapDumpSignature, heapCount, processId, flags
-   Detection: signature=4D444D50 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Heap Dump",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -137,7 +127,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "System",
     "extensions": [
       ".hdmp"

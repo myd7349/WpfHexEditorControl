@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Game Boy Advance ROM
-   Category:  Game
-   Ext:       .gba
-   Editor:    hex-editor
-   Desc:      Game Boy Advance ROM cartridge format
-   Variables: currentOffset, gameTitle, gameCode, complement, fileCount, version, indexOffset, entryPoint, nintendoLogo, makerCode, fixedValue0x96, mainUnitCode, deviceType, softwareVersion
-   Detection: signature=96 @ offset 178
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Game Boy Advance ROM",
   "version": "2.5",
@@ -37,8 +27,8 @@
     "offset": 178,
     "required": true,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -220,7 +210,7 @@
     "NO$GBA",
     "RetroArch"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".gba"

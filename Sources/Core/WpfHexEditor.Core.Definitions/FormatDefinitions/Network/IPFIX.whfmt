@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    IPFIX
-   Category:  Network
-   Ext:       .ipfix
-   Editor:    hex-editor
-   Desc:      IP Flow Information Export - Network flow monitoring protocol
-   Variables: currentOffset, version, messageLength, exportTime, sequenceNumber, ipfixVersion, observationDomainId, setId, setLength
-   Detection: signature=000A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "IPFIX",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -142,7 +132,7 @@
     "Wireshark",
     "tcpdump"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Network",
     "extensions": [
       ".ipfix"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Parallel Compression Archive
-   Category:  Archives
-   Ext:       .pz
-   Editor:    hex-editor
-   Desc:      Parallel compression archive format optimized for multi-threaded compression and decompression
-   Variables: calculatedCRC32, crc32Valid, originalSize, compressedSize, compressionRatio, pcompressMagic, formattedSize
-   Detection: signature=50434F4D50 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Parallel Compression Archive",
   "version": "1.12",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 5,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -117,7 +107,7 @@
     "7-Zip",
     "WinRAR"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".pz"

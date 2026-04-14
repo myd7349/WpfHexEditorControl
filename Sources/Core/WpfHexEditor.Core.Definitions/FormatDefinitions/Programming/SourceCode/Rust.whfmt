@@ -1,14 +1,4 @@
-/*
-   ============================================================
-   Format:    Rust Source File
-   Category:  Programming
-   Ext:       .rs
-   Editor:    code-editor
-   Desc:      Rust programming language source file.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "Rust Source File",
   "version": "2.1",

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    SQX Archive
-   Category:  Archives
-   Ext:       .sqx
-   Editor:    hex-editor
-   Desc:      SQX archive format with advanced compression algorithms and encryption support
-   Variables: fileCount, totalSize, compressionMethod, headerCRC, sqxSignature, formattedSize
-   Detection: signature=53515820 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "SQX Archive",
   "version": "1.12",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -115,7 +105,7 @@
   "software": [
     "SQX Archiver"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Archives",
     "extensions": [
       ".sqx"

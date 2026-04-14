@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Microsoft Access Compiled Database
-   Category:  Database
-   Ext:       .accde
-   Editor:    hex-editor
-   Desc:      Microsoft Access compiled executable-only database format
-   Variables: currentOffset, pageSize, pageCount, tableCount, version, accdeSignature
-   Detection: signature=5374616E64617264204143452044617461626173 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Microsoft Access Compiled Database",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 20,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -85,7 +75,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".accde"

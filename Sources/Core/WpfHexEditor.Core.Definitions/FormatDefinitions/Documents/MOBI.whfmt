@@ -1,132 +1,329 @@
-/* ============================================================
-   Format:    Mobipocket eBook
-   Category:  Documents
-   Ext:       .mobi, .prc
-   Editor:    hex-editor
-   Desc:      Mobipocket eBook format
-   Variables: currentOffset, databaseName, title, author, preferredEditor, recordCount, mobiType, encoding, pdbName
-   Detection: signature=424F4F4B4D4F4249 @ offset 60
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Mobipocket eBook",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".mobi",
-    ".prc"
+    ".prc",
+    ".azw"
   ],
-  "description": "Mobipocket eBook format",
+  "description": "Mobipocket eBook format (.mobi) — a structured document format based on the PalmDOC compressed text format, which itself is packaged in a Palm Database (PDB) container. The PDB header occupies the first 78 bytes: 32-byte null-padded ASCII database name, 2-byte attributes (BE uint16), 2-byte version, 4-byte creation timestamp (BE uint32, seconds since Jan 1, 1904), 4-byte modification time, 4-byte backup time, 4-byte modification number, 4-byte appInfoId, 4-byte sortInfoId, 4-byte type ('BOOK'), 4-byte creator ('MOBI' — combined as 'BOOKMOBI' at offset 60), 4-byte uniqueIDseed, 4-byte nextRecordListID, 2-byte recordCount. Record list follows with 8-byte entries (4B offset + 4B uniqueID/attributes). The first data record contains a 16-byte PalmDOC header + variable-length MOBI header starting with 'MOBI' identifier.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
-  "references": {
-    "specifications": [
-      "Mobipocket eBook Format"
-    ],
-    "WebLinks": [
-      "https://en.wikipedia.org/wiki/MOBI"
-    ]
-  },
+  "references": [
+    {
+      "specifications": [
+        "Mobipocket File Format Technical Specification — Mobipocket SA",
+        "Palm Database Format (PDB) — Palm OS Programmer's Companion",
+        "KF7/KF8 (Kindle Format) reverse-engineered specification — Calibre project"
+      ],
+      "WebLinks": [
+        "https://wiki.mobileread.com/wiki/MOBI",
+        "https://wiki.mobileread.com/wiki/MOBI6",
+        "https://en.wikipedia.org/wiki/Mobipocket",
+        "https://www.loc.gov/preservation/digital/formats/fdd/fdd000472.shtml"
+      ]
+    }
+  ],
   "detection": {
     "signature": "424F4F4B4D4F4249",
     "offset": 60,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.0 },
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 78,
+      "note": "MOBI identifier 'BOOKMOBI' at offset 60 = PDB type ('BOOK') + PDB creator ('MOBI'). First 32 bytes are the database name (null-padded ASCII). Record list starts at offset 78."
     }
   },
-  "functions": {
-    "readUInt32BE": "Read 32-bit big-endian for PalmDOC header fields",
-    "extractASCIIString": "Extract book title and database name (32 bytes at offset 0)",
-    "readUInt16BE": "Read 16-bit values for record count and attributes"
-  },
   "variables": {
-    "currentOffset": 0,
-    "databaseName": "Unknown",
-    "title": "Unknown",
-    "author": "Unknown",
-    "preferredEditor": "hex-editor",
+    "pdbName": "",
+    "pdbAttributes": 0,
+    "pdbVersion": 0,
+    "pdbType": "",
+    "pdbCreator": "",
     "recordCount": 0,
-    "mobiType": "Unknown",
-    "encoding": "UTF-8",
-    "pdbName": ""
+    "mobiType": "",
+    "compressionType": 0,
+    "textLength": 0,
+    "recordBlockCount": 0,
+    "encoding": 0,
+    "fileVersion": 0,
+    "uniqueMobiId": 0,
+    "isKF8": false,
+    "isDRMProtected": false
   },
   "blocks": [
     {
       "type": "field",
-      "name": "PDB Name",
+      "name": "Database Name",
       "offset": 0,
       "length": 32,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Database name",
+      "opacity": 0.30,
+      "description": "PDB database name — 32-byte null-padded ASCII string. For MOBI eBooks, this is typically the book title (truncated to 31 characters + null terminator). The name is used by Palm OS to identify the database but may contain author-set book metadata.",
       "storeAs": "pdbName",
       "valueType": "ascii"
     },
     {
-      "type": "signature",
-      "name": "MOBI Type",
+      "type": "field",
+      "name": "PDB Attributes",
+      "offset": 32,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.25,
+      "description": "Palm Database attribute flags (big-endian uint16). Bit 0: read-only. Bit 1: dirty AppInfo. Bit 2: backup on sync. Bit 3: override backup preference. Bit 4: prevent being beamed. Bit 5: prevent being copied. For MOBI, usually 0x0000.",
+      "storeAs": "pdbAttributes",
+      "valueType": "uint16",
+      "endianness": "big",
+      "bitfields": [
+        { "name": "Read-Only", "bits": "0", "description": "Database is read-only" },
+        { "name": "Dirty AppInfo", "bits": "1", "description": "AppInfo block has been modified" },
+        { "name": "Backup on Sync", "bits": "2", "description": "Always backup on HotSync" },
+        { "name": "Prevent Beam", "bits": "4", "description": "Prevent beaming (DRM-like flag)" },
+        { "name": "Prevent Copy", "bits": "5", "description": "Prevent copying to other devices" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "PDB Version",
+      "offset": 34,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.20,
+      "description": "Palm Database version number (big-endian uint16). Usually 0 for MOBI files.",
+      "storeAs": "pdbVersion",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "PDB Type",
       "offset": 60,
-      "length": 8,
+      "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "BOOKMOBI identifier",
+      "opacity": 0.40,
+      "description": "PDB database type identifier (4-byte ASCII). Must be 'BOOK' (0x424F4F4B) for Mobipocket eBooks. This field identifies the application type that owns the database.",
+      "storeAs": "pdbType",
+      "valueType": "ascii",
+      "valueMap": {
+        "BOOK": "BOOK — Mobipocket/MOBI eBook database",
+        "PNRd": "PNRd — PalmDOC plain text (older format)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "PDB Creator",
+      "offset": 64,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.40,
+      "description": "PDB creator identifier (4-byte ASCII). Must be 'MOBI' (0x4D4F4249) for Mobipocket format. Together with pdbType ('BOOK' + 'MOBI' = 'BOOKMOBI') this is the definitive MOBI identifier.",
+      "storeAs": "pdbCreator",
+      "valueType": "ascii",
+      "valueMap": {
+        "MOBI": "MOBI — Mobipocket reader creator ID",
+        "REAd": "REAd — PalmDOC reader (older format)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Record Count",
+      "offset": 76,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.30,
+      "description": "Number of records in the PDB database (big-endian uint16). Each record holds a chunk of the compressed book content. Record 0 is the PalmDOC + MOBI header. Records 1 through recordCount-1 contain compressed text. Last records may contain Cover image (KF7) or EXTH (metadata) extension.",
+      "storeAs": "recordCount",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is BOOKMOBI",
+      "expression": "calc:pdbType == 'BOOK' && pdbCreator == 'MOBI'",
       "storeAs": "mobiType",
-      "valueType": "ascii"
+      "description": "Combined BOOKMOBI identifier — true when pdbType='BOOK' and pdbCreator='MOBI'"
+    },
+    {
+      "type": "metadata",
+      "name": "Database Name",
+      "variable": "pdbName",
+      "description": "PDB database name (truncated book title)"
+    },
+    {
+      "type": "metadata",
+      "name": "PDB Type",
+      "variable": "pdbType",
+      "description": "PDB type ('BOOK' for MOBI)"
+    },
+    {
+      "type": "metadata",
+      "name": "PDB Creator",
+      "variable": "pdbCreator",
+      "description": "PDB creator ('MOBI' for Mobipocket)"
+    },
+    {
+      "type": "metadata",
+      "name": "Record Count",
+      "variable": "recordCount",
+      "description": "Number of PDB records (content chunks)"
     }
   ],
-  "software": [
-    "Amazon Kindle",
-    "Calibre",
-    "FBReader"
+  "assertions": [
+    {
+      "name": "PDB type is BOOK",
+      "expression": "pdbType == 'BOOK'",
+      "severity": "error",
+      "message": "PDB type field must be 'BOOK' (42 4F 4F 4B) for a valid MOBI file"
+    },
+    {
+      "name": "PDB creator is MOBI",
+      "expression": "pdbCreator == 'MOBI'",
+      "severity": "error",
+      "message": "PDB creator field must be 'MOBI' (4D 4F 42 49) — this is the definitive MOBI identifier"
+    },
+    {
+      "name": "Record count non-zero",
+      "expression": "recordCount > 0",
+      "severity": "error",
+      "message": "MOBI record count must be > 0 — a MOBI file must have at least one record"
+    }
   ],
-  "format_relationships": {
-    "amazon_format": true,
-    "based_on": "PalmDOC",
-    "replaced_by": "AZW/KF8",
-    "related": [
-      "AZW",
-      "AZW3"
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "PDB Header",
+        "offset": 0,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "BOOKMOBI Type/Creator",
+        "offset": 60,
+        "icon": "\uE8A5",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Record List",
+        "offset": 78,
+        "icon": "\uE80A",
+        "color": "#FFE66D"
+      }
     ]
   },
-  "MimeTypes": [
-    "application/x-mobipocket-ebook"
+  "inspector": {
+    "badge": "pdbCreator",
+    "primaryField": "pdbName",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PDB Container",
+        "icon": "\uE9D9",
+        "fields": ["pdbName", "pdbAttributes", "pdbVersion", "pdbType", "pdbCreator"]
+      },
+      {
+        "title": "Content",
+        "icon": "\uE8A5",
+        "fields": ["recordCount"]
+      }
+    ]
+  },
+  "versionDetection": {
+    "field": "pdbCreator",
+    "versions": {
+      "MOBI": "Mobipocket MOBI (KF7 or KF8 content)",
+      "REAd": "PalmDOC plain text (not MOBI)"
+    }
+  },
+  "exportTemplates": [
+    {
+      "name": "MOBI PDB Header (JSON)",
+      "format": "json",
+      "fields": ["pdbName", "pdbAttributes", "pdbType", "pdbCreator", "recordCount"]
+    },
+    {
+      "name": "Python MOBI check",
+      "format": "python-bytes",
+      "fields": ["pdbType", "pdbCreator"]
+    }
   ],
-  "Software": [
-    "Kindle",
-    "Calibre",
-    "FBReader"
+  "forensic": {
+    "category": "document",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "DRM protection",
+        "condition": "pdbAttributes == 4",
+        "severity": "info",
+        "description": "Backup-on-sync bit set in PDB attributes. Amazon Kindle .azw files typically have DRM protection indicated by an encrypted EXTH header in record 0."
+      },
+      {
+        "name": "Invalid BOOKMOBI identifier",
+        "condition": "pdbType != 'BOOK' || pdbCreator != 'MOBI'",
+        "severity": "error",
+        "description": "BOOKMOBI identifier is invalid — this is not a valid MOBI eBook file."
+      }
+    ],
+    "knownExploitVectors": [
+      "Malformed MOBI record offsets leading to out-of-bounds reads in early Mobipocket Reader",
+      "Integer overflow in Huffman-compressed PalmDOC record decompression"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "MOBI file structure: PDB header (78B) + record list (8B × recordCount entries, each: 4B offset BE uint32 + 4B uniqueID/attributes) + padding. Record 0 (at first offset in record list): 16-byte PalmDOC header (BE: 2B compressionType {1=none, 2=PalmDOC LZ77, 17480=Huffdic/HUFF}, 2B reserved=0, 4B textLength, 2B recordCount=textRecords, 2B maxRecordSize=4096, 4B encryptionType) + MOBI header starting with 'MOBI' (4D 4F 42 49) at recordStart+16, then 4B headerLength, 4B mobiType {2=book, 257=news, 258=newsWithPics, 516=magaWithPics, 517=catalog, 521=comic}, 4B encoding {1252=CP-1252, 65001=UTF-8}, 4B uniqueMobiId, 4B fileVersion {6=KF6/MOBI6, 8=KF8}. EXTH header (metadata block) may follow MOBI header if bit 6 of mobiFlags is set.",
+    "knownVulnerabilities": [
+      "CVE-2012-1539: Amazon Kindle MOBI parser integer overflow in HUFF/CDIC decompression",
+      "Calibre MOBI writer: crafted MOBI with negative record counts caused heap underallocation"
+    ],
+    "suggestedInspections": [
+      "Verify 'BOOK' at offset 60 and 'MOBI' at offset 64 (or check combined 'BOOKMOBI' at offset 60)",
+      "Read record count at offset 76 (BE uint16) and first record offset at offset 78 (BE uint32)",
+      "At first record offset: read compressionType (BE uint16): 1=none, 2=PalmDOC, 17480=Huffdic",
+      "At firstRecord+16: check 'MOBI' magic (4D 4F 42 49); read fileVersion (+20, BE uint32): 6=KF6, 8=KF8",
+      "Check for EXTH header at firstRecord+16+mobiHeaderLength: starts with 'EXTH' (45 58 54 48)",
+      "EXTH records 100=author, 101=publisher, 103=description, 108=contributing writer, 201=coverOffset"
+    ]
+  },
+  "software": [
+    "Amazon Kindle devices and apps",
+    "Calibre (calibre.ebookmanager.com)",
+    "Mobipocket Reader (legacy)",
+    "FBReader",
+    "Kobo e-readers (import)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".mobi", ".prc", ".azw"],
+    "relatedFormats": ["AZW"],
+    "note": "MOBI/PRC is the base format; .azw is Amazon's DRM-protected variant. KF8 (Kindle Format 8) extended MOBI to support HTML5/CSS3 content in a dual-format file (.mobi with MOBI6+KF8 sections). Superseded by KFX format on modern Kindle devices."
+  },
+  "MimeTypes": [
+    "application/x-mobipocket-ebook",
+    "application/x-mobi8-ebook"
   ],
   "UseCases": [
-    "Kindle ebooks",
-    "Digital reading",
-    "Legacy ebook format"
+    "Amazon Kindle eBook delivery",
+    "Legacy Mobipocket Reader content",
+    "eBook conversion (Calibre source/target)",
+    "Digital textbooks and documents"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 12,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-13",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "DocumentFormat": true
-  },
-  "forensic": {
-    "category": "document",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Mobipocket eBook format",
-    "suggestedInspections": [
-      "Validate Mobipocket eBook file signature and container structure",
-      "Check for embedded macros, scripts, or active content",
-      "Inspect document metadata: author, timestamps, revisions"
-    ]
+    "DocumentFormat": true,
+    "Endianness": "big-endian (PDB) + big-endian (MOBI header)",
+    "Container": "Palm Database (PDB)",
+    "Compression": "PalmDOC LZ77 or Huffdic",
+    "HasHeader": true,
+    "HeaderSize": "78 bytes PDB header + 8×recordCount bytes record list"
   }
 }

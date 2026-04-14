@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Protocol Buffers
-   Category:  Data
-   Ext:       .pb, .protobuf
-   Editor:    hex-editor
-   Desc:      Google Protocol Buffers binary serialization format
-   Variables: currentOffset, tagCount, messageDepth, wireType
-   Detection: signature=00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Protocol Buffers",
   "version": "1.11",
@@ -33,8 +23,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 1,
-      "max_signature_offset": 1024
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -70,7 +60,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Data",
     "extensions": [
       ".pb",

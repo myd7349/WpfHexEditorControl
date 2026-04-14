@@ -1,14 +1,4 @@
-/*
-   ============================================================
-   Format:    SQL Source File
-   Category:  Programming
-   Ext:       .sql, .ddl, .dml
-   Editor:    code-editor
-   Desc:      Structured Query Language source files for databases.
-   Updated:   2026-04-04
-   ============================================================
-*/
-{
+﻿{
   "diffMode": "text",
   "formatName": "SQL Source File",
   "version": "2.1",

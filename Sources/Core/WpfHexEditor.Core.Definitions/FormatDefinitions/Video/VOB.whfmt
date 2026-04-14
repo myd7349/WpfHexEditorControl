@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    DVD Video Object
-   Category:  Video
-   Ext:       .vob
-   Editor:    hex-editor
-   Desc:      DVD Video Object file - MPEG-2 container
-   Variables: currentOffset, scrBase, scrExtension, muxRate, width, height, videoCodec, mpegPsPackHeader, scr, totalPixels
-   Detection: signature=000001BA @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "DVD Video Object",
   "version": "1.11",
@@ -36,8 +26,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "functions": {
@@ -94,7 +84,7 @@
     "VLC",
     "Media players"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".vob"

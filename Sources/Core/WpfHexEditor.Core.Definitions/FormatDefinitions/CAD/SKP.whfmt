@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    SketchUp Model
-   Category:  CAD
-   Ext:       .skp
-   Editor:    hex-editor
-   Desc:      SketchUp 3D model file
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, skpHeader, formattedSize
-   Detection: signature=FFFE @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "SketchUp Model",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 2,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -86,7 +76,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "CAD",
     "extensions": [
       ".skp"

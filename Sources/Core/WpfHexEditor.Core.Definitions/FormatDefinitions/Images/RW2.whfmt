@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Panasonic Raw Image
-   Category:  Images
-   Ext:       .rw2
-   Editor:    image-viewer
-   Desc:      Panasonic RAW camera image
-   Variables: currentOffset, width, height, totalPixels, bitsPerPixel, tiffHeader
-   Detection: signature=49492A00 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Panasonic Raw Image",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -84,7 +74,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".rw2"

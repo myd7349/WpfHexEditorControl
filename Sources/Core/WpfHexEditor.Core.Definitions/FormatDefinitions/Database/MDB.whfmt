@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Microsoft Access Database
-   Category:  Database
-   Ext:       .mdb
-   Editor:    hex-editor
-   Desc:      Microsoft Access database file (Jet format)
-   Variables: currentOffset, pageSize, pageCount, tableCount, version, jetDbSignature
-   Detection: signature=5374616E64617264204A6574204442 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Microsoft Access Database",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 15,
-      "max_signature_offset": 1024
+      "minFileSize": 15,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -85,7 +75,7 @@
     "Common file viewers",
     "Specialized software"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Database",
     "extensions": [
       ".mdb"

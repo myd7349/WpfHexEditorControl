@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    No Cache File
-   Category:  Game
-   Ext:       .ncf
-   Editor:    hex-editor
-   Desc:      Steam No Cache File format
-   Variables: currentOffset, machineType, sectionCount, entryPoint, ncfHeader, version
-   Detection: signature=0100000001000000 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "No Cache File",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 8,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -89,7 +79,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".ncf"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Autodesk FBX
-   Category:  3D
-   Ext:       .fbx
-   Editor:    hex-editor
-   Desc:      Autodesk Filmbox 3D format
-   Variables: currentOffset, vertexCount, faceCount, materialCount, fileSize, fbxMagic, version, formattedSize
-   Detection: signature=4B61796461726120464258 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Autodesk FBX",
   "version": "1.13",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 11,
-      "max_signature_offset": 1024
+      "minFileSize": 11,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -101,7 +91,7 @@
     "Unity",
     "Unreal Engine"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "autodesk_format": true,
     "proprietary": true,
     "industry_standard": true,

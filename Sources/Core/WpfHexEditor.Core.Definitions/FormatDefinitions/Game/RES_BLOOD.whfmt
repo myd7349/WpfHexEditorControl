@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Blood RFF
-   Category:  Game
-   Ext:       .rff
-   Editor:    hex-editor
-   Desc:      Blood game RFF resource archive
-   Variables: currentOffset, resourceCount, directoryOffset, version, rffSignature
-   Detection: signature=52464618 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Blood RFF",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -99,7 +89,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".rff"

@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Microsoft Xbox (Original) Image
-   Category:  Game
-   Ext:       .iso, .xiso
-   Editor:    hex-editor
-   Desc:      Microsoft Xbox (original) disc image format (XISO)
-   Variables: currentOffset, width, height, totalPixels, bitsPerPixel, xboxMagic, rootDirectorySector, rootDirectorySize, fileTime
-   Detection: signature=4D494352 @ offset 0
-   Updated:   2026-03-01
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Microsoft Xbox (Original) Image",
   "version": "2.5",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": false,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -121,7 +111,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".iso",

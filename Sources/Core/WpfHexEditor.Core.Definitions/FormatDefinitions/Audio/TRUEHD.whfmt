@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Dolby TrueHD
-   Category:  Audio
-   Ext:       .thd, .truehd
-   Editor:    audio-viewer
-   Desc:      Dolby TrueHD lossless multi-channel audio codec for Blu-ray
-   Variables: sampleRate, channels, bitDepth, duration, truehdSyncWord, byteRate, samplesPerSecond
-   Detection: signature=18E371F3 @ offset 4
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Dolby TrueHD",
   "version": "1.13",
@@ -38,8 +28,8 @@
     "offset": 4,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -92,7 +82,7 @@
     "VLC Media Player",
     "foobar2000"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Audio",
     "extensions": [
       ".thd",

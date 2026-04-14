@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    RPG Maker WOLF
-   Category:  Game
-   Ext:       .wolf
-   Editor:    hex-editor
-   Desc:      RPG Maker Wolf RPG archive
-   Variables: currentOffset, machineType, sectionCount, entryPoint, dlcSignature, version
-   Detection: signature=444C43 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "RPG Maker WOLF",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 3,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -89,7 +79,7 @@
     "Emulators",
     "Game engines"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Game",
     "extensions": [
       ".wolf"

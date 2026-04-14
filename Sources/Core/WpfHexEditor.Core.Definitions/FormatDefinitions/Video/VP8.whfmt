@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    VP8 Video
-   Category:  Video
-   Ext:       .vp8, .ivf
-   Editor:    hex-editor
-   Desc:      VP8 video codec, open video compression format developed by Google
-   Variables: width, height, frameRate, duration, ivfHeader, totalPixels
-   Detection: signature=444B4946 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "VP8 Video",
   "version": "1.13",
@@ -38,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -86,7 +76,7 @@
     "VLC",
     "WEBM players"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Video",
     "extensions": [
       ".vp8",

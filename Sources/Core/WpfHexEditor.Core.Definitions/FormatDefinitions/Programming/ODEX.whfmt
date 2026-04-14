@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Android ODEX
-   Category:  Programming
-   Ext:       .odex
-   Editor:    hex-editor
-   Desc:      Android ODEX (Optimized DEX) format, contains optimized Dalvik bytecode for Android
-   Variables: zipFileCount, zipCentralDirSize, zipCommentLength, zipComment, eocdOffset, isZip64, dexMagic
-   Detection: signature=6465790A @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Android ODEX",
   "version": "1.11",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -113,7 +103,7 @@
     "Compilers",
     "Linkers"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Programming",
     "extensions": [
       ".odex"

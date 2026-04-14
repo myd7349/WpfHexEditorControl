@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Windows Registry File
-   Category:  System
-   Ext:       .reg
-   Editor:    hex-editor
-   Desc:      Windows Registry export file
-   Variables: currentOffset, timestamp, size, version, type, registryHeader
-   Detection: signature=57696E646F77732052656769737472792045646974 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Windows Registry File",
   "version": "1.12",
@@ -32,8 +22,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 21,
-      "max_signature_offset": 1024
+      "minFileSize": 21,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -80,7 +70,7 @@
     "regedit",
     "reg.exe"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "microsoft_format": true,
     "windows_registry": true,
     "text_based": true

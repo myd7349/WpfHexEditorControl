@@ -1,14 +1,4 @@
-/* ============================================================
-   Format:    Free Lossless Image Format
-   Category:  Images
-   Ext:       .flif
-   Editor:    image-viewer
-   Desc:      FLIF - Free Lossless Image Format
-   Variables: dimensions, dataType, arrayCount, flifMagic, headerByte
-   Detection: signature=464C4946 @ offset 0
-   Updated:   2026-02-24
-   ============================================================ */
-{
+﻿{
   "diffMode": "binary",
   "formatName": "Free Lossless Image Format",
   "version": "1.12",
@@ -37,8 +27,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 4,
+      "maxSignatureOffset": 1024
     }
   },
   "variables": {
@@ -94,7 +84,7 @@
     "Image viewers",
     "GIMP"
   ],
-  "format_relationships": {
+  "formatRelationships": {
     "category": "Images",
     "extensions": [
       ".flif"
