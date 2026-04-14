@@ -6,6 +6,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using WpfHexEditor.Core.Definitions;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Services;
 
@@ -642,6 +643,22 @@ namespace WpfHexEditor.Tests
             int expectedMinimum = (int)(testExtensions.Count * 0.8);
             Assert.IsTrue(foundCount >= expectedMinimum,
                 $"Only {foundCount}/{testExtensions.Count} extensions found. Expected at least {expectedMinimum}.");
+        }
+
+        #endregion
+
+        #region Embedded Catalog Tests (PR #230 — tecAmoRaller)
+
+        /// <summary>
+        /// Verifies that all embedded .whfmt resources load without throwing.
+        /// MakeEntries(rethrow:true) propagates the first parse exception instead of swallowing it,
+        /// making this test a build-gate for corrupt embedded format definitions.
+        /// </summary>
+        [TestMethod]
+        public void LoadResourcesTest()
+        {
+            var r = EmbeddedFormatCatalog.MakeEntries(rethrow: true);
+            Assert.IsTrue(r.Count > 0, "Expected at least one embedded format entry to load.");
         }
 
         #endregion

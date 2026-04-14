@@ -4,10 +4,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Collections.Frozen;
 using System.Reflection;
 using System.Text.Json;
 using WpfHexEditor.Editor.Core;
@@ -28,28 +25,23 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
 {
     // -- Singleton -------------------------------------------------------------
 
-    private static EmbeddedFormatCatalog? _instance;
-
     // JSONC support: .whfmt files contain // comment headers — skip them during parse.
     private static readonly JsonDocumentOptions s_jsonOptions = new()
     {
-        CommentHandling    = JsonCommentHandling.Skip,
+        CommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true
     };
 
     /// <summary>
     /// The singleton instance.
     /// </summary>
-    public static EmbeddedFormatCatalog Instance
-        => _instance ??= new EmbeddedFormatCatalog();
+    public static EmbeddedFormatCatalog Instance => LazyInitializer.EnsureInitialized(ref field, () => new EmbeddedFormatCatalog());
 
     private EmbeddedFormatCatalog() { }
 
     // -- Lazy cache ------------------------------------------------------------
-
-    private volatile IReadOnlyList<EmbeddedFormatEntry>? _entries;
-    private volatile IReadOnlyList<string>?              _categories;
-    private readonly object _entriesLock = new();
+    private IReadOnlySet<EmbeddedFormatEntry> Entries => LazyInitializer.EnsureInitialized(ref field, () => MakeEntries());
+    private IReadOnlySet<string> Categories => LazyInitializer.EnsureInitialized(ref field, () => MakeCategories(Entries));
 
     /// <summary>
     /// Thread-safe cache: embedded resource key → raw JSON text.
@@ -66,58 +58,51 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
     // -- IEmbeddedFormatCatalog ------------------------------------------------
 
     /// <inheritdoc/>
-    public IReadOnlyList<EmbeddedFormatEntry> GetAll()
+    public IReadOnlySet<EmbeddedFormatEntry> GetAll() => Entries;
+
+    public static IReadOnlySet<EmbeddedFormatEntry> MakeEntries(bool rethrow = false)
     {
-        // Fast path: already populated (volatile read — no lock needed).
-        if (_entries is not null) return _entries;
-
-        lock (_entriesLock)
+        var list = new List<EmbeddedFormatEntry>();
+        foreach (var key in DefinitionsAssembly.GetManifestResourceNames())
         {
-            // Second check inside the lock: another thread may have populated while we waited.
-            if (_entries is not null) return _entries;
+            if (!key.Contains("FormatDefinitions")) continue;
+            var isWhfmt = key.EndsWith(".whfmt");
+            var isGrammar = key.EndsWith(".grammar");
+            if (!isWhfmt && !isGrammar) continue;
 
-            var list = new List<EmbeddedFormatEntry>();
-            foreach (var key in DefinitionsAssembly.GetManifestResourceNames())
+            try
             {
-                if (!key.Contains("FormatDefinitions")) continue;
-                var isWhfmt   = key.EndsWith(".whfmt");
-                var isGrammar = key.EndsWith(".grammar");
-                if (!isWhfmt && !isGrammar) continue;
-
-                try
-                {
-                    EmbeddedFormatEntry? entry = isGrammar
-                        ? LoadGrammarHeader(key)
-                        : LoadHeader(key);
-                    if (entry is not null) list.Add(entry);
-                }
-                catch
-                {
-                    // Skip malformed resources
-                }
+                EmbeddedFormatEntry? entry = isGrammar
+                    ? LoadGrammarHeader(key)
+                    : LoadHeader(key);
+                if (entry is not null) list.Add(entry);
             }
-
-            list.Sort((a, b) =>
+            catch
             {
-                var cat = string.Compare(a.Category, b.Category, StringComparison.OrdinalIgnoreCase);
-                return cat != 0 ? cat : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-            });
-
-            // Assign categories before entries so readers never see entries without categories.
-            _categories = list.Select(e => e.Category)
-                              .Distinct(StringComparer.OrdinalIgnoreCase)
-                              .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
-                              .ToList();
-            _entries = list;
-            return _entries;
+                if (rethrow)
+                    throw;
+                // Skip malformed resources
+            }
         }
+
+        list.Sort((a, b) =>
+        {
+            var cat = string.Compare(a.Category, b.Category, StringComparison.OrdinalIgnoreCase);
+            return cat != 0 ? cat : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        });
+
+        return list.ToFrozenSet();
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<string> GetCategories()
+    public IReadOnlySet<string> GetCategories() => Categories;
+
+    public static IReadOnlySet<string> MakeCategories(IReadOnlySet<EmbeddedFormatEntry> entries)
     {
-        GetAll(); // ensure cache is populated
-        return _categories!;
+        return entries.Select(e => e.Category)
+                      .Distinct(StringComparer.OrdinalIgnoreCase)
+                      .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+                      .ToFrozenSet();
     }
 
     /// <inheritdoc/>
