@@ -1,7 +1,7 @@
 ﻿{
   "diffMode": "binary",
   "formatName": "Opus Audio",
-  "version": "2.1",
+  "version": "2.34",
   "extensions": [
     ".opus"
   ],
