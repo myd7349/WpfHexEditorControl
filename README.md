@@ -177,7 +177,7 @@ dotnet add package WpfTerminal        # Terminal control
 | **[Assembly Explorer](Sources/Plugins/WpfHexEditor.Plugins.AssemblyExplorer/README.md)** | ~30% | .NET assembly browser — load any .NET DLL/EXE to inspect namespaces, types, methods, and fields in a tree view, double-click to decompile to C# or VB.NET in a syntax-highlighted Code Editor tab |
 | **[Document Structure](Sources/Plugins/WpfHexEditor.Plugins.DocumentStructure/README.md)** | ~55% | VS-style outline panel — shows the structural skeleton of the active document (classes, methods, regions, headings, sections…) with 8 providers: LSP, Source Outline, JSON, XML, Markdown, INI, Binary Format, Folding Regions; click any node to jump; 18 `DS_*` theme tokens |
 | **[Custom Parser Template](Sources/Plugins/WpfHexEditor.Plugins.CustomParserTemplate/README.md)** | ~25% | Template-driven parser — define custom binary structure schemas (similar to 010 Editor `.bt` templates) and see live parsed field output in the Parsed Fields panel |
-| **[Git Integration](Sources/Plugins/WpfHexEditor.Plugins.Git/README.md)** | ~90% | Full VS-style Git client — **G0** GitChangesPanel (stage/unstage/commit/discard, diff preview), **G1** push/pull/fetch toolbar, **G2** branch picker popup (create/switch/delete), **G3** stash manager (stash/pop/drop), **G4** status bar adapter (branch name, ahead/behind counts), **G5** GitHistoryPanel (log graph, commit detail, file tree), **G7** BlameGutterControl (per-line author/date inline, Ctrl+Click to history); 18 `GC_*` theme tokens; `GetActiveCodeEditor` pattern for blame sync |
+| **[Git Integration](Sources/Plugins/WpfHexEditor.Plugins.Git/README.md)** | ~40% | VS-style Git client — UI implemented: GitChangesPanel (stage/unstage/commit/discard, diff preview), push/pull/fetch toolbar, branch picker popup (create/switch/delete), stash manager, status bar adapter, GitHistoryPanel (log graph, commit detail, file tree), BlameGutterControl (per-line author/date inline, Ctrl+Click to history); 18 `GC_*` theme tokens — **not yet integration-tested** |
 
 ---
 
@@ -239,20 +239,20 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 
 | Feature | Status | # |
 |---------|--------|---|
-| **Code Editor** — ~99% complete: all major features shipped; remaining: inline value hints (debug variable overlay) | 🔧 ~99% | #84 |
-| **LSP Engine / SmartComplete** — remaining: inline value hints | 🔧 ~96% | #85–86 |
-| **MSBuild & VS Solution** — remaining: VB.NET item group editing, nested solution folders | 🔧 ~97% | #101–103 |
-| **Assembly Explorer + Decompilation** — remaining: plugin panel improvements, PDB source-link matching | 🔧 ~92% | #104–106 |
-| **Document Model** — HexEditor ↔ CodeEditor shared undo engine ✅; remaining: multi-editor collaboration | 🔧 ~70% | #107 |
-| **Plugin Sandbox** — remaining: gRPC migration, hot-reload from sandbox | 🔧 ~75% | #81 |
-| **.NET Debugger** — UI complete (menus, toolbar, breakpoints, explorer), remaining: runtime attach and debug launch | 🔧 ~60% | #44, #90 |
+| **Code Editor** — most features shipped; remaining: inline value hints (debug variable overlay) | 🔧 ~75% | #84 |
+| **LSP Engine / SmartComplete** — remaining: inline value hints, pull-diagnostics | 🔧 ~65% | #85–86 |
+| **MSBuild & VS Solution** — remaining: VB.NET item group editing, nested solution folders | 🔧 ~70% | #101–103 |
+| **Assembly Explorer + Decompilation** — remaining: plugin panel improvements, PDB source-link matching | 🔧 ~55% | #104–106 |
+| **Document Model** — HexEditor ↔ CodeEditor shared undo engine ✅; remaining: multi-editor collaboration | 🔧 ~50% | #107 |
+| **Plugin Sandbox** — remaining: gRPC migration, hot-reload from sandbox | 🔧 ~40% | #81 |
+| **.NET Debugger** — UI complete (menus, toolbar, breakpoints, explorer), remaining: runtime attach and debug launch | 🔧 ~30% | #44, #90 |
+| **Git Integration** — UI in place (changes panel, history, blame gutter, branch picker, stash), not yet integration-tested | 🔧 ~40% | #91 |
 
 **Planned:**
 
 | Feature | Status | # |
 |---------|--------|---|
 | **Editors Phase 2** — TextEditor LSP, DiffViewer 3-way merge, AudioViewer playback, TileEditor pixel tools | 🔜 Planned | #169–178 |
-| **Git Integration** — ✅ Done v0.6.4.7 — full VS-style Git client, blame gutter, stash, history | ✅ Done | #91 |
 | **Plugin Marketplace & Auto-Update** — online registry, signed packages, auto-update | 🔜 Planned | #41–43 |
 | **IDE Localization Engine** — full i18n for IDE UI (EN/FR initial, plugin-provided translations) | 🔜 Planned | #100 |
 | **Installable Package** — MSI / MSIX / WinGet, auto-update channel, no SDK required | 🔜 Planned | #109 |
