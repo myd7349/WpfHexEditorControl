@@ -264,15 +264,23 @@ namespace WpfHexEditor.Core.Services
                 var tier1 = DetectWithStrongSignatures(data, fileName, contentAnalysis, byteProvider, cts.Token);
                 candidates.AddRange(tier1);
 
-                // Early exit if high-confidence match found
-                if (tier1.Any(c => c.ConfidenceScore >= 0.9))
+                // Score TIER 1 candidates immediately so the early-exit threshold is meaningful.
+                // Without this, ConfidenceScore is 0 on all candidates at this point.
+                if (tier1.Count > 0)
+                    ScoreAndRankCandidates(tier1, fileName, contentAnalysis, data);
+
+                // Early exit: a strong-signature match that is already high-confidence wins outright.
+                // Skip TIER 2/3 entirely — a required signature match must beat any text heuristic.
+                if (tier1.Any(c => c.ConfidenceScore >= 0.7))
                 {
                     return CreateResult(tier1.OrderByDescending(c => c.ConfidenceScore).First(),
                                       candidates, contentAnalysis, sw);
                 }
 
-                // TIER 2: Text format detection (if appears to be text)
-                if (contentAnalysis.IsLikelyText)
+                // TIER 2: Text format detection (if appears to be text AND no strong match found).
+                // Skipped when TIER 1 already has a required-signature match — a format like RTF is
+                // text-based but must not be displaced by the Plain Text fallback.
+                if (contentAnalysis.IsLikelyText && tier1.Count == 0)
                 {
                     var tier2 = DetectTextFormats(data, fileName, contentAnalysis, byteProvider, cts.Token);
                     candidates.AddRange(tier2);
