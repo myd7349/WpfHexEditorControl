@@ -14,6 +14,14 @@ A full-featured WPF hex editor UserControl for .NET 8. Successor to [WPFHexaEdit
 dotnet add package WPFHexaEditor
 ```
 
+## What's New in 3.1.1
+
+- **Fix**: `TechnicalDetails.SampleRate` changed from `int?` to `string?` — AMR and OPUS had descriptive values like `"8000 Hz (AMR-NB) / 16000 Hz (AMR-WB)"` that were silently dropped
+- **Fix**: `MOBI.whfmt` references structure corrected — was an array wrapping an object, must be a plain object
+- **Fix**: `GFX.whfmt`, `TIL.whfmt`, `CHR.whfmt` Platform field corrected — was a string array, must be a single string
+- **Fix**: 5 `.whfmt` files with invalid `Strength` values corrected (`"strong"` → `"Strong"`, `"moderate"` → `"Medium"`)
+- **Perf**: `JsonSerializerOptions` in `ImportFromJson` is now a `static readonly` field — avoids 463+ allocations at startup
+
 ## What's New in 3.1.0
 
 ### Format Detection — Major Overhaul
