@@ -1,0 +1,113 @@
+{
+  "formatName": "Indeo Video Frame (IVF Container)",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "IVF (Indeo Video Frame) simple container format used by Google's libvpx/libaom for VP8, VP9, and AV1 bitstream storage; primarily a development and testing container for Google's open video codecs.",
+  "extensions": [ ".ivf" ],
+  "category": "Video",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "44494B46",
+      "offset": 0,
+      "label": "'DKIF' — IVF container magic (Duck Corporation Indeo Video Frame)",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0,  "size": 4, "name": "signature",   "type": "ascii",    "description": "Magic: 'DKIF'",                             "storeAs": "ivfMagic" },
+      { "offset": 4,  "size": 2, "name": "version",     "type": "uint16le", "description": "Version, must be 0" },
+      { "offset": 6,  "size": 2, "name": "header_size", "type": "uint16le", "description": "File header size, must be 32 bytes" },
+      { "offset": 8,  "size": 4, "name": "fourcc",      "type": "ascii",    "description": "Codec FourCC: 'VP80','VP90','AV01','VP10'",  "storeAs": "ivfCodec" },
+      { "offset": 12, "size": 2, "name": "width",       "type": "uint16le", "description": "Frame width in pixels" },
+      { "offset": 14, "size": 2, "name": "height",      "type": "uint16le", "description": "Frame height in pixels" },
+      { "offset": 16, "size": 4, "name": "frame_rate",  "type": "uint32le", "description": "Frame rate numerator" },
+      { "offset": 20, "size": 4, "name": "time_scale",  "type": "uint32le", "description": "Frame rate denominator (fps = frame_rate / time_scale)" },
+      { "offset": 24, "size": 4, "name": "num_frames",  "type": "uint32le", "description": "Total number of frames in the file",        "storeAs": "ivfNumFrames" },
+      { "offset": 28, "size": 4, "name": "reserved",    "type": "bytes",    "description": "Reserved, must be zero" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "ivfMagic", "ivfCodec", "width", "height", "ivfNumFrames" ],
+    "valueMaps": {
+      "ivfCodec": {
+        "VP80": "VP8",
+        "VP90": "VP9",
+        "AV01": "AV1 (AOMedia Video 1)",
+        "VP10": "VP10 / VP9 development branch"
+      }
+    },
+    "tooltips": {
+      "ivfMagic":     "Must be exactly 'DKIF' (Duck Corporation IVF magic)",
+      "ivfCodec":     "Codec FourCC determines how frame data is decoded",
+      "frame_rate":   "FPS = frame_rate / time_scale; e.g. 30000/1001 = 29.97",
+      "header_size":  "Must be 32; each frame header adds 12 bytes (size+timestamp)"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "ivfMagic",    "operator": "eq",  "value": "DKIF", "description": "Magic must be 'DKIF'" },
+    { "id": "A2", "field": "version",     "operator": "eq",  "value": 0,      "description": "Version must be 0" },
+    { "id": "A3", "field": "header_size", "operator": "eq",  "value": 32,     "description": "Header size must be 32 bytes" },
+    { "id": "A4", "field": "ivfNumFrames","operator": "gte", "value": 1,      "description": "Must contain at least 1 frame" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,  "label": "Magic 'DKIF'",     "color": "#E74C3C" },
+      { "offset": 8,  "label": "Codec FourCC",      "color": "#3498DB" },
+      { "offset": 12, "label": "Width / Height",    "color": "#27AE60" },
+      { "offset": 16, "label": "Frame Rate",        "color": "#F39C12" },
+      { "offset": 24, "label": "Frame Count",       "color": "#9B59B6" },
+      { "offset": 32, "label": "First Frame Header","color": "#1ABC9C" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "IVF Header Summary",
+      "fields": [ "ivfMagic", "ivfCodec", "width", "height", "ivfNumFrames", "frame_rate", "time_scale" ],
+      "format": "text"
+    },
+    {
+      "name": "IVF Metadata JSON",
+      "fields": [ "ivfCodec", "width", "height", "ivfNumFrames", "frame_rate", "time_scale" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "IVF is a minimal container: a 32-byte file header followed by frames each prefixed with a 12-byte per-frame header (4B size + 8B PTS timestamp).",
+    "FourCC 'AV01' identifies AV1 bitstreams — the newest and most compressed codec; 'VP80'/'VP90' are older Google open codecs.",
+    "The format was originally created by Duck Corporation (later acquired by On2, then Google) and is essentially a raw bitstream wrapper.",
+    "IVF does not support audio tracks; for multiplexed audio+video use WebM (Matroska-based) or MKV with the same codec.",
+    "Frame timestamps use 64-bit PTS values scaled by time_scale; convert to seconds as: pts * time_scale / frame_rate.",
+    "libvpx vpxenc and aomenc produce IVF output by default for VP8/VP9/AV1 encoding tests — common in codec development workflows."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "IVF files contain only compressed video frames; no executable content.",
+      "Malformed IVF headers (incorrect frame sizes) can cause decoder OOB reads in older libvpx — keep codecs patched.",
+      "Frame count may be 0 in streaming-generated files where the total was not known at write time."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "WebM", "relationship": "successor",   "note": "WebM (Matroska container) replaced IVF for VP8/VP9/AV1 distribution." },
+    { "format": "MKV",  "relationship": "related",     "note": "MKV uses the same Matroska base as WebM but with broader codec support." }
+  ],
+  "software": [
+    { "name": "libvpx / vpxenc",  "role": "Google VP8/VP9 encoder producing IVF output" },
+    { "name": "aomenc / libaom",  "role": "AV1 encoder (AOMedia) using IVF container" },
+    { "name": "ffmpeg",           "role": "IVF mux/demux (read+write)" },
+    { "name": "WebM Tools",       "role": "Google IVF inspection and manipulation utilities" }
+  ],
+  "useCases": [
+    "VP8/VP9/AV1 codec testing and bitstream inspection",
+    "Raw video codec output container for development",
+    "WebRTC VP8/VP9 bitstream capture and analysis",
+    "Video codec benchmarking and quality measurement"
+  ],
+  "technicalDetails": "IVF (Indeo Video Frame) is a trivially simple container created by Duck Corporation (acquired by On2, then Google). It wraps a raw VP8, VP9, AV1, or VP10 bitstream with a 32-byte file header and per-frame 12-byte headers (4B payload size + 8B PTS). No audio, no seeking index, no subtitle support. Primarily used in codec development and testing pipelines. WebM (Matroska-based) is the production distribution format for the same codecs.",
+  "completenessScore": 80
+}

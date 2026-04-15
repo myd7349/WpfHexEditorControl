@@ -1,0 +1,122 @@
+{
+  "formatName": "Extended Module",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "FastTracker 2 Extended Module format (.xm) — tracker music file with up to 32 channels, 128 instruments, linear or Amiga frequency tables, widely used in demoscene and game audio.",
+  "extensions": [ ".xm" ],
+  "category": "Audio",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "457874656E646564204D6F64756C653A20",
+      "offset": 0,
+      "label": "'Extended Module: ' — FastTracker 2 XM header magic (17 bytes ASCII)",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 17,
+  "structure": {
+    "fields": [
+      { "offset": 0,   "size": 17,  "name": "id_text",         "type": "ascii",   "description": "Header magic: 'Extended Module: '", "storeAs": "xmMagic" },
+      { "offset": 17,  "size": 20,  "name": "module_name",     "type": "ascii",   "description": "Song title (null-padded)",           "storeAs": "xmTitle" },
+      { "offset": 37,  "size": 1,   "name": "marker",          "type": "uint8",   "description": "EOF marker byte, always 0x1A" },
+      { "offset": 38,  "size": 20,  "name": "tracker_name",    "type": "ascii",   "description": "Tracker software name, e.g. 'FastTracker v2.00'" },
+      { "offset": 58,  "size": 2,   "name": "version",         "type": "uint16le","description": "Format version; 0x0104 = v1.04 (current)",   "storeAs": "xmVersion" },
+      { "offset": 60,  "size": 4,   "name": "header_size",     "type": "uint32le","description": "Header size from this field to end of header" },
+      { "offset": 64,  "size": 2,   "name": "song_length",     "type": "uint16le","description": "Number of patterns in the playback sequence" },
+      { "offset": 66,  "size": 2,   "name": "restart_position","type": "uint16le","description": "Pattern to restart at after end of song" },
+      { "offset": 68,  "size": 2,   "name": "num_channels",    "type": "uint16le","description": "Number of channels (2–32)",               "storeAs": "xmChannels" },
+      { "offset": 70,  "size": 2,   "name": "num_patterns",    "type": "uint16le","description": "Number of patterns stored in the file" },
+      { "offset": 72,  "size": 2,   "name": "num_instruments", "type": "uint16le","description": "Number of instruments (0–128)" },
+      { "offset": 74,  "size": 2,   "name": "flags",           "type": "uint16le","description": "Bit 0: linear frequency table (0=Amiga periods)" },
+      { "offset": 76,  "size": 2,   "name": "default_tempo",   "type": "uint16le","description": "Default tempo in ticks per row" },
+      { "offset": 78,  "size": 2,   "name": "default_bpm",     "type": "uint16le","description": "Default BPM playback speed",              "storeAs": "xmBPM" },
+      { "offset": 80,  "size": 256, "name": "pattern_order",   "type": "bytes",   "description": "Sequence table: 256 pattern index bytes" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "xmTitle", "xmVersion", "xmChannels", "xmBPM" ],
+    "valueMaps": {
+      "xmVersion": {
+        "260": "v1.04 (current standard)"
+      },
+      "flags": {
+        "0": "Amiga frequency table",
+        "1": "Linear frequency table"
+      }
+    },
+    "tooltips": {
+      "xmMagic":    "Must begin with 'Extended Module: ' (17 ASCII bytes)",
+      "xmVersion":  "0x0104 (260) is the only widely-supported version",
+      "xmChannels": "Valid range 2–32 channels",
+      "xmBPM":      "Default playback speed in BPM at song start"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "xmMagic",    "operator": "startsWith", "value": "Extended Module:", "description": "Header must start with 'Extended Module:'" },
+    { "id": "A2", "field": "marker",     "operator": "eq",         "value": 26,                 "description": "Byte 37 must be 0x1A (EOF marker)" },
+    { "id": "A3", "field": "xmVersion",  "operator": "eq",         "value": 260,                "description": "Version must be 0x0104 (v1.04)" },
+    { "id": "A4", "field": "xmChannels", "operator": "between",    "value": [2, 32],             "description": "Channel count must be in range 2–32" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,   "label": "Header Magic",         "color": "#E74C3C" },
+      { "offset": 17,  "label": "Song Title",            "color": "#3498DB" },
+      { "offset": 38,  "label": "Tracker Name",          "color": "#9B59B6" },
+      { "offset": 58,  "label": "Format Version",        "color": "#F39C12" },
+      { "offset": 64,  "label": "Song / Channel Info",   "color": "#27AE60" },
+      { "offset": 80,  "label": "Pattern Order Table",   "color": "#1ABC9C" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "XM Header Summary",
+      "fields": [ "xmTitle", "xmVersion", "xmChannels", "num_patterns", "num_instruments", "xmBPM" ],
+      "format": "text"
+    },
+    {
+      "name": "XM Metadata JSON",
+      "fields": [ "xmTitle", "tracker_name", "xmVersion", "xmChannels", "num_patterns", "num_instruments", "default_tempo", "xmBPM" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "XM files always begin with exactly 'Extended Module: ' (17 bytes including trailing space) — any deviation indicates corruption or a non-XM file.",
+    "Byte 37 (0x1A) is a legacy DOS EOF marker inherited from earlier tracker formats to prevent 'type' from dumping binary to the console.",
+    "Version 0x0104 (260) is the only version in common use; files with other version bytes may not play correctly in most players.",
+    "The flags field (offset 74) bit 0 controls frequency table: 0 = Amiga logarithmic periods (original hardware), 1 = linear table (easier to implement, used by modern trackers).",
+    "Channels must be even (stereo pairs) and range 2–32; odd counts or values outside this range indicate a malformed or non-standard XM.",
+    "Each instrument can have up to 96 samples with independent envelope curves (volume, panning) — the instrument block follows after the 336-byte fixed header."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "XM files contain only audio data (patterns, samples, instrument metadata); no executable code.",
+      "Module title and tracker name fields are plain ASCII and may reveal authorship or creation tool.",
+      "Corrupted or deliberately malformed XMs have been used in buffer-overflow exploits in old libxmp/modplug versions — keep libraries patched."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "MOD", "relationship": "predecessor", "note": "XM extends the 4-channel Amiga MOD concept to 32 channels with envelopes." },
+    { "format": "IT",  "relationship": "contemporary", "note": "Impulse Tracker IT format is a competing advanced module format with similar goals." },
+    { "format": "S3M", "relationship": "predecessor",  "note": "ScreamTracker 3 S3M influenced XM instrument design." }
+  ],
+  "software": [
+    { "name": "FastTracker 2",  "role": "Original authoring tool (Triton, 1994)" },
+    { "name": "MilkyTracker",   "role": "Cross-platform FT2-compatible editor" },
+    { "name": "OpenMPT",        "role": "Modern Windows module tracker (import/export)" },
+    { "name": "XMPlay",         "role": "Lightweight module player (Windows)" },
+    { "name": "libxmp",         "role": "C library for playback (cross-platform)" },
+    { "name": "VLC",            "role": "Plays XM via libxmp plugin" }
+  ],
+  "useCases": [
+    "Demoscene music authoring and playback",
+    "Retro game soundtracks (DOS/early Windows era)",
+    "Lightweight music format for embedded/mobile platforms",
+    "Chiptune and tracker music archiving"
+  ],
+  "technicalDetails": "FastTracker 2 module format created by Triton (1994). Supports linear or Amiga logarithmic frequency tables. Up to 32 channels and 128 instruments. Each instrument has up to 96 samples with independent volume and panning envelope curves (sustain + loop). Pattern data is event-based: note + instrument index + volume column + effect command per channel per row (64 rows/pattern default). Sample data stored as signed 8-bit or 16-bit PCM at the end of the file.",
+  "completenessScore": 86
+}

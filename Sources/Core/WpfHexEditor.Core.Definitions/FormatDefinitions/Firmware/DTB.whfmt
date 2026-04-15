@@ -1,0 +1,309 @@
+{
+  "diffMode": "binary",
+  "formatName": "Device Tree Blob",
+  "version": "1.0",
+  "extensions": [".dtb", ".dtbo"],
+  "description": "Linux Device Tree Blob (FDT — Flattened Device Tree). Magic 0xD00DFEED at offset 0 (big-endian). Hardware description compiled from DTS text by dtc. Used on ARM, RISC-V, and PowerPC Linux systems. Passed by bootloader (U-Boot) or embedded in kernel Image.",
+  "category": "Firmware",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Devicetree Specification v0.4 — devicetree.org",
+      "Linux kernel Documentation/devicetree/bindings/",
+      "ePAPR (Power Architecture Platform Reference) — IBM/Freescale"
+    ],
+    "WebLinks": [
+      "https://www.devicetree.org/specifications/",
+      "https://en.wikipedia.org/wiki/Devicetree",
+      "https://github.com/devicetree-org/devicetree-specification"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "D00DFEED",
+        "offset": 0,
+        "label": "0xD00DFEED — FDT magic (big-endian uint32). All Device Tree Blobs begin with this 4-byte magic.",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.0, "max": 6.0 },
+    "validation": {
+      "minFileSize": 40
+    }
+  },
+  "variables": {
+    "dtbMagic": 0,
+    "dtbTotalsize": 0,
+    "dtbOffDtStruct": 0,
+    "dtbOffDtStrings": 0,
+    "dtbOffMemRsvmap": 0,
+    "dtbVersion": 0,
+    "dtbLastCompVersion": 0,
+    "dtbBootCpuidPhys": 0,
+    "dtbSizeDtStrings": 0,
+    "dtbSizeDtStruct": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "FDT Magic",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "0xD00DFEED — Device Tree magic number as big-endian uint32. A playful hex pun ('dood feed'). Present at the start of every compiled DTB file. The mnemonic makes it easy to identify in hex dumps. dtbofiles (Device Tree overlays) use the same magic.",
+      "storeAs": "dtbMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Total Size",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "Total size of the DTB file in bytes as big-endian uint32. Includes the fdt_header, memory reservation block, structure block, and strings block. Should match the actual file size on disk. A mismatch indicates truncation or file corruption.",
+      "storeAs": "dtbTotalsize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Structure Block Offset",
+      "offset": 8,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Byte offset from the start of the DTB to the structure block as big-endian uint32. The structure block contains the FDT_BEGIN_NODE, FDT_END_NODE, FDT_PROP, and FDT_END tokens that describe the device tree hierarchy. Always 4-byte aligned.",
+      "storeAs": "dtbOffDtStruct",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Strings Block Offset",
+      "offset": 12,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Byte offset from the start of the DTB to the strings block as big-endian uint32. The strings block contains all property name strings referenced by FDT_PROP tokens in the structure block. Property names are stored once and referenced by offset.",
+      "storeAs": "dtbOffDtStrings",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Memory Reservation Map Offset",
+      "offset": 16,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Byte offset to the memory reservation block as big-endian uint32. Contains a list of {address, size} pairs marking memory ranges that the OS must not use (reserved for firmware, device drivers, or trusted execution). Terminated by {0,0}.",
+      "storeAs": "dtbOffMemRsvmap",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "DTB Version",
+      "offset": 20,
+      "length": 4,
+      "color": "#FF8C94",
+      "opacity": 0.3,
+      "description": "FDT specification version as big-endian uint32. Current version is 17. This version number has been stable since Linux 2.6.x. Used by the kernel's libfdt and dtc to handle version-specific parsing rules.",
+      "storeAs": "dtbVersion",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "17": "FDT version 17 (current, stable since Linux 2.6)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Last Compatible Version",
+      "offset": 24,
+      "length": 4,
+      "color": "#C5A3FF",
+      "opacity": 0.3,
+      "description": "Lowest FDT version with which this DTB is backward compatible, as big-endian uint32. Always 16 for version 17 DTBs. A parser understanding FDT version 16 can correctly parse a version 17 DTB using this compatibility guarantee.",
+      "storeAs": "dtbLastCompVersion",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Boot CPU ID (Physical)",
+      "offset": 28,
+      "length": 4,
+      "color": "#B5EAD7",
+      "opacity": 0.3,
+      "description": "Physical CPU ID of the boot processor as big-endian uint32. Identifies which CPU in the device tree's /cpus node is executing the boot code. Used by SMP initialization to determine the boot CPU before starting secondary CPUs.",
+      "storeAs": "dtbBootCpuidPhys",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Strings Block Size",
+      "offset": 32,
+      "length": 4,
+      "color": "#FFD3B6",
+      "opacity": 0.3,
+      "description": "Size of the strings block in bytes as big-endian uint32. The strings block follows the structure block in the DTB. This size is used by libfdt to validate string offset references in FDT_PROP tokens.",
+      "storeAs": "dtbSizeDtStrings",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Structure Block Size",
+      "offset": 36,
+      "length": 4,
+      "color": "#A8D8EA",
+      "opacity": 0.3,
+      "description": "Size of the structure block in bytes as big-endian uint32. The structure block contains all FDT tokens. This size is used by libfdt to validate structure block boundaries and detect malformed DTBs.",
+      "storeAs": "dtbSizeDtStruct",
+      "valueType": "uint32",
+      "endianness": "big"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FDT magic valid",
+      "expression": "dtbMagic == 0xD00DFEED",
+      "severity": "error",
+      "message": "FDT magic 0xD00DFEED not found — not a valid Device Tree Blob"
+    },
+    {
+      "name": "DTB version is 17",
+      "expression": "dtbVersion == 17",
+      "severity": "warning",
+      "message": "DTB version is not 17 — non-standard or future FDT format revision"
+    },
+    {
+      "name": "Structure offset within file",
+      "expression": "dtbOffDtStruct < dtbTotalsize",
+      "severity": "error",
+      "message": "Structure block offset exceeds total file size — truncated or corrupted DTB"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "FDT Header",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Structure Block",
+        "offsetVar": "dtbOffDtStruct",
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Strings Block",
+        "offsetVar": "dtbOffDtStrings",
+        "icon": "\uE9D9",
+        "color": "#A8E6CF"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "dtbVersion",
+    "primaryField": "dtbTotalsize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "FDT Header",
+        "icon": "\uE8B7",
+        "fields": ["dtbMagic", "dtbVersion", "dtbLastCompVersion", "dtbTotalsize"]
+      },
+      {
+        "title": "Block Layout",
+        "icon": "\uE8A5",
+        "fields": ["dtbOffMemRsvmap", "dtbOffDtStruct", "dtbOffDtStrings", "dtbSizeDtStruct", "dtbSizeDtStrings"]
+      },
+      {
+        "title": "Boot Info",
+        "icon": "\uE9D9",
+        "fields": ["dtbBootCpuidPhys"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "DTB Header (JSON)",
+      "format": "json",
+      "fields": ["dtbMagic", "dtbTotalsize", "dtbVersion", "dtbLastCompVersion", "dtbBootCpuidPhys", "dtbOffDtStruct", "dtbOffDtStrings", "dtbOffMemRsvmap", "dtbSizeDtStruct", "dtbSizeDtStrings"]
+    },
+    {
+      "name": "DTB Header (text)",
+      "format": "text",
+      "fields": ["dtbVersion", "dtbTotalsize", "dtbBootCpuidPhys", "dtbOffDtStruct", "dtbOffDtStrings"]
+    }
+  ],
+  "forensic": {
+    "category": "firmware",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Custom memory reservations",
+        "condition": "dtbOffMemRsvmap > 0",
+        "severity": "info",
+        "description": "Memory reservation map may contain entries reserving physical memory for firmware or TrustZone. Analyze entries at dtbOffMemRsvmap to understand memory layout restrictions."
+      }
+    ],
+    "knownExploitVectors": [
+      "Malformed DTB causing kernel parsing crash during early boot (CVE class: OOBS in libfdt)",
+      "DTB injection via unsecured bootloader interfaces to modify device capabilities"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "DTB = FDT_HEADER (40B) + memory_rsvmap + struct_block + strings_block. Structure block tokens: FDT_BEGIN_NODE(1), FDT_END_NODE(2), FDT_PROP(3), FDT_NOP(4), FDT_END(9). Decompile: `dtc -I dtb -O dts file.dtb`. Key nodes: /cpus, /memory, /chosen (bootargs, stdout-path), /aliases, peripherals.",
+    "suggestedInspections": [
+      "Decompile to DTS with `dtc -I dtb -O dts -o output.dts input.dtb` to read human-friendly text",
+      "Check /chosen node bootargs property for kernel command line (may reveal boot configuration)",
+      "Read /memory reg property to understand physical memory layout and size",
+      "Inspect memory reservation block at dtbOffMemRsvmap for TrustZone/firmware reserved ranges",
+      "Validate dtbTotalsize matches file size on disk to detect truncation or appended data"
+    ]
+  },
+  "software": ["dtc (Device Tree Compiler)", "fdtdump", "fdtget", "fdtput", "U-Boot", "Linux kernel"],
+  "formatRelationships": {
+    "category": "Firmware",
+    "extensions": [".dtb", ".dtbo"],
+    "relatedFormats": ["UBOOT_IMG", "UEFI_FV", "LINUX_IMAGE"]
+  },
+  "MimeTypes": ["application/x-dtb"],
+  "UseCases": [
+    "ARM/RISC-V/PowerPC Linux hardware description (CPU, memory, peripherals)",
+    "U-Boot bootloader device tree support (fdt addr/fdt print commands)",
+    "DTB overlays (.dtbo) for runtime hardware configuration (Raspberry Pi config.txt)",
+    "UEFI ARM platform hardware description for OS loader"
+  ],
+  "TechnicalDetails": {
+    "Magic": "0xD00DFEED — big-endian uint32",
+    "Endianness": "All FDT header fields are big-endian",
+    "CurrentVersion": "17 (last_comp_version=16)",
+    "StructureTokens": "FDT_BEGIN_NODE=1, FDT_END_NODE=2, FDT_PROP=3, FDT_NOP=4, FDT_END=9",
+    "DecompileCommand": "dtc -I dtb -O dts -o output.dts input.dtb",
+    "EmbeddedInKernel": "ARM/ARM64 kernels may have DTB appended at end of Image"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

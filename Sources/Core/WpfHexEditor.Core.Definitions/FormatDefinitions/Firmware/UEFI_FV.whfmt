@@ -1,0 +1,311 @@
+{
+  "diffMode": "binary",
+  "formatName": "UEFI Firmware Volume",
+  "version": "1.0",
+  "extensions": [".fd", ".rom", ".bin"],
+  "description": "UEFI Firmware Volume (FV) container identified by '_FVH' signature at offset 40. Contains UEFI FFS2 filesystem with SEC, PEI, DXE, and BDS phase modules. Common in BIOS flash chips, Surface firmware, and UEFI capsule updates. High security sensitivity.",
+  "category": "Firmware",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "UEFI Platform Initialization (PI) Specification v1.8 — Volume 3: Shared Architectural Elements",
+      "UEFI Specification v2.10 — Appendix A: GUID and Structure Definition",
+      "EDK2 MdePkg/Include/Pi/PiFirmwareVolume.h"
+    ],
+    "WebLinks": [
+      "https://uefi.org/sites/default/files/resources/PI_Spec_1_8.pdf",
+      "https://en.wikipedia.org/wiki/UEFI",
+      "https://github.com/LongSoft/UEFITool"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5F465648",
+        "offset": 40,
+        "label": "'_FVH' — EFI_FIRMWARE_VOLUME_HEADER Signature field at offset 40 within the FV header",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 1.5, "max": 7.5 },
+    "validation": {
+      "minFileSize": 72,
+      "maxSignatureOffset": 44
+    }
+  },
+  "variables": {
+    "fvhFileSystemGuid": "",
+    "fvhFvLength": 0,
+    "fvhSignature": "",
+    "fvhAttributes": 0,
+    "fvhHeaderLength": 0,
+    "fvhChecksum": 0,
+    "fvhRevision": 0,
+    "fvhBlockMapNumBlocks": 0,
+    "fvhBlockMapLength": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Zero Vector",
+      "offset": 0,
+      "length": 16,
+      "color": "#808080",
+      "opacity": 0.15,
+      "description": "16-byte ZeroVector field at the start of the Firmware Volume header. Typically all zeros or contains a CPU reset vector instruction (for bootable FVs). UEFI PI specification allows any content here — used by some platforms for CPU-specific reset jump instructions.",
+      "valueType": "hex",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FileSystem GUID",
+      "offset": 16,
+      "length": 16,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "16-byte GUID identifying the FFS file system type inside this Firmware Volume. EFI_FIRMWARE_FILE_SYSTEM2_GUID = {8C8CE578-8A3D-4F1C-9935-896185C32DD3}. EFI_FIRMWARE_FILE_SYSTEM3_GUID for FVs with files > 16MB. Determines how EFI_FFS_FILE_HEADER entries are parsed.",
+      "storeAs": "fvhFileSystemGuid",
+      "valueType": "hex",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Firmware Volume Length",
+      "offset": 32,
+      "length": 8,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Total size of the Firmware Volume in bytes as uint64 LE, including the header and all FFS file entries. This determines the extent of the FV within the BIOS flash image. Multiple FVs may be concatenated in a single .fd file.",
+      "storeAs": "fvhFvLength",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "signature",
+      "name": "FV Header Signature",
+      "offset": 40,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "'_FVH' (0x5F465648) — EFI_FIRMWARE_VOLUME_HEADER Signature field. Located at offset 40 within the FV header. This 4-byte signature is the primary identifier for UEFI Firmware Volumes and is checked before any FFS file parsing begins.",
+      "storeAs": "fvhSignature",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FV Attributes",
+      "offset": 44,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Firmware Volume attribute flags as uint32 LE. Key bits: EFI_FVB2_READ_ENABLED_CAP (bit0), EFI_FVB2_READ_STATUS (bit1), EFI_FVB2_WRITE_ENABLED_CAP (bit4), EFI_FVB2_WRITE_STATUS (bit5), EFI_FVB2_LOCK_STATUS (bit10). Determines read/write/lock state of the FV.",
+      "storeAs": "fvhAttributes",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Length",
+      "offset": 48,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Size of the EFI_FIRMWARE_VOLUME_HEADER structure in bytes as uint16 LE. Typically 0x48 (72 bytes) for a basic FV with one BlockMap entry. Larger values indicate extended headers or multiple BlockMap entries for complex volume geometries.",
+      "storeAs": "fvhHeaderLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Checksum",
+      "offset": 50,
+      "length": 2,
+      "color": "#FF8C94",
+      "opacity": 0.3,
+      "description": "16-bit checksum of the entire FV header as uint16 LE. Computed such that the sum of all 16-bit words in the header equals 0x0000. Used to detect header corruption. A non-zero result after summing all header words indicates header damage.",
+      "storeAs": "fvhChecksum",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Revision",
+      "offset": 55,
+      "length": 1,
+      "color": "#C5A3FF",
+      "opacity": 0.3,
+      "description": "EFI Firmware Volume header specification revision. Must be 2 (kEFIFirmwareVolumeHeaderRevision2) for PI specification 1.0+. Revision 1 was used in earlier EFI 1.x implementations. All modern UEFI platforms use revision 2.",
+      "storeAs": "fvhRevision",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "1": "EFI 1.x revision (legacy)",
+        "2": "UEFI PI 1.0+ revision (current)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "BlockMap NumBlocks",
+      "offset": 56,
+      "length": 4,
+      "color": "#B5EAD7",
+      "opacity": 0.3,
+      "description": "Number of contiguous blocks in the first BlockMap entry as uint32 LE. Together with BlockMap.Length defines the block geometry. A BlockMap entry of {0, 0} terminates the array. Total FV size = sum of (NumBlocks * Length) for all non-terminator BlockMap entries.",
+      "storeAs": "fvhBlockMapNumBlocks",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "BlockMap Length (bytes)",
+      "offset": 60,
+      "length": 4,
+      "color": "#B5EAD7",
+      "opacity": 0.2,
+      "description": "Size of each block in bytes for the first BlockMap entry as uint32 LE. Common values: 0x10000 (64KB blocks, typical NOR flash), 0x1000 (4KB blocks). Block size determines erase unit granularity for writeable firmware volumes.",
+      "storeAs": "fvhBlockMapLength",
+      "valueType": "uint32",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FV header signature valid",
+      "expression": "fvhSignature == '_FVH'",
+      "severity": "error",
+      "message": "'_FVH' signature not found at offset 40 — not a valid UEFI Firmware Volume header"
+    },
+    {
+      "name": "Header revision is 2",
+      "expression": "fvhRevision == 2",
+      "severity": "warning",
+      "message": "FV header revision is not 2 — may be legacy EFI 1.x format or corrupted header"
+    },
+    {
+      "name": "Header length at least 72",
+      "expression": "fvhHeaderLength >= 72",
+      "severity": "error",
+      "message": "FV header length is less than 72 bytes — minimum EFI_FIRMWARE_VOLUME_HEADER size"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "FV Header",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "FileSystem GUID",
+        "offset": 16,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "FFS2 File System Start",
+        "offsetVar": "fvhHeaderLength",
+        "icon": "\uE9D9",
+        "color": "#95E1D3"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "fvhRevision",
+    "primaryField": "fvhFvLength",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "FV Identity",
+        "icon": "\uE8B7",
+        "fields": ["fvhSignature", "fvhRevision", "fvhFileSystemGuid"]
+      },
+      {
+        "title": "Volume Layout",
+        "icon": "\uE8A5",
+        "fields": ["fvhFvLength", "fvhHeaderLength", "fvhBlockMapNumBlocks", "fvhBlockMapLength"]
+      },
+      {
+        "title": "Security & Attributes",
+        "icon": "\uE9D9",
+        "fields": ["fvhAttributes", "fvhChecksum"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "FV Header (JSON)",
+      "format": "json",
+      "fields": ["fvhSignature", "fvhRevision", "fvhFileSystemGuid", "fvhFvLength", "fvhHeaderLength", "fvhAttributes", "fvhChecksum", "fvhBlockMapNumBlocks", "fvhBlockMapLength"]
+    },
+    {
+      "name": "FV Header (text)",
+      "format": "text",
+      "fields": ["fvhSignature", "fvhRevision", "fvhFvLength", "fvhHeaderLength", "fvhBlockMapNumBlocks", "fvhBlockMapLength"]
+    }
+  ],
+  "forensic": {
+    "category": "firmware",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Potential firmware backdoor",
+        "condition": "true",
+        "severity": "warning",
+        "description": "UEFI firmware is the highest-privilege code on the system. Malicious FV modules (DXE drivers, SMM drivers) execute before the OS and are invisible to OS-level security tools. Use CHIPSEC to validate Secure Boot keys and NV variable store integrity."
+      }
+    ],
+    "knownExploitVectors": [
+      "LoJax UEFI rootkit — APT28 embedded malicious DXE driver in SPI flash",
+      "MoonBounce — UEFI implant persisting through OS reinstalls in CORE_DXE module",
+      "CosmicStrand — UEFI bootkit targeting ASUS and Gigabyte motherboards",
+      "Insecure UEFI update mechanisms without signature verification (pre-Secure Boot era)"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "UEFI FV contains FFS2 filesystem. FFS files start at header boundary alignment. EFI_FFS_FILE_HEADER: Name(16B GUID) + IntegrityCheck(2B) + Type(1B) + Attributes(1B) + Size(3B LE) + State(1B). File types: EFI_FV_FILETYPE_DXE_CORE(0x0C), SEC(0x03), PEI_CORE(0x04), SMM_CORE(0x0E). Use UEFITool to extract.",
+    "suggestedInspections": [
+      "Use UEFITool to recursively parse all FFS files and sections within the firmware volume",
+      "Search for EFI_FV_FILETYPE_RAW (0x01) modules — may contain compressed nested FVs",
+      "Extract and analyze SMM drivers (EFI_FV_FILETYPE_SMM = 0x0A) — run at ring -2",
+      "Run CHIPSEC framework: `python chipsec_main.py -m common.secureboot.variables` to verify Secure Boot",
+      "Compare FileSystem GUID against known FFS2 GUID {8C8CE578...} to detect custom/malicious FV types"
+    ]
+  },
+  "software": ["UEFITool", "UEFIExtract", "ifrextract", "CHIPSEC", "binwalk", "EDK2 BaseTools"],
+  "formatRelationships": {
+    "category": "Firmware",
+    "extensions": [".fd", ".rom", ".bin"],
+    "relatedFormats": ["UEFI_CAPSULE", "FFS2", "PE32", "TE_IMAGE"]
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "BIOS/UEFI flash image analysis and extraction",
+    "UEFI firmware security auditing with CHIPSEC",
+    "Platform Key (PK), KEK, db, dbx Secure Boot variable extraction",
+    "Firmware modification for embedded systems development"
+  ],
+  "TechnicalDetails": {
+    "FVHSignature": "'_FVH' at offset 40",
+    "FileSystemGUID": "FFS2: {8C8CE578-8A3D-4F1C-9935-896185C32DD3}",
+    "FFSGUID": "FFS3 (large files): {5473C07A-3DCB-4DCA-BD6F-1E9689E7349A}",
+    "HeaderSize": "Typically 72 bytes (0x48), may include extended header",
+    "FFSAlignment": "8-byte aligned FFS file headers within FV",
+    "PhaseModules": "SEC (security), PEI (pre-EFI init), DXE (driver exec env), BDS (boot device sel), SMM (system management mode)"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 87,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

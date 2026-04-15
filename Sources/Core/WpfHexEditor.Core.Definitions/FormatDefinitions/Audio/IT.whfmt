@@ -1,0 +1,129 @@
+{
+  "formatName": "Impulse Tracker Module",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "Impulse Tracker 2.x module format (.it) — the most capable classic tracker format with 64 channels, compressed samples, instrument envelopes, and carry effects; widely used in demoscene compositions.",
+  "extensions": [ ".it" ],
+  "category": "Audio",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "494D504D",
+      "offset": 0,
+      "label": "'IMPM' — Impulse Tracker module magic",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0,   "size": 4,  "name": "signature",      "type": "ascii",    "description": "Magic bytes: 'IMPM'",                          "storeAs": "itMagic" },
+      { "offset": 4,   "size": 26, "name": "songname",       "type": "ascii",    "description": "Song title (null-padded 26 bytes)",             "storeAs": "itTitle" },
+      { "offset": 30,  "size": 2,  "name": "philihlength",   "type": "uint16le", "description": "Pattern highlight row counts (hi-byte/lo-byte)" },
+      { "offset": 32,  "size": 2,  "name": "ordnum",         "type": "uint16le", "description": "Number of orders in the sequence" },
+      { "offset": 34,  "size": 2,  "name": "insnum",         "type": "uint16le", "description": "Number of instruments (0–99)" },
+      { "offset": 36,  "size": 2,  "name": "smpnum",         "type": "uint16le", "description": "Number of samples (0–99)" },
+      { "offset": 38,  "size": 2,  "name": "patnum",         "type": "uint16le", "description": "Number of patterns (0–200)" },
+      { "offset": 40,  "size": 2,  "name": "cwt",            "type": "uint16le", "description": "Created with version (Cwt) — e.g. 0x0214 = IT 2.14" },
+      { "offset": 42,  "size": 2,  "name": "cmwt",           "type": "uint16le", "description": "Compatible with version (Cmwt) — minimum required version" },
+      { "offset": 44,  "size": 2,  "name": "flags",          "type": "uint16le", "description": "Playback flags (stereo, instruments, linear slides, old effects)" },
+      { "offset": 46,  "size": 2,  "name": "special",        "type": "uint16le", "description": "Special flags (embedded MIDI, song message)" },
+      { "offset": 48,  "size": 1,  "name": "globalvol",      "type": "uint8",    "description": "Global volume (0–128)" },
+      { "offset": 49,  "size": 1,  "name": "mixvol",         "type": "uint8",    "description": "Master volume / mix volume" },
+      { "offset": 50,  "size": 1,  "name": "initialspeed",   "type": "uint8",    "description": "Initial playback speed (ticks per row)" },
+      { "offset": 51,  "size": 1,  "name": "initialtempo",   "type": "uint8",    "description": "Initial playback tempo (BPM)" },
+      { "offset": 52,  "size": 1,  "name": "sep",            "type": "uint8",    "description": "Stereo separation (0–128)" },
+      { "offset": 53,  "size": 1,  "name": "pwd",            "type": "uint8",    "description": "MIDI pitch wheel depth in semitones" },
+      { "offset": 54,  "size": 2,  "name": "msglen",         "type": "uint16le", "description": "Song message length in bytes" },
+      { "offset": 56,  "size": 4,  "name": "msgoffset",      "type": "uint32le", "description": "File offset of embedded song message text" },
+      { "offset": 60,  "size": 4,  "name": "reserved",       "type": "bytes",    "description": "Reserved (must be zero)" },
+      { "offset": 64,  "size": 64, "name": "channelpan",     "type": "bytes",    "description": "Per-channel initial panning positions (64 bytes)" },
+      { "offset": 128, "size": 64, "name": "channelvol",     "type": "bytes",    "description": "Per-channel initial volume levels (64 bytes)" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "itMagic", "itTitle", "ordnum", "insnum", "smpnum", "patnum", "initialtempo" ],
+    "valueMaps": {
+      "flags": {
+        "1":  "Stereo",
+        "4":  "Vol0 Mix Optimizations",
+        "8":  "Use Instruments (not samples)",
+        "16": "Linear Frequency Slides",
+        "32": "Old Effects behaviour",
+        "64": "Link Effect E/F/G"
+      }
+    },
+    "tooltips": {
+      "itMagic":      "Must be exactly 'IMPM' (4 ASCII bytes)",
+      "cwt":          "High nibble = major version, low nibble = minor (0x0214 = v2.14)",
+      "initialtempo": "BPM at start of playback; typical values 80–180",
+      "flags":        "Bit 3: instrument mode enables envelope curves and NNA"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "itMagic", "operator": "eq",      "value": "IMPM",  "description": "Magic must be 'IMPM'" },
+    { "id": "A2", "field": "smpnum",  "operator": "lte",     "value": 99,      "description": "Sample count must not exceed 99" },
+    { "id": "A3", "field": "insnum",  "operator": "lte",     "value": 99,      "description": "Instrument count must not exceed 99" },
+    { "id": "A4", "field": "patnum",  "operator": "lte",     "value": 200,     "description": "Pattern count must not exceed 200" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,   "label": "Magic 'IMPM'",         "color": "#E74C3C" },
+      { "offset": 4,   "label": "Song Title",            "color": "#3498DB" },
+      { "offset": 32,  "label": "Order/Ins/Smp/Pat Counts","color": "#F39C12" },
+      { "offset": 44,  "label": "Playback Flags",        "color": "#9B59B6" },
+      { "offset": 64,  "label": "Channel Pan Array",     "color": "#27AE60" },
+      { "offset": 128, "label": "Channel Volume Array",  "color": "#1ABC9C" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "IT Header Summary",
+      "fields": [ "itTitle", "ordnum", "insnum", "smpnum", "patnum", "initialtempo" ],
+      "format": "text"
+    },
+    {
+      "name": "IT Metadata JSON",
+      "fields": [ "itTitle", "cwt", "cmwt", "ordnum", "insnum", "smpnum", "patnum", "flags", "globalvol", "initialtempo" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "The 'IMPM' magic at offset 0 is definitive; IT files have no ambiguous multi-variant magic unlike MOD files.",
+    "Cwt at offset 40 encodes the authoring tracker version: high byte = major, low byte = minor (e.g. 0x0214 = IT 2.14); OpenMPT uses 0x5000+.",
+    "Flags bit 3 (0x08) enables instrument mode — when set, note cells reference instrument headers (envelope + NNA) rather than raw samples.",
+    "IT supports sample compression (ITPACK): flag in sample header indicates compressed data; the decompressed size is always larger.",
+    "Pattern data uses a packed format: a mask byte per row indicates which channels have data, followed by optional note/instrument/volume/command bytes.",
+    "Song message (if msglen>0) is plain text at msgoffset; useful for authorship attribution and timing notes left by composers."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "IT files contain only audio data and optional plain-text song message; no executable content.",
+      "Historical buffer-overflow bugs in libmodplug with IT instrument headers have been patched; use current library versions.",
+      "Song title and sample names can carry hidden strings — useful for attribution in forensic music analysis."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "MOD", "relationship": "predecessor", "note": "MOD is the ancestor of the tracker lineage that IT extends." },
+    { "format": "S3M", "relationship": "predecessor",  "note": "ScreamTracker 3 S3M directly influenced IT's channel and effect model." },
+    { "format": "XM",  "relationship": "contemporary", "note": "XM (FastTracker 2) is IT's primary contemporary competitor." }
+  ],
+  "software": [
+    { "name": "Impulse Tracker",  "role": "Original DOS authoring tool (Jeffrey Lim, 1995–1998)" },
+    { "name": "OpenMPT",          "role": "Modern Windows tracker with full IT support" },
+    { "name": "Schism Tracker",   "role": "Cross-platform IT-compatible editor" },
+    { "name": "ModPlug Player",   "role": "Windows Winamp plugin for IT/MOD/XM/S3M" },
+    { "name": "XMPlay",           "role": "Lightweight player with IT support" }
+  ],
+  "useCases": [
+    "Demoscene music composition and playback",
+    "Complex multi-channel game and demo audio",
+    "High-quality chiptune with instrument envelopes",
+    "Module music archiving in HVSC/Modland collections"
+  ],
+  "technicalDetails": "Impulse Tracker 2.x format (Jeffrey Lim, 1995–1998). Up to 64 simultaneous channels. Instruments support volume/panning/pitch envelope curves with sustain loops and carry-on-note features (NNA). Samples stored as signed 8/16-bit PCM, optionally ITPACK-compressed. Effect command set expands on S3M with additional macro, filter, and MIDI commands. OpenMPT is the current canonical editor and reference implementation.",
+  "completenessScore": 85
+}

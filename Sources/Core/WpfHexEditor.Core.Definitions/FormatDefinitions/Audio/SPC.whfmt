@@ -1,0 +1,123 @@
+{
+  "formatName": "SNES SPC700 Sound",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "SNES SPC700 audio processor snapshot (.spc) — a complete 64KB RAM dump of the SPC700 CPU plus S-DSP register state, used to store and replay SNES game music.",
+  "extensions": [ ".spc" ],
+  "category": "Audio",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "534E45532D5350",
+      "offset": 0,
+      "label": "'SNES-SP' — SNES SPC700 Sound File Data header start (7 bytes)",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 7,
+  "structure": {
+    "fields": [
+      { "offset": 0,     "size": 33,    "name": "file_id",       "type": "ascii",   "description": "File identification string: 'SNES-SPC700 Sound File Data v0.30'", "storeAs": "spcMagic" },
+      { "offset": 33,    "size": 2,     "name": "eof_marker",    "type": "bytes",   "description": "EOF markers: both bytes must be 0x1A" },
+      { "offset": 35,    "size": 1,     "name": "has_id666",     "type": "uint8",   "description": "26 = ID666 tag present; 27 = no ID666 tag" },
+      { "offset": 36,    "size": 1,     "name": "version_minor", "type": "uint8",   "description": "Minor version, must be 30 (decimal)" },
+      { "offset": 37,    "size": 2,     "name": "pc",            "type": "uint16le","description": "SPC700 program counter at snapshot time" },
+      { "offset": 39,    "size": 1,     "name": "a",             "type": "uint8",   "description": "SPC700 accumulator register A" },
+      { "offset": 40,    "size": 1,     "name": "x",             "type": "uint8",   "description": "SPC700 index register X" },
+      { "offset": 41,    "size": 1,     "name": "y",             "type": "uint8",   "description": "SPC700 index register Y" },
+      { "offset": 42,    "size": 1,     "name": "psw",           "type": "uint8",   "description": "SPC700 processor status word (flags)" },
+      { "offset": 43,    "size": 1,     "name": "sp",            "type": "uint8",   "description": "SPC700 stack pointer (low byte; high=$01xx)" },
+      { "offset": 46,    "size": 32,    "name": "song_title",    "type": "ascii",   "description": "ID666: song title (null-padded 32 bytes)",  "storeAs": "spcTitle" },
+      { "offset": 78,    "size": 32,    "name": "game_title",    "type": "ascii",   "description": "ID666: game name (null-padded 32 bytes)",   "storeAs": "spcGame" },
+      { "offset": 110,   "size": 16,    "name": "dumper_name",   "type": "ascii",   "description": "ID666: name of person who dumped the SPC" },
+      { "offset": 126,   "size": 32,    "name": "comments",      "type": "ascii",   "description": "ID666: comments (null-padded 32 bytes)" },
+      { "offset": 158,   "size": 11,    "name": "date_dumped",   "type": "ascii",   "description": "ID666: date dumped (MM/DD/YYYY format)" },
+      { "offset": 169,   "size": 3,     "name": "seconds_to_play","type": "bytes",  "description": "ID666: seconds to play before fading" },
+      { "offset": 172,   "size": 5,     "name": "fade_length",   "type": "bytes",   "description": "ID666: fade length in milliseconds" },
+      { "offset": 177,   "size": 32,    "name": "artist",        "type": "ascii",   "description": "ID666: artist / composer name",            "storeAs": "spcArtist" },
+      { "offset": 256,   "size": 65536, "name": "ram",           "type": "bytes",   "description": "Full SPC700 64KB RAM dump" },
+      { "offset": 65792, "size": 128,   "name": "dsp_registers", "type": "bytes",   "description": "S-DSP register state (128 bytes)" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "spcTitle", "spcGame", "spcArtist", "has_id666", "version_minor" ],
+    "valueMaps": {
+      "has_id666": {
+        "26": "ID666 tag present",
+        "27": "No ID666 tag"
+      }
+    },
+    "tooltips": {
+      "spcMagic":      "Must be 'SNES-SPC700 Sound File Data v0.30' (33 bytes)",
+      "version_minor": "Must be 30 decimal (= v0.30 of the SPC file format spec)",
+      "has_id666":     "26 = ID666 metadata block is populated at offset 46–210",
+      "pc":            "SPC700 program counter; the music code execution resumes from this address"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "spcMagic",      "operator": "startsWith", "value": "SNES-SPC", "description": "File ID must start with 'SNES-SPC'" },
+    { "id": "A2", "field": "version_minor", "operator": "eq",         "value": 30,          "description": "Minor version must be 30 (v0.30)" },
+    { "id": "A3", "field": "has_id666",     "operator": "inSet",      "value": [26, 27],    "description": "ID666 flag must be 26 (present) or 27 (absent)" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,     "label": "File ID Header",      "color": "#E74C3C" },
+      { "offset": 35,    "label": "ID666 / Version Flags","color": "#F39C12" },
+      { "offset": 37,    "label": "SPC700 CPU Registers", "color": "#3498DB" },
+      { "offset": 46,    "label": "ID666 Song Title",     "color": "#27AE60" },
+      { "offset": 78,    "label": "ID666 Game Title",     "color": "#9B59B6" },
+      { "offset": 256,   "label": "SPC700 RAM (64KB)",    "color": "#1ABC9C" },
+      { "offset": 65792, "label": "DSP Registers",        "color": "#E67E22" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SPC Metadata Text",
+      "fields": [ "spcTitle", "spcGame", "spcArtist", "dumper_name", "date_dumped" ],
+      "format": "text"
+    },
+    {
+      "name": "SPC Metadata JSON",
+      "fields": [ "spcTitle", "spcGame", "spcArtist", "dumper_name", "comments", "date_dumped", "has_id666", "pc" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "SPC files are memory snapshots, not code containers — the entire 64KB SPC700 RAM is dumped at offset 256, so playback resumes exactly from the captured state.",
+    "The ID666 tag (offsets 46–210) is optional; some rippers omit it — detect presence via the has_id666 byte (26=present, 27=absent).",
+    "A standard SPC file is exactly 66048 bytes (33 header + 3 tag bytes + 220 ID666 + 65536 RAM + 128 DSP = 65920... plus padding to 256 before RAM): the total is always 66048 bytes for spec-compliant files.",
+    "The S-DSP registers at offset 65792 control the 8-channel BRR (Bit Rate Reduction) ADPCM playback engine — critical for correct audio reproduction.",
+    "Extended ID666 (xid6) can follow the standard 66048 bytes as an optional chunk with additional metadata; look for 'xid6' FourCC after offset 66048.",
+    "SNES BRR samples use 4-bit ADPCM in 9-byte blocks; the DSP register dump includes BRR source/loop addresses that the DSP uses to stream sample data from RAM."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "SPC files contain a full memory snapshot of the SPC700 CPU — the code is SPC700 architecture and cannot run on modern CPUs without emulation.",
+      "ID666 metadata fields (title, game, artist) are commonly used for cataloguing in the SNESMUSIC.org archive.",
+      "No known security vulnerabilities from SPC parsing; risk is limited to inaccurate emulation of the SPC700 or DSP."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "SID", "relationship": "analog", "note": "SID is the C64 equivalent: 6502 code + SID chip register state." },
+    { "format": "NSF", "relationship": "analog", "note": "NSF is the NES equivalent: 6502 code for the NES APU." }
+  ],
+  "software": [
+    { "name": "snes9x",        "role": "SNES emulator with SPC dumping support" },
+    { "name": "bsnes / higan", "role": "Highly accurate SNES emulator" },
+    { "name": "spc_play",      "role": "Command-line SPC player" },
+    { "name": "SNES SPC Player","role": "Windows SPC player with ID666 display" },
+    { "name": "OpenMPT",       "role": "Can import SPC for inspection" },
+    { "name": "SPCAS",         "role": "SPC archiving and metadata tool" }
+  ],
+  "useCases": [
+    "SNES game music archiving and playback",
+    "SPC700 audio research and DSP analysis",
+    "Retro music preservation in SNESMUSIC.org archive",
+    "SNES chiptune composition and replay"
+  ],
+  "technicalDetails": "SNES SPC700 audio snapshot. The SPC700 is a dedicated audio CPU (65C02-derived) with 64KB dedicated RAM. The S-DSP chip provides 8 independent ADPCM (BRR) channels with pitch/volume envelopes, echo/reverb effect, and Gaussian interpolation. A standard SPC file is always 66048 bytes. The music code in RAM runs continuously; the snapshot freezes execution state so it can resume identically in an emulator. The xid6 optional extension adds per-track durations and richer metadata.",
+  "completenessScore": 84
+}

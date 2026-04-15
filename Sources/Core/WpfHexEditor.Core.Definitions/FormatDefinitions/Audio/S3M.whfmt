@@ -1,0 +1,120 @@
+{
+  "formatName": "ScreamTracker 3 Module",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "ScreamTracker 3 module format (.s3m) — PC tracker format by Future Crew with 32 channels, signed/unsigned 8/16-bit PCM samples, widely used in 1990s DOS demoscene productions.",
+  "extensions": [ ".s3m" ],
+  "category": "Audio",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "5343524D",
+      "offset": 44,
+      "label": "'SCRM' — ScreamTracker 3 module signature at offset 44",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 48,
+  "structure": {
+    "fields": [
+      { "offset": 0,  "size": 28, "name": "songname",          "type": "ascii",    "description": "Song title (null-padded 28 bytes)",    "storeAs": "s3mTitle" },
+      { "offset": 28, "size": 1,  "name": "eof_marker",        "type": "uint8",    "description": "DOS EOF marker, must be 0x1A" },
+      { "offset": 29, "size": 1,  "name": "type",              "type": "uint8",    "description": "Module type: 16 = module (not sample)" },
+      { "offset": 30, "size": 2,  "name": "reserved",          "type": "bytes",    "description": "Reserved bytes, typically zero" },
+      { "offset": 32, "size": 2,  "name": "ordnum",            "type": "uint16le", "description": "Number of orders in playback sequence" },
+      { "offset": 34, "size": 2,  "name": "insnum",            "type": "uint16le", "description": "Number of instruments (max 99)" },
+      { "offset": 36, "size": 2,  "name": "patnum",            "type": "uint16le", "description": "Number of patterns (max 100)" },
+      { "offset": 38, "size": 2,  "name": "flags",             "type": "uint16le", "description": "Compatibility and playback flags" },
+      { "offset": 40, "size": 2,  "name": "tracker_version",  "type": "uint16le", "description": "Tracker version that created the file", "storeAs": "s3mTrackerVer" },
+      { "offset": 42, "size": 2,  "name": "sample_type",      "type": "uint16le", "description": "1 = signed samples, 2 = unsigned samples" },
+      { "offset": 44, "size": 4,  "name": "signature",        "type": "ascii",    "description": "File signature: 'SCRM'",               "storeAs": "s3mMagic" },
+      { "offset": 48, "size": 1,  "name": "globalvol",        "type": "uint8",    "description": "Global volume (0–64)" },
+      { "offset": 49, "size": 1,  "name": "initialspeed",     "type": "uint8",    "description": "Initial tick speed" },
+      { "offset": 50, "size": 1,  "name": "initialtempo",     "type": "uint8",    "description": "Initial BPM tempo" },
+      { "offset": 51, "size": 1,  "name": "mastervol",        "type": "uint8",    "description": "Master volume (bit 7 = stereo)" },
+      { "offset": 52, "size": 1,  "name": "ultraclick",       "type": "uint8",    "description": "Ultra-click removal (GUS-era) value" },
+      { "offset": 53, "size": 1,  "name": "default_pan",      "type": "uint8",    "description": "0xFC = use per-channel pan settings" },
+      { "offset": 64, "size": 32, "name": "channelsettings",  "type": "bytes",    "description": "Per-channel settings: enable/pan (32 bytes)" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "s3mTitle", "s3mMagic", "ordnum", "insnum", "patnum", "initialtempo" ],
+    "valueMaps": {
+      "sample_type": {
+        "1": "Signed PCM samples",
+        "2": "Unsigned PCM samples"
+      }
+    },
+    "tooltips": {
+      "s3mMagic":        "Must be 'SCRM' at offset 44",
+      "s3mTrackerVer":   "High nibble = major version (3=ST3); low byte = minor version",
+      "type":            "Must be 16 (0x10) for a module file",
+      "globalvol":       "Range 0–64; values above 64 are clamped by players"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "s3mMagic", "operator": "eq",  "value": "SCRM", "description": "Signature at offset 44 must be 'SCRM'" },
+    { "id": "A2", "field": "type",     "operator": "eq",  "value": 16,     "description": "Type byte must be 16 (module)" },
+    { "id": "A3", "field": "insnum",   "operator": "lte", "value": 99,     "description": "Instrument count must not exceed 99" },
+    { "id": "A4", "field": "patnum",   "operator": "lte", "value": 100,    "description": "Pattern count must not exceed 100" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,  "label": "Song Title",          "color": "#3498DB" },
+      { "offset": 32, "label": "Counts (Ord/Ins/Pat)", "color": "#F39C12" },
+      { "offset": 44, "label": "Magic 'SCRM'",         "color": "#E74C3C" },
+      { "offset": 48, "label": "Volume / Tempo",       "color": "#27AE60" },
+      { "offset": 64, "label": "Channel Settings",     "color": "#9B59B6" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "S3M Header Summary",
+      "fields": [ "s3mTitle", "s3mMagic", "ordnum", "insnum", "patnum", "initialtempo" ],
+      "format": "text"
+    },
+    {
+      "name": "S3M Metadata JSON",
+      "fields": [ "s3mTitle", "s3mTrackerVer", "sample_type", "ordnum", "insnum", "patnum", "flags", "globalvol", "initialtempo" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "The 'SCRM' signature sits at offset 44, not at the file start — detecting S3M requires reading deeper than most formats.",
+    "EOF marker 0x1A at offset 28 is identical to MOD and XM — a DOS convention to stop 'type' commands from displaying binary data on the console.",
+    "Sample_type field (offset 42) affects how 8-bit PCM data is interpreted: 1=signed (−128..127), 2=unsigned (0..255); most modern players handle both.",
+    "The mastervol byte (offset 51) bit 7 controls stereo output: if set, stereo mixing is enabled; channel panning in channelsettings is then relevant.",
+    "ScreamTracker 3 was written by Future Crew (the demoscene group behind Second Reality), which explains its prevalence in iconic DOS demos.",
+    "tracker_version encodes the creating tool: 0x1300 = ScreamTracker 3.0x; 0x1320 = ST3.20; OpenMPT stores its own version code here."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "S3M files contain only music data; no executable content.",
+      "Song title field (28 bytes) is longer than MOD and may contain authorship information.",
+      "Known vulnerability: malformed S3M instrument headers in older libmodplug — keep libraries current."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "MOD", "relationship": "predecessor",  "note": "S3M was directly inspired by the Amiga MOD format adapted for PC." },
+    { "format": "IT",  "relationship": "predecessor",  "note": "Impulse Tracker IT was designed as an advanced successor to S3M." },
+    { "format": "XM",  "relationship": "contemporary", "note": "XM (FastTracker 2) and S3M were competing PC module formats in the mid-1990s." }
+  ],
+  "software": [
+    { "name": "ScreamTracker 3", "role": "Original DOS authoring tool (Future Crew, 1994)" },
+    { "name": "OpenMPT",         "role": "Modern Windows multi-format tracker" },
+    { "name": "ModPlug Player",  "role": "Classic Winamp plugin player" },
+    { "name": "XMPlay",          "role": "Lightweight Windows module player" },
+    { "name": "libxmp",          "role": "Cross-platform C library for playback" }
+  ],
+  "useCases": [
+    "DOS demoscene music playback and archiving",
+    "Retro game soundtrack research",
+    "Multi-channel PC module composition",
+    "Legacy audio format conversion and preservation"
+  ],
+  "technicalDetails": "ScreamTracker 3 format by Future Crew (1994). Up to 32 channels (16 stereo pairs). PCM-only instruments — no FM synthesis. Signed or unsigned 8/16-bit samples. Instrument headers stored at paragraph boundaries (offset × 16). Pattern data uses packed rows with RLE-like channel presence flags. Effect set compatible with MOD with S3M-specific extensions (vibrato depth, tremolo, arpeggio). Widely supported by libxmp, OpenMPT, and most DOS emulators.",
+  "completenessScore": 83
+}

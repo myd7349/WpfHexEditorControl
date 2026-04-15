@@ -1,0 +1,101 @@
+{
+  "formatName": "JPEG XR (HD Photo)",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "JPEG XR / Microsoft HD Photo image format (.jxr, .wdp, .hdp) — ITU-T T.832 standard supporting HDR, up to 32 bits per channel, tile-based random access, and progressive decoding with a TIFF-like IFD container structure.",
+  "extensions": [ ".jxr", ".wdp", ".hdp" ],
+  "category": "Images",
+  "diffMode": "binary",
+  "signatures": [
+    { "value": "4949BC01", "offset": 0, "label": "JPEG XR little-endian (II + 0xBC + 0x01)", "weight": 1.0, "strength": "Strong" },
+    { "value": "4D4DBC01", "offset": 0, "label": "JPEG XR big-endian (MM + 0xBC + 0x01)",    "weight": 1.0, "strength": "Strong" }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0, "size": 2, "name": "byte_order",       "type": "ascii",    "description": "'II' = little-endian or 'MM' = big-endian", "storeAs": "jxrByteOrder" },
+      { "offset": 2, "size": 1, "name": "fixed_byte",       "type": "uint8",    "description": "JPEG XR identifier byte, always 0xBC",      "storeAs": "jxrMagicByte" },
+      { "offset": 3, "size": 1, "name": "version",          "type": "uint8",    "description": "Format version, always 0x01",               "storeAs": "jxrVersion" },
+      { "offset": 4, "size": 4, "name": "first_ifd_offset", "type": "uint32le", "description": "Offset to first IFD (Image File Directory), typically 8" }
+    ],
+    "notes": "Follows TIFF-like IFD structure from offset first_ifd_offset. IFD entries include: pixel format GUID (16B), image width, image height, DC/LP/HP quantization parameters, tile structure info, and the compressed image bitstream as a raw-data tag. Tags use JPEG XR-specific codes (not standard TIFF tags)."
+  },
+  "inspector": {
+    "displayFields": [ "jxrByteOrder", "jxrMagicByte", "jxrVersion", "first_ifd_offset" ],
+    "valueMaps": {
+      "jxrByteOrder": {
+        "II": "Little-endian (Intel byte order)",
+        "MM": "Big-endian (Motorola byte order)"
+      },
+      "jxrMagicByte": {
+        "188": "0xBC — JPEG XR identifier (correct)"
+      }
+    },
+    "tooltips": {
+      "jxrMagicByte":     "Must be 0xBC (188 decimal); distinguishes JPEG XR from standard TIFF files which use 0x2A",
+      "jxrVersion":       "Must be 0x01 (1); no other versions defined",
+      "first_ifd_offset": "Typically 8 (immediately after the 8-byte file header)"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "jxrMagicByte", "operator": "eq",    "value": 188,          "description": "Fixed byte must be 0xBC (188)" },
+    { "id": "A2", "field": "jxrVersion",   "operator": "eq",    "value": 1,            "description": "Version must be 0x01" },
+    { "id": "A3", "field": "jxrByteOrder", "operator": "inSet", "value": ["II","MM"],  "description": "Byte order must be 'II' (LE) or 'MM' (BE)" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "Byte Order Mark",     "color": "#3498DB" },
+      { "offset": 2, "label": "JPEG XR Magic (0xBC)","color": "#E74C3C" },
+      { "offset": 3, "label": "Version (0x01)",       "color": "#F39C12" },
+      { "offset": 4, "label": "First IFD Offset",     "color": "#27AE60" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JXR Header Summary",
+      "fields": [ "jxrByteOrder", "jxrMagicByte", "jxrVersion", "first_ifd_offset" ],
+      "format": "text"
+    },
+    {
+      "name": "JXR Metadata JSON",
+      "fields": [ "jxrByteOrder", "jxrVersion", "first_ifd_offset" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "JPEG XR reuses the TIFF IFD container structure but inserts 0xBC at offset 2 where TIFF uses 0x2A (42); this byte is the definitive differentiator.",
+    "The format supports HDR output via fixed-point (16-bit integer), floating-point (16/32-bit float), and integer pixel formats up to 32 bits per channel.",
+    "Tile-based structure allows random access to sub-regions without decoding the full image — useful for very large images and streaming.",
+    "Windows Imaging Component (WIC) provides native JPEG XR encode/decode on all Windows Vista+ systems without additional libraries.",
+    "JPEG XR uses a lapped biorthogonal transform (LBT) which is a DCT variant that reduces blocking artifacts at high compression.",
+    "The .wdp extension is the original Windows HD Photo name; .hdp is the HDPHOTO variant; .jxr became the standard extension with the ITU-T T.832 standard."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "JPEG XR files contain only image data; no executable content.",
+      "WIC-based parsers have historically had vulnerabilities in malformed IFD handling — keep Windows fully patched.",
+      "The TIFF-like structure means a well-crafted JPEG XR could confuse TIFF parsers; the 0xBC byte should always be verified."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "TIFF", "relationship": "derived-from", "note": "JPEG XR uses TIFF IFD structure but with a different magic byte (0xBC vs 0x2A)." },
+    { "format": "JXL",  "relationship": "successor",    "note": "JPEG XL (JXL) is the modern successor offering better compression and HDR support." }
+  ],
+  "software": [
+    { "name": "Windows (WIC)",    "role": "Native JPEG XR codec built into Windows Vista+" },
+    { "name": "ImageMagick",      "role": "Cross-platform JPEG XR read/write" },
+    { "name": "GDAL",             "role": "Geospatial JPEG XR support" },
+    { "name": "jxrlib",           "role": "Microsoft reference implementation (open source)" },
+    { "name": "paint.net",        "role": "JPEG XR read/write on Windows" }
+  ],
+  "useCases": [
+    "HDR image storage with up to 32 bits per channel",
+    "Windows HD Photo format for high-quality photography",
+    "Medical imaging with high bit-depth lossless compression",
+    "Tiled image workflows for very large images"
+  ],
+  "technicalDetails": "ITU-T T.832 / ISO 29199-2 (JPEG XR). Microsoft HD Photo format standardised in 2009. Uses a lapped biorthogonal transform (LBT) with hierarchical DC/LP/HP frequency subbands. Tile-based structure enables random access. Supports: 8/16/32-bit integer, 16/32-bit float, RGB/CMYK/YCbCr/monochrome. Progressive decode via DC-only mode. Alpha plane can be stored in a separate IFD. The jxrlib reference implementation is open source (BSD licence).",
+  "completenessScore": 82
+}

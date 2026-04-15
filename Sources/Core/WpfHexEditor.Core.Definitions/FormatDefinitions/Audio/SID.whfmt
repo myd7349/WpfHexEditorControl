@@ -1,0 +1,117 @@
+{
+  "formatName": "Commodore 64 SID Music",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "PSID/RSID container for Commodore 64 SID chip music — contains 6502 machine code that drives the MOS 6581/8580 SID chip; core format of the High Voltage SID Collection (HVSC).",
+  "extensions": [ ".sid" ],
+  "category": "Audio",
+  "diffMode": "binary",
+  "signatures": [
+    { "value": "50534944", "offset": 0, "label": "'PSID' — PlaySID compatible C64 music file", "weight": 1.0, "strength": "Strong" },
+    { "value": "52534944", "offset": 0, "label": "'RSID' — Real SID file (requires exact C64 hardware timing)", "weight": 1.0, "strength": "Strong" }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0,   "size": 4,  "name": "magic",          "type": "ascii",    "description": "'PSID' or 'RSID'",                            "storeAs": "sidMagic" },
+      { "offset": 4,   "size": 2,  "name": "version",        "type": "uint16be", "description": "Header version: 1, 2, 3, or 4",               "storeAs": "sidVersion" },
+      { "offset": 6,   "size": 2,  "name": "dataOffset",     "type": "uint16be", "description": "Offset to embedded C64 payload (0x76 for v2)" },
+      { "offset": 8,   "size": 2,  "name": "loadAddress",    "type": "uint16be", "description": "C64 load address (0 = use embedded word)" },
+      { "offset": 10,  "size": 2,  "name": "initAddress",    "type": "uint16be", "description": "C64 init subroutine address ($0000 = loadAddress)" },
+      { "offset": 12,  "size": 2,  "name": "playAddress",    "type": "uint16be", "description": "C64 play subroutine called at 50/60 Hz" },
+      { "offset": 14,  "size": 2,  "name": "songs",          "type": "uint16be", "description": "Total number of subtunes (1–256)",             "storeAs": "sidSongs" },
+      { "offset": 16,  "size": 2,  "name": "startSong",      "type": "uint16be", "description": "Default subtune to play (1-based)" },
+      { "offset": 18,  "size": 4,  "name": "speed",          "type": "uint32be", "description": "Bit mask: 0=50Hz (PAL), 1=60Hz (NTSC) per subtune" },
+      { "offset": 22,  "size": 32, "name": "name",           "type": "ascii",    "description": "Song title (null-padded 32 bytes)",            "storeAs": "sidTitle" },
+      { "offset": 54,  "size": 32, "name": "author",         "type": "ascii",    "description": "Composer name (null-padded 32 bytes)",         "storeAs": "sidAuthor" },
+      { "offset": 86,  "size": 32, "name": "released",       "type": "ascii",    "description": "Year and copyright notice (null-padded 32 bytes)" },
+      { "offset": 118, "size": 2,  "name": "flags",          "type": "uint16be", "description": "v2+ flags: PAL/NTSC, SID model, play speed" },
+      { "offset": 120, "size": 1,  "name": "startPage",      "type": "uint8",    "description": "v2+: free C64 memory start page for RSID" },
+      { "offset": 121, "size": 1,  "name": "pageLength",     "type": "uint8",    "description": "v2+: number of free pages" },
+      { "offset": 122, "size": 1,  "name": "secondSIDAddr",  "type": "uint8",    "description": "v3+: second SID chip base address (×16 + $D000)" },
+      { "offset": 123, "size": 1,  "name": "thirdSIDAddr",   "type": "uint8",    "description": "v4+: third SID chip base address" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "sidMagic", "sidVersion", "sidTitle", "sidAuthor", "sidSongs" ],
+    "valueMaps": {
+      "sidVersion": {
+        "1": "PSID v1 (original)",
+        "2": "PSID v2 / RSID v2",
+        "3": "PSID v3 (stereo SID)",
+        "4": "PSID v4 (triple SID)"
+      }
+    },
+    "tooltips": {
+      "sidMagic":    "PSID = software-emulated; RSID = requires real C64 hardware timing",
+      "sidVersion":  "v3 adds second SID address field; v4 adds third SID address field",
+      "sidSongs":    "Range 1–256; most files have 1 subtune, game SIDs often have 20+",
+      "dataOffset":  "0x76 (118) is standard for v2; 0x7C for v3; 0x7E for v4"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "sidMagic",   "operator": "inSet",  "value": ["PSID","RSID"],  "description": "Magic must be 'PSID' or 'RSID'" },
+    { "id": "A2", "field": "sidVersion", "operator": "between","value": [1, 4],            "description": "Version must be 1–4" },
+    { "id": "A3", "field": "sidSongs",   "operator": "between","value": [1, 256],          "description": "Subtune count must be 1–256" },
+    { "id": "A4", "field": "startSong",  "operator": "gte",    "value": 1,                "description": "Default start song must be 1-based (≥1)" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,   "label": "Magic (PSID/RSID)",  "color": "#E74C3C" },
+      { "offset": 4,   "label": "Version",             "color": "#F39C12" },
+      { "offset": 14,  "label": "Subtune Count",       "color": "#3498DB" },
+      { "offset": 22,  "label": "Song Title",          "color": "#27AE60" },
+      { "offset": 54,  "label": "Author",              "color": "#9B59B6" },
+      { "offset": 86,  "label": "Released / Copyright","color": "#1ABC9C" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SID Metadata Text",
+      "fields": [ "sidTitle", "sidAuthor", "released", "sidVersion", "sidSongs" ],
+      "format": "text"
+    },
+    {
+      "name": "SID Metadata JSON",
+      "fields": [ "sidMagic", "sidVersion", "sidTitle", "sidAuthor", "released", "sidSongs", "startSong", "loadAddress", "initAddress", "playAddress" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "RSID files require exact C64 timing emulation; they will not play in older PSID-only players that do not implement CIA and VIC timing correctly.",
+    "The 6502 machine code payload at dataOffset is not a standard binary — it must be loaded into the C64 memory map and called via initAddress/playAddress.",
+    "SID v1 headers end at offset 118; v2 adds flags/startPage/pageLength; v3 adds secondSIDAddr; v4 adds thirdSIDAddr — detect by dataOffset value.",
+    "The speed bitmask (offset 18) assigns 50Hz or 60Hz interrupt rate per subtune; most European C64 music uses 50Hz (PAL system clock).",
+    "HVSC (High Voltage SID Collection) is the canonical archive of over 50,000 .sid files with strict naming and metadata conventions.",
+    "SID chip has 3 independent voices; ring modulation and hard sync between voice pairs enable complex timbres not possible with simple oscillators."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "SID files contain actual 6502 machine code targeting the C64 memory map; code cannot run on any modern platform without a full C64 emulator.",
+      "Author and title metadata are widely used for archival attribution in HVSC and CSDb (C64 Scene Database).",
+      "No known security vulnerabilities from SID file parsing; risk is purely in the emulation layer."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "NSF",  "relationship": "analog", "note": "NSF is the NES equivalent: 6502 code driving the APU instead of the SID chip." },
+    { "format": "SPC",  "relationship": "analog", "note": "SPC is the SNES equivalent: SPC700 code and DSP state snapshot." }
+  ],
+  "software": [
+    { "name": "SIDPLAY2 / libsidplayfp", "role": "Accurate C64 SID emulation (desktop)" },
+    { "name": "JSidplay2",               "role": "Java-based SID player with HVSC integration" },
+    { "name": "DeliPlayer",              "role": "Multi-format retro audio player (Windows)" },
+    { "name": "SIDrip",                  "role": "SID extraction tool from C64 disk images" },
+    { "name": "SID2WAV",                 "role": "Command-line SID to WAV converter" },
+    { "name": "VICE",                    "role": "Full C64 emulator with SID playback" }
+  ],
+  "useCases": [
+    "Archiving and playback of Commodore 64 game and demo music",
+    "Chiptune composition targeting the SID chip",
+    "Retro music research and metadata extraction",
+    "C64 demoscene preservation via HVSC"
+  ],
+  "technicalDetails": "PSID/RSID container for Commodore 64 SID chip music (MOS 6581/8580). Contains 6502 machine code that plays back by driving the SID chip registers at interrupt rate (50Hz PAL / 60Hz NTSC). The SID chip provides 3 voices each with 4 waveforms (triangle, sawtooth, pulse, noise), ADSR envelope, ring modulation, and oscillator sync. RSID requires exact CIA/VIC timing emulation. libsidplayfp is the current reference emulation library.",
+  "completenessScore": 86
+}

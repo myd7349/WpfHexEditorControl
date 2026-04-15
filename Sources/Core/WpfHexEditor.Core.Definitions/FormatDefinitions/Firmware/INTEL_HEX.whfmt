@@ -1,0 +1,207 @@
+{
+  "diffMode": "text",
+  "formatName": "Intel HEX",
+  "version": "1.0",
+  "extensions": [".hex", ".ihx", ".h86"],
+  "description": "Intel HEX ASCII text format for binary firmware data. Each line is one record starting with ':'. Used for microcontroller firmware flashing (Arduino/AVR, PIC, ARM Cortex-M). RECTYP: 00=Data, 01=EOF, 02=Extended Segment, 04=Extended Linear Address.",
+  "category": "Firmware",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "Intel Hexadecimal Object File Format Specification — Revision A (January 6, 1988)",
+      "avrdude documentation — AVR firmware flashing",
+      "GNU binutils objcopy(1) manual — ihex output format"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/Intel_HEX",
+      "https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/an/an386.pdf",
+      "https://pypi.org/project/IntelHex/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "3A",
+        "offset": 0,
+        "label": "':' — Intel HEX record start character. Every record in an Intel HEX file begins with a colon ASCII 0x3A.",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 2.5, "max": 4.0 },
+    "validation": {
+      "minFileSize": 11
+    }
+  },
+  "variables": {
+    "ihexFirstColon": 0,
+    "ihexRecLen": "",
+    "ihexLoadOffset": "",
+    "ihexRecType": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Record Start Colon",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "':' (0x3A) — Intel HEX record start character. Every record begins with this ASCII colon character. The entire file consists of text records, each starting with ':' on its own line. Binary data is represented as uppercase hexadecimal ASCII characters.",
+      "storeAs": "ihexFirstColon",
+      "valueType": "uint8",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Record Length (RECLEN)",
+      "offset": 1,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "2-character ASCII hex byte count specifying how many data bytes are in this record. Maximum 255 (0xFF) bytes per record, but typical records contain 16 (0x10) or 32 (0x20) bytes. Determines the length of the DATA field that follows.",
+      "storeAs": "ihexRecLen",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Load Offset",
+      "offset": 3,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "4-character ASCII hex 16-bit address where the data bytes should be loaded. For Extended Linear Address (type 04) records, this is combined with the upper 16 bits to form a 32-bit address. For type 00 Data records, this is the target memory address.",
+      "storeAs": "ihexLoadOffset",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Record Type (RECTYP)",
+      "offset": 7,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "2-character ASCII hex record type code. 00=Data, 01=End Of File, 02=Extended Segment Address (adds 4-bit shifted upper 16-bit), 03=Start Segment Address (CS:IP), 04=Extended Linear Address (sets upper 16 bits of 32-bit address), 05=Start Linear Address (EIP/entry point).",
+      "storeAs": "ihexRecType",
+      "valueType": "ascii",
+      "endianness": "little",
+      "valueMap": {
+        "00": "Data record — firmware bytes at LOAD_OFFSET",
+        "01": "End Of File — marks end of Intel HEX file",
+        "02": "Extended Segment Address — upper 16-bit address bits (shifted left 4)",
+        "03": "Start Segment Address — CS:IP for 80x86 processors",
+        "04": "Extended Linear Address — upper 16 bits of 32-bit linear address",
+        "05": "Start Linear Address — 32-bit entry point (EIP)"
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "name": "First byte is colon",
+      "expression": "ihexFirstColon == 58",
+      "severity": "error",
+      "message": "First byte is not ':' (0x3A=58) — not a valid Intel HEX file"
+    },
+    {
+      "name": "First record type is data or extended",
+      "expression": "ihexRecType == '00' || ihexRecType == '04' || ihexRecType == '02'",
+      "severity": "warning",
+      "message": "First record type is unexpected — Intel HEX files typically start with Data (00) or Extended Linear Address (04) record"
+    },
+    {
+      "name": "Record length field is hex digits",
+      "expression": "ihexRecLen != ''",
+      "severity": "error",
+      "message": "RECLEN field is empty — malformed or truncated Intel HEX record"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "First Data Record",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "ihexRecType",
+    "primaryField": "ihexRecLen",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "First Record",
+        "icon": "\uE8B7",
+        "fields": ["ihexFirstColon", "ihexRecLen", "ihexLoadOffset", "ihexRecType"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Intel HEX Record (JSON)",
+      "format": "json",
+      "fields": ["ihexFirstColon", "ihexRecLen", "ihexLoadOffset", "ihexRecType"]
+    },
+    {
+      "name": "Intel HEX Record (text)",
+      "format": "text",
+      "fields": ["ihexRecLen", "ihexLoadOffset", "ihexRecType"]
+    }
+  ],
+  "forensic": {
+    "category": "firmware",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownExploitVectors": [
+      "Malicious Intel HEX files targeting vulnerable HEX parsers with malformed CHKSUM or RECLEN",
+      "Supply chain attack via modified .hex firmware files for microcontroller products"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Intel HEX is pure ASCII text. Record format: ':' + RECLEN(2) + LOAD_OFFSET(4) + RECTYP(2) + DATA(RECLEN*2) + CHKSUM(2). Checksum = two's complement of (RECLEN + OFFSET_HIGH + OFFSET_LOW + RECTYP + data bytes). EOF record is always ':00000001FF'. Extended Linear Address (04) sets upper 16 bits.",
+    "suggestedInspections": [
+      "Verify EOF record ':00000001FF' is present — absence indicates truncated or incomplete HEX file",
+      "Check for Extended Linear Address (04) records to determine if firmware exceeds 64KB addressing",
+      "Validate checksums on several records: sum all bytes + CHKSUM should equal 0x00 (mod 256)",
+      "Look for Start Linear Address (05) record to identify firmware entry point address",
+      "Convert to binary with objcopy or IntelHex Python library for further binary analysis"
+    ]
+  },
+  "software": ["avrdude", "objcopy (GNU binutils)", "srec_cat", "IntelHex (Python)", "OpenOCD", "MPLAB X IDE", "Arduino IDE"],
+  "formatRelationships": {
+    "category": "Firmware",
+    "extensions": [".hex", ".ihx", ".h86"],
+    "relatedFormats": ["SREC", "BINARY", "ELF", "UF2"]
+  },
+  "MimeTypes": ["text/plain", "application/x-intel-hex"],
+  "UseCases": [
+    "Arduino and AVR microcontroller firmware flashing via avrdude",
+    "PIC microcontroller programming (MPLAB X IDE produces .hex)",
+    "ARM Cortex-M firmware distribution (objcopy ELF to ihex)",
+    "EPROM/EEPROM programming with legacy hardware programmers"
+  ],
+  "TechnicalDetails": {
+    "RecordFormat": "':' + RECLEN(1B hex) + LOAD_OFFSET(2B hex) + RECTYP(1B hex) + DATA(N hex) + CHKSUM(1B hex)",
+    "ChecksumAlgorithm": "Two's complement: ~(sum of RECLEN, ADDR bytes, RECTYP, DATA) + 1, masked to 8 bits",
+    "EOFRecord": "':00000001FF' — mandatory terminator",
+    "MaxDataPerRecord": "255 bytes (typical: 16 or 32)",
+    "AddressExtension": "Type 04 (Extended Linear Address) extends to 32-bit address space",
+    "Conversion": "objcopy -I elf32-littlearm -O ihex firmware.elf firmware.hex"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 76,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

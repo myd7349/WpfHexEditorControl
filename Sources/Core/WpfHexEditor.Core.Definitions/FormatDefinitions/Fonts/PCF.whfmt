@@ -1,0 +1,122 @@
+{
+  "formatName": "Portable Compiled Format Font",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "X11 PCF (Portable Compiled Format) bitmap font — binary compiled form of BDF used at runtime by the X Window System server; table-based structure with per-table endianness flags for portability across architectures.",
+  "extensions": [ ".pcf", ".pcf.gz" ],
+  "category": "Fonts",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "01666370",
+      "offset": 0,
+      "label": "'\\x01fcp' — PCF font magic (0x01 'f' 'c' 'p')",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0, "size": 4, "name": "header",      "type": "uint32le", "description": "Magic: 0x01666370 ('\\x01fcp')", "storeAs": "pcfMagic" },
+      { "offset": 4, "size": 4, "name": "table_count", "type": "uint32le", "description": "Number of tables in the font file", "storeAs": "pcfTables" }
+    ],
+    "tableDirectory": {
+      "description": "table_count × 16-byte entries starting at offset 8",
+      "entryFields": [
+        { "size": 4, "name": "type",   "type": "uint32le", "description": "Table type bitmask (see valueMaps)" },
+        { "size": 4, "name": "format", "type": "uint32le", "description": "Format flags: byte/bit order, glyph pad, scan unit" },
+        { "size": 4, "name": "size",   "type": "uint32le", "description": "Table data size in bytes" },
+        { "size": 4, "name": "offset", "type": "uint32le", "description": "Byte offset to table data from start of file" }
+      ]
+    }
+  },
+  "inspector": {
+    "displayFields": [ "pcfMagic", "pcfTables" ],
+    "valueMaps": {
+      "tableType": {
+        "1":   "PCF_PROPERTIES — font property list",
+        "2":   "PCF_ACCELERATORS — rendering accelerator data",
+        "4":   "PCF_METRICS — per-glyph metrics (bounding boxes, advances)",
+        "8":   "PCF_BITMAPS — raw glyph bitmap data",
+        "16":  "PCF_INK_METRICS — ink metrics for anti-aliasing",
+        "32":  "PCF_BDF_ENCODINGS — encoding/glyph index mapping",
+        "64":  "PCF_SWIDTHS — scalable widths",
+        "128": "PCF_GLYPH_NAMES — glyph name strings",
+        "256": "PCF_BDF_ACCELERATORS — BDF-compatible accelerators"
+      },
+      "formatBits": {
+        "0": "Default byte/bit order",
+        "1": "Byte order: big-endian",
+        "4": "Bit order: MSB first",
+        "8": "Glyph pad: 2 bytes",
+        "16": "Glyph pad: 4 bytes",
+        "256": "Scan unit: 2 bytes",
+        "512": "Scan unit: 4 bytes"
+      }
+    },
+    "tooltips": {
+      "pcfMagic":  "Must be 0x01666370; the 0x01 byte followed by ASCII 'fcp'",
+      "pcfTables": "Typical PCF font has 8–9 tables covering properties, metrics, bitmaps, and encodings"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "pcfMagic",  "operator": "eq",  "value": 0x01666370, "description": "Magic must be 0x01666370 ('\\x01fcp')" },
+    { "id": "A2", "field": "pcfTables", "operator": "gte", "value": 1,          "description": "Must have at least 1 table" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "PCF Magic (\\x01fcp)",   "color": "#E74C3C" },
+      { "offset": 4, "label": "Table Count",            "color": "#F39C12" },
+      { "offset": 8, "label": "Table Directory Start",  "color": "#3498DB" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PCF Header Summary",
+      "fields": [ "pcfMagic", "pcfTables" ],
+      "format": "text"
+    },
+    {
+      "name": "PCF Table Directory JSON",
+      "fields": [ "pcfMagic", "pcfTables" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "PCF is the binary compiled version of BDF — use bdftopcf to compile and FontForge to re-export to BDF for source editing.",
+    "Each table's format field encodes independent byte/bit order — a single PCF file can be read on both big-endian and little-endian systems via per-table format inspection.",
+    "The PCF_BITMAPS table (type=8) contains all glyph pixel data packed according to the glyph pad and scan unit flags in the format field.",
+    "PCF_BDF_ENCODINGS (type=32) maps Unicode/Latin-1 code points to glyph indices; missing entries use the default/undefined glyph index.",
+    "PCF files are commonly gzip-compressed on disk (.pcf.gz); X11 decompresses them transparently — the compressed file is not a PCF until decompressed.",
+    "mkfontdir and mkfontscale generate fonts.dir and fonts.scale index files from PCF files in a directory for the X11 font server."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "PCF files contain only font glyph data; no executable content.",
+      "Extremely large PCF files with excessive table counts have caused memory exhaustion in some X11 font server versions.",
+      "PCF files found outside of /usr/share/fonts/ may indicate font injection attempts in multi-user systems."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "BDF", "relationship": "source-form", "note": "BDF is the human-readable source that gets compiled to PCF by bdftopcf." },
+    { "format": "PSF", "relationship": "related",     "note": "PSF is a simpler single-table Linux console bitmap font format." }
+  ],
+  "software": [
+    { "name": "bdftopcf",    "role": "Primary BDF to PCF compiler" },
+    { "name": "mkfontdir",   "role": "Generates X11 font directory index files" },
+    { "name": "xftcache",    "role": "Xft font cache builder" },
+    { "name": "fontconfig",  "role": "Font configuration and PCF indexing" },
+    { "name": "xfontsel",    "role": "X11 PCF font browser and selector" }
+  ],
+  "useCases": [
+    "X11 bitmap font deployment and runtime loading",
+    "Terminal emulator font rendering",
+    "Legacy Unix system font distribution",
+    "Bitmap font archiving and conversion"
+  ],
+  "technicalDetails": "PCF (Portable Compiled Format) generated by bdftopcf. Table-based binary structure with 9 standard table types. Each table has an independent format field encoding byte order, bit order, glyph padding, and scan unit — enabling cross-architecture portability. Glyph bitmap data is row-padded to 1, 2, or 4 bytes. The encoding table maps platform code points to glyph indices. Typically found as .pcf.gz (gzip compressed) in /usr/share/fonts/X11/ on Linux/Unix systems.",
+  "completenessScore": 80
+}

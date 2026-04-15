@@ -1,0 +1,243 @@
+{
+  "diffMode": "binary",
+  "formatName": "StuffIt Archive",
+  "version": "1.0",
+  "extensions": [".sit", ".sitx", ".hqx"],
+  "description": "Macintosh StuffIt archive format popular in the 1990s-2000s for Mac software distribution. Classic format uses 'StuffIt ' magic. StuffIt 5.x uses 'STE ' magic. Stores Mac resource forks, HFS metadata, and compressed file data.",
+  "category": "Archives",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "StuffIt archive format — reverse-engineered by The Unarchiver project",
+      "unar/lsar (The Unarchiver) source code — DAK/Dag Ågren",
+      "StuffIt Engine SDK documentation (Aladdin/Allume/Smith Micro)"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/StuffIt",
+      "https://theunarchiver.com/",
+      "https://macintoshgarden.org/technical-resources/stuffit-documentation"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5374756666497420",
+        "offset": 0,
+        "label": "'StuffIt ' — StuffIt classic archive magic (8 bytes, versions 1-5)",
+        "weight": 0.8
+      },
+      {
+        "value": "53544520",
+        "offset": 0,
+        "label": "'STE ' — StuffIt Engine 5.x magic (alternative magic for newer classic format)",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 26
+    }
+  },
+  "variables": {
+    "sitMagic": "",
+    "sitFileCount": 0,
+    "sitArchiveSize": 0,
+    "sitCreator": "",
+    "sitVersion": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "StuffIt Magic",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "'StuffIt ' — 8-byte magic for classic StuffIt archives (versions 1-5). Trailing space is significant. Alternative STE magic ('STE ') appears in some StuffIt 5.x archives using the newer StuffIt Engine. Both are supported by The Unarchiver (unar).",
+      "storeAs": "sitMagic",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Files",
+      "offset": 8,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "Count of top-level entries (files and folders) stored in the archive as big-endian uint16. This is the number of first-level items visible at the root of the archive, not the total recursive count of all contained files.",
+      "storeAs": "sitFileCount",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Archive Size",
+      "offset": 10,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Total archive size in bytes as big-endian uint32. Should match the actual file size. A mismatch between this field and the actual file size on disk suggests truncation or corruption of the archive.",
+      "storeAs": "sitArchiveSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Creator Signature",
+      "offset": 14,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "'rLau' — 4-byte Macintosh creator code for StuffIt archives. 'rLau' = Raymond Lau, the original author of StuffIt. This Mac OS 4-character code ('OSType') is used by HFS to associate the file with the StuffIt application.",
+      "storeAs": "sitCreator",
+      "valueType": "ascii",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "StuffIt Version",
+      "offset": 18,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "StuffIt format version byte. Values 1-5 are supported by classic StuffIt and The Unarchiver. Version 5 added AES encryption support. Version 6+ uses a different format not identified by this magic.",
+      "storeAs": "sitVersion",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "1": "StuffIt 1.x — RLE and LZW only",
+        "2": "StuffIt 2.x — Huffman added",
+        "3": "StuffIt 3.x — improved Huffman",
+        "4": "StuffIt 4.x — Brimstone compression",
+        "5": "StuffIt 5.x — AES encryption support added"
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "name": "StuffIt magic present",
+      "expression": "sitMagic == 'StuffIt '",
+      "severity": "error",
+      "message": "StuffIt magic 'StuffIt ' not found at offset 0 — file is not a valid classic StuffIt archive"
+    },
+    {
+      "name": "File count is positive",
+      "expression": "sitFileCount > 0",
+      "severity": "warning",
+      "message": "StuffIt archive contains zero files — empty or corrupted archive"
+    },
+    {
+      "name": "Version within classic range",
+      "expression": "sitVersion >= 1 && sitVersion <= 5",
+      "severity": "warning",
+      "message": "StuffIt version byte is outside the classic 1-5 range — may be a non-standard or corrupted archive"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Archive Header",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "First Entry Header",
+        "offset": 26,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "sitVersion",
+    "primaryField": "sitFileCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Archive Header",
+        "icon": "\uE8B7",
+        "fields": ["sitMagic", "sitVersion", "sitCreator"]
+      },
+      {
+        "title": "Archive Content",
+        "icon": "\uE9D9",
+        "fields": ["sitFileCount", "sitArchiveSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SIT Header (JSON)",
+      "format": "json",
+      "fields": ["sitMagic", "sitFileCount", "sitArchiveSize", "sitCreator", "sitVersion"]
+    },
+    {
+      "name": "SIT Header (text)",
+      "format": "text",
+      "fields": ["sitMagic", "sitVersion", "sitFileCount", "sitArchiveSize"]
+    }
+  ],
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "AES-encrypted archive",
+        "condition": "sitVersion == 5",
+        "severity": "info",
+        "description": "StuffIt 5.x archives may use AES encryption — content analysis requires password. Frequently used for protected Mac shareware distribution."
+      }
+    ],
+    "knownExploitVectors": [
+      "StuffIt Engine vulnerabilities in legacy Mac OS X versions (historical, patched)",
+      "Resource fork data may contain executable code (Mac OS 9 and earlier)"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Classic Mac archive format from 1990s-2000s. Resource forks stored separately in archive. Entry headers follow at offset 26 (after reserved bytes). Common on vintage Mac software archives (Macintosh Garden, Macintosh Repository). The Unarchiver (unar) is the best modern extractor.",
+    "suggestedInspections": [
+      "Check sitVersion to determine compression algorithms available (v5 supports AES)",
+      "Verify sitArchiveSize matches actual file size to detect truncation or corruption",
+      "Inspect entry headers at offset 26 for resource fork presence (Mac OS 9 heritage)",
+      "For .hqx files: BinHex-encoded StuffIt — decode BinHex layer first before parsing SIT structure",
+      "Use unar (The Unarchiver) for extraction — StuffIt Expander only runs on legacy Mac OS"
+    ]
+  },
+  "software": ["StuffIt Expander", "The Unarchiver (macOS)", "unar", "7-Zip (partial)"],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".sit", ".sitx", ".hqx"],
+    "relatedFormats": ["BINHEX", "MACBINARY", "ZIP", "SITX"]
+  },
+  "MimeTypes": ["application/x-stuffit", "application/x-sit"],
+  "UseCases": [
+    "Vintage Mac software distribution (1990s-2000s shareware)",
+    "Macintosh game and application archives (Macintosh Garden)",
+    "Legacy Mac backup containing resource forks and HFS metadata",
+    "BinHex-encoded StuffIt attachments from classic email/Usenet"
+  ],
+  "TechnicalDetails": {
+    "Magic": "'StuffIt ' (8B) at offset 0 for versions 1-5",
+    "CreatorCode": "'rLau' = Raymond Lau, original StuffIt author",
+    "CompressionMethods": "RLE, LZW, Huffman, Brimstone, AES (v5)",
+    "ResourceForkSupport": true,
+    "EntryHeaderOffset": "26 bytes (after 26-byte archive header)",
+    "ModernReplacement": "StuffIt X (.sitx) uses completely different format"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 76,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 5,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

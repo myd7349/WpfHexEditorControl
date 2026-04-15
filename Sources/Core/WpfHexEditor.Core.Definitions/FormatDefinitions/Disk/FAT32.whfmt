@@ -1,0 +1,390 @@
+{
+  "diffMode": "binary",
+  "formatName": "FAT32 Filesystem",
+  "version": "1.0",
+  "extensions": [".img", ".fat", ".vhd"],
+  "description": "FAT32 filesystem boot sector (512 bytes). Identified by 0x55AA signature at offset 510 and 'FAT32   ' string at offset 82. Key differentiator from FAT12/16: root_entry_count=0, fat_size_16=0, fat_size_32 field used. Max volume 2TB (512B sectors).",
+  "category": "Disk",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": [
+    "Microsoft FAT32 File System Specification v1.03",
+    "ECMA-107: Volume and File Structure of Disk Cartridges",
+    "Microsoft KB article 184006 — FAT32 description"
+  ],
+  "WebLinks": [
+    "https://docs.microsoft.com/en-us/windows/win32/fileio/fat-technical-reference",
+    "https://en.wikipedia.org/wiki/File_Allocation_Table",
+    "https://www.pjrc.com/tech/8051/ide/fat32.html"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "55AA",
+        "offset": 510,
+        "label": "Boot sector signature 0x55AA at offset 510 (standard MBR/VBR marker)",
+        "weight": 0.6
+      },
+      {
+        "value": "4641543332202020",
+        "offset": 82,
+        "label": "'FAT32   ' — FAT32 filesystem type string at offset 82 in boot sector (8 bytes, space-padded)",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.6,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 0.5, "max": 7.0 },
+    "validation": {
+      "minFileSize": 512,
+      "maxSignatureOffset": 512
+    }
+  },
+  "variables": {
+    "fat32OemName": "",
+    "fat32BytesPerSector": 0,
+    "fat32SectorsPerCluster": 0,
+    "fat32ReservedSectors": 0,
+    "fat32NumFats": 0,
+    "fat32RootEntryCount": 0,
+    "fat32MediaType": 0,
+    "fat32TotalSectors32": 0,
+    "fat32FatSize32": 0,
+    "fat32RootCluster": 0,
+    "fat32VolumeLabel": "",
+    "fat32FsType": "",
+    "fat32BootSig": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Jump Boot",
+      "offset": 0,
+      "length": 3,
+      "color": "#808080",
+      "opacity": 0.2,
+      "description": "x86 JMP instruction bytes that jump over the BPB to the bootstrap code at offset 90+. Typical values: 0xEB 0x58 0x90 (short jump) or 0xE9 xx xx (near jump). Not validated by FAT drivers but required by BIOS for bootable volumes.",
+      "valueType": "hex",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "OEM Name",
+      "offset": 3,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "8-byte ASCII OEM name string identifying the OS that formatted the volume. Common values: 'MSDOS5.0' (Windows format), 'mkfs.fat' (Linux), 'MSWIN4.1', 'FreeDOS'. This is informational only and not validated by FAT drivers.",
+      "storeAs": "fat32OemName",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Bytes Per Sector",
+      "offset": 11,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Logical sector size in bytes as uint16 LE. Valid values: 512, 1024, 2048, 4096. Must be a power of 2. The vast majority of FAT32 volumes use 512 bytes. Larger values are used on certain removable media and advanced format drives.",
+      "storeAs": "fat32BytesPerSector",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Sectors Per Cluster",
+      "offset": 13,
+      "length": 1,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Number of sectors per allocation cluster. Must be a power of 2 from 1 to 128. Combined with bytes_per_sector gives cluster size. FAT32 cluster sizes: 4KB (small volumes), 8KB, 16KB, 32KB (large volumes > 32GB). Larger clusters reduce FAT overhead but waste space on small files.",
+      "storeAs": "fat32SectorsPerCluster",
+      "valueType": "uint8",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Reserved Sector Count",
+      "offset": 14,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Number of reserved sectors at the start of the volume (before the first FAT). For FAT32 this is typically 32 (0x0020), which accommodates the boot sector plus FSInfo sector and backup boot sector. For FAT12/16 it is typically 1.",
+      "storeAs": "fat32ReservedSectors",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of FATs",
+      "offset": 16,
+      "length": 1,
+      "color": "#FF8C94",
+      "opacity": 0.3,
+      "description": "Number of File Allocation Tables on the volume. Standard value is 2 — FAT1 (primary) and FAT2 (backup/mirror). Using 2 FATs provides redundancy: if FAT1 becomes corrupted, FAT2 can be used for recovery. Value 1 is technically valid but non-standard.",
+      "storeAs": "fat32NumFats",
+      "valueType": "uint8",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Root Entry Count",
+      "offset": 17,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Maximum number of root directory entries. MUST be 0 for FAT32 — this is the primary distinguishing field. FAT12 uses 224, FAT16 uses 512. A non-zero value here indicates FAT12 or FAT16, not FAT32. Root directory is stored in the data area for FAT32.",
+      "storeAs": "fat32RootEntryCount",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Media Type",
+      "offset": 21,
+      "length": 1,
+      "color": "#B5EAD7",
+      "opacity": 0.3,
+      "description": "Media type byte identifying the physical media. 0xF8 = fixed disk (non-removable), 0xF0 = removable media (floppy/USB). Must also match the first byte of both FAT copies. Legacy field from early FAT days; modern systems ignore it.",
+      "storeAs": "fat32MediaType",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "248": "0xF8 — Fixed disk (non-removable hard drive or partition)",
+        "240": "0xF0 — Removable media (USB flash drive, floppy, SD card)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Total Sectors (32-bit)",
+      "offset": 32,
+      "length": 4,
+      "color": "#F8B500",
+      "opacity": 0.3,
+      "description": "Total number of sectors in the volume as uint32 LE. For FAT32 the 16-bit field at offset 19 is 0, and this 32-bit field is used instead. Multiply by bytes_per_sector to get the total volume capacity in bytes. A USB drive formatted as FAT32 will use this field.",
+      "storeAs": "fat32TotalSectors32",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FAT Size (32-bit sectors)",
+      "offset": 36,
+      "length": 4,
+      "color": "#C5A3FF",
+      "opacity": 0.3,
+      "description": "Size of each FAT in sectors as uint32 LE. FAT32-specific field (offset 22 fat_size_16 must be 0 for FAT32). Each FAT entry is 4 bytes, so FAT size = ceil(cluster_count * 4 / bytes_per_sector). Both FAT copies have this same size.",
+      "storeAs": "fat32FatSize32",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Root Cluster",
+      "offset": 44,
+      "length": 4,
+      "color": "#A8D8EA",
+      "opacity": 0.3,
+      "description": "Cluster number of the first cluster of the root directory as uint32 LE. Typically 2 (the first valid data cluster). The root directory can be relocated by defragmentation tools. Following the chain from this cluster in the FAT gives all root directory entries.",
+      "storeAs": "fat32RootCluster",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Volume Label",
+      "offset": 71,
+      "length": 11,
+      "color": "#FFD3B6",
+      "opacity": 0.3,
+      "description": "11-byte volume label string, space-padded to 11 characters. Default value 'NO NAME    ' when no label is set during format. Windows allows labels up to 11 characters. This is a legacy field; the authoritative label is stored as a directory entry in the root directory.",
+      "storeAs": "fat32VolumeLabel",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Filesystem Type String",
+      "offset": 82,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "'FAT32   ' — 8-byte filesystem type string, space-padded. Informational only per Microsoft spec (drivers must not use this to identify FAT type). However, this string is the most reliable secondary indicator for FAT32 detection after the root_entry_count==0 test.",
+      "storeAs": "fat32FsType",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Boot Sector Signature",
+      "offset": 510,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.5,
+      "description": "Boot sector end signature 0x55 0xAA at offset 510-511. Required by BIOS to mark a bootable sector. For non-bootable FAT32 volumes formatted by modern tools this is still required to be present. Big-endian display reads as 0xAA55.",
+      "storeAs": "fat32BootSig",
+      "valueType": "uint16",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Boot sector signature valid",
+      "expression": "fat32BootSig == 0xAA55",
+      "severity": "error",
+      "message": "Boot sector signature 0x55AA not found at offset 510 — not a valid FAT boot sector"
+    },
+    {
+      "name": "Root entry count is zero (FAT32)",
+      "expression": "fat32RootEntryCount == 0",
+      "severity": "error",
+      "message": "root_entry_count != 0 — this is FAT12 or FAT16, not FAT32. FAT32 always stores root directory in the data area."
+    },
+    {
+      "name": "Number of FATs is 1 or 2",
+      "expression": "fat32NumFats == 1 || fat32NumFats == 2",
+      "severity": "warning",
+      "message": "Number of FATs should be 1 or 2. Standard FAT32 volumes use 2 FATs for redundancy."
+    },
+    {
+      "name": "Bytes per sector is valid power of 2",
+      "expression": "fat32BytesPerSector == 512 || fat32BytesPerSector == 1024 || fat32BytesPerSector == 2048 || fat32BytesPerSector == 4096",
+      "severity": "error",
+      "message": "Bytes per sector is not a valid value (must be 512, 1024, 2048, or 4096)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "BPB Start",
+        "offset": 11,
+        "icon": "\uE8B7",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "FAT32 Extended BPB",
+        "offset": 36,
+        "icon": "\uE8A5",
+        "color": "#95E1D3"
+      },
+      {
+        "name": "Volume Label",
+        "offset": 71,
+        "icon": "\uE8F4",
+        "color": "#FFD3B6"
+      },
+      {
+        "name": "Boot Signature",
+        "offset": 510,
+        "icon": "\uE9D9",
+        "color": "#FF6B6B"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "fat32FsType",
+    "primaryField": "fat32VolumeLabel",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "BIOS Parameter Block",
+        "icon": "\uE8B7",
+        "fields": ["fat32OemName", "fat32BytesPerSector", "fat32SectorsPerCluster", "fat32ReservedSectors", "fat32NumFats"]
+      },
+      {
+        "title": "FAT32 Extended BPB",
+        "icon": "\uE8A5",
+        "fields": ["fat32FatSize32", "fat32RootCluster", "fat32TotalSectors32"]
+      },
+      {
+        "title": "Volume Identity",
+        "icon": "\uE9D9",
+        "fields": ["fat32VolumeLabel", "fat32FsType", "fat32MediaType"]
+      },
+      {
+        "title": "Validation",
+        "icon": "\uE8F4",
+        "fields": ["fat32RootEntryCount", "fat32BootSig"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "FAT32 BPB (JSON)",
+      "format": "json",
+      "fields": ["fat32OemName", "fat32BytesPerSector", "fat32SectorsPerCluster", "fat32NumFats", "fat32RootEntryCount", "fat32MediaType", "fat32TotalSectors32", "fat32FatSize32", "fat32RootCluster", "fat32VolumeLabel", "fat32FsType"]
+    },
+    {
+      "name": "FAT32 Summary (text)",
+      "format": "text",
+      "fields": ["fat32VolumeLabel", "fat32FsType", "fat32TotalSectors32", "fat32BytesPerSector", "fat32SectorsPerCluster", "fat32NumFats"]
+    }
+  ],
+  "forensic": {
+    "category": "disk",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Non-standard OEM name",
+        "condition": "fat32OemName != 'MSDOS5.0' && fat32OemName != 'mkfs.fat' && fat32OemName != 'MSWIN4.1'",
+        "severity": "info",
+        "description": "Unusual OEM name may indicate non-standard formatting tool, virtual filesystem creation, or forensic image artifact."
+      },
+      {
+        "name": "Deleted file remnants likely present",
+        "condition": "true",
+        "severity": "info",
+        "description": "FAT32 volumes are well-known for retaining deleted file content until clusters are reused. PhotoRec and TestDisk can recover significant data."
+      }
+    ],
+    "knownExploitVectors": [
+      "Deleted file recovery via FAT cluster chain analysis (forensic carving)",
+      "Boot sector infection by boot-sector viruses (historical but still found in legacy images)",
+      "Long filename (LFN) VFAT entries can obscure true 8.3 filename",
+      "Slack space at end of final cluster may contain remnants of previous file content"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "FAT32 boot sector is 512 bytes. The BIOS Parameter Block (BPB) at offsets 11-35 describes the volume geometry. Extended BPB for FAT32 starts at offset 36. FAT1 starts at sector reserved_sector_count. Data area starts at reserved_sector_count + num_fats * fat_size_32 sectors. Cluster 2 = root directory.",
+    "suggestedInspections": [
+      "Verify root_entry_count==0 to confirm FAT32 vs FAT12/16 — the most reliable discriminator",
+      "Calculate volume size: total_sectors_32 * bytes_per_sector to verify matches container file size",
+      "Check FSInfo sector at fs_info field (typically sector 1, offset 512) for free cluster count",
+      "Scan FAT table starting at sector reserved_sector_count for cluster chain integrity",
+      "Use PhotoRec/TestDisk on suspicious images to recover deleted files from free clusters"
+    ]
+  },
+  "software": ["mkfs.fat", "dosfsck", "fatcat", "DiskGenius", "TestDisk", "PhotoRec"],
+  "formatRelationships": {
+    "category": "Disk",
+    "extensions": [".img", ".fat", ".vhd"],
+    "relatedFormats": ["FAT12", "FAT16", "EXFAT", "NTFS", "MBR"]
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "USB flash drive and SD card filesystem (< 32GB)",
+    "FAT32 partition within disk images (VHD, VMDK, raw .img)",
+    "Boot partitions for UEFI (EFI System Partition must be FAT32)",
+    "Embedded system firmware storage and OTA update partitions"
+  ],
+  "TechnicalDetails": {
+    "BootSectorSize": "512 bytes",
+    "FAT32Key": "root_entry_count=0, fat_size_16=0, total_sectors_16=0, fat_size_32 field used",
+    "MaxVolume": "2TB with 512-byte sectors, 16TB with 4KB sectors",
+    "MaxFileSize": "4GB - 1 byte (32-bit file size limit)",
+    "ClusterRange": "Clusters 2 through 0x0FFFFFEF (data area); 0x0FFFFFF8-0x0FFFFFFF = EOF markers",
+    "FSInfoSector": "Usually sector 1 (offset 512): signature 0x41615252 + 0x61417272 + free cluster count"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 13,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

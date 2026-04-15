@@ -1,0 +1,113 @@
+{
+  "formatName": "Windows Cursor",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "Windows Cursor resource format (.cur) — identical structure to ICO but with type field = 2 and hotspot coordinates replacing the planes/bit-count fields; stores single or multi-resolution cursor images.",
+  "extensions": [ ".cur" ],
+  "category": "Images",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "00000200",
+      "offset": 0,
+      "label": "Windows CUR header: reserved=0x0000, type=0x0002 (cursor) — 4 bytes LE",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0, "size": 2, "name": "reserved", "type": "uint16le", "description": "Must be 0" },
+      { "offset": 2, "size": 2, "name": "type",     "type": "uint16le", "description": "Resource type: 2 = cursor (ICO uses 1)", "storeAs": "curType" },
+      { "offset": 4, "size": 2, "name": "count",    "type": "uint16le", "description": "Number of cursor images in this file",  "storeAs": "curCount" }
+    ],
+    "directoryEntries": {
+      "description": "count × 16-byte CURDIR entries starting at offset 6",
+      "entryFields": [
+        { "size": 1, "name": "width",          "type": "uint8",    "description": "Image width in pixels (0 = 256)" },
+        { "size": 1, "name": "height",         "type": "uint8",    "description": "Image height in pixels (0 = 256)" },
+        { "size": 1, "name": "color_count",    "type": "uint8",    "description": "Number of colors (0 = more than 256 or true-color)" },
+        { "size": 1, "name": "reserved",       "type": "uint8",    "description": "Reserved, must be 0" },
+        { "size": 2, "name": "hotspot_x",      "type": "uint16le", "description": "Hotspot X coordinate (cursor click point)" },
+        { "size": 2, "name": "hotspot_y",      "type": "uint16le", "description": "Hotspot Y coordinate (cursor click point)" },
+        { "size": 4, "name": "size_in_bytes",  "type": "uint32le", "description": "Image data size in bytes" },
+        { "size": 4, "name": "image_offset",   "type": "uint32le", "description": "Offset to image data from start of file" }
+      ]
+    },
+    "imageData": "Each image: DIB (BITMAPINFOHEADER + XOR mask + AND mask) for legacy cursors, or PNG data for Vista+ compressed cursors"
+  },
+  "inspector": {
+    "displayFields": [ "reserved", "curType", "curCount" ],
+    "valueMaps": {
+      "curType": {
+        "1": "ICO — icon file",
+        "2": "CUR — cursor file"
+      }
+    },
+    "tooltips": {
+      "curType":  "Must be 2 for .cur files; value 1 indicates an .ico icon file",
+      "curCount": "Cursor files may contain multiple resolutions: 32×32, 48×48, 128×128 etc.",
+      "reserved": "Always zero; non-zero value indicates a corrupt or non-standard file"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "curType",  "operator": "eq",  "value": 2, "description": "Type must be 2 (cursor)" },
+    { "id": "A2", "field": "reserved", "operator": "eq",  "value": 0, "description": "Reserved field must be 0" },
+    { "id": "A3", "field": "curCount", "operator": "gte", "value": 1, "description": "Must contain at least 1 cursor image" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "Header (reserved/type)",   "color": "#E74C3C" },
+      { "offset": 4, "label": "Image Count",              "color": "#F39C12" },
+      { "offset": 6, "label": "Directory Entry [0]",      "color": "#3498DB" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "CUR Header Summary",
+      "fields": [ "curType", "curCount" ],
+      "format": "text"
+    },
+    {
+      "name": "CUR Directory JSON",
+      "fields": [ "curType", "curCount" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "CUR and ICO are structurally identical except for the type field at offset 2: ICO=1, CUR=2; extension is not a reliable differentiator.",
+    "In CUR directory entries, the planes/bit_count fields found in ICO are replaced by hotspot_x/hotspot_y (the cursor click registration point).",
+    "Hotspot values (0,0) place the click point at the top-left corner; arrow cursors typically have (0,0), while crosshairs have (width/2, height/2).",
+    "Windows Vista+ allows PNG-compressed images inside CUR entries for high-DPI (128×128, 256×256) cursors; detect by checking for PNG magic at the image_offset.",
+    "Multi-resolution CUR files (count>1) allow Windows to select the best size for the display DPI; always include at least 32×32 for compatibility.",
+    "ANI (.ani) files are animated cursors stored as RIFF chunks containing multiple CUR frame data; static .cur files do not have animation."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "CUR files contain only image data; no executable content.",
+      "Malicious cursor files have been used in browser exploits via CSS cursor: url() declarations — ensure browser cursor parsers are patched.",
+      "The CUR format dates to Windows 3.0; the structure has not changed since."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "ICO", "relationship": "sibling",     "note": "ICO is identical to CUR with type=1; no hotspot fields." },
+    { "format": "ANI", "relationship": "superset",    "note": "ANI (animated cursor) is a RIFF container embedding multiple CUR frames with timing." }
+  ],
+  "software": [
+    { "name": "Visual Studio",          "role": "Built-in cursor resource editor" },
+    { "name": "Greenfish Icon Editor",  "role": "Free ICO/CUR editor with alpha support" },
+    { "name": "AniTuner",               "role": "ANI/CUR animated cursor editor" },
+    { "name": "IcoFX",                  "role": "Professional ICO/CUR editor" }
+  ],
+  "useCases": [
+    "Custom Windows application cursor design",
+    "Mouse pointer themes and cursor packs",
+    "Accessibility tool cursors (large, high-contrast)",
+    "Game custom cursors replacing system defaults"
+  ],
+  "technicalDetails": "Windows Cursor format, identical to ICO (ICONDIR structure) but with type=2. The cursor directory entries swap the ICO 'planes' and 'bit_count' fields for 'hotspot_x' and 'hotspot_y'. Hotspot = the pixel that registers as the pointer position. Image data can be DIB (legacy) with XOR+AND bitmask layers for transparency, or PNG (Vista+) for high-DPI antialiased cursors. Windows selects the closest-matching size image from multi-image CUR files based on display DPI.",
+  "completenessScore": 80
+}

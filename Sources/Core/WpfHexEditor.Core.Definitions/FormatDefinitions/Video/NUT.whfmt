@@ -1,0 +1,93 @@
+{
+  "formatName": "NUT Multimedia Container",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "NUT open multimedia container format (.nut) — designed by the FFmpeg and MPlayer communities as a simple, extensible alternative to AVI/MKV with CRC-32 error detection and variable-length integer encoding.",
+  "extensions": [ ".nut" ],
+  "category": "Video",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "F6E2F4AD",
+      "offset": 0,
+      "label": "NUT file header magic — first 4 bytes of the 8-byte NUT container identifier",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0, "size": 8, "name": "file_magic", "type": "bytes", "description": "8-byte NUT file magic: 0xF6E2F4ADEC3B2B00", "storeAs": "nutMagic" }
+    ],
+    "notes": "NUT uses variable-length integer (vint) encoding similar to EBML. After the 8-byte file magic, the first packet is a main header containing stream count, time base list, and chapter info. Each packet has: 8-byte startcode + forward_ptr(vint) + checksum(CRC-32 4B) + data.",
+    "packetStartcodes": [
+      { "code": "0x7A561F5F4551B0F4", "name": "main_header",    "description": "Main file header with global stream metadata" },
+      { "code": "0x11405BF2F9DBD794", "name": "stream_header",  "description": "Per-stream header (codec, time base, sample rate)" },
+      { "code": "0xE4ADEECA4569F4D0", "name": "syncpoint",      "description": "Synchronisation point for seeking" },
+      { "code": "0xDD672F23E64EDEA4", "name": "index",          "description": "Optional seekable index packet" },
+      { "code": "0xAB68B596BA7786CB", "name": "info",           "description": "Optional metadata info packet (title, artist, etc.)" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "nutMagic" ],
+    "tooltips": {
+      "nutMagic": "8-byte magic: F6 E2 F4 AD EC 3B 2B 00 — unique to NUT container format"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "nutMagic", "operator": "startsWith", "value": "F6E2F4AD", "description": "First 4 bytes must match NUT magic 0xF6E2F4AD" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "NUT File Magic (8B)",      "color": "#E74C3C" },
+      { "offset": 8, "label": "Main Header Packet Start", "color": "#3498DB" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "NUT Header Summary",
+      "fields": [ "nutMagic" ],
+      "format": "text"
+    },
+    {
+      "name": "NUT Metadata JSON",
+      "fields": [ "nutMagic" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "NUT's 8-byte magic (0xF6E2F4ADEC3B2B00) was chosen to be highly unique and not occur in common binary files — false positives are extremely rare.",
+    "NUT uses variable-length integers (vint) extensively: values ≤ 126 encode in 1 byte; larger values use a prefix byte to indicate the total byte count.",
+    "Every NUT packet includes a CRC-32 checksum covering the packet header — corruption detection is built into the format at the packet level.",
+    "The forward_ptr vint in each packet header allows players to skip unknown packets without understanding their content, enabling forward compatibility.",
+    "NUT was never widely adopted; ffmpeg and mplayer support it but most consumer tools do not — MKV and MP4 dominate the container space.",
+    "Seek points are optional (index packet); without an index, players must linearly scan to find syncpoints for non-sequential access."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "NUT files contain compressed audio/video streams wrapped in CRC-validated packets; no executable content.",
+      "Rarely encountered outside of FFmpeg-based tools and academic codec testing.",
+      "CRC-32 checksums allow reliable detection of file corruption or tampering."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "MKV",  "relationship": "alternative", "note": "MKV (Matroska) is the dominant open container; NUT was designed as a simpler alternative." },
+    { "format": "AVI",  "relationship": "alternative", "note": "NUT was partly designed to address AVI limitations (no vfr, 4GB limit, etc.)." }
+  ],
+  "software": [
+    { "name": "ffmpeg",   "role": "Primary NUT mux/demux implementation" },
+    { "name": "mplayer",  "role": "NUT playback support" },
+    { "name": "VLC",      "role": "NUT support via libavformat (ffmpeg)" }
+  ],
+  "useCases": [
+    "Codec research and FFmpeg pipeline testing",
+    "Open container format for lossless or intermediate video",
+    "Academic multimedia format comparison studies",
+    "FFmpeg internal test vector storage"
+  ],
+  "technicalDetails": "NUT multimedia container designed by the FFmpeg and MPlayer developers. Uses variable-length integer (vint) encoding and 8-byte startcodes for each packet type. CRC-32 checksums on all headers provide integrity verification. Supports arbitrary codecs via FourCC and any time base as rational numbers. The format specification is public. Despite technical merits (simplicity, CRC, extensibility) NUT was not widely adopted; Matroska (MKV) became the standard open container.",
+  "completenessScore": 75
+}

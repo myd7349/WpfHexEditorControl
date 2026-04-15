@@ -1,0 +1,202 @@
+{
+  "diffMode": "text",
+  "formatName": "Motorola S-Record",
+  "version": "1.0",
+  "extensions": [".s19", ".s28", ".s37", ".mot", ".srec"],
+  "description": "Motorola S-Record ASCII firmware format. S0=header, S1/S2/S3=data (16/24/32-bit address), S7/S8/S9=start address/end. Used for Motorola/Freescale/NXP embedded firmware: HCS08, HC12, ColdFire, Kinetis, M68K. objcopy and srec_cat convert between formats.",
+  "category": "Firmware",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "Motorola S-Record Format Reference — Freescale Application Note AN1539",
+      "objcopy(1) manual page — GNU binutils S-record support",
+      "srec_cat documentation — Scott Finneran"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/SREC_(file_format)",
+      "http://srecord.sourceforge.net/man/man1/srec_cat.1.html",
+      "https://www.freescale.com/files/32bit/doc/app_note/AN1539.pdf"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5330",
+        "offset": 0,
+        "label": "'S0' — Motorola S-Record header record (file description / module name)",
+        "weight": 0.9
+      },
+      {
+        "value": "5331",
+        "offset": 0,
+        "label": "'S1' — S-Record data with 16-bit address (no header record present)",
+        "weight": 0.6
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.6,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.5, "max": 4.0 },
+    "validation": {
+      "minFileSize": 10
+    }
+  },
+  "variables": {
+    "srecType": "",
+    "srecByteCount": "",
+    "srecAddressStart": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Record Type",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "S-Record type field: 'S' followed by a single digit. S0=Header (module name/description), S1=Data 16-bit addr, S2=Data 24-bit addr, S3=Data 32-bit addr, S5=Record count, S7=Start address for S3 (32-bit), S8=Start for S2 (24-bit), S9=Start for S1 (16-bit). S1/S9 pair = S19 format.",
+      "storeAs": "srecType",
+      "valueType": "ascii",
+      "endianness": "little",
+      "valueMap": {
+        "S0": "Header record — module name or description string",
+        "S1": "Data record — 16-bit address (S19 / .s19 format)",
+        "S2": "Data record — 24-bit address (S28 / .s28 format)",
+        "S3": "Data record — 32-bit address (S37 / .s37 format)",
+        "S5": "Record count — optional count of S1/S2/S3 records",
+        "S7": "Start address — 32-bit entry point (terminates S3 stream)",
+        "S8": "Start address — 24-bit entry point (terminates S2 stream)",
+        "S9": "Start address — 16-bit entry point (terminates S1 stream)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Byte Count",
+      "offset": 2,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "2-character ASCII hex byte count. Includes address bytes + data bytes + checksum byte in the count. For S0 header record with module name: BYTECOUNT = 2 (address) + len(name) + 1 (checksum). Maximum 255 total bytes including address and checksum.",
+      "storeAs": "srecByteCount",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Address Start",
+      "offset": 4,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "First 4 characters of the address field in ASCII hex. For S1: full 4-char 16-bit address. For S2: 6-char 24-bit address. For S3: 8-char 32-bit address. For S0 header records this is typically '0000'. The address specifies target memory location for data records.",
+      "storeAs": "srecAddressStart",
+      "valueType": "ascii",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Record starts with S",
+      "expression": "srecType[0] == 'S'",
+      "severity": "error",
+      "message": "First character is not 'S' — not a valid Motorola S-Record file"
+    },
+    {
+      "name": "Record type digit is valid",
+      "expression": "srecType == 'S0' || srecType == 'S1' || srecType == 'S2' || srecType == 'S3' || srecType == 'S5' || srecType == 'S7' || srecType == 'S8' || srecType == 'S9'",
+      "severity": "error",
+      "message": "Record type digit is not in valid range S0-S9 — malformed S-Record file"
+    },
+    {
+      "name": "Byte count field is not empty",
+      "expression": "srecByteCount != ''",
+      "severity": "error",
+      "message": "Byte count field is empty — truncated or malformed S-Record"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "S0 Header Record",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "srecType",
+    "primaryField": "srecAddressStart",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "First S-Record",
+        "icon": "\uE8B7",
+        "fields": ["srecType", "srecByteCount", "srecAddressStart"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SREC Record (JSON)",
+      "format": "json",
+      "fields": ["srecType", "srecByteCount", "srecAddressStart"]
+    },
+    {
+      "name": "SREC Record (text)",
+      "format": "text",
+      "fields": ["srecType", "srecByteCount", "srecAddressStart"]
+    }
+  ],
+  "forensic": {
+    "category": "firmware",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownExploitVectors": [
+      "Tampered SREC files for firmware supply chain attacks on embedded devices",
+      "Malformed BYTECOUNT causing buffer overflow in vulnerable S-Record parsers"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "SREC format: SN + BYTECOUNT(2 hex chars) + ADDRESS(4/6/8 hex chars) + DATA(N hex chars) + CHECKSUM(2 hex chars). Checksum = ~(BYTECOUNT + ADDRESS + DATA) & 0xFF. S0 header usually has ASCII module name as data. S19=16-bit addr, S28=24-bit, S37=32-bit. srec_cat converts between formats.",
+    "suggestedInspections": [
+      "Check S0 header record data field for module name and firmware description metadata",
+      "Identify address width from record type: S1=16-bit, S2=24-bit, S3=32-bit",
+      "Verify S7/S8/S9 terminator record is present to confirm complete firmware image",
+      "Validate checksums: ~(sum of BYTECOUNT+ADDRESS+DATA bytes) & 0xFF should match stored CHECKSUM",
+      "Use srec_cat to convert to binary or Intel HEX for further analysis: srec_cat file.s19 -o binary.bin"
+    ]
+  },
+  "software": ["objcopy (GNU binutils)", "srec_cat", "srec_info", "OpenOCD", "CodeWarrior", "IAR Embedded Workbench", "Lauterbach TRACE32"],
+  "formatRelationships": {
+    "category": "Firmware",
+    "extensions": [".s19", ".s28", ".s37", ".mot", ".srec"],
+    "relatedFormats": ["INTEL_HEX", "BINARY", "ELF", "UF2"]
+  },
+  "MimeTypes": ["text/plain", "application/x-motorola-srec"],
+  "UseCases": [
+    "Motorola HCS08/HC11/HC12 microcontroller firmware flashing",
+    "Freescale/NXP ColdFire and Kinetis MCU programming",
+    "M68K embedded firmware distribution",
+    "Legacy 8-bit and 16-bit embedded system firmware archives"
+  ],
+  "TechnicalDetails": {
+    "RecordFormat": "SN + BYTECOUNT(1B hex) + ADDRESS(2/3/4B hex) + DATA(N hex) + CHECKSUM(1B hex)",
+    "ChecksumAlgorithm": "One's complement: ~(sum of BYTECOUNT + ADDRESS bytes + DATA bytes) & 0xFF",
+    "Variants": "S19 (16-bit, S1/S9), S28 (24-bit, S2/S8), S37 (32-bit, S3/S7)",
+    "MaxDataPerRecord": "255 bytes including address and checksum",
+    "ConversionTool": "srec_cat input.s19 -Output output.hex -Intel",
+    "TargetArchitectures": "M68K, ColdFire, HCS08, HC11/HC12, Kinetis, MPC5xx"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 74,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

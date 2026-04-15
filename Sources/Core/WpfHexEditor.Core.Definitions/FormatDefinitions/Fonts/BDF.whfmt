@@ -1,0 +1,109 @@
+{
+  "formatName": "Glyph Bitmap Distribution Format",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "Adobe BDF (Glyph Bitmap Distribution Format) — a human-readable plain-text font format for X Window System bitmap fonts; contains pixel-level glyph bitmaps with XLFD names, widely used in Unix terminal emulators and embedded displays.",
+  "extensions": [ ".bdf" ],
+  "category": "Fonts",
+  "diffMode": "text",
+  "signatures": [
+    {
+      "value": "5354415254464F4E5420",
+      "offset": 0,
+      "label": "'STARTFONT ' — BDF text font header keyword (10 bytes ASCII)",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 10,
+  "structure": {
+    "format": "text",
+    "topLevelKeywords": [
+      { "keyword": "STARTFONT",      "description": "File start marker + version (e.g. STARTFONT 2.1)" },
+      { "keyword": "FONT",           "description": "XLFD (X Logical Font Description) name string" },
+      { "keyword": "SIZE",           "description": "Point size, x-resolution, y-resolution in DPI" },
+      { "keyword": "FONTBOUNDINGBOX","description": "Global bounding box: width height xOffset yOffset" },
+      { "keyword": "STARTPROPERTIES","description": "Begin optional font-level property block" },
+      { "keyword": "ENDPROPERTIES",  "description": "End font-level property block" },
+      { "keyword": "CHARS",          "description": "Number of glyphs that follow" },
+      { "keyword": "ENDFONT",        "description": "File end marker" }
+    ],
+    "glyphKeywords": [
+      { "keyword": "STARTCHAR",  "description": "Begin glyph block; followed by glyph name string" },
+      { "keyword": "ENCODING",   "description": "Unicode or platform code point (decimal)" },
+      { "keyword": "SWIDTH",     "description": "Scalable width (device-independent width in 1/1000 point units)" },
+      { "keyword": "DWIDTH",     "description": "Device width in pixels (horizontal advance)" },
+      { "keyword": "BBX",        "description": "Bounding box: width height xOffset yOffset" },
+      { "keyword": "BITMAP",     "description": "Begins hex bitmap rows (one hex row per text line)" },
+      { "keyword": "ENDCHAR",    "description": "End glyph block" }
+    ],
+    "fields": [
+      { "offset": 0,  "size": 10, "name": "bdfMagic",  "type": "ascii", "description": "'STARTFONT ' — file identification keyword", "storeAs": "bdfMagic" },
+      { "offset": 0,  "size": 1,  "name": "firstByte", "type": "uint8", "description": "First byte: 'S' (0x53) confirms BDF text format", "storeAs": "bdfFirst" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "bdfMagic", "bdfFirst" ],
+    "tooltips": {
+      "bdfMagic":  "First 10 bytes must be 'STARTFONT ' (including trailing space)",
+      "bdfFirst":  "Must be 0x53 ('S'); a non-ASCII first byte indicates binary corruption"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "bdfFirst", "operator": "eq",         "value": 83,          "description": "First byte must be 0x53 ('S')" },
+    { "id": "A2", "field": "bdfMagic", "operator": "startsWith", "value": "STARTFONT", "description": "File must begin with 'STARTFONT'" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "STARTFONT Header",       "color": "#E74C3C" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "BDF Summary",
+      "fields": [ "bdfMagic" ],
+      "format": "text"
+    },
+    {
+      "name": "BDF Metadata JSON",
+      "fields": [ "bdfMagic" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "BDF is a plain-text format; open as text for human inspection. The 'STARTFONT 2.1' version line is the standard; 2.2 is an extension with additional properties.",
+    "XLFD font names follow a strict 14-field dash-separated convention: foundry-family-weight-slant-setwidth-additional-pixel-point-xres-yres-spacing-avgwidth-registry-encoding.",
+    "Each glyph's BITMAP section contains hexadecimal rows, one row per line, where each hex digit pair represents 8 pixels (MSB to LSB, left to right).",
+    "The ENCODING field uses -1 for unencoded glyphs; standard positive values are Unicode code points (or Latin-1 for pre-Unicode fonts).",
+    "BDF files are typically converted to PCF (Portable Compiled Format) by bdftopcf for runtime use by X11; BDF is the source, PCF is the compiled form.",
+    "Common resolutions are 75dpi (screen) and 100dpi (high-resolution); SIZE line specifies both X and Y DPI so non-square pixels are supported."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "BDF is plain text; no binary execution risk.",
+      "Malformed or very large BDF files with pathological glyph counts have caused memory issues in some X11 font loaders — validate CHARS count.",
+      "BDF files sometimes contain non-public font metadata including internal foundry codes or proprietary XLFD extensions."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "PCF", "relationship": "compiled-form", "note": "PCF is the binary compiled form of BDF generated by bdftopcf for X11 runtime use." },
+    { "format": "PSF", "relationship": "related",        "note": "PSF (PC Screen Font) is a simpler binary bitmap font format for Linux console." }
+  ],
+  "software": [
+    { "name": "bdftopcf",      "role": "Compile BDF to PCF binary format" },
+    { "name": "FontForge",     "role": "Professional font editor with BDF import/export" },
+    { "name": "xfontsel",      "role": "X11 font selector and BDF browser" },
+    { "name": "mkfontscale",   "role": "Generate font.scale from BDF files" },
+    { "name": "X11",           "role": "Runtime font server consuming BDF/PCF" }
+  ],
+  "useCases": [
+    "X Window System bitmap font authoring and distribution",
+    "Terminal emulator custom font creation",
+    "Embedded display font design for small screens",
+    "Legacy Unix system font preservation"
+  ],
+  "technicalDetails": "Adobe BDF v2.1 (1993). Human-readable text format for pixel-level bitmap fonts. Each glyph specifies a bounding box and rows of hexadecimal pixel data (1 bit per pixel). XLFD names provide structured metadata for X11 font matching. SWIDTH (scalable width) and DWIDTH (device width) specify advance width for proportional and monospace fonts. Standard format for X11 source fonts; PCF is the binary compiled runtime form. Widely used in embedded systems, terminal emulators, and retro computing environments.",
+  "completenessScore": 78
+}

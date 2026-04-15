@@ -1,0 +1,165 @@
+{
+  "diffMode": "binary",
+  "formatName": "Nero Burning ROM Image",
+  "version": "1.0",
+  "extensions": [".nrg"],
+  "description": "Nero Burning ROM proprietary CD/DVD disc image format. V1='NERO', V2='NER5'. Footer-based structure: main image data first, chunk-based metadata at end of file. Common source of ripped CDs from the 2000s.",
+  "category": "Archives",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Nero Burning ROM NRG format — reverse-engineered documentation",
+      "nrg2iso source code analysis (nrg2iso by Grégory Kokanosky)",
+      "libburn NRG reader implementation"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/NRG_(file_format)",
+      "http://cdplugins.sourceforge.net/en/nrg-format.html",
+      "https://sourceforge.net/projects/nrg2iso/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "4E455235",
+        "offset": 0,
+        "label": "'NER5' — Nero v2 image magic at start of footer chunk (located near end of file)",
+        "weight": 0.3
+      },
+      {
+        "value": "4E45524F",
+        "offset": 0,
+        "label": "'NERO' — Nero v1 image magic (legacy format, prior to NER5)",
+        "weight": 0.3
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Weak",
+    "EntropyHint": { "min": 2.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 2048
+    }
+  },
+  "variables": {
+    "nrgFirstBytes": "",
+    "nrgFileSize": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "File Start Bytes",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First 4 bytes of the NRG file. NRG is a footer-based format so the magic is near EOF, not at the start. The beginning of the file contains raw CD sector data (2048 bytes per sector for data CDs, 2352 for audio). This field is informational only for display.",
+      "storeAs": "nrgFirstBytes",
+      "valueType": "hex",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File size is at least one CD sector",
+      "expression": "nrgFileSize > 2048",
+      "severity": "error",
+      "message": "File is smaller than one CD sector (2048 bytes) — cannot be a valid NRG image"
+    },
+    {
+      "name": "First bytes present",
+      "expression": "nrgFirstBytes != ''",
+      "severity": "info",
+      "message": "Could not read first bytes — file may be inaccessible or empty"
+    },
+    {
+      "name": "Extension matches NRG",
+      "expression": "true",
+      "severity": "info",
+      "message": "NRG format relies on footer detection — magic at EOF only. Use extension and file size as primary indicators."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "CD Sector Data Start",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "nrgFirstBytes",
+    "primaryField": "nrgFileSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "NRG File Info",
+        "icon": "\uE8B7",
+        "fields": ["nrgFirstBytes", "nrgFileSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "NRG Info (JSON)",
+      "format": "json",
+      "fields": ["nrgFirstBytes", "nrgFileSize"]
+    },
+    {
+      "name": "NRG Info (text)",
+      "format": "text",
+      "fields": ["nrgFirstBytes", "nrgFileSize"]
+    }
+  ],
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownExploitVectors": [
+      "Disc images may contain autorun exploits targeting legacy Windows autoplay behavior"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "NRG is footer-based: main image data (raw CD sectors) at start, metadata chunks at end. V2 footer structure: 'NER5' tag + chunk sequence: CUEX (UPC/EAN), DAOX (disc-at-once data), SINF (session info), MTYP (media type), END! Each chunk: 4B ID + 4B BE size + data. Convert with nrg2iso.",
+    "suggestedInspections": [
+      "Seek to EOF-8 and read backward to find 'NER5' or 'NERO' footer magic marker",
+      "Parse NER5 footer chunks: look for DAOX chunk to extract track offset and length information",
+      "Check MTYP chunk to identify media type (CD-ROM, DVD-ROM, etc.)",
+      "Verify first 2048 bytes match expected CD sector content (ISO 9660 or audio PCM)",
+      "Convert to ISO using nrg2iso for mounting with standard tools"
+    ]
+  },
+  "software": ["Nero Burning ROM", "Alcohol 120%", "AnyToISO", "nrg2iso", "Virtual CloneDrive", "ImgBurn"],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".nrg"],
+    "relatedFormats": ["ISO", "MDF", "BIN_CUE", "IMG"]
+  },
+  "MimeTypes": ["application/x-nrg"],
+  "UseCases": [
+    "Legacy CD/DVD backup images from Nero Burning ROM software",
+    "Archival of optical media from the 2000s era",
+    "Conversion to ISO format for modern compatibility",
+    "Preservation of CD audio with Nero's track metadata"
+  ],
+  "TechnicalDetails": {
+    "Version1Magic": "'NERO' near EOF (v1 legacy)",
+    "Version2Magic": "'NER5' near EOF (v2, current)",
+    "FooterChunks": "CUEX, DAOX, SINF, MTYP, END! (each: 4B ID + 4B BE size + data)",
+    "SectorSize": "2048 bytes (data CD), 2352 bytes (audio/raw)",
+    "ConversionTool": "nrg2iso (open source), imgburn (commercial)"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "minimal",
+    "BlocksDefined": 1,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

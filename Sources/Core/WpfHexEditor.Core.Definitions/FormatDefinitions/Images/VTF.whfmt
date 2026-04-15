@@ -1,0 +1,134 @@
+{
+  "formatName": "Valve Texture Format",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "Valve Source Engine texture format (.vtf) — stores mipmapped textures with optional animation frames and cubemaps; used in Half-Life 2, Portal, TF2, Counter-Strike Source, and all Source Engine titles.",
+  "extensions": [ ".vtf" ],
+  "category": "Images",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "56544600",
+      "offset": 0,
+      "label": "'VTF\\0' — Valve Texture Format magic (4 bytes + null terminator)",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0,  "size": 4,  "name": "signature",      "type": "ascii",    "description": "Magic: 'VTF\\0' (4 bytes including null)",         "storeAs": "vtfMagic" },
+      { "offset": 4,  "size": 2,  "name": "version_major",  "type": "uint32le", "description": "Major version (always 7)",                        "storeAs": "vtfVersion" },
+      { "offset": 6,  "size": 2,  "name": "version_minor",  "type": "uint32le", "description": "Minor version: 1–5 (v7.5 = latest common)" },
+      { "offset": 8,  "size": 4,  "name": "headerSize",     "type": "uint32le", "description": "Header size: 80 bytes (v7.2), 96 (v7.4+)" },
+      { "offset": 12, "size": 2,  "name": "width",          "type": "uint16le", "description": "Image width in pixels (power of 2)",               "storeAs": "vtfWidth" },
+      { "offset": 14, "size": 2,  "name": "height",         "type": "uint16le", "description": "Image height in pixels (power of 2)",              "storeAs": "vtfHeight" },
+      { "offset": 16, "size": 4,  "name": "flags",          "type": "uint32le", "description": "Texture flags (wrap/filter/normal/alpha/envmap/etc.)" },
+      { "offset": 20, "size": 2,  "name": "frames",         "type": "uint16le", "description": "Number of animation frames (1 = no animation)" },
+      { "offset": 22, "size": 2,  "name": "first_frame",    "type": "uint16le", "description": "Index of the first frame to play" },
+      { "offset": 24, "size": 4,  "name": "padding0",       "type": "bytes",    "description": "Padding, must be zero" },
+      { "offset": 28, "size": 12, "name": "reflectivity",   "type": "bytes",    "description": "3×float32 reflectivity color for radiosity (XYZ)" },
+      { "offset": 40, "size": 4,  "name": "padding1",       "type": "bytes",    "description": "Padding, must be zero" },
+      { "offset": 44, "size": 4,  "name": "bumpmap_scale",  "type": "float32",  "description": "Normal map bump scale factor" },
+      { "offset": 48, "size": 4,  "name": "image_format",   "type": "uint32le", "description": "Pixel format enum (DXT1/3/5, BGRA8888, etc.)",     "storeAs": "vtfFormat" },
+      { "offset": 52, "size": 1,  "name": "mip_count",      "type": "uint8",    "description": "Number of mipmap levels" },
+      { "offset": 53, "size": 4,  "name": "low_res_format", "type": "uint32le", "description": "Low-resolution thumbnail format (usually DXT1=13)" },
+      { "offset": 57, "size": 1,  "name": "low_res_width",  "type": "uint8",    "description": "Thumbnail width (16 typical)" },
+      { "offset": 58, "size": 1,  "name": "low_res_height", "type": "uint8",    "description": "Thumbnail height (16 typical)" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "vtfMagic", "vtfVersion", "vtfWidth", "vtfHeight", "vtfFormat", "mip_count", "frames" ],
+    "valueMaps": {
+      "vtfFormat": {
+        "0":  "RGBA8888",
+        "1":  "ABGR8888",
+        "2":  "RGB888",
+        "3":  "BGR888",
+        "12": "BGRA8888",
+        "13": "DXT1",
+        "14": "DXT3",
+        "15": "DXT5",
+        "20": "BGR565",
+        "21": "BGRX5551",
+        "22": "BGRA4444",
+        "24": "DXT1_ONEBITALPHA",
+        "25": "BGRA5551",
+        "28": "RGBA16161616F",
+        "29": "RGBA16161616"
+      }
+    },
+    "tooltips": {
+      "vtfMagic":    "Must be 'VTF\\0' — note the null byte is part of the magic",
+      "vtfFormat":   "DXT5 (15) is most common for RGBA textures; DXT1 (13) for opaque",
+      "mip_count":   "Mipmaps stored from smallest to largest; count includes the full-size level",
+      "frames":      "1 = static; >1 = animated texture (Valve sprite system)"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "vtfMagic",  "operator": "startsWith", "value": "VTF",  "description": "Signature must start with 'VTF'" },
+    { "id": "A2", "field": "vtfWidth",  "operator": "gte",        "value": 1,      "description": "Width must be positive" },
+    { "id": "A3", "field": "vtfHeight", "operator": "gte",        "value": 1,      "description": "Height must be positive" },
+    { "id": "A4", "field": "mip_count", "operator": "gte",        "value": 1,      "description": "Mipmap count must be at least 1" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,  "label": "Magic 'VTF\\0'",      "color": "#E74C3C" },
+      { "offset": 4,  "label": "Version",              "color": "#F39C12" },
+      { "offset": 12, "label": "Dimensions",           "color": "#27AE60" },
+      { "offset": 16, "label": "Texture Flags",        "color": "#9B59B6" },
+      { "offset": 44, "label": "Bump Scale",           "color": "#3498DB" },
+      { "offset": 48, "label": "Image Format",         "color": "#E67E22" },
+      { "offset": 52, "label": "Mip Count",            "color": "#1ABC9C" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "VTF Header Summary",
+      "fields": [ "vtfVersion", "vtfWidth", "vtfHeight", "vtfFormat", "mip_count", "frames" ],
+      "format": "text"
+    },
+    {
+      "name": "VTF Metadata JSON",
+      "fields": [ "vtfMagic", "vtfVersion", "vtfWidth", "vtfHeight", "flags", "frames", "vtfFormat", "mip_count", "bumpmap_scale" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "VTF stores mipmaps in reverse order (smallest to largest): mip 0 in the file = the smallest mipmap (1×1 or 4×4), not the full-resolution image.",
+    "DXT5 (format code 15) is the most common format for Source Engine RGBA textures due to its 4:1 compression and separate 8-bit alpha block.",
+    "The low-resolution thumbnail (16×16 DXT1) at the start of image data provides a quick preview without reading the full mipchain.",
+    "VMT (Valve Material) files reference VTF textures by path; VTF files are typically found inside .vpk (Valve Pak) archives.",
+    "Cubemap textures have frames=6 (±X, ±Y, ±Z faces stored as consecutive frame entries in the mipchain).",
+    "Version 7.4+ header is 96 bytes vs. 80 bytes in v7.2/v7.3; the additional fields add depth, low-res depth map, and resource entries for external data."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "VTF files contain only compressed texture data; no executable content.",
+      "Proprietary Valve format but widely documented; VTFEdit is the reference tool for inspection.",
+      "Found inside VPK archives in all Source Engine games; extraction requires GCFScape or similar tools."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "VMT",  "relationship": "paired-with", "note": "VMT (Valve Material) files reference VTF textures and define rendering parameters." },
+    { "format": "VPK",  "relationship": "container",   "note": "VTF files are typically packed into VPK archives in Source Engine games." }
+  ],
+  "software": [
+    { "name": "VTFEdit",       "role": "VTF view/create/convert GUI tool" },
+    { "name": "GCFScape",      "role": "Valve archive extractor (VPK, GCF)" },
+    { "name": "Crowbar",       "role": "Source Engine model/texture decompiler" },
+    { "name": "VTEX",          "role": "Valve in-house texture compiler" },
+    { "name": "SteamCMD",      "role": "Game data download for VTF extraction" }
+  ],
+  "useCases": [
+    "Source Engine game texture inspection and export",
+    "Game modding: custom texture creation for HL2/TF2/Portal",
+    "VTF format identification in game data archives",
+    "Texture mipmap chain analysis"
+  ],
+  "technicalDetails": "Valve Source Engine texture format. Stores complete mipmap chains, animation frames, and cubemap faces. DXT (S3TC) GPU texture compression is standard. Image data layout: low-res thumbnail (16×16 DXT1) followed by mip levels from smallest to largest, for each frame/face. v7.5 added resource blocks for CRC and particle sheet data. Reflectivity values are used by Valve's radiosity lighting system for approximate light bounce calculations.",
+  "completenessScore": 85
+}

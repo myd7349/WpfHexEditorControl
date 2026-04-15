@@ -1,0 +1,378 @@
+{
+  "diffMode": "binary",
+  "formatName": "U-Boot Legacy Image",
+  "version": "1.0",
+  "extensions": [".img", ".bin", ".uimg"],
+  "description": "U-Boot legacy image format with 64-byte header. Magic 0x27051956 (big-endian) at offset 0. Contains load address, entry point, CRC-32, OS type, architecture, image type, and compression fields. Used on embedded routers, SBCs, and OpenWrt devices.",
+  "category": "Firmware",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Das U-Boot source — include/image.h (IH_MAGIC, image_header structure)",
+      "U-Boot documentation — doc/uImage.FIT/",
+      "OpenWrt firmware image format documentation"
+    ],
+    "WebLinks": [
+      "https://u-boot.readthedocs.io/en/latest/develop/legacy_image_format.html",
+      "https://en.wikipedia.org/wiki/Das_U-Boot",
+      "https://openwrt.org/docs/techref/flash.layout"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "27051956",
+        "offset": 0,
+        "label": "0x27051956 — U-Boot IH_MAGIC legacy image header magic (big-endian uint32)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 64
+    }
+  },
+  "variables": {
+    "ubMagic": 0,
+    "ubHcrc": 0,
+    "ubTime": 0,
+    "ubSize": 0,
+    "ubLoad": 0,
+    "ubEp": 0,
+    "ubDcrc": 0,
+    "ubOs": 0,
+    "ubArch": 0,
+    "ubType": 0,
+    "ubComp": 0,
+    "ubName": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "IH_MAGIC",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "0x27051956 — U-Boot IH_MAGIC constant as big-endian uint32. The value is a reference to the birth year of UNIX (1956... actually January 19, 1956 — Ken Thompson's birthday according to U-Boot lore, though often cited as 'Unix birthday' pun). Present in all U-Boot legacy image headers.",
+      "storeAs": "ubMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Header CRC-32",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "CRC-32 of the image header (64 bytes) as big-endian uint32. Computed with this field set to 0. U-Boot verifies this checksum before loading the image. A mismatch causes U-Boot to reject the image with 'Bad Header Checksum' error.",
+      "storeAs": "ubHcrc",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Image Creation Timestamp",
+      "offset": 8,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Image creation timestamp as Unix time (seconds since Jan 1, 1970) stored as big-endian uint32. Set by mkimage at build time. Used by U-Boot for informational display during boot. Can be used for firmware build provenance analysis.",
+      "storeAs": "ubTime",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Image Data Size",
+      "offset": 12,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Size of the image data (not including the 64-byte header) as big-endian uint32. U-Boot uses this field to determine how many bytes to load. Total file size = ih_size + 64. Used for CRC-32 verification of the data section.",
+      "storeAs": "ubSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Load Address",
+      "offset": 16,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Target physical memory address to load the image data as big-endian uint32. U-Boot copies the (possibly decompressed) image data to this address before jumping to the entry point. Common ARM load address: 0x80008000 (Linux kernel).",
+      "storeAs": "ubLoad",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Entry Point Address",
+      "offset": 20,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.2,
+      "description": "Execution entry point address as big-endian uint32. U-Boot jumps to this address after loading and optional decompression. For Linux kernels this is typically the same as the load address. For multi-file images this points to the first sub-image entry.",
+      "storeAs": "ubEp",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Data CRC-32",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF8C94",
+      "opacity": 0.3,
+      "description": "CRC-32 of the image data section (ih_size bytes following the header) as big-endian uint32. U-Boot verifies this checksum after loading to detect data corruption or incomplete transfers. Mismatch causes 'Bad Data CRC' boot failure.",
+      "storeAs": "ubDcrc",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Operating System",
+      "offset": 28,
+      "length": 1,
+      "color": "#C5A3FF",
+      "opacity": 0.3,
+      "description": "Target operating system type byte (IH_OS_*). Tells U-Boot how to prepare the execution environment. Linux (5) = passes device tree pointer and command line. Android (18) = special boot protocol. RTEMS (11) = real-time OS. Value 0 = invalid.",
+      "storeAs": "ubOs",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "5": "Linux",
+        "6": "NetBSD",
+        "11": "RTEMS",
+        "17": "OpenRTOS",
+        "18": "Android"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Architecture",
+      "offset": 29,
+      "length": 1,
+      "color": "#B5EAD7",
+      "opacity": 0.3,
+      "description": "Target CPU architecture byte (IH_ARCH_*). Used by U-Boot to validate compatibility with the running CPU. 2=ARM (32-bit), 3=x86, 5=MIPS, 8=PowerPC, 14=ARM64/AArch64, 22=RISC-V. Mismatched arch causes image rejection.",
+      "storeAs": "ubArch",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "2": "ARM (32-bit)",
+        "3": "x86",
+        "4": "IA-64",
+        "5": "MIPS",
+        "8": "PowerPC",
+        "14": "ARM64 / AArch64",
+        "22": "RISC-V"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Image Type",
+      "offset": 30,
+      "length": 1,
+      "color": "#FFD3B6",
+      "opacity": 0.3,
+      "description": "Image content type byte (IH_TYPE_*). Determines how U-Boot handles the image after loading. 2=Kernel (most common), 3=RAMDisk (initramfs), 4=Multi (concatenated sub-images), 5=Firmware, 6=Script (U-Boot script), 7=Filesystem (UBIFS/JFFS2).",
+      "storeAs": "ubType",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "1": "Standalone application",
+        "2": "OS Kernel image",
+        "3": "RAM disk / initramfs",
+        "4": "Multi-file image",
+        "5": "Firmware binary",
+        "6": "U-Boot script",
+        "7": "Filesystem image"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Compression",
+      "offset": 31,
+      "length": 1,
+      "color": "#A8D8EA",
+      "opacity": 0.3,
+      "description": "Image data compression algorithm byte (IH_COMP_*). U-Boot decompresses the data to the load address if non-zero. 0=none (raw binary), 1=gzip, 2=bzip2, 3=lzma, 4=lzo, 5=lz4. Actual decompressed size may differ significantly from ih_size.",
+      "storeAs": "ubComp",
+      "valueType": "uint8",
+      "endianness": "little",
+      "valueMap": {
+        "0": "None — uncompressed binary",
+        "1": "gzip",
+        "2": "bzip2",
+        "3": "lzma",
+        "4": "lzo",
+        "5": "lz4"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Image Name",
+      "offset": 32,
+      "length": 32,
+      "color": "#F8B500",
+      "opacity": 0.3,
+      "description": "32-byte null-padded ASCII image name string. Set by the -n flag in mkimage. Displayed by U-Boot during boot: 'Loading kernel: <name>'. Provides human-readable identification of what the image contains (e.g., 'Linux-5.15.0', 'OpenWrt kernel').",
+      "storeAs": "ubName",
+      "valueType": "ascii",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "U-Boot magic valid",
+      "expression": "ubMagic == 0x27051956",
+      "severity": "error",
+      "message": "U-Boot IH_MAGIC 0x27051956 not found — not a valid U-Boot legacy image"
+    },
+    {
+      "name": "Image data size is positive",
+      "expression": "ubSize > 0",
+      "severity": "error",
+      "message": "Image data size (ih_size) is 0 — invalid U-Boot image with no data"
+    },
+    {
+      "name": "Architecture is valid",
+      "expression": "ubArch > 0",
+      "severity": "error",
+      "message": "Architecture type is 0 (IH_ARCH_INVALID) — malformed U-Boot image header"
+    },
+    {
+      "name": "Image type is valid",
+      "expression": "ubType > 0",
+      "severity": "error",
+      "message": "Image type is 0 (IH_TYPE_INVALID) — malformed U-Boot image header"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "U-Boot Header",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "Image Name",
+        "offset": 32,
+        "icon": "\uE8A5",
+        "color": "#F8B500"
+      },
+      {
+        "name": "Image Data",
+        "offset": 64,
+        "icon": "\uE9D9",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "ubType",
+    "primaryField": "ubName",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Image Identity",
+        "icon": "\uE8B7",
+        "fields": ["ubMagic", "ubName", "ubTime"]
+      },
+      {
+        "title": "Platform Info",
+        "icon": "\uE8A5",
+        "fields": ["ubOs", "ubArch", "ubType", "ubComp"]
+      },
+      {
+        "title": "Memory Layout",
+        "icon": "\uE9D9",
+        "fields": ["ubLoad", "ubEp", "ubSize"]
+      },
+      {
+        "title": "Integrity",
+        "icon": "\uE8F4",
+        "fields": ["ubHcrc", "ubDcrc"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "U-Boot Header (JSON)",
+      "format": "json",
+      "fields": ["ubMagic", "ubHcrc", "ubTime", "ubSize", "ubLoad", "ubEp", "ubDcrc", "ubOs", "ubArch", "ubType", "ubComp", "ubName"]
+    },
+    {
+      "name": "U-Boot Header (text)",
+      "format": "text",
+      "fields": ["ubName", "ubOs", "ubArch", "ubType", "ubComp", "ubSize", "ubLoad", "ubEp"]
+    }
+  ],
+  "forensic": {
+    "category": "firmware",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Script type image",
+        "condition": "ubType == 6",
+        "severity": "warning",
+        "description": "Image type is IH_TYPE_SCRIPT — U-Boot script that will execute shell commands during boot. Inspect image data for arbitrary U-Boot commands that could modify boot behavior or bypass Secure Boot."
+      }
+    ],
+    "knownExploitVectors": [
+      "Modified U-Boot images with crafted entry points for bootloader exploitation",
+      "U-Boot scripts (IH_TYPE_SCRIPT) executing environment modification commands",
+      "Weak or absent image signature verification in legacy U-Boot configurations"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "U-Boot legacy image: 64-byte header + ih_size bytes of data. Data starts at offset 64. mkimage command: `mkimage -A arm -O linux -T kernel -C gzip -a 0x80008000 -e 0x80008000 -n 'Linux' -d zImage uImage`. FIT (Flattened Image Tree) is the modern replacement but legacy IH_MAGIC widely used on embedded routers.",
+    "suggestedInspections": [
+      "Read ubName field for firmware version string and image description metadata",
+      "Check ubComp to determine if data at offset 64 is compressed — decompress before further analysis",
+      "Verify CRC: compute CRC-32 of header with ubHcrc=0 to validate header integrity",
+      "Compute CRC-32 of ubSize bytes at offset 64 and compare with ubDcrc for data integrity",
+      "For ubType==3 (ramdisk): decompress and mount as cpio/ext2 to inspect initramfs contents"
+    ]
+  },
+  "software": ["U-Boot mkimage", "Das U-Boot", "binwalk", "u-boot-tools", "OpenWrt imagebuilder"],
+  "formatRelationships": {
+    "category": "Firmware",
+    "extensions": [".img", ".bin", ".uimg"],
+    "relatedFormats": ["DTB", "UBOOT_FIT", "LINUX_IMAGE", "GZIP"]
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Embedded Linux kernel packaging for U-Boot (OpenWrt, LEDE, embedded routers)",
+    "Single-board computer firmware (Raspberry Pi 1-3, BeagleBone, ODROID older firmware)",
+    "U-Boot script images for automated boot configuration",
+    "RAM disk (initramfs) packaging for embedded Linux systems"
+  ],
+  "TechnicalDetails": {
+    "HeaderSize": "64 bytes (fixed)",
+    "DataOffset": "64 bytes from start",
+    "Magic": "0x27051956 (big-endian uint32)",
+    "Endianness": "All header fields big-endian",
+    "MkimageCommand": "mkimage -A arch -O os -T type -C comp -a load -e entry -n name -d data out.uimg",
+    "FITReplacement": "FIT (Flattened Image Tree) is the modern replacement with multi-image and signature support",
+    "TotalFileSize": "ih_size + 64 bytes"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 12,
+    "ValidationRules": 4,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}
