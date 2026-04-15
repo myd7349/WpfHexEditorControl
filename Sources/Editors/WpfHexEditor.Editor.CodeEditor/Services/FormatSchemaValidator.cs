@@ -33,14 +33,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Services
         private static readonly string[] ValidBlockTypes =
         {
             "signature", "field", "conditional", "loop", "action",
-            "computeFromVariables", "metadata", "data", "header"
+            "computeFromVariables", "metadata", "data", "header",
+            "pointer", "repeating"
         };
         private static readonly string[] ValidFieldTypes =
         {
             "uint8", "uint16", "uint32", "uint64",
             "int8", "int16", "int32", "int64",
             "float", "double",
-            "string", "ascii", "utf8", "utf16", "bytes"
+            "string", "ascii", "utf8", "utf16", "bytes",
+            "bool", "char", "uuid", "padding"
         };
 
         #endregion

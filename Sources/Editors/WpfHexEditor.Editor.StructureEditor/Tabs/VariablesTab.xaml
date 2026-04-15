@@ -11,18 +11,37 @@
 
     <Grid Margin="8">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- description -->
+            <RowDefinition Height="Auto"/>  <!-- filter -->
+            <RowDefinition Height="*"/>     <!-- grid -->
+            <RowDefinition Height="Auto"/>  <!-- add button -->
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
                    Text="Initial variables available to the block interpreter (e.g. loop counters, computed offsets)."
-                   FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"
+                   FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"
                    Foreground="{DynamicResource TE_LineNumberForeground}"/>
 
-        <DataGrid Grid.Row="1"
+        <!-- Filter -->
+        <Grid Grid.Row="1" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="Segoe MDL2 Assets"
+                       FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"
+                       Foreground="{DynamicResource TE_LineNumberForeground}"/>
+            <TextBox   Grid.Column="1" FontSize="11" Padding="4,2" BorderThickness="1"
+                       Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                       Background="{DynamicResource TE_Background}"
+                       Foreground="{DynamicResource TE_Foreground}"
+                       ToolTip="Filter variables by name"/>
+        </Grid>
+
+        <!-- DataGrid -->
+        <DataGrid Grid.Row="2"
                   x:Name="VarsGrid"
+                  ItemsSource="{Binding FilteredItems}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
@@ -36,7 +55,6 @@
                   AlternatingRowBackground="{DynamicResource TE_LineNumberBackground}"
                   Foreground="{DynamicResource TE_Foreground}"
                   BorderThickness="1"
-                  FontFamily="Consolas"
                   FontSize="11">
 
             <DataGrid.Resources>
@@ -44,34 +62,65 @@
                     <Setter Property="Background" Value="{DynamicResource TE_LineNumberBackground}"/>
                     <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
                     <Setter Property="Padding"    Value="4,2"/>
+                    <Setter Property="FontSize"   Value="11"/>
+                </Style>
+                <!-- Themed ComboBox for the Type column -->
+                <Style x:Key="TypeCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                    <Setter Property="FontSize"   Value="11"/>
+                    <Setter Property="Padding"    Value="2,1"/>
+                    <Setter Property="Background" Value="{DynamicResource TE_Background}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                    <Setter Property="BorderThickness" Value="0"/>
                 </Style>
             </DataGrid.Resources>
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Variable Name" Width="*"
-                                    Binding="{Binding Key, UpdateSourceTrigger=LostFocus}"/>
-                <DataGridTextColumn Header="Initial Value" Width="*"
-                                    Binding="{Binding Value, UpdateSourceTrigger=LostFocus}"/>
+
+                <!-- Variable Name -->
+                <DataGridTextColumn Header="Variable Name" Width="160" MinWidth="120"
+                                    Binding="{Binding Key, UpdateSourceTrigger=LostFocus}"
+                                    FontFamily="Consolas"/>
+
+                <!-- Type -->
+                <DataGridTemplateColumn Header="Type" Width="80">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Type}" FontSize="11" Padding="4,2"
+                                       Foreground="{DynamicResource TE_Foreground}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox Style="{StaticResource TypeCombo}"
+                                      ItemsSource="{Binding TypeOptions}"
+                                      SelectedItem="{Binding Type, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Initial Value -->
+                <DataGridTextColumn Header="Initial Value" Width="100"
+                                    Binding="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                                    FontFamily="Consolas"/>
+
+                <!-- Description -->
+                <DataGridTextColumn Header="Description" Width="*"
+                                    Binding="{Binding Description, UpdateSourceTrigger=LostFocus}"/>
+
+                <!-- Delete -->
                 <DataGridTemplateColumn Width="28">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="✕" FontSize="10" Padding="2"
-                                    Command="{Binding RemoveCommand}"
-                                    Background="Transparent"
-                                    Foreground="{DynamicResource TE_LineNumberForeground}"
-                                    BorderThickness="0"/>
+                            <Button Command="{Binding RemoveCommand}"
+                                    Style="{DynamicResource PM_RemoveButtonStyle}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+
             </DataGrid.Columns>
         </DataGrid>
 
-        <Button Grid.Row="2" Content="＋ Add Variable"
-                FontSize="11" Padding="6,3" Margin="0,6,0,0"
-                HorizontalAlignment="Left"
-                x:Name="AddVarBtn" Click="OnAddVariable"
-                Background="Transparent"
-                Foreground="{DynamicResource ET_AccentBrush}"
-                BorderThickness="0"/>
+        <Button Grid.Row="3" Content="＋ Add Variable" x:Name="AddVarBtn" Click="OnAddVariable"
+                Style="{DynamicResource PM_LinkButtonStyle}" Padding="6,3" Margin="0,6,0,0"/>
     </Grid>
 </UserControl>

@@ -1457,6 +1457,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 max = Math.Max(max, n3);
             else if (id.StartsWith("doc-entropy-") && int.TryParse(id["doc-entropy-".Length..], out var n4))
                 max = Math.Max(max, n4);
+            else if (id.StartsWith("doc-new-text-") && int.TryParse(id["doc-new-text-".Length..], out var n5))
+                max = Math.Max(max, n5);
+            else if (id.StartsWith("doc-new-code-") && int.TryParse(id["doc-new-code-".Length..], out var n6))
+                max = Math.Max(max, n6);
         }
 
         _documentCounter = max;
@@ -1532,6 +1536,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             PluginManagerContentId         => CreatePluginManagerContent(),
             MarkdownOutlinePanelContentId  => CreateMarkdownOutlinePanelContent(),
             _ when item.ContentId.StartsWith("doc-class-diagram-") => CreateClassDiagramGhostContent(item),
+            _ when item.ContentId.StartsWith("doc-new-text-")   => CreateEmptyTextEditorContent(item),
+            _ when item.ContentId.StartsWith("doc-new-code-")  => CreateEmptyCodeEditorContent(item),
             _ when item.ContentId.StartsWith("doc-file-")      => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-src-nav-")   => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")       => WrapHexDocItemWithInfoBar(item),
@@ -2490,6 +2496,64 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return hexContent is FrameworkElement hexFe
             ? WrapWithInfoBar(hexFe, null, filePath, item.ContentId)
             : hexContent;
+    }
+
+    /// <summary>
+    /// Creates a TextEditor tab opened via command palette ("New Text Editor").
+    /// On first launch the tab is empty (no file).  After the user saves, the
+    /// <c>FilePath</c> metadata is written back and the layout is persisted; on
+    /// restart the item delegates to <see cref="CreateSmartFileEditorContent"/>
+    /// so the saved file is reopened instead of creating another blank tab.
+    /// </summary>
+    private UIElement CreateEmptyTextEditorContent(DockItem item)
+    {
+        // Restart path: the file was saved in a previous session → reopen it.
+        if (item.Metadata.TryGetValue("FilePath", out var savedPath) &&
+            !string.IsNullOrEmpty(savedPath))
+            return CreateSmartFileEditorContent(item);
+
+        var factory = _editorRegistry.GetAll().FirstOrDefault(f => f.Descriptor.Id == "text-editor");
+        if (factory?.Create() is not IDocumentEditor editor || editor is not FrameworkElement fe)
+            return new Border();
+
+        _editorSettingsService?.Apply(editor);
+        editor.OutputMessage += OnEditorOutputMessage;
+        ActiveDocumentEditor       = editor;
+        ActiveStatusBarContributor = editor as IStatusBarContributor;
+        return WrapWithInfoBar(fe, factory, filePath: string.Empty, item.ContentId);
+    }
+
+    /// <summary>
+    /// Creates a CodeEditor tab opened via command palette ("New Code Editor").
+    /// Same restart-restore semantics as <see cref="CreateEmptyTextEditorContent"/>.
+    /// </summary>
+    private UIElement CreateEmptyCodeEditorContent(DockItem item)
+    {
+        // Restart path: the file was saved in a previous session → reopen it.
+        if (item.Metadata.TryGetValue("FilePath", out var savedPath) &&
+            !string.IsNullOrEmpty(savedPath))
+            return CreateSmartFileEditorContent(item);
+
+        var factory = _editorRegistry.GetAll().FirstOrDefault(f => f.Descriptor.Id == "code-editor");
+        if (factory?.Create() is not IDocumentEditor editor || editor is not FrameworkElement fe)
+            return new Border();
+
+        _editorSettingsService?.Apply(editor);
+        editor.OutputMessage += OnEditorOutputMessage;
+
+        if (editor is CodeEditorControl json)
+        {
+            json.ReferenceNavigationRequested    += OnCodeEditorReferenceNavigation;
+            json.FindAllReferencesDockRequested  += OnFindAllReferencesDockRequested;
+            json.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
+            json.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
+            json.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
+            json.FormattingOptionsRequested      += (_, _) => OpenSettingsAt("Code Editor", "Formatting");
+        }
+
+        ActiveDocumentEditor       = editor;
+        ActiveStatusBarContributor = editor as IStatusBarContributor;
+        return WrapWithInfoBar(fe, factory, filePath: string.Empty, item.ContentId);
     }
 
     /// <summary>
@@ -5012,6 +5076,37 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Opens an empty editor tab directly, without a file dialog.
+    /// The document has no path yet; first Ctrl+S triggers Save As.
+    /// <paramref name="kind"/>: "hex", "text", or "code".
+    /// </summary>
+    private void OpenEmptyEditor(string kind)
+    {
+        _documentCounter++;
+        var (contentId, title) = kind switch
+        {
+            "text" => ($"doc-new-text-{_documentCounter}", $"Untitled{_documentCounter}.txt"),
+            "code" => ($"doc-new-code-{_documentCounter}", $"Untitled{_documentCounter}.json"),
+            _      => ($"doc-hex-{_documentCounter}",      $"Untitled{_documentCounter}.bin"),
+        };
+
+        var item = new DockItem
+        {
+            Title    = title,
+            ContentId = contentId,
+            Metadata =
+            {
+                ["IsNewFile"]   = "true",
+                ["DisplayName"] = title
+            }
+        };
+        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        DockHost.RebuildVisualTree();
+        UpdateStatusBar();
+        OutputLogger.Info($"New empty editor opened: {title}");
+    }
+
     private void OnNewFile(object sender, RoutedEventArgs e)
     {
         var availableProjects = _solutionManager.CurrentSolution?.Projects
@@ -5496,6 +5591,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     private void OnSave(object sender, RoutedEventArgs e)
     {
+        // New text/code document (doc-new-text-* / doc-new-code-*) with no file path yet:
+        // show Save As dialog, write the file, then persist the path in the DockItem metadata
+        // so the tab is restored on next restart.
+        var activeItem = _documentManager.ActiveDocument?.ContentId is { } cid
+            ? _layout.FindItemByContentId(cid)
+            : null;
+        if (activeItem is not null &&
+            (activeItem.ContentId.StartsWith("doc-new-text-") ||
+             activeItem.ContentId.StartsWith("doc-new-code-")) &&
+            activeItem.Metadata.TryGetValue("IsNewFile", out var nf) && nf == "true" &&
+            ActiveDocumentEditor is { } newFileEd)
+        {
+            _ = SaveNewDocumentAsAsync(activeItem, newFileEd);
+            return;
+        }
+
         // Suppress file watcher before writing to prevent false external-modification warnings.
         SuppressFileWatcherForSave(GetActiveDocumentFilePath());
 
@@ -5548,6 +5659,53 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _ = ed.SaveAsAsync(string.Empty);
                 OutputLogger.Info($"Save As invoked for '{ed.Title.TrimEnd(' ', '*')}'.");
             }
+        }
+    }
+
+    /// <summary>
+    /// Shows a Save As dialog for a new text/code document that has never been saved,
+    /// writes the file, and persists the path + removes <c>IsNewFile</c> from the
+    /// <see cref="DockItem"/> metadata so the tab is restored on next restart.
+    /// </summary>
+    private async Task SaveNewDocumentAsAsync(DockItem item, IDocumentEditor editor)
+    {
+        bool isCode = item.ContentId.StartsWith("doc-new-code-");
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title      = "Save As",
+            FileName   = item.Title,
+            Filter     = isCode
+                ? "JSON files (*.json)|*.json|All files (*.*)|*.*"
+                : "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+            DefaultExt = isCode ? ".json" : ".txt"
+        };
+
+        if (dlg.ShowDialog(this) != true) return;
+
+        var path = dlg.FileName;
+        SuppressFileWatcherForSave(path);
+
+        try
+        {
+            await editor.SaveAsAsync(path);
+
+            // Persist path in layout so the tab is restored on next restart.
+            item.Metadata["FilePath"]  = path;
+            item.Metadata["IsNewFile"] = "false";
+            item.Title = Path.GetFileName(path);
+
+            // DocumentModel.FilePath is read-only after Register(); the model keeps
+            // FilePath=null for the remainder of this session. On restart, the item
+            // routes through CreateSmartFileEditorContent (FilePath is now set in
+            // metadata) and a fresh DocumentModel with the correct path is created.
+
+            _solutionManager.PushRecentFile(path);
+            PopulateRecentMenus();
+            OutputLogger.Info($"Saved new document as: {path}");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Save As failed: {ex.Message}");
         }
     }
 

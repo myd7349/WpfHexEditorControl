@@ -28,7 +28,7 @@
                     <Setter Property="Foreground"         Value="{DynamicResource TE_LineNumberForeground}"/>
                     <Setter Property="MinWidth"           Value="110"/>
                 </Style>
-                <Style x:Key="Field" TargetType="TextBox">
+                <Style x:Key="Field" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="FontSize"         Value="11"/>
                     <Setter Property="Padding"          Value="4,2"/>
                     <Setter Property="BorderThickness"  Value="1"/>
@@ -37,7 +37,7 @@
                     <Setter Property="Foreground"       Value="{DynamicResource TE_Foreground}"/>
                     <Setter Property="CaretBrush"       Value="{DynamicResource TE_Foreground}"/>
                 </Style>
-                <Style x:Key="Combo" TargetType="ComboBox">
+                <Style x:Key="Combo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                     <Setter Property="FontSize"    Value="11"/>
                     <Setter Property="Padding"     Value="4,2"/>
                     <Setter Property="Margin"      Value="0,2,0,2"/>
@@ -119,11 +119,8 @@
                         <StackPanel Orientation="Horizontal" Margin="0,2">
                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
                                      Width="120" Style="{StaticResource Field}" Margin="0,0,4,0"/>
-                            <Button Content="✕" FontSize="10" Padding="4,1"
-                                    Command="{Binding RemoveCommand}"
-                                    Background="Transparent"
-                                    Foreground="{DynamicResource TE_LineNumberForeground}"
-                                    BorderThickness="0"/>
+                            <Button Command="{Binding RemoveCommand}"
+                                    Style="{DynamicResource PM_RemoveButtonStyle}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -131,9 +128,7 @@
             <Button Content="＋ Add Extension" FontSize="11" Padding="6,2" Margin="0,4,0,0"
                     HorizontalAlignment="Left"
                     x:Name="AddExtBtn" Click="OnAddExtension"
-                    Background="Transparent"
-                    Foreground="{DynamicResource ET_AccentBrush}"
-                    BorderThickness="0"/>
+                    Style="{DynamicResource PM_LinkButtonStyle}"/>
 
             <!-- ── MIME Types ───────────────────────────────────────── -->
             <TextBlock Text="MIME Types" Style="{StaticResource SectionHeader}"/>
@@ -143,11 +138,8 @@
                         <StackPanel Orientation="Horizontal" Margin="0,2">
                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
                                      Width="200" Style="{StaticResource Field}" Margin="0,0,4,0"/>
-                            <Button Content="✕" FontSize="10" Padding="4,1"
-                                    Command="{Binding RemoveCommand}"
-                                    Background="Transparent"
-                                    Foreground="{DynamicResource TE_LineNumberForeground}"
-                                    BorderThickness="0"/>
+                            <Button Command="{Binding RemoveCommand}"
+                                    Style="{DynamicResource PM_RemoveButtonStyle}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -155,9 +147,7 @@
             <Button Content="＋ Add MIME Type" FontSize="11" Padding="6,2" Margin="0,4,0,0"
                     HorizontalAlignment="Left"
                     x:Name="AddMimeBtn" Click="OnAddMimeType"
-                    Background="Transparent"
-                    Foreground="{DynamicResource ET_AccentBrush}"
-                    BorderThickness="0"/>
+                    Style="{DynamicResource PM_LinkButtonStyle}"/>
 
             <!-- ── Software ─────────────────────────────────────────── -->
             <TextBlock Text="Software" Style="{StaticResource SectionHeader}"/>
@@ -167,11 +157,8 @@
                         <StackPanel Orientation="Horizontal" Margin="0,2">
                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
                                      Width="240" Style="{StaticResource Field}" Margin="0,0,4,0"/>
-                            <Button Content="✕" FontSize="10" Padding="4,1"
-                                    Command="{Binding RemoveCommand}"
-                                    Background="Transparent"
-                                    Foreground="{DynamicResource TE_LineNumberForeground}"
-                                    BorderThickness="0"/>
+                            <Button Command="{Binding RemoveCommand}"
+                                    Style="{DynamicResource PM_RemoveButtonStyle}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -179,9 +166,7 @@
             <Button Content="＋ Add Software" FontSize="11" Padding="6,2" Margin="0,4,0,12"
                     HorizontalAlignment="Left"
                     x:Name="AddSoftwareBtn" Click="OnAddSoftware"
-                    Background="Transparent"
-                    Foreground="{DynamicResource ET_AccentBrush}"
-                    BorderThickness="0"/>
+                    Style="{DynamicResource PM_LinkButtonStyle}"/>
 
         </StackPanel>
     </ScrollViewer>

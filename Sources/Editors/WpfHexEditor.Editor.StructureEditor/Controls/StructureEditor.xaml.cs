@@ -12,6 +12,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
+using WpfHexEditor.Editor.CodeEditor.Controls;
 using WpfHexEditor.Editor.CodeEditor.Services;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.Core.Validation;
@@ -31,6 +33,12 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
     private readonly StructureEditorViewModel _vm = new();
     private readonly FormatSchemaValidator    _schemaValidator = new();
     private string _filePath = string.Empty;
+
+    // ── Live code view ────────────────────────────────────────────────────────
+
+    private readonly CodeEditorSplitHost _codeView  = new();
+    private LiveWhfmtBuffer?             _liveBuffer;
+    private DispatcherTimer?             _refreshTimer;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -69,9 +77,6 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         V2TabCtrl.DataContext        = _vm;
         QualityTabCtrl.DataContext   = _vm.QualityMetrics;
 
-        // Validation bar
-        ValBar.ItemsSource = _vm.ValidationSummary;
-
         // Dirty + validation tracking
         _vm.DirtyChanged        += OnVmDirtyChanged;
         _vm.ValidationCompleted += OnValidationCompleted;
@@ -93,7 +98,10 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         MainTabs.SelectionChanged += (_, _) =>
         {
             RefreshStatusBarItems();
+            UpdateToolbarState();
             PopToolbar.SetBlockOperationsVisible(MainTabs.SelectedIndex == 2);
+            if (MainTabs.SelectedIndex == 5) // Quality tab
+                _vm.QualityMetrics.Refresh(_vm.Blocks, _vm.Variables);
         };
 
         // Pop-toolbar events
@@ -114,6 +122,27 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         InputBindings.Add(new KeyBinding(
             new ViewModels.RelayCommand(() => _vm.TriggerValidationNow()),
             Key.V, ModifierKeys.Control | ModifierKeys.Shift));
+
+        // Live code view — debounce timer (400 ms)
+        _refreshTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(400),
+        };
+        _refreshTimer.Tick += (_, _) =>
+        {
+            _refreshTimer.Stop();
+            PushJsonToCodeView();
+        };
+
+        // Insert CodeEditorSplitHost into the XAML placeholder border
+        CodeViewBorder.Child = _codeView;
+
+        // Schedule dirty → code-view refresh
+        _vm.DirtyChanged += (_, _) =>
+        {
+            _refreshTimer?.Stop();
+            _refreshTimer?.Start();
+        };
     }
 
     // ── IDocumentEditor — State ───────────────────────────────────────────────
@@ -178,7 +207,14 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         return Task.CompletedTask;
     }
 
-    public void Close() => _vm.Reset();
+    public void Close()
+    {
+        _refreshTimer?.Stop();
+        _codeView.DetachBuffer();
+        _liveBuffer = null;
+        _vm.Reset();
+        ClearDiagnostics();
+    }
 
     // ── IOpenableDocument ─────────────────────────────────────────────────────
 
@@ -197,6 +233,11 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             {
                 _vm.LoadFromJson(json);
                 SetStatus($"Loaded — {_vm.Blocks.BlockTree.Count} block(s)");
+
+                // (Re)create the live buffer for the new file path and attach it
+                _liveBuffer = new LiveWhfmtBuffer(filePath);
+                _codeView.AttachBuffer(_liveBuffer);
+                PushJsonToCodeView();
             });
 
             OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = true });
@@ -249,12 +290,6 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, dirty ? $"{Title} *" : Title);
 
-            ValBar.Visibility = _vm.ValidationSummary.Count > 0
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-            ValBar.ErrorCount   = _vm.ErrorCount;
-            ValBar.WarningCount = _vm.WarningCount;
-
             UpdateToolbarState();
             UpdateDirtyStatus();
             SyncPopToolbarState();
@@ -265,14 +300,8 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
     {
         Dispatcher.InvokeAsync(() =>
         {
-            ValBar.ItemsSource  = _vm.ValidationSummary;
-            ValBar.ErrorCount   = _vm.ErrorCount;
-            ValBar.WarningCount = _vm.WarningCount;
-            ValBar.Visibility   = _vm.ValidationSummary.Count > 0
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
             UpdateValidationStatus();
+            PublishDiagnostics();
 
             var summary = _vm.ErrorCount > 0
                 ? $"{_vm.ErrorCount} error(s), {_vm.WarningCount} warning(s)"
@@ -312,4 +341,10 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void SetStatus(string msg) => StatusText.Text = msg;
+
+    private void PushJsonToCodeView()
+    {
+        if (_liveBuffer is null) return;
+        _liveBuffer.SetText(_vm.SerializeToJson());
+    }
 }

@@ -96,6 +96,12 @@ public partial class MainWindow
             () => _ = OnConvertSolutionFormatAsync(toSlnx: false));
         Reg(CommandIds.File.ConvertToWhsln, "Convert Solution to .whsln", "File", null,            "\uE8AB",
             () => _ = OnConvertToWhslnAsync());
+        Reg(CommandIds.File.NewHexEditor,  "New Hex Editor",             "File / New", null,       "\uE8A5",
+            () => OpenEmptyEditor("hex"));
+        Reg(CommandIds.File.NewTextEditor, "New Text Editor",            "File / New", null,       "\uE8A5",
+            () => OpenEmptyEditor("text"));
+        Reg(CommandIds.File.NewCodeEditor, "New Code Editor",            "File / New", null,       "\uE8A5",
+            () => OpenEmptyEditor("code"));
 
         // ── Workspace ────────────────────────────────────────────────────────
         Reg(CommandIds.Workspace.New,    "New Workspace…",         "Workspace", null,            "\uE8A5",

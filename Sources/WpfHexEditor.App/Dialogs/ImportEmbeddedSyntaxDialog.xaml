@@ -31,21 +31,9 @@
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
             </Style>
 
-            <!-- TreeViewItem base style -->
-            <Style TargetType="TreeViewItem">
-                <Setter Property="Foreground"        Value="{DynamicResource DockMenuForegroundBrush}"/>
-                <Setter Property="Background"        Value="Transparent"/>
-                <Setter Property="Padding"           Value="3,2"/>
-                <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
-                <Setter Property="IsExpanded"        Value="False"/>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="{DynamicResource ERR_HoverRowBrush}"/>
-                    </Trigger>
-                    <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="{DynamicResource ERR_SelectedRowBrush}"/>
-                    </Trigger>
-                </Style.Triggers>
+            <!-- TreeViewItem: inherit global VS-style template; IsExpanded=False by default here -->
+            <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                <Setter Property="IsExpanded" Value="False"/>
             </Style>
 
             <!-- ToggleButton (Show Preview) — VS2022 style with checked state -->

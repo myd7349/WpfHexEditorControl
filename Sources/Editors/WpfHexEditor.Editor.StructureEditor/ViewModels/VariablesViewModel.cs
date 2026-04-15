@@ -5,7 +5,7 @@
 //////////////////////////////////////////////
 // Project: WpfHexEditor.Editor.StructureEditor
 // File: ViewModels/VariablesViewModel.cs
-// Description: VM for the Variables tab — editable Key/Value dictionary.
+// Description: VM for the Variables tab — editable Key/Type/Value/Description rows.
 //////////////////////////////////////////////
 
 using System.Collections.ObjectModel;
@@ -19,11 +19,17 @@ internal sealed class VariableItemViewModel : ViewModelBase
     internal event EventHandler? Changed;
     internal event EventHandler? RemoveRequested;
 
-    private string _key   = "";
-    private string _value = "";
+    private string _key         = "";
+    private string _type        = "string";
+    private string _value       = "";
+    private string _description = "";
 
-    public string Key   { get => _key;   set { if (SetField(ref _key, value))   RaiseChanged(); } }
-    public string Value { get => _value; set { if (SetField(ref _value, value)) RaiseChanged(); } }
+    public string Key         { get => _key;         set { if (SetField(ref _key, value))         RaiseChanged(); } }
+    public string Type        { get => _type;        set { if (SetField(ref _type, value))        RaiseChanged(); } }
+    public string Value       { get => _value;       set { if (SetField(ref _value, value))       RaiseChanged(); } }
+    public string Description { get => _description; set { if (SetField(ref _description, value)) RaiseChanged(); } }
+
+    public static IReadOnlyList<string> TypeOptions { get; } = ["string", "int", "float", "bool"];
 
     public System.Windows.Input.ICommand RemoveCommand =>
         new RelayCommand(() => RemoveRequested?.Invoke(this, EventArgs.Empty));
@@ -35,13 +41,41 @@ internal sealed class VariablesViewModel : ViewModelBase
 {
     internal event EventHandler? Changed;
 
+    private string _filterText = "";
+
     public ObservableCollection<VariableItemViewModel> Items { get; } = [];
+
+    public string FilterText
+    {
+        get => _filterText;
+        set { if (SetField(ref _filterText, value)) OnPropertyChanged(nameof(FilteredItems)); }
+    }
+
+    public IEnumerable<VariableItemViewModel> FilteredItems =>
+        string.IsNullOrWhiteSpace(_filterText)
+            ? Items
+            : Items.Where(i => i.Key.Contains(_filterText, StringComparison.OrdinalIgnoreCase));
 
     internal void LoadFrom(Dictionary<string, object>? vars)
     {
         Items.Clear();
         foreach (var kv in vars ?? [])
-            AddItem(kv.Key, kv.Value?.ToString() ?? "");
+        {
+            var valStr = kv.Value?.ToString() ?? "";
+            var type = kv.Value switch
+            {
+                bool   => "bool",
+                int    => "int",
+                long   => "int",
+                float  => "float",
+                double => "float",
+                _ when bool.TryParse(valStr, out _)  => "bool",
+                _ when long.TryParse(valStr, out _)  => "int",
+                _ when double.TryParse(valStr, out _) => "float",
+                _ => "string"
+            };
+            AddItem(kv.Key, type, valStr);
+        }
     }
 
     internal void SaveTo(FormatDefinition def)
@@ -50,21 +84,28 @@ internal sealed class VariablesViewModel : ViewModelBase
         foreach (var item in Items)
         {
             if (string.IsNullOrWhiteSpace(item.Key)) continue;
-            if (long.TryParse(item.Value, out var n))
-                def.Variables[item.Key] = n;
-            else if (double.TryParse(item.Value, out var d))
-                def.Variables[item.Key] = d;
-            else
-                def.Variables[item.Key] = item.Value;
+            def.Variables[item.Key] = item.Type switch
+            {
+                "int"   when long.TryParse(item.Value, out var n)     => (object)n,
+                "float" when double.TryParse(item.Value, out var d)   => (object)d,
+                "bool"  when bool.TryParse(item.Value, out var b)     => (object)b,
+                _ => item.Value
+            };
         }
     }
 
-    internal void AddItem(string key = "", string value = "")
+    internal void AddItem(string key = "", string type = "string", string value = "")
     {
-        var vm = new VariableItemViewModel { Key = key, Value = value };
-        vm.RemoveRequested += (s, _) => { Items.Remove((VariableItemViewModel)s!); RaiseChanged(); };
-        vm.Changed         += (_, _) => RaiseChanged();
+        var vm = new VariableItemViewModel { Key = key, Type = type, Value = value };
+        vm.RemoveRequested += (s, _) =>
+        {
+            Items.Remove((VariableItemViewModel)s!);
+            OnPropertyChanged(nameof(FilteredItems));
+            RaiseChanged();
+        };
+        vm.Changed += (_, _) => { OnPropertyChanged(nameof(FilteredItems)); RaiseChanged(); };
         Items.Add(vm);
+        OnPropertyChanged(nameof(FilteredItems));
         RaiseChanged();
     }
 

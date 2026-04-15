@@ -73,6 +73,9 @@ internal sealed class BlockViewModel : ViewModelBase
     private string _targetVar = "";
     private string _label     = "";
 
+    /// <summary>Transient nesting depth, set by QualityMetricsViewModel.Refresh(). Not persisted.</summary>
+    internal int Depth { get; set; }
+
     // ── Collections ──────────────────────────────────────────────────────────
 
     public ObservableCollection<BitfieldViewModel>    Bitfields      { get; } = [];

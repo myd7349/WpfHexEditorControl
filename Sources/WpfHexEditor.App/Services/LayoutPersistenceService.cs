@@ -221,7 +221,9 @@ internal static class LayoutPersistenceService
         => item.ContentId.StartsWith("doc-file-")
         || item.ContentId.StartsWith("doc-hex-")
         || item.ContentId.StartsWith("doc-proj-")
-        || item.ContentId.StartsWith("doc-src-nav-");
+        || item.ContentId.StartsWith("doc-src-nav-")
+        || item.ContentId.StartsWith("doc-new-text-")
+        || item.ContentId.StartsWith("doc-new-code-");
 
     /// <summary>
     /// Returns a normalized (path, editorId) key for dedup, or null if item is not a document.

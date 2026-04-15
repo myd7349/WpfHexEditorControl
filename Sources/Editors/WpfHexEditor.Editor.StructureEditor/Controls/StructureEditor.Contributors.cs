@@ -4,61 +4,120 @@
 // Contributors: Claude Opus 4.6
 // Project: WpfHexEditor.Editor.StructureEditor
 // File: Controls/StructureEditor.Contributors.cs
-// Description: IEditorToolbarContributor + IStatusBarContributor implementation.
+// Description: IEditorToolbarContributor + IStatusBarContributor + IDiagnosticSource implementation.
 //              Provides contextual toolbar buttons and status bar items to the IDE shell.
+//              Publishes validation diagnostics to the IDE Error List panel.
 //////////////////////////////////////////////////////
 
 using System.Collections.ObjectModel;
+using System.IO;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.Core.Validation;
 
 namespace WpfHexEditor.Editor.StructureEditor.Controls;
 
-public sealed partial class StructureEditor : IEditorToolbarContributor, IStatusBarContributor
+public sealed partial class StructureEditor : IEditorToolbarContributor, IStatusBarContributor, IDiagnosticSource
 {
     // ── Toolbar ──────────────────────────────────────────────────────────────
+    // NOTE: Save, Undo, Redo are global IDE commands (Ctrl+S/Z/Y delegate to
+    //       ActiveDocumentEditor). Only domain-specific actions belong here.
 
     public ObservableCollection<EditorToolbarItem> ToolbarItems { get; } = [];
 
-    private EditorToolbarItem? _tbSave;
-    private EditorToolbarItem? _tbUndo;
-    private EditorToolbarItem? _tbRedo;
+    private EditorToolbarItem? _tbAddBlock;
+    private EditorToolbarItem? _tbCodeView;
+
+    // Tracks whether the live code view split pane is open
+    private bool _codeViewVisible;
+
+    private const double CodeViewWidth = 360d;
 
     private void InitToolbarItems()
     {
-        _tbSave = new EditorToolbarItem
-        {
-            Icon = "\uE74E", Tooltip = "Save (Ctrl+S)",
-            Command = SaveCommand,
-        };
         var tbValidate = new EditorToolbarItem
         {
-            Icon = "\uE73E", Tooltip = "Validate",
+            Icon    = "\uE73E",
+            Tooltip = "Validate (Ctrl+Shift+V)",
             Command = new ViewModels.RelayCommand(() => _vm.TriggerValidationNow()),
         };
-        _tbUndo = new EditorToolbarItem
+        _tbAddBlock = new EditorToolbarItem
         {
-            Icon = "\uE7A7", Tooltip = "Undo (Ctrl+Z)",
-            Command = UndoCommand, IsEnabled = false,
+            Icon      = "\uE710",
+            Tooltip   = "Add Block (Ctrl+N)",
+            Command   = new ViewModels.RelayCommand(() => BlocksTabCtrl.RequestAddBlock()),
+            IsEnabled = false,
         };
-        _tbRedo = new EditorToolbarItem
+        _tbCodeView = new EditorToolbarItem
         {
-            Icon = "\uE7A6", Tooltip = "Redo (Ctrl+Y)",
-            Command = RedoCommand, IsEnabled = false,
+            Icon    = "\uE943",   // Segoe MDL2 "Code" glyph
+            Tooltip = "Toggle Live Code View",
+            Command = new ViewModels.RelayCommand(ToggleCodeView),
         };
 
-        ToolbarItems.Add(_tbSave);
-        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
         ToolbarItems.Add(tbValidate);
         ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
-        ToolbarItems.Add(_tbUndo);
-        ToolbarItems.Add(_tbRedo);
+        ToolbarItems.Add(_tbAddBlock);
+        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
+        ToolbarItems.Add(_tbCodeView);
     }
 
     private void UpdateToolbarState()
     {
-        if (_tbSave is not null) _tbSave.IsEnabled = _vm.IsDirty;
-        if (_tbUndo is not null) _tbUndo.IsEnabled = _vm.UndoRedo.CanUndo;
-        if (_tbRedo is not null) _tbRedo.IsEnabled = _vm.UndoRedo.CanRedo;
+        if (_tbAddBlock is not null)
+            _tbAddBlock.IsEnabled = MainTabs.SelectedIndex == 2; // Blocks tab
+    }
+
+    private void ToggleCodeView()
+    {
+        _codeViewVisible = !_codeViewVisible;
+
+        if (_codeViewVisible)
+        {
+            SplitterCol.Width  = new System.Windows.GridLength(4);
+            CodeViewCol.Width  = new System.Windows.GridLength(CodeViewWidth);
+            // Push a fresh snapshot so the panel isn't blank on first open
+            PushJsonToCodeView();
+        }
+        else
+        {
+            SplitterCol.Width  = new System.Windows.GridLength(0);
+            CodeViewCol.Width  = new System.Windows.GridLength(0);
+        }
+    }
+
+    // ── Diagnostics (IDE Error List) ─────────────────────────────────────────
+
+    private List<DiagnosticEntry> _diagnostics = [];
+
+    public IReadOnlyList<DiagnosticEntry> GetDiagnostics() => _diagnostics;
+
+    public event EventHandler? DiagnosticsChanged;
+
+    public string SourceLabel => "WHFMT";
+
+    private void PublishDiagnostics()
+    {
+        var fileName = string.IsNullOrEmpty(_filePath) ? null : Path.GetFileName(_filePath);
+        _diagnostics = _vm.ValidationSummary
+            .Select(v => new DiagnosticEntry(
+                Severity    : v.Severity == ValidationSeverity.Error
+                                  ? DiagnosticSeverity.Error
+                                  : DiagnosticSeverity.Warning,
+                Code        : "WHFMT",
+                Description : v.Message,
+                ProjectName : "Format Definitions",
+                FileName    : fileName,
+                FilePath    : _filePath,
+                Line        : v.Line,
+                Column      : v.Column))
+            .ToList();
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ClearDiagnostics()
+    {
+        _diagnostics = [];
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ── Status Bar ───────────────────────────────────────────────────────────

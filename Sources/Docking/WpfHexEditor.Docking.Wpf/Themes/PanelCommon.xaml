@@ -816,6 +816,78 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Link-style "add" button: transparent background, accent foreground, no border.
+         Use this for inline "+ Add …" actions inside editor panels and tool windows. -->
+    <Style x:Key="PM_LinkButtonStyle" TargetType="Button">
+        <Setter Property="Background"        Value="Transparent"/>
+        <Setter Property="Foreground"        Value="{DynamicResource ET_AccentBrush}"/>
+        <Setter Property="BorderThickness"   Value="0"/>
+        <Setter Property="FontSize"          Value="11"/>
+        <Setter Property="Padding"           Value="4,2"/>
+        <Setter Property="Margin"            Value="0,4,0,0"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Cursor"            Value="Hand"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="0"
+                            CornerRadius="2"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PM_ListItemSelectedBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Inline remove (✕) button: transparent, muted foreground, no border -->
+    <Style x:Key="PM_RemoveButtonStyle" TargetType="Button">
+        <Setter Property="Content"           Value="✕"/>
+        <Setter Property="Background"        Value="Transparent"/>
+        <Setter Property="Foreground"        Value="{DynamicResource TE_LineNumberForeground}"/>
+        <Setter Property="BorderThickness"   Value="0"/>
+        <Setter Property="FontSize"          Value="10"/>
+        <Setter Property="Padding"           Value="3,1"/>
+        <Setter Property="Cursor"            Value="Hand"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="0"
+                            CornerRadius="2"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PM_ListItemSelectedBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Metric card: small dark card showing CPU / RAM / Init / Avg -->
     <Style x:Key="PM_MetricCardStyle" TargetType="Border">
         <Setter Property="Background"   Value="{DynamicResource Panel_ToolbarBrush}"/>

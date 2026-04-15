@@ -20,12 +20,13 @@
                 <ResourceDictionary Source="/WpfHexEditor.Editor.StructureEditor;component/Resources/BlockEditorTemplates.V2.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <ctrl:BlockEditorTemplateSelector x:Key="BlockEditorTemplateSelector"/>
+            <ctrl:BlockTypeBadgeConverter x:Key="BlockTypeBadge"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260" MinWidth="160" MaxWidth="500"/>
+            <ColumnDefinition Width="340" MinWidth="200" MaxWidth="600"/>
             <ColumnDefinition Width="4"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
@@ -61,7 +62,7 @@
                     <ContextMenu Background="{DynamicResource TE_LineNumberBackground}"
                                  Foreground="{DynamicResource TE_Foreground}"
                                  BorderBrush="{DynamicResource DockBorderBrush}">
-                        <MenuItem Header="Add Block..." Click="OnAddBlock"/>
+                        <MenuItem Header="Add Block..." Click="OnAddBlock" InputGestureText="Ctrl+N"/>
                         <Separator/>
                         <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" InputGestureText="Ctrl+D"/>
                         <MenuItem Header="Remove" Command="{Binding RemoveCommand}" InputGestureText="Del"/>
@@ -74,18 +75,23 @@
                     </ContextMenu>
                 </TreeView.ContextMenu>
                 <TreeView.ItemContainerStyle>
-                    <Style TargetType="TreeViewItem">
+                    <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                         <Setter Property="IsExpanded" Value="True"/>
-                        <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                         <StackPanel Orientation="Horizontal" Margin="2,1">
-                            <!-- Type color indicator -->
-                            <Rectangle Width="6" Height="14" RadiusX="2" RadiusY="2"
-                                       Fill="{Binding ColorBrush}" Margin="0,0,5,0"
-                                       VerticalAlignment="Center"/>
+                            <!-- 2-char type badge chip with block color as background -->
+                            <Border CornerRadius="2" Width="22" Height="14"
+                                    Background="{Binding ColorBrush}" Margin="0,0,5,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding BlockType, Converter={StaticResource BlockTypeBadge}}"
+                                           FontSize="8" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
                             <TextBlock Text="{Binding DisplayName}" FontSize="11"
                                        Foreground="{DynamicResource TE_Foreground}"/>
                         </StackPanel>
@@ -112,14 +118,17 @@
         </ScrollViewer>
 
         <!-- Empty state -->
-        <TextBlock Grid.Column="2"
-                   x:Name="EmptyHint"
-                   Text="Select a block in the tree to edit its properties.&#x0a;Right-click for more options."
-                   FontSize="12"
-                   Foreground="{DynamicResource TE_LineNumberForeground}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   TextAlignment="Center"
-                   Visibility="Visible"/>
+        <StackPanel Grid.Column="2"
+                    x:Name="EmptyHint"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Visibility="Visible">
+            <TextBlock Text="Select a block to edit its properties,"
+                       FontSize="12" TextAlignment="Center"
+                       Foreground="{DynamicResource TE_LineNumberForeground}"/>
+            <TextBlock Text="or press Ctrl+N / right-click to add a new block."
+                       FontSize="11" TextAlignment="Center" Margin="0,4,0,0"
+                       Foreground="{DynamicResource TE_LineNumberForeground}"/>
+        </StackPanel>
     </Grid>
 </UserControl>

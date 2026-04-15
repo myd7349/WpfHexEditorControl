@@ -33,6 +33,9 @@ public static class CommandIds
         public const string ConvertToSlnx    = "File.ConvertToSlnx";
         public const string ConvertToSln     = "File.ConvertToSln";
         public const string ConvertToWhsln   = "File.ConvertToWhsln";
+        public const string NewHexEditor     = "File.NewHexEditor";
+        public const string NewTextEditor    = "File.NewTextEditor";
+        public const string NewCodeEditor    = "File.NewCodeEditor";
     }
 
     public static class Edit

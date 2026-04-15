@@ -2,7 +2,7 @@
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Opus 4.6
-    Description: Interactive .whfmt editor shell — TabControl + ValidationBar + PopToolbar.
+    Description: Interactive .whfmt editor shell — TabControl + live CodeView split + PopToolbar.
 -->
 
 <UserControl x:Class="WpfHexEditor.Editor.StructureEditor.Controls.StructureEditor"
@@ -26,98 +26,156 @@
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <ctrl:SeverityToBrushConverter x:Key="SeverityToBrushConverter"/>
+
+            <!-- TabControl: theme the tab-strip panel background -->
+            <Style x:Key="WhfmtTabControlStyle" TargetType="TabControl">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid KeyboardNavigation.TabNavigation="Local" SnapsToDevicePixels="True">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0"
+                                        Background="{DynamicResource DockMenuBackgroundBrush}"
+                                        BorderBrush="{DynamicResource DockBorderBrush}"
+                                        BorderThickness="0,0,0,1">
+                                    <TabPanel x:Name="HeaderPanel"
+                                              IsItemsHost="True"
+                                              Margin="4,2,4,0"
+                                              Background="Transparent"
+                                              KeyboardNavigation.TabIndex="1"/>
+                                </Border>
+                                <Border Grid.Row="1"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                      ContentSource="SelectedContent"
+                                                      KeyboardNavigation.TabNavigation="Local"
+                                                      KeyboardNavigation.DirectionalNavigation="Contained"
+                                                      Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>     <!-- TabControl -->
-            <RowDefinition Height="Auto"/>  <!-- ValidationBar -->
-            <RowDefinition Height="22"/>    <!-- Status bar -->
+            <RowDefinition Height="*"/>   <!-- main content -->
+            <RowDefinition Height="22"/>  <!-- status bar -->
         </Grid.RowDefinitions>
 
-        <!-- ── TabControl ────────────────────────────────────────────────── -->
-        <TabControl Grid.Row="0"
-                    x:Name="MainTabs"
-                    Background="{DynamicResource TE_Background}"
-                    Foreground="{DynamicResource TE_Foreground}"
+        <!-- ── Main content: visual editor | splitter | live code view ─── -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="260"/>
+                <ColumnDefinition x:Name="SplitterCol" Width="0"/>
+                <ColumnDefinition x:Name="CodeViewCol"  Width="0" MinWidth="0"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Col 0 : TabControl ──────────────────────────────────── -->
+            <TabControl Grid.Column="0"
+                        x:Name="MainTabs"
+                        Style="{StaticResource WhfmtTabControlStyle}"
+                        Background="{DynamicResource TE_Background}"
+                        Foreground="{DynamicResource TE_Foreground}"
+                        BorderBrush="{DynamicResource DockBorderBrush}"
+                        BorderThickness="0"
+                        ItemContainerStyle="{DynamicResource DockTabItemStyle}">
+
+                <TabItem Header="Metadata">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <tabs:MetadataTab x:Name="MetadataTabCtrl"/>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Detection">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <tabs:DetectionTab x:Name="DetectionTabCtrl"/>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Blocks">
+                    <tabs:BlocksTab x:Name="BlocksTabCtrl"/>
+                </TabItem>
+
+                <TabItem Header="Variables">
+                    <tabs:VariablesTab x:Name="VariablesTabCtrl"/>
+                </TabItem>
+
+                <TabItem Header="Advanced">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <tabs:V2FeaturesTab x:Name="V2TabCtrl"/>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Quality">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <tabs:QualityMetricsTab x:Name="QualityTabCtrl"/>
+                    </ScrollViewer>
+                </TabItem>
+
+            </TabControl>
+
+            <!-- ── Col 1 : Splitter ────────────────────────────────────── -->
+            <GridSplitter Grid.Column="1"
+                          Width="4"
+                          HorizontalAlignment="Stretch"
+                          Background="{DynamicResource DockBorderBrush}"
+                          ResizeBehavior="PreviousAndNext"
+                          ResizeDirection="Columns"/>
+
+            <!-- ── Col 2 : Live code view (CodeEditorSplitHost inserted in code-behind) -->
+            <Border Grid.Column="2"
+                    x:Name="CodeViewBorder"
                     BorderBrush="{DynamicResource DockBorderBrush}"
-                    BorderThickness="0,1,0,0">
+                    BorderThickness="0"
+                    Background="{DynamicResource TE_Background}"/>
 
-            <TabItem Header="_Metadata">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <tabs:MetadataTab x:Name="MetadataTabCtrl"/>
-                </ScrollViewer>
-            </TabItem>
+            <!-- ── Pop-toolbar trigger zone (invisible, top-right of col 0) -->
+            <Border Grid.Column="0"
+                    x:Name="PopToolbarTrigger"
+                    Height="36" Width="200"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Background="Transparent"
+                    IsHitTestVisible="True"
+                    MouseEnter="OnPopTriggerMouseEnter"/>
 
-            <TabItem Header="_Detection">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <tabs:DetectionTab x:Name="DetectionTabCtrl"/>
-                </ScrollViewer>
-            </TabItem>
+            <!-- ── Pop-toolbar popup ──────────────────────────────────── -->
+            <Popup Grid.Column="0"
+                   x:Name="PopToolbarPopup"
+                   PlacementTarget="{Binding ElementName=PopToolbarTrigger}"
+                   Placement="Bottom"
+                   HorizontalOffset="-40"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade"
+                   StaysOpen="False">
+                <ctrl:StructurePopToolbar x:Name="PopToolbar"
+                                          MouseLeave="OnPopToolbarMouseLeave"/>
+            </Popup>
 
-            <TabItem Header="_Blocks">
-                <tabs:BlocksTab x:Name="BlocksTabCtrl"/>
-            </TabItem>
+            <!-- ── Dirty indicator (floating, top-left of col 0) ─────── -->
+            <TextBlock Grid.Column="0"
+                       x:Name="DirtyIndicator" Text="●" FontSize="14"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Top"
+                       Margin="8,6,0,0"
+                       Foreground="{DynamicResource ET_AccentBrush}"
+                       Visibility="Collapsed"
+                       IsHitTestVisible="False"
+                       ToolTip="Unsaved changes"/>
 
-            <TabItem Header="_Variables">
-                <tabs:VariablesTab x:Name="VariablesTabCtrl"/>
-            </TabItem>
+        </Grid>
 
-            <TabItem Header="v2.0 _Features">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <tabs:V2FeaturesTab x:Name="V2TabCtrl"/>
-                </ScrollViewer>
-            </TabItem>
-
-            <TabItem Header="_Quality">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <tabs:QualityMetricsTab x:Name="QualityTabCtrl"/>
-                </ScrollViewer>
-            </TabItem>
-
-        </TabControl>
-
-        <!-- ── Pop-toolbar trigger zone (invisible, top-right) ────────── -->
-        <Border Grid.Row="0"
-                x:Name="PopToolbarTrigger"
-                Height="36" Width="200"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Background="Transparent"
-                IsHitTestVisible="True"
-                MouseEnter="OnPopTriggerMouseEnter"/>
-
-        <!-- ── Pop-toolbar popup ──────────────────────────────────────── -->
-        <Popup x:Name="PopToolbarPopup"
-               PlacementTarget="{Binding ElementName=PopToolbarTrigger}"
-               Placement="Bottom"
-               HorizontalOffset="-40"
-               AllowsTransparency="True"
-               PopupAnimation="Fade"
-               StaysOpen="False">
-            <ctrl:StructurePopToolbar x:Name="PopToolbar"
-                                      MouseLeave="OnPopToolbarMouseLeave"/>
-        </Popup>
-
-        <!-- ── Dirty indicator (floating, top-left of tab area) ──────── -->
-        <TextBlock x:Name="DirtyIndicator" Text="●" FontSize="14"
-                   Grid.Row="0"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Top"
-                   Margin="8,6,0,0"
-                   Foreground="{DynamicResource ET_AccentBrush}"
-                   Visibility="Collapsed"
-                   IsHitTestVisible="False"
-                   ToolTip="Unsaved changes"/>
-
-        <!-- ── Validation bar ────────────────────────────────────────── -->
-        <ctrl:ValidationBar Grid.Row="1"
-                            x:Name="ValBar"
-                            Visibility="Collapsed"/>
-
-        <!-- ── Status bar ────────────────────────────────────────────── -->
-        <StatusBar Grid.Row="2"
+        <!-- ── Status bar ────────────────────────────────────────────────── -->
+        <StatusBar Grid.Row="1"
                    Background="{DynamicResource TE_LineNumberBackground}"
                    Foreground="{DynamicResource TE_LineNumberForeground}"
                    Height="22">
