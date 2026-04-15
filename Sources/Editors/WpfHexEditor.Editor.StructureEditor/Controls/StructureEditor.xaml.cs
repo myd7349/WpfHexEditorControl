@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using WpfHexEditor.Core.Options;
 using WpfHexEditor.Editor.CodeEditor.Controls;
 using WpfHexEditor.Editor.CodeEditor.Services;
 using WpfHexEditor.Editor.Core;
@@ -45,6 +46,11 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
 
     public StructureEditor()
     {
+        // Apply persisted settings before building commands/timers
+        var editorSettings = AppSettingsService.Instance.Current.StructureEditor;
+        _codeViewVisible = editorSettings.CodePreviewVisibleByDefault;
+        _codeViewDock    = editorSettings.CodePreviewDock;
+
         InitializeComponent();
 
         UndoCommand      = new ViewModels.RelayCommand(() => _vm.Undo(), () => _vm.UndoRedo.CanUndo);
@@ -102,6 +108,14 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             if (_tbLayout is not null) _tbLayout.IsEnabled = true;
             ApplyCodeViewDock(_codeViewDock);
             PushJsonToCodeView();
+
+            // Force CodeEditorSplitHost to re-measure after the WPF layout pass
+            // so it picks up its actual ActualHeight (ADR-002 viewport race fix).
+            Dispatcher.InvokeAsync(() =>
+            {
+                _codeView.InvalidateMeasure();
+                _codeView.UpdateLayout();
+            }, DispatcherPriority.Loaded);
         };
 
         // Tab switch → status bar + pop-toolbar context update + code view navigation
@@ -157,10 +171,10 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             new ViewModels.RelayCommand(() => _vm.TriggerValidationNow()),
             Key.V, ModifierKeys.Control | ModifierKeys.Shift));
 
-        // Live code view — debounce timer (400 ms)
+        // Live code view — debounce timer (interval from settings)
         _refreshTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(400),
+            Interval = TimeSpan.FromMilliseconds(editorSettings.CodePreviewDebounceMs),
         };
         _refreshTimer.Tick += (_, _) =>
         {
@@ -356,9 +370,11 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
 
         try
         {
-            TryBumpVersion(_vm.Metadata);
-            // Auto-stamp the save date when field is empty or format is a priority
-            if (string.IsNullOrEmpty(_vm.QualityMetrics.LastUpdated) || _vm.QualityMetrics.PriorityFormat)
+            var cfg = AppSettingsService.Instance.Current.StructureEditor;
+            if (cfg.AutoIncrementVersion)
+                TryBumpVersion(_vm.Metadata);
+            if (cfg.AutoFillLastUpdated &&
+                (string.IsNullOrEmpty(_vm.QualityMetrics.LastUpdated) || _vm.QualityMetrics.PriorityFormat))
                 _vm.QualityMetrics.LastUpdated = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var json = _vm.SerializeToJson();
             File.WriteAllText(_filePath, json);

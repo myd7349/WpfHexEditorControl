@@ -16,9 +16,13 @@
 
     <UserControl.Resources>
 
-        <!-- Status → foreground colour converter (inline style triggers) -->
+        <!-- Converts Offset=-1 to "—" for skipped/summary blocks -->
+        <local:NegativeOffsetConverter x:Key="OffsetConverter"/>
+
+        <!-- Status → foreground colour (keeps readable on row selection) -->
         <Style x:Key="StatusCell" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Padding"    Value="6,3"/>
             <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Status}" Value="OK">
@@ -33,6 +37,23 @@
                 <DataTrigger Binding="{Binding Status}" Value="Skipped">
                     <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
                 </DataTrigger>
+                <!-- Keep readable on row selection -->
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Summary/branch rows italic -->
+        <Style x:Key="SummaryCell" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Padding"    Value="6,3"/>
+            <Setter Property="FontStyle"  Value="Italic"/>
+            <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -46,14 +67,22 @@
             <Setter Property="Cursor"          Value="Hand"/>
         </Style>
 
+        <Style x:Key="FilterCheck" TargetType="CheckBox">
+            <Setter Property="FontSize"           Value="11"/>
+            <Setter Property="Margin"             Value="0,0,14,0"/>
+            <Setter Property="VerticalAlignment"  Value="Center"/>
+            <Setter Property="Foreground"         Value="{DynamicResource TE_Foreground}"/>
+        </Style>
+
     </UserControl.Resources>
 
     <Grid Margin="12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>   <!-- header -->
+            <RowDefinition Height="Auto"/>   <!-- file picker -->
+            <RowDefinition Height="Auto"/>   <!-- summary bar -->
+            <RowDefinition Height="Auto"/>   <!-- filter bar -->
+            <RowDefinition Height="*"/>      <!-- results grid -->
         </Grid.RowDefinitions>
 
         <!-- ── Header ──────────────────────────────────────────────────────── -->
@@ -67,6 +96,7 @@
         <Grid Grid.Row="1" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -94,6 +124,12 @@
                     x:Name="RunBtn"
                     Click="OnRunClicked"
                     IsEnabled="{Binding RunCommand.CanExecute}"/>
+
+            <Button Grid.Column="3" Content="📋"
+                    Style="{StaticResource GridBtn}"
+                    Margin="6,0,0,0"
+                    ToolTip="Copy results to clipboard (TSV)"
+                    Click="OnCopyClicked"/>
         </Grid>
 
         <!-- ── Summary bar ─────────────────────────────────────────────────── -->
@@ -101,8 +137,9 @@
                 Background="{DynamicResource TE_LineNumberBackground}"
                 BorderBrush="{DynamicResource DockBorderBrush}"
                 BorderThickness="1" CornerRadius="3"
-                Padding="8,4" Margin="0,0,0,8"
-                x:Name="SummaryBar">
+                Padding="8,4" Margin="0,0,0,6"
+                x:Name="SummaryBar"
+                Visibility="Collapsed">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -121,8 +158,18 @@
             </Grid>
         </Border>
 
+        <!-- ── Filter bar ──────────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Show:" FontSize="11" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TE_LineNumberForeground}" Margin="0,0,10,0"/>
+            <CheckBox Content="✓ OK"      Style="{StaticResource FilterCheck}" IsChecked="{Binding ShowOk}"/>
+            <CheckBox Content="⚠ Warning" Style="{StaticResource FilterCheck}" IsChecked="{Binding ShowWarning}"/>
+            <CheckBox Content="✕ Error"   Style="{StaticResource FilterCheck}" IsChecked="{Binding ShowError}"/>
+            <CheckBox Content="⊘ Skipped" Style="{StaticResource FilterCheck}" IsChecked="{Binding ShowSkipped}"/>
+        </StackPanel>
+
         <!-- ── Results grid ────────────────────────────────────────────────── -->
-        <DataGrid Grid.Row="3"
+        <DataGrid Grid.Row="4"
                   ItemsSource="{Binding Results}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
@@ -138,94 +185,163 @@
                   AlternatingRowBackground="{DynamicResource TE_LineNumberBackground}"
                   GridLinesVisibility="Horizontal"
                   HorizontalGridLinesBrush="{DynamicResource DockBorderBrush}"
-                  HeadersVisibility="Column">
+                  HeadersVisibility="Column"
+                  RowHeight="22">
+
+            <!-- Tooltip on each row shows the full Note + force foreground on selection -->
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="ToolTip" Value="{Binding Note}"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                        </Trigger>
+                        <!-- Italic for summary/branch rows -->
+                        <DataTrigger Binding="{Binding IsSummary}" Value="True">
+                            <Setter Property="FontStyle" Value="Italic"/>
+                            <Setter Property="Opacity"   Value="0.85"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="Background"  Value="{DynamicResource TE_LineNumberBackground}"/>
-                    <Setter Property="Foreground"  Value="{DynamicResource TE_LineNumberForeground}"/>
-                    <Setter Property="FontSize"    Value="10"/>
-                    <Setter Property="FontWeight"  Value="SemiBold"/>
-                    <Setter Property="Padding"     Value="6,3"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource DockBorderBrush}"/>
+                    <Setter Property="Background"      Value="{DynamicResource TE_LineNumberBackground}"/>
+                    <Setter Property="Foreground"      Value="{DynamicResource TE_LineNumberForeground}"/>
+                    <Setter Property="FontSize"        Value="10"/>
+                    <Setter Property="FontWeight"      Value="SemiBold"/>
+                    <Setter Property="Padding"         Value="6,3"/>
+                    <Setter Property="BorderBrush"     Value="{DynamicResource DockBorderBrush}"/>
                     <Setter Property="BorderThickness" Value="0,0,1,1"/>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
 
             <DataGrid.Columns>
 
-                <DataGridTemplateColumn Header="Status" Width="60" SortMemberPath="Status">
+                <DataGridTemplateColumn Header="Status" Width="68" SortMemberPath="Status">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Status}" Style="{StaticResource StatusCell}" Padding="6,3"/>
+                            <TextBlock Text="{Binding Status}" Style="{StaticResource StatusCell}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Block Name" Binding="{Binding BlockName}" Width="160">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="11"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="Block Name" Width="170" SortMemberPath="BlockName">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding BlockName}" Padding="6,3" FontSize="11"
+                                       Foreground="{DynamicResource TE_Foreground}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSummary}" Value="True">
+                                                <Setter Property="FontStyle" Value="Italic"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
                 <DataGridTextColumn Header="Type" Binding="{Binding BlockType}" Width="90">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="11"/>
+                            <Setter Property="Padding"    Value="6,3"/>
+                            <Setter Property="FontSize"   Value="11"/>
                             <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Offset" Binding="{Binding Offset, StringFormat='0x{0:X}'}" Width="80">
+                <DataGridTemplateColumn Header="Offset" Width="76" SortMemberPath="Offset">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Offset, Converter={StaticResource OffsetConverter}}"
+                                       Padding="6,3" FontSize="11"
+                                       Foreground="{DynamicResource SE_ValidationInfoBrush}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="42">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="11"/>
-                            <Setter Property="Foreground" Value="{DynamicResource SE_ValidationInfoBrush}"/>
+                            <Setter Property="Padding"  Value="6,3"/>
+                            <Setter Property="FontSize" Value="11"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="45">
+                <DataGridTextColumn Header="Raw (hex)" Binding="{Binding RawHex}" Width="130">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="11"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-
-                <DataGridTextColumn Header="Raw (hex)" Binding="{Binding RawHex}" Width="140">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="10"/>
+                            <Setter Property="Padding"    Value="6,3"/>
+                            <Setter Property="FontSize"   Value="10"/>
                             <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Parsed Value" Binding="{Binding ParsedValue}" Width="140">
+                <DataGridTextColumn Header="Parsed Value" Binding="{Binding ParsedValue}" Width="130">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="11"/>
+                            <Setter Property="Padding"  Value="6,3"/>
+                            <Setter Property="FontSize" Value="11"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Note column: single line, full text in row tooltip -->
                 <DataGridTextColumn Header="Note" Binding="{Binding Note}" Width="*">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Padding"   Value="6,3"/>
-                            <Setter Property="FontSize"  Value="10"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TE_LineNumberForeground}"/>
-                            <Setter Property="TextWrapping" Value="Wrap"/>
+                            <Setter Property="Padding"              Value="6,3"/>
+                            <Setter Property="FontSize"             Value="10"/>
+                            <Setter Property="Foreground"           Value="{DynamicResource TE_LineNumberForeground}"/>
+                            <Setter Property="TextTrimming"         Value="CharacterEllipsis"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>

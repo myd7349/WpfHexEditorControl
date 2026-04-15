@@ -5,7 +5,8 @@
 // Project: WpfHexEditor.Editor.StructureEditor
 // File: Services/SimpleBlockInterpreter.cs
 // Description: Lightweight format-against-file interpreter for the Test Panel.
-//              Handles field and signature blocks; reports skips for complex types.
+//              Fully handles: field, signature, conditional, loop, metadata.
+//              Reports skips for union, nested, repeating (partial), pointer.
 //////////////////////////////////////////////////////
 
 using System.Collections.Generic;
@@ -20,23 +21,35 @@ internal sealed class BlockTestResult
 {
     public string  BlockName    { get; init; } = "";
     public string  BlockType    { get; init; } = "";
-    public long    Offset       { get; init; }
+    public long    Offset       { get; init; } = -1;   // -1 = not applicable (skipped/summary)
     public int     Length       { get; init; }
     public string  RawHex       { get; init; } = "";
     public string  ParsedValue  { get; init; } = "";
     public string  Status       { get; init; } = "OK";   // OK | Warning | Error | Skipped
     public string  Note         { get; init; } = "";
+    public bool    IsSummary    { get; init; }           // True for conditional/loop summary rows
 }
 
 /// <summary>
 /// Executes a <see cref="FormatDefinition"/> against raw file bytes and returns
-/// per-block test results. Only <c>field</c> and <c>signature</c> blocks are
-/// fully interpreted; others are reported as Skipped.
+/// per-block test results.
+/// <list type="bullet">
+///   <item>field, signature     — fully parsed</item>
+///   <item>conditional          — condition evaluated; Then/Else branch executed</item>
+///   <item>loop                 — iterated up to MaxTestIterations; body blocks executed</item>
+///   <item>metadata             — variable value shown in ParsedValue</item>
+///   <item>computeFromVariables — skipped (expression evaluation not supported)</item>
+///   <item>action               — skipped (runtime state only)</item>
+///   <item>repeating, union, nested, pointer — skipped</item>
+/// </list>
 /// </summary>
 internal sealed class SimpleBlockInterpreter
 {
     private readonly Dictionary<string, object> _vars = new(StringComparer.Ordinal);
     private readonly byte[] _bytes;
+
+    /// <summary>Maximum loop iterations executed in test mode (prevents flood).</summary>
+    private const int MaxTestIterations = 32;
 
     public SimpleBlockInterpreter(byte[] fileBytes)
     {
@@ -72,14 +85,16 @@ internal sealed class SimpleBlockInterpreter
                 results.Add(InterpretField(block));
                 break;
 
+            case "conditional":
+                InterpretConditional(block, results);
+                break;
+
+            case "loop":
+                InterpretLoop(block, results);
+                break;
+
             case "metadata":
-                results.Add(new BlockTestResult
-                {
-                    BlockName = block.Name ?? "",
-                    BlockType = block.Type ?? "",
-                    Status    = "Skipped",
-                    Note      = "Metadata blocks read from variables (not from file bytes).",
-                });
+                results.Add(InterpretMetadata(block));
                 break;
 
             case "computefromvariables":
@@ -108,10 +123,206 @@ internal sealed class SimpleBlockInterpreter
                     BlockName = block.Name ?? "",
                     BlockType = block.Type ?? "",
                     Status    = "Skipped",
-                    Note      = $"Complex block type '{block.Type}' — requires full interpreter.",
+                    Note      = $"Block type '{block.Type}' — not supported in test mode.",
                 });
                 break;
         }
+    }
+
+    // ── Conditional ───────────────────────────────────────────────────────────
+
+    private void InterpretConditional(BlockDefinition block, List<BlockTestResult> results)
+    {
+        var cond = block.Condition;
+        if (cond is null)
+        {
+            results.Add(new BlockTestResult
+            {
+                BlockName = block.Name ?? "",
+                BlockType = "conditional",
+                Status    = "Skipped",
+                Note      = "No condition defined.",
+            });
+            return;
+        }
+
+        bool? evaluated = TryEvaluateCondition(cond);
+        if (evaluated is null)
+        {
+            results.Add(new BlockTestResult
+            {
+                BlockName  = block.Name ?? "",
+                BlockType  = "conditional",
+                Status     = "Skipped",
+                IsSummary  = true,
+                Note       = $"Condition [{cond}] — could not be evaluated (unsupported operator or expression).",
+            });
+            return;
+        }
+
+        bool taken         = evaluated.Value;
+        var  branch        = taken ? (block.Then ?? []) : (block.Else ?? []);
+        var  branchLabel   = taken ? (block.TrueLabel ?? "Then") : (block.FalseLabel ?? "Else");
+        int  beforeCount   = results.Count;
+
+        // Summary row for the conditional itself
+        results.Add(new BlockTestResult
+        {
+            BlockName  = block.Name ?? "",
+            BlockType  = "conditional",
+            Status     = "OK",
+            IsSummary  = true,
+            ParsedValue = taken ? "TRUE" : "FALSE",
+            Note       = $"[{cond}] → {(taken ? "TRUE" : "FALSE")} — executing '{branchLabel}' branch ({branch.Count} block(s))",
+        });
+
+        foreach (var b in branch)
+            InterpretBlock(b, results);
+    }
+
+    private bool? TryEvaluateCondition(ConditionDefinition cond)
+    {
+        if (string.IsNullOrEmpty(cond.Field) || string.IsNullOrEmpty(cond.Operator))
+            return null;
+
+        long actual;
+        if (cond.Field.StartsWith("var:", StringComparison.Ordinal))
+        {
+            var varName = cond.Field[4..];
+            if (!_vars.TryGetValue(varName, out var vv)) return null;
+            actual = ToLong(vv);
+        }
+        else if (cond.Field.StartsWith("offset:", StringComparison.Ordinal)
+            && long.TryParse(cond.Field[7..], out var off)
+            && off >= 0 && off + cond.Length <= _bytes.Length)
+        {
+            actual = ReadIntFromBytes(off, cond.Length);
+        }
+        else
+        {
+            return null;
+        }
+
+        long expected = ParseConditionValue(cond.Value);
+
+        return cond.Operator.ToLowerInvariant() switch
+        {
+            "equals"       or "==" or "eq" => actual == expected,
+            "notequals"    or "!=" or "ne" => actual != expected,
+            "greaterthan"  or ">"  or "gt" => actual > expected,
+            "lessthan"     or "<"  or "lt" => actual < expected,
+            "greaterorequal" or ">="       => actual >= expected,
+            "lessorequal"    or "<="       => actual <= expected,
+            _                              => (bool?)null,
+        };
+    }
+
+    private long ReadIntFromBytes(long offset, int length)
+    {
+        long v = 0;
+        for (int i = 0; i < Math.Min(length, 8); i++)
+            v |= (long)_bytes[offset + i] << (i * 8);
+        return v;
+    }
+
+    private static long ParseConditionValue(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return 0;
+        if (raw.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            && long.TryParse(raw[2..], System.Globalization.NumberStyles.HexNumber, null, out var hex))
+            return hex;
+        if (long.TryParse(raw, out var dec)) return dec;
+        return 0;
+    }
+
+    // ── Loop ─────────────────────────────────────────────────────────────────
+
+    private void InterpretLoop(BlockDefinition block, List<BlockTestResult> results)
+    {
+        long rawCount = ResolveNumber(block.Count, -1);
+        if (rawCount < 0)
+        {
+            results.Add(new BlockTestResult
+            {
+                BlockName = block.Name ?? "",
+                BlockType = "loop",
+                Status    = "Skipped",
+                Note      = "Cannot resolve loop count — variable not declared.",
+            });
+            return;
+        }
+
+        int count    = (int)Math.Min(rawCount, MaxTestIterations);
+        int bodySize = (block.Body ?? []).Count;
+        bool capped  = rawCount > MaxTestIterations;
+
+        // Summary row
+        results.Add(new BlockTestResult
+        {
+            BlockName  = block.Name ?? "",
+            BlockType  = "loop",
+            Status     = "OK",
+            IsSummary  = true,
+            ParsedValue = $"{count} / {rawCount}",
+            Note       = capped
+                ? $"Loop: {rawCount} iteration(s) declared — capped at {MaxTestIterations} in test mode. {bodySize} block(s) per iteration."
+                : $"Loop: {count} iteration(s) × {bodySize} block(s) per iteration.",
+        });
+
+        for (int i = 0; i < count; i++)
+        {
+            // Write index variable if declared
+            if (!string.IsNullOrEmpty(block.IndexVar))
+                _vars[block.IndexVar] = (long)i;
+
+            foreach (var b in block.Body ?? [])
+            {
+                var iterResults = new List<BlockTestResult>();
+                InterpretBlock(b, iterResults);
+
+                foreach (var r in iterResults)
+                {
+                    // Prefix block name with [i=N] to distinguish iterations
+                    results.Add(new BlockTestResult
+                    {
+                        BlockName   = $"[i={i}] {r.BlockName}",
+                        BlockType   = r.BlockType,
+                        Offset      = r.Offset,
+                        Length      = r.Length,
+                        RawHex      = r.RawHex,
+                        ParsedValue = r.ParsedValue,
+                        Status      = r.Status,
+                        Note        = r.Note,
+                        IsSummary   = r.IsSummary,
+                    });
+                }
+            }
+        }
+    }
+
+    // ── Metadata ──────────────────────────────────────────────────────────────
+
+    private BlockTestResult InterpretMetadata(BlockDefinition block)
+    {
+        var name = block.Name ?? "";
+
+        // Look up the variable by name or by StoreAs
+        object? val = null;
+        if (!string.IsNullOrEmpty(name) && _vars.TryGetValue(name, out var v1)) val = v1;
+        else if (!string.IsNullOrEmpty(block.StoreAs) && _vars.TryGetValue(block.StoreAs, out var v2)) val = v2;
+
+        string parsed = val is not null ? val.ToString() ?? "—" : "—";
+
+        return new BlockTestResult
+        {
+            BlockName   = name,
+            BlockType   = "metadata",
+            ParsedValue = parsed,
+            Status      = "OK",
+            Note        = val is not null
+                ? "Variable value at this point in execution."
+                : "Variable not yet set at this point.",
+        };
     }
 
     // ── Field / Signature ─────────────────────────────────────────────────────
@@ -144,11 +355,7 @@ internal sealed class SimpleBlockInterpreter
 
         // Resolve length
         int length = (int)ResolveNumber(block.Length, 0);
-        if (length <= 0)
-        {
-            // Some fields (e.g. utf8 strings) have no length — default to 0-byte marker
-            length = 0;
-        }
+        if (length < 0) length = 0;
 
         // Bounds check
         if (offset < 0 || offset > _bytes.Length)
@@ -169,10 +376,19 @@ internal sealed class SimpleBlockInterpreter
         var rawHex   = Convert.ToHexString(rawBytes);
 
         // Parse typed value
-        bool   bigEndian  = string.Equals(block.Endianness, "big", StringComparison.OrdinalIgnoreCase);
-        string parsed     = ParseValue(rawBytes, block.ValueType, bigEndian);
-        string status     = "OK";
-        string note       = "";
+        bool   bigEndian = string.Equals(block.Endianness, "big", StringComparison.OrdinalIgnoreCase);
+        string parsed    = ParseValue(rawBytes, block.ValueType, bigEndian);
+        string status    = "OK";
+        string note      = "";
+
+        // Apply ValueMap if defined
+        if (block.ValueMap is { Count: > 0 } && rawBytes.Length > 0)
+        {
+            long numericVal = TryParseNumeric(rawBytes, block.ValueType, bigEndian) ?? 0;
+            var  key        = numericVal.ToString();
+            if (block.ValueMap.TryGetValue(key, out var mapped))
+                parsed = $"{parsed} ({mapped})";
+        }
 
         // Store variable
         if (!string.IsNullOrEmpty(block.StoreAs) && length > 0)
@@ -185,8 +401,7 @@ internal sealed class SimpleBlockInterpreter
         // Signature validation
         if (string.Equals(block.Type, "signature", StringComparison.OrdinalIgnoreCase))
         {
-            // Signatures carry expected bytes in ValueMap or via description — best-effort check
-            note = "Signature block — bytes shown; no expected pattern to validate against in test mode.";
+            note   = "Signature — bytes shown; expected pattern not validated in test mode.";
             status = "Warning";
         }
 
@@ -215,8 +430,6 @@ internal sealed class SimpleBlockInterpreter
     private static string ParseValue(byte[] data, string? valueType, bool bigEndian)
     {
         if (data.Length == 0) return "(empty)";
-
-        var span = data.AsSpan();
 
         try
         {
@@ -287,7 +500,6 @@ internal sealed class SimpleBlockInterpreter
     {
         if (raw is null) return fallback;
 
-        // JsonElement (from deserialization)
         if (raw is JsonElement je)
         {
             return je.ValueKind switch
@@ -316,6 +528,9 @@ internal sealed class SimpleBlockInterpreter
             var name = s[4..];
             return _vars.TryGetValue(name, out var v) ? ToLong(v) : fallback;
         }
+        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            && long.TryParse(s[2..], System.Globalization.NumberStyles.HexNumber, null, out var hex))
+            return hex;
         if (long.TryParse(s, out var parsed)) return parsed;
         return fallback;
     }

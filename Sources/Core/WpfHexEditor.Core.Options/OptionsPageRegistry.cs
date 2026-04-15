@@ -77,6 +77,11 @@ public static class OptionsPageRegistry
         // Extensions
         new("Extensions", "Marketplace", () => new MarketplaceOptionsPage(), "🔌",
             ["marketplace", "install", "update", "package", "gallery", "extension", "download"]),
+
+        // Format Editor (.whfmt)
+        new("Format Editor (.whfmt)", "General", () => new StructureEditorOptionsPage(), "📋",
+            ["whfmt", "block", "validation", "code preview", "structure", "format definition",
+             "endianness", "version", "test panel", "debounce", "auto validate"]),
     ];
 
     /// <summary>

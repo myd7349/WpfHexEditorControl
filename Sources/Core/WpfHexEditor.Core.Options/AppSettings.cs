@@ -179,6 +179,14 @@ public sealed class AppSettings
     /// <summary>Document Structure panel preferences (max depth, etc.).</summary>
     public DocumentStructureSettings DocumentStructure { get; set; } = new();
 
+    // -- Structure Editor ---------------------------------------------------------
+
+    /// <summary>
+    /// Format definition editor (.whfmt) preferences.
+    /// Serialised as "structureEditor": { … } in settings.json.
+    /// </summary>
+    public StructureEditorSettings StructureEditor { get; set; } = new();
+
     // -- Lazy Plugin Persistence --------------------------------------------------
 
     /// <summary>
@@ -1366,4 +1374,44 @@ public sealed class DocumentStructureSettings
     /// Default = 0 (unlimited).
     /// </summary>
     public int MaxDepthIndex { get; set; } = 0;
+}
+
+
+// ─── Structure Editor ─────────────────────────────────────────────────────────
+
+/// <summary>Format definition editor (.whfmt) preferences.</summary>
+public sealed class StructureEditorSettings
+{
+    /// <summary>Show the live JSON code-preview pane when a .whfmt file is first opened. Default: true.</summary>
+    public bool CodePreviewVisibleByDefault { get; set; } = true;
+
+    /// <summary>Initial dock position of the code-preview pane. One of: "Right", "Left", "Top", "Bottom". Default: "Right".</summary>
+    public string CodePreviewDock { get; set; } = "Right";
+
+    /// <summary>Debounce delay in ms before the code-preview refreshes after a content change. Default: 400.</summary>
+    public int CodePreviewDebounceMs { get; set; } = 400;
+
+    /// <summary>Debounce delay in ms before validation runs after a content change. Default: 500.</summary>
+    public int ValidationDebounceMs { get; set; } = 500;
+
+    /// <summary>When true, validation runs automatically after each content change. Default: true.</summary>
+    public bool AutoValidation { get; set; } = true;
+
+    /// <summary>Default color applied to newly created blocks (#RRGGBB). Default: "#4C9BE8".</summary>
+    public string DefaultBlockColor { get; set; } = "#4C9BE8";
+
+    /// <summary>Default background opacity for block color chips (0.0–1.0). Default: 0.3.</summary>
+    public double DefaultBlockOpacity { get; set; } = 0.3;
+
+    /// <summary>Default byte order applied to new field blocks. One of: "little", "big". Default: "little".</summary>
+    public string DefaultEndianness { get; set; } = "little";
+
+    /// <summary>When true, the patch version number is auto-incremented on every save. Default: true.</summary>
+    public bool AutoIncrementVersion { get; set; } = true;
+
+    /// <summary>When true, the "lastUpdated" quality metric is auto-filled with today's date on save. Default: true.</summary>
+    public bool AutoFillLastUpdated { get; set; } = true;
+
+    /// <summary>Maximum file size in bytes that the Test Panel will load into memory. Default: 10 485 760 (10 MB).</summary>
+    public long TestPanelMaxBytes { get; set; } = 10 * 1024 * 1024;
 }

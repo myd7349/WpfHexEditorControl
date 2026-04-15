@@ -5,7 +5,7 @@
 // Project: WpfHexEditor.Editor.StructureEditor
 // File: ViewModels/TestTabViewModel.cs
 // Description: VM for the Test Panel tab — drives file selection, interpreter
-//              invocation, and result binding.
+//              invocation, result binding, and status-filter toggling.
 //////////////////////////////////////////////////////
 
 using System.Collections.ObjectModel;
@@ -28,6 +28,12 @@ internal sealed class TestTabViewModel : ViewModelBase
     private int    _warnCount;
     private int    _errorCount;
     private int    _skipCount;
+
+    // Filter toggles
+    private bool _showOk      = true;
+    private bool _showWarning = true;
+    private bool _showError   = true;
+    private bool _showSkipped = true;
 
     public string FilePath
     {
@@ -52,6 +58,38 @@ internal sealed class TestTabViewModel : ViewModelBase
     public int ErrorCount { get => _errorCount; private set => SetField(ref _errorCount, value); }
     public int SkipCount  { get => _skipCount;  private set => SetField(ref _skipCount, value); }
 
+    // ── Filter properties ─────────────────────────────────────────────────────
+
+    public bool ShowOk
+    {
+        get => _showOk;
+        set { if (SetField(ref _showOk, value)) ApplyFilter(); }
+    }
+
+    public bool ShowWarning
+    {
+        get => _showWarning;
+        set { if (SetField(ref _showWarning, value)) ApplyFilter(); }
+    }
+
+    public bool ShowError
+    {
+        get => _showError;
+        set { if (SetField(ref _showError, value)) ApplyFilter(); }
+    }
+
+    public bool ShowSkipped
+    {
+        get => _showSkipped;
+        set { if (SetField(ref _showSkipped, value)) ApplyFilter(); }
+    }
+
+    // ── Collections ───────────────────────────────────────────────────────────
+
+    /// <summary>Raw results from the last run (unfiltered source of truth).</summary>
+    private List<BlockTestResult> _allResults = [];
+
+    /// <summary>Filtered view bound to the DataGrid.</summary>
     public ObservableCollection<BlockTestResult> Results { get; } = [];
 
     // ── Commands ──────────────────────────────────────────────────────────────
@@ -92,6 +130,7 @@ internal sealed class TestTabViewModel : ViewModelBase
         IsBusy  = true;
         Summary = "Running…";
         Results.Clear();
+        _allResults = [];
         OkCount = WarnCount = ErrorCount = SkipCount = 0;
 
         try
@@ -100,19 +139,20 @@ internal sealed class TestTabViewModel : ViewModelBase
             var interp  = new SimpleBlockInterpreter(bytes);
             var results = await Task.Run(() => interp.Run(def));
 
-            foreach (var r in results)
-                Results.Add(r);
+            _allResults = results;
 
             OkCount    = results.Count(r => r.Status == "OK");
             WarnCount  = results.Count(r => r.Status == "Warning");
             ErrorCount = results.Count(r => r.Status == "Error");
             SkipCount  = results.Count(r => r.Status == "Skipped");
 
+            ApplyFilter();
+
             Summary = ErrorCount > 0
-                ? $"{ErrorCount} error(s), {WarnCount} warning(s), {SkipCount} skipped"
+                ? $"{ErrorCount} error(s), {WarnCount} warning(s), {SkipCount} skipped — {OkCount} OK"
                 : WarnCount > 0
-                    ? $"Passed with {WarnCount} warning(s)"
-                    : $"All {OkCount} field(s) OK — {SkipCount} complex block(s) skipped";
+                    ? $"Passed with {WarnCount} warning(s) — {OkCount} OK, {SkipCount} skipped"
+                    : $"All {OkCount} block(s) OK — {SkipCount} complex block(s) skipped";
         }
         catch (Exception ex)
         {
@@ -121,6 +161,21 @@ internal sealed class TestTabViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    // ── Filter ────────────────────────────────────────────────────────────────
+
+    private void ApplyFilter()
+    {
+        Results.Clear();
+        foreach (var r in _allResults)
+        {
+            if (r.Status == "OK"      && !_showOk)      continue;
+            if (r.Status == "Warning" && !_showWarning) continue;
+            if (r.Status == "Error"   && !_showError)   continue;
+            if (r.Status == "Skipped" && !_showSkipped) continue;
+            Results.Add(r);
         }
     }
 }
