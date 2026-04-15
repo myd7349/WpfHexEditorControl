@@ -1,0 +1,161 @@
+{
+  "diffMode": "binary",
+  "formatName": "Atari 2600 ROM",
+  "version": "1.0",
+  "extensions": [".a26", ".bin", ".rom"],
+  "description": "Atari 2600 VCS cartridge ROM image (Atari Inc., 1977). No fixed magic — raw 6507 CPU code (a cost-reduced 6502 variant with a 13-bit address bus). Standard sizes: 2 KB (2048 bytes), 4 KB (4096 bytes), 8 KB (8192 bytes with bank switching), 12 KB, 16 KB, 32 KB, and 64 KB. Common bank-switching schemes: F8 (8 KB, Atari standard), F6 (16 KB), F4 (32 KB), E0 (Parker Bros 8 KB), FE (Activision 8 KB), 3F (Tigervision), E7 (M-Network). The 6502 reset vector is at 0xFFFC/0xFFFD: for a 2 KB ROM the vector mirrors at 0x07FC/0x07FD; for 4 KB at 0x0FFC/0x0FFD. No OS ROM — game code controls every aspect of video generation via the TIA chip's direct register writes. Library: approximately 600 licensed commercial releases plus thousands of homebrews.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Atari 2600 VCS Hardware Reference Manual",
+      "6507 CPU Datasheet (MOS Technology)",
+      "TIA (Television Interface Adaptor) Programmer's Guide"
+    ],
+    "WebLinks": [
+      "https://stella-emu.github.io/",
+      "https://www.atarimania.com/",
+      "https://en.wikipedia.org/wiki/Atari_2600",
+      "https://atariage.com/2600/programming/"
+    ]
+  },
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 2048,
+      "maxSignatureOffset": 0,
+      "note": "Atari 2600 ROMs have no magic bytes — pure 6507 machine code. Detection relies on file extension (.a26) and file size being one of: 2048, 4096, 8192, 12288, 16384, 32768, or 65536 bytes."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "secondByte": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "uint8",
+      "description": "First byte of the Atari 2600 ROM image. Since the 6507 begins execution from the reset vector (at the end of the ROM), the first byte is typically part of game code or data rather than the entry point. Common values include 6502-family opcodes or static data tables.",
+      "storeAs": "firstByte"
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "description": "Second byte of the ROM image. Together with the first byte this allows analysis tools to guess the bank-switching scheme from common byte patterns at the start of the ROM.",
+      "storeAs": "secondByte"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First ROM byte (no magic)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size Class",
+      "variable": "secondByte",
+      "description": "Indicates ROM bank-switching class by file size"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid ROM size",
+      "expression": "fileSize == 2048 || fileSize == 4096 || fileSize == 8192 || fileSize == 12288 || fileSize == 16384 || fileSize == 32768 || fileSize == 65536",
+      "severity": "warning",
+      "message": "Atari 2600 ROM size should be 2 KB, 4 KB, 8 KB, 12 KB, 16 KB, 32 KB, or 64 KB"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ROM Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "secondByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Atari 2600 ROM",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "secondByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Atari 2600 ROM Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "secondByte"]
+    },
+    {
+      "name": "Atari 2600 ROM Info (CSV)",
+      "format": "csv",
+      "fields": ["firstByte", "secondByte"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Atari 2600 ROM: raw 6507 CPU code, no header, no magic. File size determines bank-switching type: 2 KB=no mapper, 4 KB=no mapper, 8 KB=F8 (most common bankswitcher), 16 KB=F6, 32 KB=F4. Reset vector at last 4 bytes of ROM (FFFC/FFFD for full 64KB address space; mirrors for smaller ROMs). The TIA chip is programmed by writing to fixed addresses 0x00-0x2C.",
+    "suggestedInspections": [
+      "Check file size to determine bank-switching type: 2 KB and 4 KB need no mapper, 8 KB uses F8, 16 KB uses F6, 32 KB uses F4",
+      "Read reset vector at ROM end minus 4 bytes (e.g., offset 0x07FC for 2 KB) to find game entry point",
+      "Look for bank-switch hotspot accesses: F8 ROMs access 0x1FF8 and 0x1FF9; F6 ROMs access 0x1FF6-0x1FF9",
+      "Identify TIA register writes (addresses 0x00-0x2C) to confirm valid Atari 2600 game code"
+    ]
+  },
+  "software": [
+    "Stella (cross-platform Atari 2600 emulator)",
+    "z26 (Windows Atari 2600 emulator)",
+    "RetroArch with Stella core",
+    "AtariAge ROM database"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".a26", ".bin", ".rom"],
+    "relatedFormats": ["ROM_ATARI7800"],
+    "note": "Atari 2600 ROMs share the .bin extension with many other raw binary formats. The Atari 7800 is backward compatible with 2600 games. The .a26 extension is Atari 2600-specific."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of Atari 2600 VCS cartridge games",
+    "Preservation of classic 1977-1992 Atari 2600 titles",
+    "ROM hacking and homebrew development for the 2600",
+    "Bank-switching scheme analysis and identification"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 65,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Atari 2600 VCS",
+    "CPU": "MOS 6507 (6502 variant, 13-bit address bus, 1.19 MHz)",
+    "VideoChip": "TIA (Television Interface Adaptor)",
+    "BankSwitching": "F8 (8KB), F6 (16KB), F4 (32KB), E0, FE, 3F, E7",
+    "NoMagic": true
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "diffMode": "text",
+  "formatName": "Web App Manifest",
+  "version": "1.0",
+  "extensions": [".webmanifest", ".manifest"],
+  "description": "Web App Manifest (W3C standard) — JSON file enabling Progressive Web Apps (PWA). Root JSON object with fields: 'name' (full app name), 'short_name' (launcher/home screen name), 'start_url' (URL to open on app launch), 'display' ('standalone', 'fullscreen', 'minimal-ui', 'browser'), 'background_color' (splash screen color), 'theme_color' (browser chrome color), 'icons' (array of {src, sizes, type} icon objects for various resolutions), 'description', 'lang', 'scope' (navigation scope boundary), 'shortcuts' (quick action list), 'categories', 'screenshots', 'protocol_handlers', 'share_target'. Linked via HTML: <link rel='manifest' href='manifest.webmanifest'>. Enables: add to home screen, splash screen, custom icons, offline mode (with Service Worker), push notifications, and app store publishing (TWA). JSON format — first byte always '{' (0x7B).",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "Web Application Manifest — W3C Candidate Recommendation",
+      "PWA (Progressive Web Apps) — Google Developers",
+      "WHATWG HTML Living Standard — manifest link relation"
+    ],
+    "WebLinks": [
+      "https://www.w3.org/TR/appmanifest/",
+      "https://developer.mozilla.org/en-US/docs/Web/Manifest",
+      "https://web.dev/add-manifest/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "7B",
+        "offset": 0,
+        "label": "{ — JSON object start (Web App Manifest)",
+        "weight": 0.4
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.1,
+    "required": false,
+    "Strength": "Weak",
+    "EntropyHint": { "min": 3.0, "max": 6.0 },
+    "validation": {
+      "minFileSize": 2,
+      "maxSignatureOffset": 0,
+      "note": "Web App Manifest detection is weak — '{' alone is insufficient. Confirmation requires the .webmanifest extension or finding 'name' and 'start_url' fields in the JSON content."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "jsonStart": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the Web App Manifest file at offset 0 (1 byte, uint8). Must be 0x7B ('{') for a valid JSON object. Web App Manifests must be served with Content-Type: application/manifest+json (W3C requirement). The manifest may include a UTF-8 BOM (EF BB BF) before the JSON content — parsers should handle BOM stripping. The manifest file is typically named manifest.webmanifest or manifest.json and linked from HTML via <link rel='manifest'>.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "JSON Start",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 4 bytes of the manifest file (ASCII). Compact manifests start with '{\"na' (name field first) or '{\"sh' (short_name first) or '{\"st' (start_url first). Pretty-printed manifests start with '{\\n  ' (open brace + newline + indentation). The W3C Web App Manifest specification requires the manifest to be a JSON object at the root level. Arrays, strings, and other JSON value types at root level are invalid.",
+      "storeAs": "jsonStart",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "0x7B '{' — JSON object root for Web App Manifest"
+    },
+    {
+      "type": "metadata",
+      "name": "JSON Start",
+      "variable": "jsonStart",
+      "description": "First 4 bytes — manifest JSON opening"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "JSON object start",
+      "expression": "firstByte == 0x7B",
+      "severity": "warning",
+      "message": "Web App Manifest must start with '{' (0x7B) — not a valid JSON object"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Manifest Root", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "jsonStart",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Manifest Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "jsonStart"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Manifest Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "jsonStart"]
+    },
+    {
+      "name": "Manifest Start (Text)",
+      "format": "text",
+      "fields": ["jsonStart"]
+    }
+  ],
+  "forensic": {
+    "category": "web-development",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "start_url pointing to external domain may indicate manifest hijacking",
+      "protocol_handlers may register app as handler for custom URL schemes",
+      "share_target may expose an app endpoint for receiving shared data"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Web App Manifest JSON structure: {name:'App Name', short_name:'App', start_url:'/', scope:'/', display:'standalone', background_color:'#ffffff', theme_color:'#000000', icons:[{src:'/icon-192.png', sizes:'192x192', type:'image/png', purpose:'any maskable'}], description:'...', lang:'en', shortcuts:[{name:'Open',url:'/open'}], screenshots:[{src:'/screen1.png',sizes:'1280x720'}], protocol_handlers:[{protocol:'web+app',url:'/?q=%s'}], share_target:{action:'/share',method:'POST',enctype:'multipart/form-data',params:{title:'title',text:'text',url:'url',files:[{name:'file',accept:['image/*']}]}}}. Icons need sizes for various resolutions: 192x192 (mandatory for Android), 512x512 (splash screen), 180x180 (Apple touch icon).",
+    "suggestedInspections": [
+      "Byte 0: '{' (0x7B) confirms JSON object — valid manifest root format",
+      "Scan for 'name' field — app display name for home screen and app switcher",
+      "Check 'display' field — 'standalone' hides browser chrome for app-like experience",
+      "Verify 'icons' array has 192x192 and 512x512 entries — required for PWA installability"
+    ]
+  },
+  "software": [
+    "Chrome (PWA installation on Android/Windows/macOS/Linux)",
+    "Edge (PWA support via WebAppInstallForce policy)",
+    "Firefox (manifest support, no PWA install on desktop)",
+    "Safari (partial PWA support, display:standalone for iOS home screen)",
+    "Lighthouse (PWA audit in Chrome DevTools)",
+    "PWABuilder (Microsoft tool for PWA packaging)"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".webmanifest", ".manifest"],
+    "relatedFormats": ["SOURCE_MAP"],
+    "note": "Web App Manifest is often named manifest.json (older convention) or app.webmanifest. The MIME type application/manifest+json is required by W3C. Service Workers (sw.js) work alongside manifests to provide offline functionality. Chrome Extensions also use manifest.json (v3) — a completely different format not to be confused with Web App Manifest."
+  },
+  "MimeTypes": [
+    "application/manifest+json",
+    "application/json"
+  ],
+  "UseCases": [
+    "Progressive Web App (PWA) definition for home screen installation",
+    "App store publishing via Trusted Web Activities (TWA) on Android",
+    "Windows PWA installation via Microsoft Store or Edge",
+    "iOS and iPadOS home screen web app configuration",
+    "Web Share Target API — receive shared content from other apps"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "JSON text (UTF-8)",
+    "Magic": "No binary magic — starts with '{' (0x7B)",
+    "Standard": "W3C Web Application Manifest — Candidate Recommendation",
+    "Endianness": "N/A (JSON text)",
+    "MimeType": "application/manifest+json (required by W3C for proper parsing)"
+  }
+}

@@ -1,175 +1,181 @@
 {
-  "diffMode": "binary",
+  "diffMode": "text",
   "formatName": "X BitMap",
-  "version": "1.16",
-  "extensions": [
-    ".xbm"
-  ],
-  "description": "X Window System Bitmap (ASCII C source)",
+  "version": "1.0",
+  "extensions": [".xbm"],
+  "description": "XBM (X BitMap) is a C source code text format for storing monochrome bitmaps used in the X Window System. The file starts with '#define name_width N' and '#define name_height N' lines declaring image dimensions. Optional hot-spot lines '#define name_x_hot N' and '#define name_y_hot N' define the cursor hot-spot for cursor bitmaps. The bitmap data follows as a C array declaration: 'static unsigned char name_bits[] = {' containing comma-separated hexadecimal byte literals (e.g. 0x00, 0xFF). Each byte encodes 8 pixels with the least-significant bit (LSB) corresponding to the leftmost pixel. Rows are padded to byte boundaries. The array is terminated by '};'. XBM is used for X11 window manager icons, mouse cursor shapes, and embedded bitmaps compiled directly into C applications. XPM is the color extension; modern alternatives include PNG and SVG.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "X BitMap (XBM) Format - X Window System",
-      "X11 Bitmap Format Specification",
-      "XBM C Source Code Image Format"
+      "X Window System XBM Format — X.Org Foundation",
+      "X11 Cursor Specification (XBM hot-spot extension)",
+      "Xlib Programming Manual — Volume 1, Chapter 6"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/X_BitMap",
-      "https://www.fileformat.info/format/xbm/egff.htm",
-      "https://www.vertopal.com/en/format/xbm",
-      "https://www.oreilly.com/library/view/x-window-system/9780937175149/ChapterG.html"
+      "https://www.x.org/releases/X11R7.6/doc/libX11/specs/libX11/libX11.html",
+      "https://fileinfo.com/extension/xbm"
     ]
   },
   "detection": {
-    "required": true,
-    "validation": {
-      "minFileSize": 7,
-      "maxSignatureOffset": 1024
-    },
     "signatures": [
-      {
-        "value": "23646566696E65",
-        "offset": 0,
-        "label": "XBM magic",
-        "weight": 1.0
-      }
+      { "value": "2364656669 6E65", "offset": 0, "label": "#define — XBM C source code header macro keyword at offset 0", "weight": 0.8 }
     ],
     "matchMode": "any",
-    "MinimumScore": 1.0,
-    "Strength": "Strong"
+    "MinimumScore": 0.3,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 2.0, "max": 5.5 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "File must start with '#define' keyword; format confirmed by presence of '_width' and '_height' defines."
+    }
   },
   "variables": {
-    "imageWidth": 0,
-    "imageHeight": 0,
-    "totalPixels": 0,
-    "bitsPerPixel": 0,
-    "xbmHeader": ""
+    "firstByte": 0,
+    "defineKeyword": "",
+    "xbmWidth": 0,
+    "xbmHeight": 0
   },
   "blocks": [
     {
-      "type": "signature",
-      "name": "XBM Header",
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the XBM C source file, must be 0x23 (ASCII '#') which begins the first '#define' preprocessor directive. This byte serves as the initial pre-filter for XBM detection before the full define keyword is matched.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Define Keyword",
       "offset": 0,
       "length": 7,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "#define keyword",
-      "storeAs": "xbmHeader",
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "The 7-character C preprocessor keyword '#define' that must appear at the absolute start of an XBM file. Every XBM file opens with '#define name_width N' as its first declaration, making this keyword the primary identification token for the format.",
+      "storeAs": "defineKeyword",
       "valueType": "ascii"
     },
     {
       "type": "metadata",
-      "name": "Width",
-      "variable": "imageWidth",
-      "description": "Width"
+      "name": "Width and Height Defines",
+      "offset": 7,
+      "description": "Two mandatory C preprocessor defines following the opening. '#define name_width N' specifies the pixel width of the bitmap. '#define name_height N' specifies the pixel height. The 'name' prefix is typically derived from the filename or image identifier. Both values must be positive decimal integers."
     },
     {
       "type": "metadata",
-      "name": "Height",
-      "variable": "imageHeight",
-      "description": "Height"
-    },
-    {
-      "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Total Pixels"
-    },
-    {
-      "type": "metadata",
-      "name": "Bits Per Pixel",
-      "variable": "bitsPerPixel",
-      "description": "Bits Per Pixel"
+      "name": "Bitmap Data Array",
+      "offset": 7,
+      "description": "C static array declaration containing the pixel data. Format: 'static unsigned char name_bits[] = {' followed by comma-separated hexadecimal byte literals (0x00 through 0xFF). Each byte encodes 8 pixels LSB-first (bit 0 = leftmost pixel). Rows are padded to whole byte boundaries: row_bytes = (width + 7) / 8. Array terminates with '};'. Total bytes = row_bytes * height."
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "ValidFirstByte",
+      "expression": "firstByte == 35",
+      "severity": "error",
+      "message": "First byte must be 0x23 '#'. This file does not begin with a C preprocessor directive as required for XBM format."
+    },
+    {
+      "name": "ValidDefineKeyword",
+      "expression": "defineKeyword == '#define'",
+      "severity": "error",
+      "message": "File must start with '#define' keyword. The XBM format header structure was not found at offset 0."
+    }
   ],
-  "formatRelationships": {
-    "category": "Images",
-    "extensions": [
-      ".xbm"
-    ]
-  },
-  "MimeTypes": [
-    "image/xbm"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 51,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
-  "functions": {
-    "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels",
-    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels"
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "X Window System Bitmap (ASCII C source)",
-    "suggestedInspections": [
-      "Validate X BitMap signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+  "navigation": {
+    "bookmarks": [
+      { "name": "Width Define", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Bitmap Array", "offset": 0, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "xbmHeader",
-    "primaryField": "xbmHeader",
+    "badge": "defineKeyword",
+    "primaryField": "defineKeyword",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "X BitMap",
-        "icon": "",
-        "fields": [
-          "xbmHeader"
-        ]
+        "title": "File Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "defineKeyword"]
+      },
+      {
+        "title": "Dimensions",
+        "icon": "\uE946",
+        "fields": ["xbmWidth", "xbmHeight"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "X BitMap Header (JSON)",
+      "name": "XBM Info (JSON)",
       "format": "json",
-      "fields": [
-        "xbmHeader"
-      ]
+      "fields": ["defineKeyword", "xbmWidth", "xbmHeight"]
+    },
+    {
+      "name": "XBM Dimensions (CSV)",
+      "format": "csv",
+      "fields": ["xbmWidth", "xbmHeight"]
     }
   ],
-  "assertions": [
-    {
-      "name": "magic valid",
-      "expression": "xbmHeader != 0",
-      "severity": "warning",
-      "message": "XBM magic field is zero — possible detection failure"
-    }
-  ]
+  "forensic": {
+    "category": "images",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Unusually large _width or _height values may indicate crafted file designed to exhaust memory during parse",
+      "Invalid hex byte literals in the data array could cause C compiler errors or parsing failures"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "XBM is a C source text format for monochrome X11 bitmaps. File starts with '#define' preprocessor directives for width and height, followed by a static unsigned char array of hex byte literals. LSB of each byte = leftmost pixel.",
+    "suggestedInspections": [
+      "Confirm '#define' at offset 0 and locate '_width' and '_height' define lines for image dimensions",
+      "Check for optional '_x_hot' and '_y_hot' defines that identify cursor hot-spot coordinates",
+      "Find 'static unsigned char' array declaration to locate the start of bitmap pixel data",
+      "Verify total byte count in array equals ceil(width/8) * height for dimension consistency",
+      "Scan for malformed hex literals or missing '};' terminator that would indicate file truncation"
+    ]
+  },
+  "software": [
+    "X.Org Server",
+    "GIMP (XBM import/export)",
+    "ImageMagick",
+    "Inkscape (monochrome bitmaps)",
+    "xbmtopbm (Netpbm converter)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".xbm"],
+    "relatedFormats": ["XPM", "ICO", "CUR", "PNG"],
+    "note": "Monochrome C-embeddable bitmap; XPM is the color extension; both largely replaced by PNG/SVG in modern X11"
+  },
+  "MimeTypes": ["image/x-xbitmap", "image/x-xbm"],
+  "UseCases": [
+    "X11 window manager icon bitmaps embedded in C source",
+    "Mouse cursor shape definitions for X Window System",
+    "Small monochrome UI element bitmaps compiled into applications",
+    "Legacy embedded systems with C-based graphics"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "encoding": "text-C-source",
+    "pixelOrder": "LSB first (bit 0 = leftmost pixel in each byte)",
+    "rowPadding": "padded to 8-pixel (1-byte) boundaries",
+    "colorDepth": "1-bit monochrome only"
+  }
 }

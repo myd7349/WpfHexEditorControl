@@ -1,0 +1,183 @@
+{
+  "diffMode": "binary",
+  "formatName": "ColecoVision ROM",
+  "version": "1.0",
+  "extensions": [".col", ".cv", ".rom"],
+  "description": "ColecoVision cartridge ROM image (Coleco Industries, 1982). The 2-byte ROM header signature at offset 0 identifies the cartridge type: 0xAA 0x55 (standard ColecoVision ROM header) or 0x55 0xAA (alternate orientation used by some later cartridges). After the 2-byte magic: program_start_address (2B LE, initial execution address), then two pairs of unused 2-byte fields (4B each), then program_title_pointer (2B LE). The header occupies the first several bytes of the ROM; game code and data fill the remainder. The Z80 CPU runs at 3.58 MHz. ROM sizes: typically 8 KB to 32 KB. Standard ROM address space: 0x8000-0xFFFF (32 KB cartridge window). The 0xAA55 magic is universally recognised by emulators (ColEm, BlueMSX, MAME) as the ColecoVision cartridge identifier.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "ColecoVision ROM Cartridge Technical Reference",
+      "ColecoVision BIOS Disassembly Documentation",
+      "Z80 CPU Technical Manual (Zilog)"
+    ],
+    "WebLinks": [
+      "https://www.colecovision.dk/",
+      "https://en.wikipedia.org/wiki/ColecoVision",
+      "https://www.msx.org/wiki/ColecoVision",
+      "https://atariage.com/forums/forum/35-colecovision/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "AA55",
+        "offset": 0,
+        "label": "0xAA 0x55 — standard ColecoVision ROM cartridge header magic",
+        "weight": 1.0
+      },
+      {
+        "value": "55AA",
+        "offset": 0,
+        "label": "0x55 0xAA — alternate ColecoVision ROM cartridge header orientation",
+        "weight": 0.9
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "ColecoVision ROMs must start with 0xAA55 or 0x55AA. File size is typically 8 KB, 16 KB, or 32 KB."
+    }
+  },
+  "variables": {
+    "colecoMagic": 0,
+    "programStart": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "ColecoVision Magic",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "uint16",
+      "description": "2-byte ROM cartridge signature at offset 0. Value 0xAA55 is the standard ColecoVision cartridge header magic recognised by the BIOS at power-on. The BIOS scans ROM slot address 0x8000 for this signature during boot to validate that a cartridge is present and to locate the execution entry point. Some late production cartridges use the alternate orientation 0x55AA.",
+      "storeAs": "colecoMagic"
+    },
+    {
+      "type": "field",
+      "name": "Program Start Address",
+      "offset": 2,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "16-bit LE initial execution address at offset 2. The ColecoVision BIOS jumps to this address after finding the cartridge magic and performing hardware initialisation. Valid range: 0x8000-0xFFC0 (cartridge ROM address window).",
+      "storeAs": "programStart"
+    },
+    {
+      "type": "metadata",
+      "name": "ColecoVision Magic",
+      "variable": "colecoMagic",
+      "description": "Cartridge magic: 0xAA55 or 0x55AA"
+    },
+    {
+      "type": "metadata",
+      "name": "Program Start",
+      "variable": "programStart",
+      "description": "Initial execution address (LE)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ColecoVision magic valid",
+      "expression": "colecoMagic == 43605 || colecoMagic == 21930",
+      "severity": "error",
+      "message": "ColecoVision ROM must start with 0xAA55 (43605) or 0x55AA (21930)"
+    },
+    {
+      "name": "Program start in ROM range",
+      "expression": "programStart >= 32768 && programStart <= 65472",
+      "severity": "warning",
+      "message": "Program start address should be in cartridge ROM range (0x8000-0xFFC0)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ROM Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ROM Code", "offset": 8, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "colecoMagic",
+    "primaryField": "programStart",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ColecoVision ROM Header",
+        "icon": "\uE71B",
+        "fields": ["colecoMagic", "programStart"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ColecoVision ROM Header (JSON)",
+      "format": "json",
+      "fields": ["colecoMagic", "programStart"]
+    },
+    {
+      "name": "ColecoVision ROM Header (CSV)",
+      "format": "csv",
+      "fields": ["colecoMagic", "programStart"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "ColecoVision ROM: 2-byte magic 0xAA55 or 0x55AA at offset 0, followed by program start address (uint16 LE). BIOS at power-on validates the magic at 0x8000 and jumps to the start address. Z80 CPU at 3.58 MHz. ROM mapped at 0x8000-0xFFFF. SN76489 PSG sound chip.",
+    "suggestedInspections": [
+      "Read bytes 0-1: 0xAA 0x55 (standard) or 0x55 0xAA (alternate) — invalid otherwise",
+      "Read program start address at bytes 2-3 (uint16 LE): should be in range 0x8000-0xFFC0",
+      "Check file size: standard sizes are 8 KB (8192), 16 KB (16384), or 32 KB (32768)",
+      "Look for Z80 opcode patterns at program start offset relative to 0x8000 base address"
+    ]
+  },
+  "software": [
+    "ColEm (cross-platform ColecoVision emulator)",
+    "BlueMSX (MSX/ColecoVision emulator)",
+    "MAME (ColecoVision driver)",
+    "RetroArch with blueMSX core"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".col", ".cv", ".rom"],
+    "relatedFormats": ["ROM_MSX", "ROM_TI99"],
+    "note": "ColecoVision shares the Z80 CPU with MSX and ZX Spectrum. The .rom extension is shared with MSX and other platforms. ColecoVision's SG-1000 compatibility mode was used by early Sega hardware."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of ColecoVision cartridge games",
+    "Preservation of early 1980s Coleco game library",
+    "ROM hacking and homebrew development on the ColecoVision platform",
+    "Study of early Z80-based home console architecture"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "ColecoVision",
+    "CPU": "Zilog Z80A at 3.58 MHz",
+    "Sound": "SN76489 PSG (4 channels)",
+    "Video": "TMS9928A VDP (256x192, 16 colors)",
+    "ROMRange": "0x8000-0xFFFF (32 KB cartridge window)",
+    "Magic": "0xAA55 or 0x55AA at offset 0"
+  }
+}

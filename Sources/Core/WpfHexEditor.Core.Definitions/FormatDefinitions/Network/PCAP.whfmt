@@ -1,56 +1,59 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "PCAP Network Capture",
-  "version": "1.14",
-  "extensions": [
-    ".pcap",
-    ".cap"
-  ],
-  "description": "Packet Capture file - Network traffic recording",
+  "formatName": "Wireshark PCAP Capture",
+  "version": "1.0",
+  "extensions": [ ".pcap", ".cap" ],
+  "description": "PCAP (Packet Capture) network traffic capture format created by libpcap, used by Wireshark, tcpdump, and NetworkMiner. Magic: A1 B2 C3 D4 (little-endian microsecond timestamps) or D4 C3 B2 A1 (big-endian). Nanosecond variants: A1 B2 3C 4D (LE) or 4D 3C B2 A1 (BE). Global header is 24 bytes: magic(4B) + version_major(2B LE: 2) + version_minor(2B LE: 4) + thiszone(4B GMT offset, usually 0) + sigfigs(4B accuracy, usually 0) + snaplen(4B LE, typically 65535) + network(4B LE link type: 1=Ethernet, 105=802.11 WiFi, 113=Linux cooked, 228=IPv4 raw). Each packet record: ts_sec(4B) + ts_usec_or_nsec(4B) + incl_len(4B captured bytes) + orig_len(4B original wire bytes) + data(incl_len bytes).",
   "category": "Network",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "PCAP Network Capture Format"
+      "PCAP File Format — libpcap specification",
+      "IETF Draft — draft-gharris-opsawg-pcap"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/PCAP"
+      "https://wiki.wireshark.org/Development/LibpcapFileFormat",
+      "https://www.tcpdump.org/manpages/pcap-savefile.5.txt",
+      "https://www.ietf.org/archive/id/draft-gharris-opsawg-pcap-00.html"
     ]
   },
   "detection": {
-    "signature": "D4C3B2A1",
-    "offset": 0,
+    "signatures": [
+      { "value": "A1B2C3D4", "offset": 0, "label": "PCAP magic LE — microsecond timestamps, little-endian byte order", "weight": 1.0 },
+      { "value": "D4C3B2A1", "offset": 0, "label": "PCAP magic BE — microsecond timestamps, big-endian byte order", "weight": 1.0 },
+      { "value": "A1B23C4D", "offset": 0, "label": "PCAP magic LE nanosecond — nanosecond-resolution timestamps, little-endian", "weight": 0.9 },
+      { "value": "4D3CB2A1", "offset": 0, "label": "PCAP magic BE nanosecond — nanosecond-resolution timestamps, big-endian", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
     "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 1024
+      "minFileSize": 24,
+      "maxSignatureOffset": 0,
+      "note": "PCAP global header is exactly 24 bytes. Any valid PCAP file must be at least 24 bytes."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "packetCount": 0,
-    "snaplen": 0,
-    "linkType": 0,
-    "version": "",
-    "pcapMagicLittleEndian": "",
+    "pcapMagic": 0,
     "versionMajor": 0,
     "versionMinor": 0,
+    "snaplen": 0,
+    "network": 0,
     "timeZoneOffset": 0,
-    "timestampAccuracy": 0,
-    "snapshotLength": 0,
-    "linkLayerType": ""
+    "timestampAccuracy": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "PCAP Magic (Little Endian)",
+      "name": "PCAP Magic Number",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "PCAP file magic number",
-      "storeAs": "pcapMagicLittleEndian",
+      "opacity": 0.45,
+      "description": "4-byte magic number identifying PCAP format and determining byte order (LE or BE) and timestamp resolution (microsecond: A1B2C3D4 or nanosecond: A1B23C4D). The byte order of this magic dictates endianness of all subsequent header fields.",
+      "storeAs": "pcapMagic",
       "valueType": "uint32"
     },
     {
@@ -59,8 +62,8 @@
       "offset": 4,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Major version (2)",
+      "opacity": 0.35,
+      "description": "Major version of the PCAP file format. Current standard value is 2 for all libpcap-compatible files. A value other than 2 indicates a non-standard or corrupted file.",
       "storeAs": "versionMajor",
       "valueType": "uint16"
     },
@@ -70,21 +73,21 @@
       "offset": 6,
       "length": 2,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Minor version (4)",
+      "opacity": 0.35,
+      "description": "Minor version of the PCAP file format. Standard value is 4. Together with version_major=2, this forms version 2.4 which is the universal libpcap standard.",
       "storeAs": "versionMinor",
       "valueType": "uint16"
     },
     {
       "type": "field",
-      "name": "Time Zone Offset",
+      "name": "GMT Timezone Offset",
       "offset": 8,
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "GMT to local correction",
+      "description": "Signed timezone offset in seconds from GMT for packet timestamps. In practice this is always 0 — all libpcap implementations store timestamps as UTC and ignore this field entirely.",
       "storeAs": "timeZoneOffset",
-      "valueType": "uint32"
+      "valueType": "int32"
     },
     {
       "type": "field",
@@ -93,7 +96,7 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Accuracy of timestamps",
+      "description": "Accuracy of packet timestamps in the file. In practice always 0 — tools accept whatever precision the OS clock provides and ignore this field. No known tool writes a non-zero value here.",
       "storeAs": "timestampAccuracy",
       "valueType": "uint32"
     },
@@ -103,9 +106,9 @@
       "offset": 16,
       "length": 4,
       "color": "#B8B8FF",
-      "opacity": 0.3,
-      "description": "Max length of captured packets",
-      "storeAs": "snapshotLength",
+      "opacity": 0.35,
+      "description": "Maximum number of bytes captured per packet. Packets longer than this are truncated. Typical values: 65535 (full capture), 1500 (MTU-limited). Values above 65535 indicate extended snaplen captures used by newer tools.",
+      "storeAs": "snaplen",
       "valueType": "uint32"
     },
     {
@@ -114,91 +117,156 @@
       "offset": 20,
       "length": 4,
       "color": "#FF6B9D",
-      "opacity": 0.3,
-      "description": "Data link type (Ethernet, etc.)",
-      "storeAs": "linkLayerType",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "Link-layer header type code for all packets in the file. Determines packet decoding strategy. IANA LINKTYPE registry. Common: 1=Ethernet (most common), 105=802.11 WiFi, 113=Linux cooked (SLL), 127=802.11 RadioTap, 228=Raw IPv4, 229=Raw IPv6.",
+      "storeAs": "network",
+      "valueType": "uint32",
+      "valueMap": {
+        "1": "Ethernet (IEEE 802.3)",
+        "105": "IEEE 802.11 WiFi",
+        "113": "Linux cooked (SLL)",
+        "127": "IEEE 802.11 RadioTap",
+        "228": "Raw IPv4",
+        "229": "Raw IPv6"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Global Header End",
+      "variable": "snaplen",
+      "description": "End of the 24-byte PCAP global header. Packet records begin at offset 24."
     },
     {
       "type": "metadata",
       "name": "Packet Count",
-      "variable": "packetCount",
-      "description": "Packet Count"
+      "variable": "versionMajor",
+      "description": "Packet count is not stored in the PCAP header — must be computed by iterating all packet records from offset 24."
     },
     {
       "type": "metadata",
-      "name": "Snapshot Length",
-      "variable": "snaplen",
-      "description": "Snapshot Length"
-    },
-    {
-      "type": "metadata",
-      "name": "Link Type",
-      "variable": "linkType",
-      "description": "Link Type"
+      "name": "Byte Order",
+      "variable": "pcapMagic",
+      "description": "Byte order (little-endian or big-endian) is determined by the magic number: A1B2C3D4=LE, D4C3B2A1=BE."
     }
   ],
-  "software": [
-    "Wireshark",
-    "tcpdump",
-    "Tshark",
-    "NetworkMiner"
+  "assertions": [
+    {
+      "name": "PCAP magic valid",
+      "expression": "pcapMagic == 2712847316 || pcapMagic == 3569595041 || pcapMagic == 2712812109 || pcapMagic == 1295823777",
+      "severity": "error",
+      "message": "PCAP magic must be one of: A1B2C3D4 (LE micro), D4C3B2A1 (BE micro), A1B23C4D (LE nano), 4D3CB2A1 (BE nano)"
+    },
+    {
+      "name": "Version major is 2",
+      "expression": "versionMajor == 2",
+      "severity": "warning",
+      "message": "PCAP version_major should be 2 for standard libpcap-compatible files."
+    },
+    {
+      "name": "Snaplen is sane",
+      "expression": "snaplen > 0 && snaplen <= 262144",
+      "severity": "warning",
+      "message": "PCAP snaplen should be between 1 and 262144 bytes."
+    }
   ],
-  "formatRelationships": {
-    "libpcap_format": true,
-    "universal_standard": true,
-    "successor": "PCAPNG"
-  },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Wireshark",
-    "tcpdump",
-    "NetworkMiner",
-    "Fiddler",
-    "Charles Proxy"
-  ],
-  "UseCases": [
-    "Network analysis",
-    "Packet capture",
-    "Debugging",
-    "Security analysis"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 56,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 10,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "forensic": {
-    "category": "network",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Packet Capture file - Network traffic recording",
-    "suggestedInspections": [
-      "Validate PCAP Network Capture file header: magic, version, link-layer type",
-      "Check packet record timestamps and capture lengths",
-      "Inspect captured protocol headers (Ethernet/IP/TCP/UDP)"
-    ]
-  },
   "navigation": {
     "bookmarks": [
+      { "name": "Magic Number", "offset": 0, "color": "#FF4444" },
+      { "name": "Version", "offset": 4, "color": "#44AAFF" },
+      { "name": "Snap Length", "offset": 16, "color": "#44FF88" },
+      { "name": "Link Type", "offset": 20, "color": "#FFAA44" },
+      { "name": "First Packet Record", "offset": 24, "color": "#AA44FF" }
+    ]
+  },
+  "inspector": {
+    "badge": "PCAP",
+    "primaryField": "network",
+    "showQualityScore": true,
+    "groups": [
       {
-        "name": "PCAP Global Header",
-        "offsetVar": "currentOffset",
-        "icon": ""
+        "title": "PCAP Global Header",
+        "icon": "",
+        "fields": [ "pcapMagic", "versionMajor", "versionMinor", "snaplen", "network" ]
+      },
+      {
+        "title": "Capture Parameters",
+        "icon": "",
+        "fields": [ "timeZoneOffset", "timestampAccuracy" ]
       }
     ]
   },
-  "TechnicalDetails": {},
-  "functions": {
-    "readUInt32LE": "Read PCAP header",
-    "divide": "Calculate duration"
+  "exportTemplates": [
+    {
+      "name": "PCAP Summary (Text)",
+      "format": "text",
+      "fields": [ "pcapMagic", "versionMajor", "versionMinor", "snaplen", "network" ]
+    },
+    {
+      "name": "PCAP Metadata (CSV)",
+      "format": "csv",
+      "fields": [ "pcapMagic", "versionMajor", "versionMinor", "snaplen", "network" ]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "high",
+    "notes": "PCAP files contain full raw packet data including cleartext credentials, session tokens, and private communications. May contain PII. Handle under chain of custody in forensic investigations. Credentials visible in cleartext HTTP, FTP, SMTP, TELNET traffic.",
+    "suspiciousPatterns": [
+      "Large snaplen values may indicate full-content interception",
+      "Unusual link types may indicate spoofed or manipulated captures"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PCAP global header: magic(4B) + version_major(2B) + version_minor(2B) + thiszone(4B) + sigfigs(4B) + snaplen(4B) + network(4B). Magic determines byte order: A1B2C3D4=LE-micro, D4C3B2A1=BE-micro. Packets at offset 24: ts_sec(4B)+ts_usec(4B)+incl_len(4B)+orig_len(4B)+data(incl_len B). incl_len<=orig_len always; incl_len<orig_len means truncated. Link type 1=Ethernet: dst_mac(6B)+src_mac(6B)+ethertype(2B)+payload.",
+    "suggestedInspections": [
+      "Check magic byte order (LE vs BE) to determine correct field interpretation for all numeric fields",
+      "Verify snaplen — values below 1500 indicate truncated captures that may hide payload credentials",
+      "Cross-reference first packet timestamp at offset 24 against filesystem creation time for tampering detection",
+      "Identify link type at offset 20 to determine correct packet frame decoding strategy",
+      "Check incl_len vs orig_len in packet records — persistent truncation may indicate privacy filtering",
+      "Scan for HTTP basic auth, FTP credentials, and SMTP content in Ethernet (link=1) captures"
+    ]
+  },
+  "software": [
+    "Wireshark — primary PCAP analysis and visualization tool",
+    "tcpdump — command-line packet capture (libpcap)",
+    "tshark — Wireshark command-line interface",
+    "NetworkMiner — forensic network capture analysis",
+    "Scapy — Python packet manipulation and crafting library"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".pcap", ".cap" ],
+    "relatedFormats": [ "PCAPNG", "NETFLOW", "NETMON", "SNOOP", "ETHERPEEK" ],
+    "note": "PCAP is the legacy libpcap format. PCAPNG is its modern successor with multi-interface support, richer metadata, and nanosecond timestamps."
+  },
+  "MimeTypes": [
+    "application/vnd.tcpdump.pcap",
+    "application/x-pcap",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Network forensics and incident response",
+    "Protocol analysis and debugging with Wireshark",
+    "IDS/IPS signature development and testing",
+    "Network performance troubleshooting",
+    "Security research and malware traffic analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary, fixed 24-byte header followed by variable-length packet records",
+    "Magic": "A1B2C3D4 (LE micro) / D4C3B2A1 (BE micro) / A1B23C4D (LE nano) / 4D3CB2A1 (BE nano)",
+    "ByteOrder": "Determined by magic number",
+    "HeaderSize": 24,
+    "PacketRecordHeaderSize": 16,
+    "LinkTypes": "See IANA LINKTYPE registry — https://www.tcpdump.org/linktypes.html"
   }
 }

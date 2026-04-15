@@ -1,0 +1,249 @@
+{
+  "diffMode": "binary",
+  "formatName": "ESRI Shapefile",
+  "version": "1.0",
+  "extensions": [".shp", ".shx", ".dbf", ".prj", ".cpg"],
+  "description": "ESRI Shapefile spatial vector format (ESRI Technical Description, 1998). Magic: 00 00 27 0A (big-endian file code 9994) at offset 0. Header (100 bytes): file_code(4B BE: 9994) + unused(20B) + file_length(4B BE: in 16-bit words) + version(4B LE: 1000) + shape_type(4B LE: 0=Null, 1=Point, 3=Polyline, 5=Polygon, 8=MultiPoint, 11=PointZ, 13=PolylineZ, 15=PolygonZ, 18=MultiPointZ, 21=PointM, 23=PolylineM, 25=PolygonM, 28=MultiPointM, 31=MultiPatch) + Xmin/Ymin/Xmax/Ymax/Zmin/Zmax/Mmin/Mmax (8B LE double each). Companion files: .dbf (attributes in dBASE format), .prj (WKT coordinate reference system), .shx (record index). Multi-format open standard used by QGIS, ArcGIS, GDAL, PostGIS.",
+  "category": "GIS",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "ESRI Shapefile Technical Description (1998)",
+      "OGC Simple Features Specification",
+      "dBASE III/IV file format for .dbf companion"
+    ],
+    "WebLinks": [
+      "https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf",
+      "https://en.wikipedia.org/wiki/Shapefile",
+      "https://gdal.org/drivers/vector/shapefile.html"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "0000270A",
+        "offset": 0,
+        "label": "0x0000270A (9994) — ESRI Shapefile file code at offset 0",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.0 },
+    "validation": {
+      "minFileSize": 100,
+      "maxSignatureOffset": 0,
+      "note": "SHP file code 9994 (0x0000270A) at offset 0 is big-endian. The version field at offset 28 (4B LE) should be 1000. Shapefile header is always exactly 100 bytes."
+    }
+  },
+  "variables": {
+    "shpFileCode": 0,
+    "fileLength": 0,
+    "shpVersion": 0,
+    "shapeType": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Shapefile File Code",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "ESRI Shapefile file code 9994 (0x0000270A) at offset 0 (4 bytes, big-endian uint32). This fixed constant 9994 uniquely identifies ESRI Shapefile format and cannot be customized. Note the mixed endianness: file_code and file_length are big-endian; version and shape_type are little-endian. The same file_code appears in .shp and .shx files (companion index). The .dbf and .prj files use different magic or no magic.",
+      "storeAs": "shpFileCode",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "File Length",
+      "offset": 24,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Total length of the .shp file at offset 24 (4 bytes, big-endian uint32), measured in 16-bit words (not bytes). To get byte count, multiply by 2. For an empty shapefile with only the header, this value is 50 (50 words = 100 bytes). This field is critical for validating file completeness. The corresponding .shx file has a file_length equal to its own header plus 4 bytes per record index entry.",
+      "storeAs": "fileLength",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Shapefile Version",
+      "offset": 28,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Shapefile format version at offset 28 (4 bytes, little-endian uint32). Must be 1000 for all valid shapefiles — this has never changed since the format was first published in 1998. Note the endianness switch at this point: bytes 0-27 are big-endian (file_code, unused padding, file_length); bytes 28 onward are little-endian (version, shape_type, bounding box).",
+      "storeAs": "shpVersion",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "1000": "ESRI Shapefile version 1000 (only valid value)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Shape Type",
+      "offset": 32,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Geometry type of all features in this shapefile at offset 32 (4 bytes, little-endian uint32). All records in a shapefile must be the same type (or Null=0). Types: 0=Null, 1=Point(x,y), 3=Polyline(multipart), 5=Polygon(multipart with holes), 8=MultiPoint, 11=PointZ(x,y,z,m), 13=PolylineZ, 15=PolygonZ, 18=MultiPointZ, 21=PointM(x,y,m), 23=PolylineM, 25=PolygonM, 28=MultiPointM, 31=MultiPatch(3D solids). Mixed-type shapefiles are non-standard.",
+      "storeAs": "shapeType",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Null shape",
+        "1": "Point (x,y)",
+        "3": "Polyline (multi-part)",
+        "5": "Polygon (multi-part with holes)",
+        "8": "MultiPoint",
+        "11": "PointZ (x,y,z,m)",
+        "13": "PolylineZ",
+        "15": "PolygonZ",
+        "18": "MultiPointZ",
+        "21": "PointM",
+        "23": "PolylineM",
+        "25": "PolygonM",
+        "31": "MultiPatch (3D solids)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "File Code",
+      "variable": "shpFileCode",
+      "description": "9994 (0x0000270A) — ESRI Shapefile identifier"
+    },
+    {
+      "type": "metadata",
+      "name": "File Length",
+      "variable": "fileLength",
+      "description": "Total file length in 16-bit words"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "shpVersion",
+      "description": "Shapefile version — always 1000"
+    },
+    {
+      "type": "metadata",
+      "name": "Shape Type",
+      "variable": "shapeType",
+      "description": "Geometry type: 1=Point, 3=Polyline, 5=Polygon, etc."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File code valid",
+      "expression": "shpFileCode == 9994",
+      "severity": "error",
+      "message": "ESRI Shapefile file code must be 9994 (0x0000270A) — not a valid shapefile"
+    },
+    {
+      "name": "Version valid",
+      "expression": "shpVersion == 1000",
+      "severity": "error",
+      "message": "Shapefile version must be 1000 — not a valid ESRI shapefile"
+    },
+    {
+      "name": "Shape type valid",
+      "expression": "shapeType == 0 or shapeType == 1 or shapeType == 3 or shapeType == 5 or shapeType == 8 or shapeType == 11 or shapeType == 13 or shapeType == 15 or shapeType == 18 or shapeType == 21 or shapeType == 23 or shapeType == 25 or shapeType == 31",
+      "severity": "warning",
+      "message": "Shape type value is not a recognized ESRI Shapefile geometry type"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "SHP Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Bounding Box", "offset": 36, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "First Record", "offset": 100, "icon": "\uE946", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "shapeType",
+    "primaryField": "shpFileCode",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Shapefile Header",
+        "icon": "\uE71B",
+        "fields": ["shpFileCode", "fileLength", "shpVersion", "shapeType"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SHP Header (JSON)",
+      "format": "json",
+      "fields": ["shpFileCode", "fileLength", "shpVersion", "shapeType"]
+    },
+    {
+      "name": "SHP Info (Text)",
+      "format": "text",
+      "fields": ["shpFileCode", "shpVersion", "shapeType"]
+    }
+  ],
+  "forensic": {
+    "category": "geospatial",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Property boundary shapefiles may contain sensitive cadastral information",
+      "Military or classified facility outlines may be present in sensitive datasets"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "SHP file header (100 bytes): file_code(4B BE=9994) + unused(5*4B BE zeros) + file_length(4B BE, in 16-bit words) + version(4B LE=1000) + shape_type(4B LE) + Xmin(8B LE double) + Ymin(8B LE double) + Xmax(8B LE double) + Ymax(8B LE double) + Zmin(8B LE double) + Zmax(8B LE double) + Mmin(8B LE double) + Mmax(8B LE double). Record header (8B): record_number(4B BE, 1-based) + content_length(4B BE, in 16-bit words). Record content: shape_type(4B LE) + geometry data. Always open with companion .dbf (attributes) and .prj (CRS) for full dataset.",
+    "suggestedInspections": [
+      "Bytes 0-3 (uint32 BE): file code — must be 9994 (0x0000270A)",
+      "Bytes 28-31 (uint32 LE): version — must be 1000",
+      "Bytes 32-35 (uint32 LE): shape type — determines geometry type of all features",
+      "Bytes 36-99: bounding box (8*float64 LE) — Xmin,Ymin,Xmax,Ymax,Zmin,Zmax,Mmin,Mmax"
+    ]
+  },
+  "software": [
+    "QGIS (open-source GIS)",
+    "ArcGIS / ArcMap / ArcPro (ESRI)",
+    "GDAL/OGR (ogr2ogr for conversion)",
+    "PostGIS (shp2pgsql loader)",
+    "Geopandas (Python geospatial library)",
+    "MapInfo Pro"
+  ],
+  "formatRelationships": {
+    "category": "GIS",
+    "extensions": [".shp", ".shx", ".dbf", ".prj", ".cpg"],
+    "relatedFormats": ["GPKG", "GEOJSON", "KML", "GEOTIFF"],
+    "note": "Shapefile is a multi-file format: .shp (geometry) + .shx (index) + .dbf (attributes) are mandatory; .prj (projection), .cpg (code page), .sbn/.sbx (spatial index) are optional. GeoPackage (GPKG) is the OGC-recommended modern replacement as a single-file format."
+  },
+  "MimeTypes": [
+    "application/x-esri-shapefile",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Administrative boundaries (countries, states, municipalities)",
+    "Transportation networks (roads, railways, rivers)",
+    "Land use and land cover mapping",
+    "Cadastral/parcel data and property boundaries",
+    "Environmental and ecological spatial datasets"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary with mixed big-endian/little-endian header + record-based geometry data",
+    "Magic": "0x0000270A (9994) at offset 0 (big-endian uint32)",
+    "Standard": "ESRI Shapefile Technical Description (1998) — open but ESRI-controlled",
+    "Endianness": "Mixed: bytes 0-27 big-endian, bytes 28+ little-endian",
+    "MultiFile": "Requires companion .shx and .dbf; .prj for CRS"
+  }
+}

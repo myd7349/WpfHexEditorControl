@@ -1,231 +1,180 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "Adaptive Multi-Rate",
-  "version": "1.14",
-  "extensions": [
-    ".amr"
-  ],
-  "description": "AMR-NB (Adaptive Multi-Rate Narrowband) — a speech codec standardized by 3GPP for GSM and UMTS mobile networks. The storage format starts with the 6-byte '#!AMR\\n' magic, followed by a sequence of variable-length frames. Each frame has a 1-byte TOC header: bits 7-4 encode the frame type (mode 0-7 for AMR-NB, selecting bitrates 4.75-12.2 kbps), bit 3 is the quality flag (0=good, 1=damaged), bits 2-0 are padding zeros. Frame payloads range from 0-31 bytes per mode. AMR-NB always uses 8000 Hz, mono. AMR-WB (wideband) uses '#!AMR-WB\\n' and 16000 Hz.",
+  "formatName": "AMR Audio",
+  "version": "1.0",
+  "extensions": [".amr", ".3ga"],
+  "description": "Adaptive Multi-Rate (AMR) is a speech-optimized lossy audio codec standardized by 3GPP for mobile telephony and VoIP applications. Narrowband AMR (AMR-NB) files begin with the 6-byte ASCII magic '#!AMR' followed by a newline byte 0x0A. Wideband AMR (AMR-WB) files begin with '#!AMR-WB' followed by 0x0A. AMR operates on 20ms speech frames with 8 codec modes (4.75-12.2 kbps for NB; 6.6-23.85 kbps for WB). Each frame byte starts with a 4-bit frame type (FT) and a quality indicator bit (Q). AMR is ubiquitous in mobile voice recording and 3GPP multimedia files.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "audio-viewer",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "3GPP TS 26.071 — AMR Speech Codec General Description",
-      "3GPP TS 26.073 — AMR Speech Codec C-Source Code",
-      "RFC 4867 — RTP Payload Format for AMR and AMR-WB"
+      "3GPP TS 26.101: Mandatory speech CODEC speech processing functions — AMR speech CODEC frame structure",
+      "3GPP TS 26.201: Speech codec speech processing functions — AMR Wideband speech codec frame structure"
     ],
     "WebLinks": [
-      "https://www.tech-invite.com/3m26/tinv-3gpp-26-071.html",
-      "https://en.wikipedia.org/wiki/Adaptive_Multi-Rate_audio_codec",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000254.shtml",
-      "https://tools.ietf.org/html/rfc4867"
+      "https://www.3gpp.org/technologies/keywords-acronyms/100-the-3gpp-umts-standards",
+      "https://en.wikipedia.org/wiki/Adaptive_Multi-Rate_audio_codec"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "2321414D520A", "offset": 0, "label": "#!AMR\\n — AMR-NB header", "weight": 1.0 },
-      { "value": "2321414D522D57420A", "offset": 0, "label": "#!AMR-WB\\n — AMR-WB wideband header", "weight": 1.0 }
+      {
+        "value": "2321414D520A",
+        "offset": 0,
+        "label": "#!AMR\\n — AMR Narrowband file header magic",
+        "weight": 1.0
+      },
+      {
+        "value": "2321414D522D57420A",
+        "offset": 0,
+        "label": "#!AMR-WB\\n — AMR Wideband file header magic",
+        "weight": 1.0
+      }
     ],
-    "matchMode": "any",
-    "MinimumScore": 1.0,
-    "required": true,
+    "matchMode": "Any",
+    "MinimumScore": 0.9,
+    "required": [],
     "Strength": "Strong",
-    "EntropyHint": { "min": 3.0, "max": 6.5 },
+    "EntropyHint": {
+      "min": 3.5,
+      "max": 7.0,
+      "comment": "Speech codec data has moderate entropy due to mode switching"
+    },
     "validation": {
-      "minFileSize": 6,
-      "maxSignatureOffset": 0
+      "notes": "Magic must be '#!AMR\\n' (NB) or '#!AMR-WB\\n' (WB) including the 0x0A newline terminator"
     }
   },
   "variables": {
-    "amrHeader": "",
-    "isWideBand": false
+    "amrMagic": "",
+    "wbFlag": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "AMR File Header",
+      "name": "amrMagic",
       "offset": 0,
       "length": 6,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "AMR-NB file magic: '#!AMR\\n' (0x23 0x21 0x41 0x4D 0x52 0x0A — hash, exclamation, 'A', 'M', 'R', newline). This 6-byte sequence is the standard storage format header for 3GPP AMR-NB single-channel audio. For AMR-WB (wideband) the header is 9 bytes: '#!AMR-WB\\n'.",
-      "storeAs": "amrHeader",
+      "opacity": 0.85,
+      "description": "AMR file header magic — ASCII '#!AMR' (5 bytes) plus newline 0x0A; for AMR-WB files the magic is '#!AMR-WB' (8 bytes) plus 0x0A, making the narrowband form 6 bytes and wideband 9 bytes",
+      "storeAs": "amrMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "First Frame TOC Header",
+      "name": "wbFlag",
       "offset": 6,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "First AMR frame's Table of Contents (TOC) byte. Bits 7-4 encode the frame type (codec mode 0-15). Modes 0-7 are valid AMR-NB speech frames at bitrates 4.75 to 12.2 kbps. Mode 8=SID (comfort noise), modes 9-14=future use, mode 15=no data. Bit 3 is the frame quality indicator (1=good). Bits 2-0 are padding zeros.",
-      "storeAs": "firstFrameToc",
-      "valueType": "uint8",
-      "bitfields": [
-        {
-          "name": "Frame Type (Mode)",
-          "bits": "7-4",
-          "description": "AMR-NB codec mode (bitrate selection). Modes 0-7 are active speech.",
-          "valueMap": {
-            "0": "Mode 0 — 4.75 kbps",
-            "1": "Mode 1 — 5.15 kbps",
-            "2": "Mode 2 — 5.90 kbps",
-            "3": "Mode 3 — 6.70 kbps",
-            "4": "Mode 4 — 7.40 kbps (GSM-EFR compatible)",
-            "5": "Mode 5 — 7.95 kbps",
-            "6": "Mode 6 — 10.2 kbps",
-            "7": "Mode 7 — 12.2 kbps (GSM-FR compatible, best quality)",
-            "8": "SID — Silence Insertion Descriptor (comfort noise)",
-            "15": "NO_DATA — empty frame"
-          }
-        },
-        {
-          "name": "Quality Flag",
-          "bits": "3",
-          "description": "Frame quality indicator: 1=good frame, 0=damaged/bad frame. Decoders may apply error concealment on bad frames.",
-          "valueMap": {
-            "0": "Bad frame (error concealment applied)",
-            "1": "Good frame"
-          }
-        },
-        {
-          "name": "Padding",
-          "bits": "2-0",
-          "description": "Must be 000 (padding bits)"
-        }
-      ]
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Is Wide Band",
-      "expression": "calc:amrHeader == '#!AMR-WB'",
-      "storeAs": "isWideBand",
-      "description": "True when file uses AMR-WB (wideband, 16kHz) header rather than AMR-NB (narrowband, 8kHz)"
-    },
-    {
-      "type": "metadata",
-      "name": "AMR Header",
-      "variable": "amrHeader",
-      "description": "#!AMR (narrowband 8kHz) or #!AMR-WB (wideband 16kHz)"
-    },
-    {
-      "type": "metadata",
-      "name": "Is Wideband",
-      "variable": "isWideBand",
-      "description": "True = AMR-WB (16kHz), False = AMR-NB (8kHz)"
+      "opacity": 0.75,
+      "description": "Byte at offset 6 distinguishes AMR variants: for NB files this is the first frame byte (frame type in upper nibble); for WB files this continues the '-WB' magic string; inspect in context of magic prefix",
+      "storeAs": "wbFlag",
+      "valueType": "uint8"
     }
   ],
   "assertions": [
     {
-      "name": "AMR header valid",
-      "expression": "amrHeader == '#!AMR'",
-      "severity": "error",
-      "message": "AMR file must start with '#!AMR\\n' (0x2321414D520A) — not a valid AMR audio file"
+      "field": "amrMagic",
+      "op": "startsWith",
+      "value": "#!AMR",
+      "message": "AMR file must start with '#!AMR' ASCII magic"
+    },
+    {
+      "field": "wbFlag",
+      "op": "noteq",
+      "value": 0,
+      "message": "Byte at offset 6 must not be null for valid AMR frame data"
     }
   ],
   "navigation": {
     "bookmarks": [
-      {
-        "name": "AMR File Header",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      },
-      {
-        "name": "First Frame",
-        "offset": 6,
-        "icon": "\uE767",
-        "color": "#4ECDC4"
-      }
+      { "name": "AMR Magic", "offset": 0, "length": 6, "color": "#FF6B6B" },
+      { "name": "First Frame / WB Flag", "offset": 6, "length": 1, "color": "#4ECDC4" }
     ]
   },
   "inspector": {
-    "badge": "isWideBand",
-    "primaryField": "amrHeader",
+    "badge": "AMR",
+    "primaryField": "amrMagic",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "AMR Identity",
-        "icon": "\uE71B",
-        "fields": ["amrHeader", "isWideBand"]
-      },
-      {
-        "title": "First Frame",
-        "icon": "\uE767",
-        "fields": ["firstFrameToc"]
+        "name": "File Header",
+        "fields": ["amrMagic", "wbFlag"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "AMR Header (JSON)",
+      "name": "AMR Header Summary",
+      "format": "text",
+      "template": "Magic: {amrMagic} | Type: {wbFlag}"
+    },
+    {
+      "name": "AMR JSON Report",
       "format": "json",
-      "fields": ["amrHeader", "isWideBand"]
+      "template": "{ \"magic\": \"{amrMagic}\", \"wbFlag\": {wbFlag} }"
     }
   ],
   "forensic": {
-    "category": "audio",
+    "category": "Audio",
     "riskLevel": "low",
     "suspiciousPatterns": [
-      {
-        "name": "Invalid frame type in first frame",
-        "condition": "(firstFrameToc >> 4) > 8 && (firstFrameToc >> 4) != 15",
-        "severity": "warning",
-        "description": "First AMR frame has a frame type value 9-14 which is reserved/undefined. May indicate a non-standard encoder or malformed file."
-      }
+      "Missing 0x0A newline terminator after '#!AMR' magic indicates malformed file",
+      "Frame type nibble value 0xF (NO_DATA frame) throughout file indicates silent/tampered recording",
+      "Quality indicator bit Q=0 on multiple frames indicates transmission errors in the original"
     ]
   },
   "aiHints": {
-    "analysisContext": "AMR-NB storage format: '#!AMR\\n'(6B header) then frames. Each frame: 1-byte TOC (bits 7-4=mode 0-15, bit 3=quality) + payload. AMR-NB frame sizes by mode: mode0=12B, mode1=13B, mode2=15B, mode3=17B, mode4=19B, mode5=20B, mode6=26B, mode7=31B, SID=5B, NO_DATA=0B. Sample rate: always 8000 Hz, mono, 20ms per frame = 160 samples/frame. AMR-WB: '#!AMR-WB\\n'(9B) header, 16000 Hz, 20ms frames. Multi-channel AMR uses '#!AMR_MC1.0\\n' header.",
+    "analysisContext": "AMR files have a minimal header (6 or 9 bytes) followed immediately by variable-length speech frames. Each frame byte begins with 4-bit frame type (mode 0-7 for NB, 0-8 for WB) and 1-bit quality flag. Frame sizes are fixed per mode — mode 7 (12.2 kbps NB) is 32 bytes per frame. AMR is frequently embedded inside 3GP/MP4 containers rather than as standalone files.",
     "suggestedInspections": [
-      "Verify '#!AMR\\n' at offset 0: 23 21 41 4D 52 0A",
-      "For AMR-WB: check for '#!AMR-WB\\n': 23 21 41 4D 52 2D 57 42 0A",
-      "Read first frame TOC at offset 6: bits 7-4 = mode (0-7 normal, 8=SID, 15=NO_DATA)",
-      "Frame count × 20ms = total duration",
-      "Mode 7 (12.2 kbps) is the highest quality AMR-NB mode"
+      "Distinguish AMR-NB ('#!AMR\\n') from AMR-WB ('#!AMR-WB\\n') by header length",
+      "Walk frames after the header: each starts with a TOC byte encoding frame type and quality",
+      "Map frame types to bitrates: NB mode 0=4.75kbps through mode 7=12.2kbps",
+      "Count Q=0 (bad quality) frames to assess recording quality from mobile device",
+      "Calculate duration from frame count: each frame = 20ms of audio",
+      "Check if file is standalone AMR or if .amr extension was extracted from 3GP container"
     ]
   },
   "software": [
-    "Android/iOS voice recordings",
-    "VLC media player",
     "FFmpeg",
-    "Nokia/Ericsson mobile devices (historical)",
-    "3GPP reference implementation"
+    "VLC Media Player",
+    "Android MediaRecorder API",
+    "iOS AVAudioRecorder",
+    "Audacity (via FFmpeg plugin)",
+    "MediaInfo"
   ],
   "formatRelationships": {
     "category": "Audio",
-    "extensions": [".amr"],
-    "relatedFormats": ["AMR-WB", "3GP", "GSM"],
-    "note": "AMR-NB is the dominant mobile voice recording format for 2G/3G networks. AMR-WB (G.722.2) doubles the bandwidth to 16kHz for better voice quality."
+    "extensions": [".amr", ".3ga"],
+    "relatedFormats": ["3GP", "MP4", "AAC", "EVRC", "G.711"],
+    "note": "AMR is commonly embedded as an audio track in 3GP files; standalone .amr is used by mobile voicemail and voice memo apps"
   },
-  "MimeTypes": [
-    "audio/amr",
-    "audio/amr-wb"
-  ],
+  "MimeTypes": ["audio/amr", "audio/amr-wb", "audio/x-amr"],
   "UseCases": [
-    "Mobile phone voice recordings (GSM/3G era)",
-    "VoIP speech coding",
-    "3GPP multimedia messaging (MMS)",
-    "Voice memos on Nokia/Android devices"
+    "Mobile phone voice memo recording",
+    "VoIP speech encoding (GSM, UMTS networks)",
+    "Voicemail message storage and transmission",
+    "3GPP multimedia messaging audio track",
+    "Embedded speech in 3GP mobile video"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 72,
+    "CompletenessScore": 88,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 5,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "AudioFormat": true,
-    "Endianness": "big-endian (TOC bits)",
-    "SampleRate": "8000 Hz (AMR-NB) / 16000 Hz (AMR-WB)",
-    "Channels": "Mono (single channel only)",
-    "FrameDuration": "20ms per frame",
-    "SamplesPerFrame": "160 (AMR-NB) / 320 (AMR-WB)",
-    "BitrateRange": "4.75 to 12.2 kbps (AMR-NB) / 6.6 to 23.85 kbps (AMR-WB)"
+    "variants": {
+      "AMR-NB": "8 kHz sample rate, 4.75-12.2 kbps, magic '#!AMR\\n'",
+      "AMR-WB": "16 kHz sample rate, 6.6-23.85 kbps, magic '#!AMR-WB\\n'"
+    },
+    "frameDurationMs": 20,
+    "modeSwitching": "per-frame, coded in TOC byte",
+    "standardBody": "3GPP",
+    "lossless": false
   }
 }

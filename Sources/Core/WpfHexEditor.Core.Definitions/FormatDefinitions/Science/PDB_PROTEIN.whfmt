@@ -1,0 +1,219 @@
+{
+  "diffMode": "text",
+  "formatName": "Protein Data Bank (PDB)",
+  "version": "1.0",
+  "extensions": [".pdb", ".ent"],
+  "description": "PDB (Protein Data Bank) file format — 3D molecular structure data for proteins, nucleic acids and small molecules. Fixed-width ASCII, 80 characters per line. Record types: HEADER (molecule name, date, PDB ID), TITLE, COMPND, SOURCE, REMARK (numbered annotations), SEQRES (amino acid sequence), ATOM (atomic coordinates: serial, name, altLoc, residueName, chainID, resSeq, x, y, z, occupancy, tempFactor, element, charge), HETATM (heteroatom — water, ligands), CONECT (covalent bonds), TER (chain terminus), END. ATOM/HETATM format: columns 7-11=serial, 13-16=name, 17=altLoc, 18-20=resName, 22=chainID, 23-26=resSeq, 31-38=x float, 39-46=y, 47-54=z, 55-60=occupancy, 61-66=tempFactor. Largely superseded by mmCIF/PDBx for large structures.",
+  "category": "Science",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "PDB File Format v3.30 — wwPDB (2008)",
+      "IUBMB/IUPAC Nomenclature for Amino Acids",
+      "wwPDB Format Specification"
+    ],
+    "WebLinks": [
+      "https://www.wwpdb.org/documentation/file-format",
+      "https://en.wikipedia.org/wiki/Protein_Data_Bank_(file_format)",
+      "https://www.rcsb.org/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "484541444552",
+        "offset": 0,
+        "label": "HEADER — PDB file header record at offset 0",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 5.5 },
+    "validation": {
+      "minFileSize": 80,
+      "maxSignatureOffset": 0,
+      "note": "PDB files typically begin with 'HEADER' record (6 ASCII chars). Files from AlphaFold or computational sources may start with REMARK or ATOM directly."
+    }
+  },
+  "variables": {
+    "pdbRecord": "",
+    "pdbLine1": "",
+    "pdbMolName": "",
+    "pdbIdCode": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "PDB Record Type",
+      "offset": 0,
+      "length": 6,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "PDB record type identifier at offset 0 (6 ASCII bytes, left-justified, space-padded). Standard first record is 'HEADER' for deposited structures. Other possible first records: 'REMARK' (annotation-only or computational structure), 'ATOM  ' (minimal coordinate file with no header), 'MODEL ' (NMR ensemble). The PDB format uses exactly 80-character lines with records identified by columns 1-6.",
+      "storeAs": "pdbRecord",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "HEADER Line",
+      "offset": 0,
+      "length": 80,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Complete HEADER record line (80 ASCII bytes). HEADER format: cols 1-6='HEADER', cols 11-50=classification (molecule name, e.g. 'HYDROLASE'), cols 51-59=depDate (DD-MON-YY), cols 63-66=idCode (4-character PDB accession code, e.g. '1TIM'). The 4-character PDB ID is the primary reference for structures in the Protein Data Bank. Over 200,000 structures are deposited.",
+      "storeAs": "pdbLine1",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Molecule Classification",
+      "offset": 10,
+      "length": 40,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "PDB HEADER classification field (columns 11-50, 40 ASCII characters). Contains a brief classification of the macromolecular structure, e.g. 'HYDROLASE', 'TRANSFERASE', 'DNA', 'RNA', 'VIRUS', 'IMMUNE SYSTEM'. This classification is free-text in early PDB entries but follows controlled vocabulary in modern depositions via the wwPDB deposition system.",
+      "storeAs": "pdbMolName",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "PDB ID Code",
+      "offset": 62,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "PDB accession code (columns 63-66, 4 ASCII characters). Four-character alphanumeric code uniquely identifying the structure in the Protein Data Bank (e.g. '1TIM', '4HHB', '7N2R'). First character is always a digit (1-9). Used as the primary reference in literature citations of PDB structures. As of 2024, PDB IDs are being extended to 8 characters for new entries.",
+      "storeAs": "pdbIdCode",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "PDB Record Type",
+      "variable": "pdbRecord",
+      "description": "First record type — typically HEADER for deposited PDB structures"
+    },
+    {
+      "type": "metadata",
+      "name": "HEADER Line",
+      "variable": "pdbLine1",
+      "description": "Complete first line of PDB file — classification, date, PDB ID"
+    },
+    {
+      "type": "metadata",
+      "name": "Molecule Name",
+      "variable": "pdbMolName",
+      "description": "Molecular classification from HEADER record columns 11-50"
+    },
+    {
+      "type": "metadata",
+      "name": "PDB ID Code",
+      "variable": "pdbIdCode",
+      "description": "4-character PDB accession code from HEADER columns 63-66"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "PDB record type valid",
+      "expression": "pdbRecord == 'HEADER' or pdbRecord == 'ATOM  ' or pdbRecord == 'REMARK'",
+      "severity": "warning",
+      "message": "PDB file should start with HEADER, ATOM, or REMARK record type"
+    },
+    {
+      "name": "Line length valid",
+      "expression": "pdbLine1 length == 80",
+      "severity": "error",
+      "message": "PDB lines must be exactly 80 characters wide — non-standard file"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "HEADER Record", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "pdbIdCode",
+    "primaryField": "pdbRecord",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PDB Header",
+        "icon": "\uE71B",
+        "fields": ["pdbRecord", "pdbMolName", "pdbIdCode", "pdbLine1"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PDB Header (JSON)",
+      "format": "json",
+      "fields": ["pdbRecord", "pdbMolName", "pdbIdCode"]
+    },
+    {
+      "name": "PDB Header (Text)",
+      "format": "text",
+      "fields": ["pdbRecord", "pdbLine1"]
+    }
+  ],
+  "forensic": {
+    "category": "science-data",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "ATOM records with invalid element symbols may indicate modified structures",
+      "Unusual REMARK 999 entries may contain non-standard metadata"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PDB fixed-width ASCII format: each line = exactly 80 characters with CR or LF termination. Records identified by columns 1-6 (space-padded). ATOM record columns: 1-6=record type, 7-11=serial (right-justified integer), 13-16=atom name, 17=altLoc, 18-20=resName, 22=chainID, 23-26=resSeq (integer), 27=iCode, 31-38=x (8.3f), 39-46=y, 47-54=z, 55-60=occupancy (6.2f), 61-66=tempFactor (6.2f), 77-78=element, 79-80=charge. HETATM identical layout. Multiple MODEL/ENDMDL blocks indicate NMR ensembles.",
+    "suggestedInspections": [
+      "Columns 1-6: record type — HEADER, REMARK, SEQRES, ATOM, HETATM, CONECT, END",
+      "HEADER line cols 63-66: 4-character PDB ID code for database lookup",
+      "ATOM records: x/y/z coordinates in columns 31-54 (angstroms, 8.3f format)",
+      "SEQRES records: amino acid sequence — match against UniProt for validation"
+    ]
+  },
+  "software": [
+    "PyMOL (molecular visualization)",
+    "VMD (Visual Molecular Dynamics)",
+    "UCSF Chimera / ChimeraX",
+    "YASARA",
+    "Discovery Studio",
+    "Biopython (Bio.PDB module)"
+  ],
+  "formatRelationships": {
+    "category": "Science",
+    "extensions": [".pdb", ".ent"],
+    "relatedFormats": ["MMCIF", "MOL2", "SDF", "XYZ"],
+    "note": "PDB format is being superseded by mmCIF/PDBx for structures with more than 99,999 atoms (e.g. viruses, ribosomes). The wwPDB now requires mmCIF for new depositions."
+  },
+  "MimeTypes": [
+    "chemical/x-pdb",
+    "application/x-pdb"
+  ],
+  "UseCases": [
+    "Protein and nucleic acid 3D structure visualization",
+    "Drug discovery — active site analysis and docking",
+    "Structural bioinformatics and computational biology",
+    "Teaching biochemistry and molecular biology",
+    "AlphaFold2 structure prediction output format"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Fixed-width ASCII text, 80 characters per line",
+    "Magic": "'HEADER' (48 45 41 44 45 52) at offset 0 — most common first record",
+    "Standard": "PDB File Format v3.30 — wwPDB (2008)",
+    "Endianness": "N/A (ASCII text format)",
+    "LineWidth": "Exactly 80 characters per record line"
+  }
+}

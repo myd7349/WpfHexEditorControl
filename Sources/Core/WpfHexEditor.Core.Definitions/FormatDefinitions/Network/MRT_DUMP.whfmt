@@ -1,0 +1,222 @@
+{
+  "diffMode": "binary",
+  "formatName": "MRT BGP Route Dump",
+  "version": "1.0",
+  "extensions": [ ".mrt", ".dump" ],
+  "description": "MRT (Multi-threaded Routing Toolkit) dump format (RFC 6396) for BGP routing data archival. Each MRT record: timestamp(4B BE: Unix seconds) + type(2B BE) + subtype(2B BE) + length(4B BE: body bytes) + message_body(length bytes). Types: 5=TABLE_DUMP (IPv4 routing table, deprecated), 6=TABLE_DUMP_V2 (current standard, subtypes: 1=PEER_INDEX_TABLE, 2=RIB_IPV4_UNICAST, 3=RIB_IPV4_MULTICAST, 4=RIB_IPV6_UNICAST, 5=RIB_IPV6_MULTICAST), 11=BGP4MP (live BGP session dumps, subtypes: 0=STATE_CHANGE, 1=MESSAGE, 4=MESSAGE_AS4, 5=STATE_CHANGE_AS4), 12=BGP4MP_ET (extended timestamp). PEER_INDEX_TABLE: collector_BGP_ID(4B)+view_name+peer_count+peer_entries. RIB entries: sequence_number(4B)+prefix_length(1B)+prefix(variable)+peer_index(2B)+originated_time(4B)+attr_length(2B)+BGP_attributes. Used by RouteViews and RIPE RIS for global routing table snapshots.",
+  "category": "Network",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 6396 — Multi-Threaded Routing Toolkit (MRT) Routing Information Export Format",
+      "RFC 6397 — Multi-Threaded Routing Toolkit (MRT) Border Gateway Protocol (BGP) Routing Information Export Format with Geo-Location Extensions"
+    ],
+    "WebLinks": [
+      "https://www.ietf.org/rfc/rfc6396.txt",
+      "https://www.routeviews.org/routeviews/index.php/archive/",
+      "https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/ris-raw-data"
+    ]
+  },
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 12,
+      "maxSignatureOffset": 0,
+      "note": "MRT has no fixed magic number. Records start with a Unix timestamp. Detection requires structural heuristics: first 4 bytes are a plausible Unix timestamp, bytes 4-5 are a valid MRT type (5, 6, 11, 12, 13), and bytes 8-11 are a plausible record length."
+    }
+  },
+  "variables": {
+    "mrtTimestamp": 0,
+    "mrtType": 0,
+    "mrtSubtype": 0,
+    "mrtLength": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "MRT Record Timestamp",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "description": "Unix timestamp (seconds since 1970-01-01 UTC) when this MRT record was created. Big-endian. For BGP4MP_ET type (12), timestamp is 8 bytes with microsecond precision. Valid timestamps should fall between 1996 (MRT tool creation) and present.",
+      "storeAs": "mrtTimestamp",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "MRT Type",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "MRT record type code (big-endian). Determines the record structure. TABLE_DUMP(5)=deprecated IPv4 RIB dump, TABLE_DUMP_V2(6)=current RIB format with peer index, BGP4MP(11)=live BGP session messages, BGP4MP_ET(12)=BGP4MP with extended microsecond timestamps.",
+      "storeAs": "mrtType",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "5": "TABLE_DUMP — IPv4 routing table (deprecated)",
+        "6": "TABLE_DUMP_V2 — current RIB dump format with peer index table",
+        "11": "BGP4MP — live BGP session messages",
+        "12": "BGP4MP_ET — BGP4MP with extended microsecond timestamps",
+        "13": "ISIS — IS-IS routing protocol messages"
+      }
+    },
+    {
+      "type": "field",
+      "name": "MRT Subtype",
+      "offset": 6,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "MRT record subtype code (big-endian). Interpretation depends on type. TABLE_DUMP_V2 subtypes: 1=PEER_INDEX_TABLE (collector info and peer list), 2=RIB_IPV4_UNICAST, 3=RIB_IPV4_MULTICAST, 4=RIB_IPV6_UNICAST. BGP4MP subtypes: 0=STATE_CHANGE, 1=MESSAGE, 4=MESSAGE_AS4 (32-bit ASN), 5=STATE_CHANGE_AS4.",
+      "storeAs": "mrtSubtype",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Record Body Length",
+      "offset": 8,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Length of the MRT record body in bytes, not including the 12-byte MRT record header (big-endian). The next MRT record starts at offset 12 + this length. RIB dumps for full BGP tables can be tens of megabytes per file.",
+      "storeAs": "mrtLength",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "metadata",
+      "name": "MRT Header Size",
+      "variable": "mrtLength",
+      "description": "MRT record header is always 12 bytes: timestamp(4B) + type(2B) + subtype(2B) + length(4B). Body begins at offset 12. BGP4MP_ET has 16-byte header (8B extended timestamp)."
+    },
+    {
+      "type": "metadata",
+      "name": "TABLE_DUMP_V2 Structure",
+      "variable": "mrtType",
+      "description": "TABLE_DUMP_V2 (type 6) files start with a PEER_INDEX_TABLE record (subtype 1) listing all BGP peers. Subsequent RIB records reference peers by index. This is the standard format used in RouteViews and RIPE RIS BGP data archives."
+    },
+    {
+      "type": "metadata",
+      "name": "Archive Sources",
+      "variable": "mrtTimestamp",
+      "description": "MRT dumps are collected by RouteViews (University of Oregon) and RIPE RIS. Files are typically named rib.YYYYMMDD.HHMM.bz2 for full table dumps or updates.YYYYMMDD.HHMM.bz2 for incremental BGP UPDATE streams."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MRT type is known",
+      "expression": "mrtType == 5 || mrtType == 6 || mrtType == 11 || mrtType == 12 || mrtType == 13",
+      "severity": "warning",
+      "message": "MRT type should be 5 (TABLE_DUMP), 6 (TABLE_DUMP_V2), 11 (BGP4MP), 12 (BGP4MP_ET), or 13 (ISIS)."
+    },
+    {
+      "name": "Record length is positive",
+      "expression": "mrtLength > 0",
+      "severity": "error",
+      "message": "MRT record body length must be greater than 0."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "First Record Timestamp", "offset": 0, "color": "#FF4444" },
+      { "name": "Record Type", "offset": 4, "color": "#44AAFF" },
+      { "name": "Record Subtype", "offset": 6, "color": "#44FF88" },
+      { "name": "Record Length", "offset": 8, "color": "#FFAA44" },
+      { "name": "First Record Body", "offset": 12, "color": "#AA44FF" }
+    ]
+  },
+  "inspector": {
+    "badge": "MRT",
+    "primaryField": "mrtType",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "MRT Record Header",
+        "icon": "",
+        "fields": [ "mrtTimestamp", "mrtType", "mrtSubtype", "mrtLength" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "MRT Record Header (JSON)",
+      "format": "json",
+      "fields": [ "mrtTimestamp", "mrtType", "mrtSubtype", "mrtLength" ]
+    },
+    {
+      "name": "MRT Summary (Text)",
+      "format": "text",
+      "fields": [ "mrtTimestamp", "mrtType", "mrtSubtype", "mrtLength" ]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "low",
+    "notes": "MRT dump files from public archives (RouteViews, RIPE RIS) contain global BGP routing table state and are publicly available. Files from private BGP routers may reveal internal network topology and routing policy. BGP hijack events are detectable by comparing AS_PATH attributes against known legitimate origination ASNs.",
+    "suspiciousPatterns": [
+      "BGP4MP STATE_CHANGE records (subtype 0) indicate BGP session flaps — potential network instability",
+      "Unexpected AS_PATH prepending may indicate BGP route manipulation or traffic engineering"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "MRT record: timestamp(4B BE)+type(2B BE)+subtype(2B BE)+length(4B BE)+body(length B). TABLE_DUMP_V2 starts with PEER_INDEX_TABLE (type=6,subtype=1): collector_BGP_ID(4B)+view_name_len(2B)+view_name+peer_count(2B)+peers[]. Each peer: peer_type(1B)+peer_BGP_ID(4B)+peer_IP(4B or 16B)+peer_AS(2B or 4B). RIB_IPV4_UNICAST (type=6,subtype=2): sequence_number(4B)+prefix_len(1B)+prefix(ceil(len/8)B)+entry_count(2B)+rib_entries[]. Each RIB entry: peer_index(2B)+originated_time(4B)+attr_len(2B)+BGP_attrs.",
+    "suggestedInspections": [
+      "Read first MRT record timestamp to determine capture date — validate against filename date (YYYYMMDD.HHMM)",
+      "Check MRT type at offset 4 to identify dump type: type=6 (TABLE_DUMP_V2) is standard for full RIB files",
+      "For TABLE_DUMP_V2, first record (subtype=1 PEER_INDEX_TABLE) contains collector BGP-ID and peer list",
+      "Analyze RIB entries for AS_PATH attributes to map routing paths and detect potential BGP hijacks",
+      "Count entries with multiple AS_PATH entries — MOAS (Multiple Origin AS) prefixes indicate BGP anomalies",
+      "Look for BGP4MP records (type=11) which contain live UPDATE messages — decode per RFC 4271"
+    ]
+  },
+  "software": [
+    "bgpdump — RIPE NCC MRT dump parser tool",
+    "libbgpdump — C library for MRT parsing",
+    "pybgpdump — Python MRT dump parser",
+    "BGPStream — high-performance BGP data processing framework",
+    "CAIDA BGPview — BGP routing table visualization"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".mrt", ".dump" ],
+    "relatedFormats": [ "BGP_UPDATE", "PCAP", "PCAPNG" ],
+    "note": "MRT is a container format that wraps BGP messages (RFC 4271) with timestamps and peer metadata. RouteViews archives: full table dumps every 2 hours, UPDATE files every 15 minutes, all bzip2-compressed. RIPE RIS uses same format. BGP4MP type wraps raw BGP UPDATE messages per RFC 4271."
+  },
+  "MimeTypes": [
+    "application/octet-stream",
+    "application/x-mrt"
+  ],
+  "UseCases": [
+    "Global Internet routing table analysis and research",
+    "BGP prefix hijack detection and RPKI validation",
+    "Autonomous system topology and path analysis",
+    "Historical routing anomaly investigation",
+    "Network security monitoring and threat intelligence"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary, big-endian, no file magic",
+    "RecordHeaderSize": 12,
+    "BGP4MP_ET_HeaderSize": 16,
+    "Archives": "RouteViews (routeviews.org) and RIPE RIS (ripe.net) — bzip2 compressed",
+    "FullTableSize": "Typical full BGP table dump is 50-200MB compressed",
+    "NamingConvention": "rib.YYYYMMDD.HHMM.bz2 (full), updates.YYYYMMDD.HHMM.bz2 (incremental)"
+  }
+}

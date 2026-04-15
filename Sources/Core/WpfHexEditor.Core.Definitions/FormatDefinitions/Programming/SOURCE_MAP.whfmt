@@ -1,0 +1,191 @@
+{
+  "diffMode": "text",
+  "formatName": "JavaScript Source Map",
+  "version": "1.0",
+  "extensions": [".map"],
+  "description": "JavaScript Source Map (Source Map Specification v3) — JSON file mapping minified or transpiled JavaScript/CSS back to original source files. Root JSON object with required fields: 'version' (integer, must be 3), 'sources' (array of source file paths), 'mappings' (base64 VLQ-encoded mapping string). Optional fields: 'file' (generated filename), 'sourceRoot' (prefix for source paths), 'sourcesContent' (array of embedded source file contents), 'names' (symbol names for rename mapping). Mappings string: semicolons separate generated output lines, commas separate segments within a line. Each segment encodes: generated column (VLQ), source file index (VLQ delta), original line (VLQ delta), original column (VLQ delta), names index (VLQ delta, optional). Used by: webpack, Rollup, Vite, TypeScript tsc, Babel, Sass, PostCSS. Browser DevTools read source maps automatically for debugging minified code.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "Source Map Specification v3 — Google/Mozilla (2011)",
+      "TC39 Source Map Proposal (proposal-source-map-v4)",
+      "Base64 VLQ Encoding — Variable-Length Quantity"
+    ],
+    "WebLinks": [
+      "https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/",
+      "https://en.wikipedia.org/wiki/Minification_(programming)#Source_mapping",
+      "https://developer.chrome.com/docs/devtools/javascript/source-maps/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "7B2276657273696F6E223A33",
+        "offset": 0,
+        "label": "{\"version\":3 — Source Map v3 JSON compact",
+        "weight": 0.9
+      },
+      {
+        "value": "7B0A2020227665727369",
+        "offset": 0,
+        "label": "{\\n  \"version — formatted Source Map JSON",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.5, "max": 6.5 },
+    "validation": {
+      "minFileSize": 2,
+      "maxSignatureOffset": 0,
+      "note": "Source maps are JSON files. Detection relies on 'version':3 near the start. .map extension is also used by Linker MAP files (binary) — file content inspection is essential for disambiguation."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "versionField": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the source map file at offset 0 (1 byte, uint8). Must be 0x7B ('{') for a valid JSON object. Source map v3 specification requires the root to be a JSON object with a 'version' key. Some source maps may include a security prefix ')]}' (0x29 0x5D 0x7D 0x27) or XSSI prefix before the JSON to prevent cross-site script inclusion — browsers and source map parsers must strip these prefixes before JSON parsing.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Version Field",
+      "offset": 0,
+      "length": 12,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 12 bytes of the source map file (ASCII). A compact source map v3 starts with '{\"version\":3' (12 bytes). A formatted source map may start with '{\\n  \"version\":3'. The 'version' field must be the integer 3 — older source map formats (v1, v2 from Closure Compiler) are obsolete. Source map v4 (proposed TC39 proposal) would use version:4 and add scopes/ranges for better debugging of inlined functions.",
+      "storeAs": "versionField",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "0x7B '{' — JSON object start"
+    },
+    {
+      "type": "metadata",
+      "name": "Version Field",
+      "variable": "versionField",
+      "description": "'{\"version\":3' — Source Map v3 JSON signature"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "JSON object start",
+      "expression": "firstByte == 0x7B",
+      "severity": "warning",
+      "message": "Source map should start with '{' (0x7B) — not a valid JSON object"
+    },
+    {
+      "name": "Version is 3",
+      "expression": "versionField contains '\"version\":3'",
+      "severity": "warning",
+      "message": "Source map v3 should contain '\"version\":3' near the start of the file"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Source Map Root", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "versionField",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Source Map Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "versionField"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Source Map Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "versionField"]
+    },
+    {
+      "name": "Source Map Header (Text)",
+      "format": "text",
+      "fields": ["versionField"]
+    }
+  ],
+  "forensic": {
+    "category": "web-development",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      "sourcesContent field embeds full original source code — may expose proprietary logic",
+      "Source map reveals original file paths, variable names, and code structure to attackers",
+      "Deployed source maps in production allow full deobfuscation of minified bundles"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Source map v3 JSON structure: {version:3, file:'output.min.js', sourceRoot:'', sources:['src/a.js','src/b.js'], sourcesContent:['...','...'], names:['foo','bar'], mappings:'AAAA,SAAS,EAAE,...'}. Mappings string: ';' separates generated lines, ',' separates segments. Each segment uses Base64 VLQ: first value = generated column (absolute), rest = deltas. Segment with 1 field = no source mapping; 4 fields = generated col + source index + original line + original col; 5 fields = also includes names index. Base64 VLQ: each 6-bit group encodes 5 bits of value + 1 continuation bit (LSB=sign for first group). Large mappings strings (several MB) indicate complex minified bundles.",
+    "suggestedInspections": [
+      "Byte 0: '{' (0x7B) confirms JSON format — not a binary linker MAP file",
+      "First 20 bytes: look for '\"version\":3' — confirms Source Map v3 specification",
+      "Check 'sources' array — reveals original source file paths (may expose structure)",
+      "Check 'sourcesContent' presence — if present, contains embedded original source code"
+    ]
+  },
+  "software": [
+    "webpack (webpack.config.js devtool: 'source-map')",
+    "Rollup (sourcemap: true option)",
+    "Vite (build.sourcemap option)",
+    "TypeScript tsc (sourceMap: true in tsconfig.json)",
+    "Babel (@babel/plugin-transform-... with sourceMaps option)",
+    "Chrome DevTools (automatic source map loading)",
+    "Firefox Developer Tools (source map support)"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".map"],
+    "relatedFormats": ["WEBMANIFEST"],
+    "note": "Source maps are JSON files but have a distinct purpose from general JSON. The .map extension is shared with linker MAP files (binary, completely different format). Source map v4 (TC39 proposal) adds 'scopes' field for better representation of inlined functions and closures. WASM source maps follow the same v3 format."
+  },
+  "MimeTypes": [
+    "application/json",
+    "application/x-source-map"
+  ],
+  "UseCases": [
+    "Browser DevTools debugging of minified JavaScript bundles",
+    "TypeScript error stack trace mapping to original source",
+    "Sass/LESS CSS preprocessor output debugging",
+    "Production error monitoring (Sentry, Bugsnag source map upload)",
+    "Dead code elimination verification in bundlers"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "JSON text (UTF-8) with Base64 VLQ-encoded mappings string",
+    "Magic": "No binary magic — starts with '{\"version\":3' for compact or '{' for formatted",
+    "Standard": "Source Map Specification v3 — Google/Mozilla (2011)",
+    "Endianness": "N/A (JSON text)",
+    "Mappings": "Base64 VLQ-encoded, semicolons for lines, commas for segments, 1/4/5 fields per segment"
+  }
+}

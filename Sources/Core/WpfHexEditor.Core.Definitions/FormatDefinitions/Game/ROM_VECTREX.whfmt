@@ -1,0 +1,169 @@
+{
+  "diffMode": "binary",
+  "formatName": "Vectrex ROM",
+  "version": "1.0",
+  "extensions": [".vec", ".bin"],
+  "description": "GCE Vectrex cartridge ROM image (General Consumer Electronics / Milton Bradley, 1982). The Vectrex is a unique vector-display home game console using a built-in oscilloscope-style CRT. Cartridge ROMs typically begin with the copyright string 'g GCE ' (0x67 0x20 0x47 0x43 0x45 0x20) followed by the game year and title in ASCII, or alternatively directly with game title text and a jump table. The Motorola 6809 CPU runs at 1.5 MHz. The built-in BIOS (8 KB) handles vector drawing routines; cartridges start at address 0x0000 in the cartridge ROM space. ROM sizes: 4 KB to 32 KB. The official library contains only 28 commercial titles released 1982-1984, with an active homebrew scene adding 100+ titles. Detection is primarily by extension and size due to the absence of a standardised header magic.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "GCE Vectrex Programmer's Manual",
+      "Motorola 6809 CPU Technical Reference",
+      "Vectrex BIOS Disassembly Documentation"
+    ],
+    "WebLinks": [
+      "https://www.vectrex.de/",
+      "https://en.wikipedia.org/wiki/Vectrex",
+      "https://vectrex.wikia.com/wiki/Vectrex_Wiki",
+      "https://www.playvectrex.com/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "6720474345",
+        "offset": 0,
+        "label": "'g GCE' — GCE copyright string at start of Vectrex cartridge ROM",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 4096,
+      "maxSignatureOffset": 4,
+      "note": "Vectrex ROMs may or may not start with the GCE copyright string. File size is typically 4 KB, 8 KB, or 32 KB. Detection is primarily extension-based."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "copyrightStr": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "uint8",
+      "description": "First byte of the Vectrex ROM. Official GCE cartridges begin with 0x67 ('g') as the start of the copyright string 'g GCE YEAR'. Homebrew ROMs may begin with a Motorola 6809 opcode or with the game title string.",
+      "storeAs": "firstByte"
+    },
+    {
+      "type": "field",
+      "name": "Copyright String",
+      "offset": 0,
+      "length": 6,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "ascii",
+      "description": "6-byte ASCII region at offset 0 containing the GCE copyright string 'g GCE ' (0x67 0x20 0x47 0x43 0x45 0x20) present on all official GCE cartridge ROMs. This string is followed by the copyright year and a game-specific header including the title and entry point jump table.",
+      "storeAs": "copyrightStr"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First ROM byte (0x67 = GCE copyright start)"
+    },
+    {
+      "type": "metadata",
+      "name": "Copyright String",
+      "variable": "copyrightStr",
+      "description": "GCE copyright string or game title"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Minimum ROM size",
+      "expression": "fileSize >= 4096",
+      "severity": "warning",
+      "message": "Vectrex ROMs should be at least 4 KB (smallest known commercial cartridge)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ROM Start / Copyright", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "copyrightStr",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Vectrex ROM Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "copyrightStr"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Vectrex ROM Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "copyrightStr"]
+    },
+    {
+      "name": "Vectrex ROM Info (CSV)",
+      "format": "csv",
+      "fields": ["firstByte"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Vectrex ROM: official GCE cartridges begin with 'g GCE YYYY' ASCII copyright string. The 6809 CPU starts at ROM address 0x0000. BIOS (8 KB internal) provides vector drawing subroutines called via JSR. ROM address space: 0x0000-0x7FFF (cartridge, 32 KB max). 0x8000-0xFFFF: BIOS, RAM, hardware registers.",
+    "suggestedInspections": [
+      "Check bytes 0-4 for 'g GCE' (0x67 0x20 0x47 0x43 0x45) — present on all official GCE cartridges",
+      "Scan for Motorola 6809 opcodes at offset 0: LDS (0x10CE), LDX (0x8E), JSR (0x9D/0xBD) indicate valid entry code",
+      "Look for game title ASCII string following the copyright header (typically null-terminated)",
+      "Identify BIOS subroutine calls (JSR to 0x8000-0xFFFF range) for vector drawing and sound routines"
+    ]
+  },
+  "software": [
+    "Vecx (cross-platform Vectrex emulator)",
+    "ParaJVE (Java Vectrex emulator)",
+    "RetroArch with Vecx core",
+    "MAME (Vectrex driver)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".vec", ".bin"],
+    "relatedFormats": ["ROM_ATARI2600"],
+    "note": "The Vectrex is unique for its built-in vector display. The 6809 CPU is more powerful than the 6502 used in most contemporaries. .bin extension is shared with many other binary formats."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of GCE Vectrex vector-display console games",
+    "Preservation of the rare 28-game official Vectrex library",
+    "Homebrew Vectrex development and testing via emulator",
+    "Study of vector graphics rendering in early home consoles"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "GCE Vectrex",
+    "CPU": "Motorola 6809 at 1.5 MHz",
+    "Display": "Built-in vector CRT (no raster graphics)",
+    "Sound": "AY-3-8912 PSG (3 channels + noise)",
+    "ROMRange": "0x0000-0x7FFF (32 KB cartridge window)",
+    "BIOSSize": "8 KB internal at 0xE000-0xFFFF"
+  }
+}

@@ -1,28 +1,28 @@
 {
   "diffMode": "binary",
-  "formatName": "Binary glTF",
-  "version": "1.15",
-  "extensions": [
-    ".glb"
-  ],
-  "description": "Binary glTF (GLB) is a compact, self-contained binary container format for the GL Transmission Format (glTF) 3D asset standard developed by the Khronos Group. A GLB file begins with a 12-byte header containing the 'glTF' magic value, a uint32 version (typically 2), and the total file length. The body consists of chunks: a mandatory JSON chunk containing the scene description, followed by an optional binary buffer chunk with vertex data, indices, and other binary payloads. GLB is the preferred delivery format for web-based 3D, AR/VR, and real-time rendering applications.",
+  "formatName": "glTF Binary (GLB)",
+  "version": "1.0",
+  "extensions": [".glb"],
+  "description": "GLB (GL Transmission Format Binary) is the binary self-contained container for glTF 2.0 3D assets, developed by the Khronos Group. The 4-byte ASCII magic 'glTF' (67 6C 54 46) appears at offset 0. The 12-byte header contains: magic (4B) + version (4B LE, value 2 for glTF 2.0) + total file length (4B LE). The body consists of one or two typed chunks. Chunk 0 (mandatory JSON): chunk_length (4B LE) + chunk_type 0x4E4F534A ('JSON' as LE uint32) + UTF-8 JSON payload padded to 4-byte alignment with 0x20 (space) bytes. Chunk 1 (optional BIN): chunk_length (4B LE) + chunk_type 0x004E4942 ('BIN' + null as LE uint32) + binary buffer data padded with 0x00 bytes. The JSON chunk contains the complete glTF scene descriptor including nodes, meshes, materials, accessors, animations, and skins. The BIN chunk contains vertex positions, indices, normals, UV coordinates, and embedded texture images. GLB is self-contained — no external files needed — making it the preferred delivery format for web, AR/VR, and real-time rendering.",
   "category": "3D",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Khronos glTF 2.0 Specification",
-      "KHR_binary_glTF Extension"
+      "Khronos glTF 2.0 Specification — GLB Container",
+      "KHR_binary_glTF Extension Specification",
+      "glTF 2.0 Quick Reference Card — Khronos Group"
     ],
     "WebLinks": [
       "https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html",
       "https://en.wikipedia.org/wiki/GlTF",
+      "https://github.com/KhronosGroup/glTF",
       "https://wiki.fileformat.com/3d/glb/"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "676C5446", "offset": 0, "label": "glTF magic 'glTF' (LE uint32 0x46546C67)", "weight": 1.0 }
+      { "value": "676C5446", "offset": 0, "label": "glTF — GLB binary glTF container magic ASCII 'glTF' at offset 0", "weight": 1.0 }
     ],
     "matchMode": "any",
     "MinimumScore": 0.9,
@@ -32,39 +32,39 @@
     "validation": {
       "minFileSize": 12,
       "maxSignatureOffset": 0,
-      "note": "Magic 'glTF' must be at exactly offset 0. Version at offset 4 should be 1 or 2. Length at offset 8 must equal file size."
+      "note": "Magic 'glTF' at offset 0. Version at offset 4 must be 2. Total length at offset 8 must equal actual file size."
     }
   },
   "variables": {
-    "gltfMagic": "",
-    "gltfVersion": 0,
-    "totalLength": 0,
+    "glbMagic": "",
+    "glbVersion": 0,
+    "glbLength": 0,
     "jsonChunkLength": 0,
-    "jsonChunkType": 0
+    "chunk0Type": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "glTF Magic",
+      "name": "GLB Magic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.45,
-      "description": "4-byte ASCII magic string 'glTF' (0x67 0x6C 0x54 0x46) at the absolute start of every GLB file. This is the primary and reliable identifier for binary glTF container files as defined in the Khronos glTF specification.",
-      "storeAs": "gltfMagic",
+      "description": "4-byte ASCII magic string 'glTF' (0x67 0x6C 0x54 0x46) at the absolute start of every GLB file. This is the primary and unambiguous identifier for the binary glTF container format as mandated by the Khronos glTF 2.0 specification.",
+      "storeAs": "glbMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "glTF Version",
+      "name": "GLB Version",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.35,
-      "description": "4-byte little-endian unsigned integer specifying the glTF container version. Value 1 corresponds to glTF 1.0, value 2 to glTF 2.0 (current standard). Used by renderers to select parsing rules.",
-      "storeAs": "gltfVersion",
+      "description": "4-byte little-endian unsigned integer specifying the glTF container version. Value 1 = glTF 1.0 (legacy, rare); value 2 = glTF 2.0 (current standard used by all modern tools). Parsers should reject files with version 0 or greater than 2 unless they explicitly support future versions.",
+      "storeAs": "glbVersion",
       "valueType": "uint32",
-      "valueMap": { "1": "glTF 1.0", "2": "glTF 2.0" }
+      "valueMap": { "1": "glTF 1.0 (legacy)", "2": "glTF 2.0 (current)" }
     },
     {
       "type": "field",
@@ -73,8 +73,8 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.35,
-      "description": "4-byte little-endian unsigned integer giving the total byte length of the entire GLB file including this header. Parsers use this value to validate file integrity and determine the end-of-data boundary.",
-      "storeAs": "totalLength",
+      "description": "4-byte little-endian unsigned integer specifying the total byte length of the entire GLB file, including this 12-byte header. Parsers use this value to validate file completeness and detect truncation. The value must equal the actual file size for a valid GLB.",
+      "storeAs": "glbLength",
       "valueType": "uint32"
     },
     {
@@ -84,34 +84,41 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.35,
-      "description": "4-byte little-endian length of the first (JSON) chunk payload in bytes, not including this 8-byte chunk header. The JSON chunk contains the entire glTF scene descriptor as UTF-8 encoded JSON text.",
+      "description": "4-byte little-endian byte length of the first chunk payload (the JSON scene descriptor), not including the 8-byte chunk header. The JSON payload is UTF-8 encoded and padded with 0x20 (ASCII space) bytes to align to a 4-byte boundary. Immediately after the JSON data, the optional BIN chunk may follow.",
       "storeAs": "jsonChunkLength",
       "valueType": "uint32"
     },
     {
       "type": "field",
-      "name": "JSON Chunk Type",
+      "name": "Chunk 0 Type",
       "offset": 16,
       "length": 4,
       "color": "#C3A6FF",
       "opacity": 0.35,
-      "description": "4-byte chunk type identifier for the first chunk; must be 0x4E4F534A ('JSON' in ASCII, little-endian) for a valid glTF 2.0 file. Parsers reject files where this field does not match the expected JSON chunk type.",
-      "storeAs": "jsonChunkType",
-      "valueType": "uint32"
+      "description": "4-byte chunk type identifier for the first (JSON) chunk. Must be 0x4E4F534A which spells 'JSON' in ASCII little-endian order. Parsers must reject GLB files where this value does not match the expected JSON chunk type magic.",
+      "storeAs": "chunk0Type",
+      "valueType": "uint32",
+      "valueMap": { "1313821514": "JSON chunk type (0x4E4F534A = 'JSON' LE)" }
     }
   ],
   "assertions": [
     {
       "name": "ValidMagic",
-      "expression": "gltfMagic == 'glTF'",
+      "expression": "glbMagic == 'glTF'",
       "severity": "error",
-      "message": "glTF magic bytes 'glTF' not found at offset 0. This is not a valid binary glTF (GLB) file."
+      "message": "GLB magic 'glTF' not found at offset 0. This is not a valid binary glTF (GLB) file."
     },
     {
       "name": "SupportedVersion",
-      "expression": "gltfVersion == 1 || gltfVersion == 2",
+      "expression": "glbVersion == 1 || glbVersion == 2",
       "severity": "warning",
-      "message": "glTF version is not 1 or 2. The file may use an unsupported or future version of the glTF container format."
+      "message": "GLB version is not 1 or 2. File may use an unsupported future version of the glTF container format."
+    },
+    {
+      "name": "ValidJsonChunkType",
+      "expression": "chunk0Type == 1313821514",
+      "severity": "error",
+      "message": "First chunk type must be 0x4E4F534A (JSON). The GLB chunk structure is invalid or the file is corrupt."
     }
   ],
   "navigation": {
@@ -122,19 +129,19 @@
     ]
   },
   "inspector": {
-    "badge": "gltfMagic",
-    "primaryField": "gltfVersion",
+    "badge": "glbMagic",
+    "primaryField": "glbVersion",
     "showQualityScore": true,
     "groups": [
       {
         "title": "File Header",
         "icon": "\uE71B",
-        "fields": ["gltfMagic", "gltfVersion", "totalLength"]
+        "fields": ["glbMagic", "glbVersion", "glbLength"]
       },
       {
         "title": "JSON Chunk",
         "icon": "\uE8B7",
-        "fields": ["jsonChunkLength", "jsonChunkType"]
+        "fields": ["jsonChunkLength", "chunk0Type"]
       }
     ]
   },
@@ -142,40 +149,62 @@
     {
       "name": "GLB Header (JSON)",
       "format": "json",
-      "fields": ["gltfMagic", "gltfVersion", "totalLength", "jsonChunkLength"]
+      "fields": ["glbMagic", "glbVersion", "glbLength", "jsonChunkLength", "chunk0Type"]
+    },
+    {
+      "name": "GLB Summary (CSV)",
+      "format": "csv",
+      "fields": ["glbVersion", "glbLength", "jsonChunkLength"]
     }
   ],
+  "forensic": {
+    "category": "3d",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Declared total length smaller than actual file size may hide appended data after the GLB",
+      "JSON chunk containing scripts or data: URIs larger than 50MB warrants closer inspection"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GLB binary glTF container: 12-byte header (magic 'glTF' + version LE uint32 + total length LE uint32) followed by typed chunks. First chunk type must be 0x4E4F534A (JSON). Optional second chunk type 0x004E4942 (BIN) holds binary buffer data.",
+    "suggestedInspections": [
+      "Verify 'glTF' magic at offset 0 and version field (expected 2 for glTF 2.0) at offset 4",
+      "Compare total length at offset 8 against actual file size to detect truncation or appended data",
+      "Confirm chunk 0 type is 0x4E4F534A (JSON) at offset 16 for valid GLB structure",
+      "Parse the JSON chunk to enumerate scene nodes, meshes, materials, extensions used, and accessor counts",
+      "Check for optional BIN chunk at offset (20 + jsonChunkLength) and verify its type 0x004E4942"
+    ]
+  },
   "software": [
     "Blender",
     "Three.js",
     "Babylon.js",
     "Unity",
     "Unreal Engine",
-    "Apple Reality Composer"
+    "Apple Reality Composer",
+    "Sketchfab",
+    "glTF-Transform (Don McCurdy)"
   ],
   "formatRelationships": {
     "category": "3D",
     "extensions": [".glb"],
-    "relatedFormats": ["GLTF", "FBX", "USD"],
-    "note": "Binary container for glTF; preferred over .gltf for single-file deployment"
+    "relatedFormats": ["GLTF", "FBX", "USD", "USDZ"],
+    "note": "Binary self-contained container for glTF; preferred over .gltf + separate .bin + texture files for deployment"
   },
-  "MimeTypes": [
-    "model/gltf-binary",
-    "application/octet-stream"
-  ],
+  "MimeTypes": ["model/gltf-binary", "application/octet-stream"],
   "UseCases": [
-    "Web-based 3D rendering",
-    "AR/VR asset delivery",
-    "Game engine import",
-    "E-commerce product visualization"
+    "Web-based 3D rendering with Three.js and Babylon.js",
+    "AR/VR asset delivery for WebXR and Apple Vision Pro",
+    "Game engine 3D model import/export",
+    "E-commerce product 3D visualization"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 64,
+    "CompletenessScore": 92,
     "DocumentationLevel": "detailed",
     "BlocksDefined": 5,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
@@ -183,19 +212,8 @@
     "headerSize": 12,
     "chunkBased": true,
     "jsonChunkType": "0x4E4F534A",
-    "binaryChunkType": "0x004E4942"
-  },
-  "forensic": {
-    "category": "3d",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Binary glTF container format. 12-byte header followed by length-prefixed typed chunks. First chunk is always JSON (0x4E4F534A), optional second chunk is BIN (0x004E4942) with raw buffer data.",
-    "suggestedInspections": [
-      "Verify 'glTF' magic and check version field (expected: 2 for glTF 2.0)",
-      "Parse JSON chunk to enumerate meshes, materials, accessors, and extensions used",
-      "Check total file length against declared length field to detect truncation"
-    ]
+    "binaryChunkType": "0x004E4942",
+    "jsonPadding": "0x20 (space) to 4-byte alignment",
+    "binPadding": "0x00 to 4-byte alignment"
   }
 }

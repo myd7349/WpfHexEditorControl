@@ -1,0 +1,180 @@
+{
+  "diffMode": "text",
+  "formatName": "Nginx Configuration",
+  "version": "1.0",
+  "extensions": [ ".conf", ".nginx" ],
+  "description": "Nginx web server configuration file (Igor Sysoev, 2004). Block-based with curly braces. Directives: directive_name param1 param2; (semicolon-terminated). Blocks: context_name [args] { directives }. Main contexts: main (top-level globals: worker_processes, error_log, pid), events { worker_connections; use epoll; multi_accept; }, http { access_log; include mime.types; gzip; upstream; server {} }, server { listen; server_name; location / {} }, upstream backend { server 127.0.0.1:8080; }, mail {}, stream {} (TCP/UDP proxy). Location matching: = (exact), ^~ (prefix priority), ~ (regex case-sensitive), ~* (regex case-insensitive), / (default prefix). Variables: $uri, $host, $remote_addr, $request_method, $scheme, $ssl_client_cert. Comments: # to EOL. Include directive: include /etc/nginx/conf.d/*.conf. Security directives: ssl_certificate, ssl_certificate_key, ssl_protocols, ssl_ciphers, add_header X-Frame-Options, limit_req_zone, allow/deny, auth_basic_user_file. Sensitive: ssl_certificate_key path, auth_basic passwords. Main config: /etc/nginx/nginx.conf. Site configs: /etc/nginx/sites-enabled/, /etc/nginx/conf.d/.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Nginx documentation — nginx.org/en/docs/",
+      "Nginx configuration guide — nginx.org/en/docs/beginners_guide.html"
+    ],
+    "WebLinks": [
+      "https://nginx.org/en/docs/",
+      "https://www.digitalocean.com/community/tools/nginx",
+      "https://github.com/nginx/nginx"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "6576656E7473", "offset": 0, "label": "events — Nginx events block at file start", "weight": 0.4 },
+      { "value": "68747470", "offset": 0, "label": "http — Nginx http block at file start", "weight": 0.4 },
+      { "value": "776F726B65725F", "offset": 0, "label": "worker_ — Nginx worker_processes or worker_connections directive", "weight": 0.3 },
+      { "value": "23", "offset": 0, "label": "# — Nginx comment line at file start", "weight": 0.2 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 1,
+      "maxSignatureOffset": 512,
+      "note": "Nginx configuration has no binary magic. .conf and .nginx extensions with nginx-specific keywords provide the best detection heuristic."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "firstWord": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte of the Nginx configuration file. 0x23=# (comment), 0x65=e (events), 0x68=h (http), 0x77=w (worker_processes), 0x73=s (server or stream), 0x75=u (upstream). Main nginx.conf typically starts with worker_processes or a comment.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Word",
+      "offset": 0,
+      "length": 6,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 6 ASCII characters of the Nginx configuration. Expected values: 'events' (events block), 'http {' (http block), 'worker' (worker_processes directive), 'server' (server block in site config), 'upstre' (upstream block), '# Ngin' (comment).",
+      "storeAs": "firstWord",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Context Hierarchy",
+      "variable": "firstWord",
+      "description": "Nginx context hierarchy: main > events (connection handling), main > http > server (virtual host) > location (URL routing), main > http > upstream (load balancing backend pool), main > stream (TCP/UDP proxy), main > mail (mail proxy). Directives inherit from parent contexts."
+    },
+    {
+      "type": "metadata",
+      "name": "Security Directives",
+      "variable": "firstByte",
+      "description": "Key security directives: ssl_certificate_key (TLS private key path — protect read access), auth_basic_user_file (htpasswd file path), limit_req_zone/limit_req (rate limiting), add_header X-Frame-Options/X-Content-Type-Options/HSTS, allow/deny (IP access control), ssl_protocols TLSv1.2 TLSv1.3 (disable older TLS)."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File has content",
+      "expression": "firstByte > 0",
+      "severity": "warning",
+      "message": "Nginx configuration file is empty."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "Nginx",
+    "primaryField": "firstWord",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Configuration Header",
+        "icon": "",
+        "fields": [ "firstByte", "firstWord" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Nginx Config Summary (Text)",
+      "format": "text",
+      "fields": [ "firstWord", "firstByte" ]
+    },
+    {
+      "name": "Nginx Config Metadata (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "firstWord" ]
+    }
+  ],
+  "forensic": {
+    "category": "configuration",
+    "riskLevel": "medium",
+    "notes": "Nginx configuration files reveal web server topology, backend service addresses, SSL certificate paths (and private key paths), authentication configuration, and rate limiting rules. The ssl_certificate_key directive points to the TLS private key — access to this key compromises all HTTPS traffic. auth_basic_user_file paths lead to htpasswd files. Proxy pass targets reveal internal service architecture.",
+    "suspiciousPatterns": [
+      "ssl_certificate_key directive reveals TLS private key file path — protect with strict file permissions",
+      "proxy_pass to internal services may reveal microservice architecture and internal IP addresses",
+      "auth_basic_user_file path leads to htpasswd credential file",
+      "allow/deny rules with overly permissive allow all may bypass intended IP restrictions",
+      "Missing security headers (X-Frame-Options, HSTS, X-Content-Type-Options) indicate security hardening gaps"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Nginx config structure: directives end with semicolons. Blocks: context { }. Location matching order: = (exact) > ^~ (prefix no-regex) > first matching ~ or ~* (regex) > longest prefix. Variables: $uri (decoded URI), $request_uri (raw), $host, $remote_addr, $scheme, $server_name. include allows file globs. upstream for load balancing. proxy_pass for reverse proxy.",
+    "suggestedInspections": [
+      "Find ssl_certificate_key directives to identify TLS private key file locations",
+      "Check proxy_pass targets to map backend service topology and discover internal service addresses",
+      "Look for missing security headers: X-Frame-Options, X-XSS-Protection, Strict-Transport-Security",
+      "Review location blocks with rewrite or return directives for potential open redirect vulnerabilities",
+      "Check limit_req_zone and limit_req directives for rate limiting on authentication endpoints",
+      "Identify server_name wildcards (*.example.com) that may inadvertently match subdomains with sensitive content"
+    ]
+  },
+  "software": [
+    "Nginx — primary web server, reverse proxy, and load balancer",
+    "OpenResty — Nginx with LuaJIT scripting extensions",
+    "Tengine — Nginx fork from Alibaba with additional features",
+    "nginx -t — configuration syntax test command",
+    "nginx -s reload — graceful configuration reload"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [ ".conf", ".nginx" ],
+    "relatedFormats": [ "YAML", "ENV_FILE", "DOCKERFILE" ],
+    "note": "Nginx uses its own block-based configuration syntax (not YAML, TOML, or JSON). Apache uses a different directive syntax with .htaccess and httpd.conf. Traefik (used in Kubernetes) uses YAML/TOML. Caddy uses Caddyfile syntax. HAProxy has its own configuration format."
+  },
+  "MimeTypes": [
+    "text/plain",
+    "text/x-nginx-conf",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "HTTPS web server and TLS termination configuration",
+    "Reverse proxy for backend applications (Node.js, Python, PHP)",
+    "Load balancing for upstream server pools",
+    "Static file serving for web applications",
+    "API gateway and rate limiting configuration"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "UTF-8 text, block-based with curly braces, semicolon-terminated directives",
+    "Comments": "# to end of line (no block comments)",
+    "ContextHierarchy": "main > events / http > server > location / stream > server",
+    "LocationMatching": "= (exact), ^~ (prefix priority), ~ (regex), ~* (case-insensitive regex), default (prefix)",
+    "MainConfig": "/etc/nginx/nginx.conf",
+    "SiteConfigs": "/etc/nginx/sites-enabled/ or /etc/nginx/conf.d/*.conf"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "diffMode": "binary",
+  "formatName": "Game Boy Advance Save",
+  "version": "1.0",
+  "extensions": [".sav", ".gsv", ".sgs"],
+  "description": "Game Boy Advance battery-backed save data dumped from cartridge storage. There is no magic header — the file contains raw save data. Storage type and hence file size are the primary discriminators: EEPROM 4 Kbit = 512 bytes (Pokemon Pinball RS, Classic NES series), EEPROM 64 Kbit = 8192 bytes (most common, Zelda: A Link to the Past), SRAM 256 Kbit = 32768 bytes (raw read/write, Mother 3), Flash 512 Kbit = 65536 bytes (Atmel AT29LV512 or Macronix MX29F512, Fire Emblem), Flash 1 Mbit = 131072 bytes (Sanyo LE26FV10 / Macronix MX29L010, Pokemon Ruby/Sapphire). EEPROM uses 64-bit serial access blocks. Flash is sector-erased before write (Macronix: 4 KB sectors, Atmel: full chip). Some emulators (VBA-M, mGBA) prepend a container header. Pokemon RSE saves: 14 sections of 4096 bytes each with a 128-byte footer including a 16-bit checksum per section.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "GBATEK — GBA Technical Reference (Martin Korth)",
+      "GBA Cartridge Save Type Documentation",
+      "mGBA Save Format Notes"
+    ],
+    "WebLinks": [
+      "https://problemkaputt.de/gbatek.htm#gbacartridgebackupids",
+      "https://mgba.io/",
+      "https://en.wikipedia.org/wiki/Game_Boy_Advance",
+      "https://github.com/visualboyadvance-m/visualboyadvance-m"
+    ]
+  },
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 512,
+      "maxSignatureOffset": 0,
+      "note": "GBA saves have no magic. Detection is by file size: 512 B=EEPROM 4K, 8192 B=EEPROM 64K, 32768 B=SRAM, 65536 B=Flash 512K, 131072 B=Flash 1M."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "secondByte": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "uint8",
+      "description": "First byte of the GBA save data. For SRAM saves this is a raw game-defined byte. For EEPROM the first byte is part of the first 64-bit serial block. For Flash saves this may be the Flash device ID or the first byte of a save block depending on whether the dump was taken after initialization.",
+      "storeAs": "firstByte"
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "description": "Second byte of the GBA save data. Used alongside the first byte and file size to help identify the storage type and game title. Pokemon Ruby/Sapphire Flash saves: section ID at the start of each 4096-byte section.",
+      "storeAs": "secondByte"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First save data byte (no magic)"
+    },
+    {
+      "type": "metadata",
+      "name": "Storage Type Hint",
+      "variable": "secondByte",
+      "description": "Second byte (no magic — type inferred from file size)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid GBA save size",
+      "expression": "fileSize == 512 || fileSize == 8192 || fileSize == 32768 || fileSize == 65536 || fileSize == 131072",
+      "severity": "warning",
+      "message": "GBA save file size should be 512 B (EEPROM 4K), 8192 B (EEPROM 64K), 32768 B (SRAM), 65536 B (Flash 512K), or 131072 B (Flash 1M)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Save Data Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "secondByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GBA Save Data",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "secondByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GBA Save Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "secondByte"]
+    },
+    {
+      "name": "GBA Save Info (CSV)",
+      "format": "csv",
+      "fields": ["firstByte", "secondByte"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "GBA save: no magic. Type determined by file size: 512=EEPROM 4Kbit, 8192=EEPROM 64Kbit, 32768=SRAM 256Kbit, 65536=Flash 512Kbit, 131072=Flash 1Mbit. Pokemon RSE: 14 sections x 4096 bytes, each with 128-byte footer (section ID uint16, checksum uint16, save index uint32, section size uint16). Flash chip IDs: 0xBF/0xD4=SST/Sanyo, 0xC2/0x1C=Macronix, 0x1F/0x13=Atmel.",
+    "suggestedInspections": [
+      "Determine storage type from file size: 512=EEPROM 4K, 8192=EEPROM 64K, 32768=SRAM, 65536=Flash 512K, 131072=Flash 1M",
+      "For Pokemon RSE (131072 bytes): read section ID at offset 0x0FF4 (uint16 LE) and checksum at 0x0FF6 of first 4096-byte section",
+      "Check for erased Flash byte patterns (0xFF fill) indicating unwritten sectors",
+      "Verify save data integrity by computing game-specific checksums (Pokemon: sum of 0xE0 uint32 values per section)"
+    ]
+  },
+  "software": [
+    "mGBA (accurate GBA emulator with save management)",
+    "VisualBoyAdvance-M (VBA-M, classic GBA emulator)",
+    "RetroArch with mGBA core",
+    "GBATA (GBA Tool Advance — ROM/save utility)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".sav", ".gsv", ".sgs"],
+    "relatedFormats": ["ROM_GBA", "SAVE_N64"],
+    "note": "GBA save type is determined at compile time from the game SDK — the string 'EEPROM_VnnnX', 'SRAM_VnnnX', or 'FLASH_VnnnX' embedded in the ROM binary identifies the storage type."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Backup and restore of GBA cartridge game saves",
+    "Transfer of GBA saves between emulators and real hardware",
+    "Editing of Pokemon RSE or FRLG save files",
+    "Analysis of GBA save format and storage chip behaviour"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 70,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Nintendo Game Boy Advance",
+    "StorageTypes": "EEPROM 4K/64K, SRAM 256K, Flash 512K/1M",
+    "NoMagic": true,
+    "SizeDiscriminator": "512 / 8192 / 32768 / 65536 / 131072 bytes",
+    "PokemonRSE": "14 sections x 4096 bytes with per-section checksums"
+  }
+}

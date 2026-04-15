@@ -1,0 +1,184 @@
+{
+  "diffMode": "text",
+  "formatName": "GeoJSON",
+  "version": "1.0",
+  "extensions": [".geojson", ".json"],
+  "description": "GeoJSON — RFC 7946 JSON format for encoding geospatial data structures. Root object has required 'type' field. GeoJSON types: 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon', 'GeometryCollection', 'Feature' (geometry + properties), 'FeatureCollection' (array of Feature objects). Coordinates: [longitude, latitude] or [longitude, latitude, elevation] — note longitude-first order per RFC 7946. CRS: always WGS84 (EPSG:4326) per RFC 7946 (deprecated crs member removed). Properties: arbitrary JSON key-value pairs per feature. File starts with '{\"type\":' or '{ \"type\":'. Alternative: TopoJSON (arc-based topology for shared boundaries). Used by Mapbox GL, Leaflet, D3.js, PostGIS ST_AsGeoJSON, QGIS, GitHub map rendering, ArcGIS Online.",
+  "category": "GIS",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "RFC 7946 — The GeoJSON Format (IETF, 2016)",
+      "GeoJSON original specification (Butler et al., 2008)",
+      "ISO 19101 — Geographic Information Reference Model"
+    ],
+    "WebLinks": [
+      "https://datatracker.ietf.org/doc/html/rfc7946",
+      "https://geojson.org/",
+      "https://en.wikipedia.org/wiki/GeoJSON"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "7B2274797065223A",
+        "offset": 0,
+        "label": "{\"type\": — GeoJSON root type field without whitespace",
+        "weight": 0.7
+      },
+      {
+        "value": "7B0A20202274797065",
+        "offset": 0,
+        "label": "{\\n  \"type — formatted GeoJSON with newline indent",
+        "weight": 0.6
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.0, "max": 6.0 },
+    "validation": {
+      "minFileSize": 2,
+      "maxSignatureOffset": 0,
+      "note": "GeoJSON is JSON — detection is heuristic based on 'type' field near start. JSON files with 'type' as first key may be GeoJSON or other JSON formats. Confirmation requires 'type' value being a valid GeoJSON type name."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "typeField": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the GeoJSON file at offset 0 (1 byte, uint8). Must be 0x7B ('{') for a valid JSON object, which is the required root structure for GeoJSON. GeoJSON must be a JSON object — not an array or primitive. The opening brace should be followed by the 'type' member as the first key. Optionally, whitespace (spaces, tabs, newlines) may appear before the '{' in some non-conforming files.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Type Field Start",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 8 bytes of the GeoJSON file (ASCII). Valid GeoJSON starts with '{\"type\":' (compact) or '{ \"type\":' (with space) or '{\\n  \"type\":' (pretty-printed). The 'type' member is required and its value must be one of: 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon', 'GeometryCollection', 'Feature', 'FeatureCollection'. RFC 7946 mandates WGS84 (EPSG:4326) as the only coordinate reference system.",
+      "storeAs": "typeField",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "0x7B '{' — JSON object root for GeoJSON"
+    },
+    {
+      "type": "metadata",
+      "name": "Type Field",
+      "variable": "typeField",
+      "description": "'{\"type\":' — GeoJSON root type declaration"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "JSON object start",
+      "expression": "firstByte == 0x7B",
+      "severity": "warning",
+      "message": "GeoJSON must start with '{' (0x7B) — not a valid JSON object"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "GeoJSON Root", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "typeField",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GeoJSON Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "typeField"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GeoJSON Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "typeField"]
+    },
+    {
+      "name": "GeoJSON Start (Text)",
+      "format": "text",
+      "fields": ["typeField"]
+    }
+  ],
+  "forensic": {
+    "category": "geospatial",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Precise coordinates may reveal sensitive location data (home addresses, surveillance positions)",
+      "Feature properties may contain personally identifiable information"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GeoJSON structure (RFC 7946): root object with 'type' member. FeatureCollection: {type:'FeatureCollection', features:[...]}. Feature: {type:'Feature', geometry:{type:'Point', coordinates:[lon,lat]}, properties:{key:value}}. Coordinate arrays: Point=[lon,lat], LineString=[[lon,lat],...], Polygon=[[[lon,lat],...]] (first/last identical, holes as additional rings). Bounding box: optional 'bbox' member [west,south,east,north]. CRS: always WGS84 per RFC 7946 — no crs member. Max precision: 6 decimal places recommended (11cm accuracy). Line length recommendation: no standard limit but large files benefit from newline-delimited GeoJSON (GeoJSONL).",
+    "suggestedInspections": [
+      "Byte 0: '{' (0x7B) confirms JSON object root — required for GeoJSON",
+      "First 20 bytes: look for '\"type\":' followed by GeoJSON type name",
+      "Check for 'FeatureCollection' — most common GeoJSON file type for datasets",
+      "Scan for 'coordinates' arrays to verify geometry data is present"
+    ]
+  },
+  "software": [
+    "Leaflet (JavaScript web mapping library)",
+    "Mapbox GL JS",
+    "D3.js (geographic visualization)",
+    "QGIS (GeoJSON read/write)",
+    "PostGIS (ST_AsGeoJSON, ST_GeomFromGeoJSON)",
+    "Geopandas (to_file/read_file GeoJSON driver)",
+    "GitHub (renders GeoJSON files as maps automatically)"
+  ],
+  "formatRelationships": {
+    "category": "GIS",
+    "extensions": [".geojson", ".json"],
+    "relatedFormats": ["SHP", "GPKG", "KML", "GEOTIFF"],
+    "note": "GeoJSON (RFC 7946) is the standard for web GIS APIs. TopoJSON compresses shared boundaries using arc topology (smaller files for polygon datasets). GeoJSONL (newline-delimited) is used for streaming large datasets. FlatGeobuf is a binary alternative with spatial indexing for performance. GPKG is preferred for persistent storage."
+  },
+  "MimeTypes": [
+    "application/geo+json",
+    "application/json"
+  ],
+  "UseCases": [
+    "Web mapping API data exchange (Mapbox, Leaflet, OpenLayers)",
+    "GitHub repository map rendering of geographic data",
+    "Geocoding API results (reverse geocoding polygons)",
+    "PostGIS query results in web applications",
+    "OpenStreetMap data extracts via Overpass API"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "JSON text — always UTF-8 per RFC 7946",
+    "Magic": "No binary magic — starts with '{' (0x7B) as JSON object",
+    "Standard": "RFC 7946 — The GeoJSON Format (IETF, 2016)",
+    "Endianness": "N/A (JSON text)",
+    "CRS": "WGS84 (EPSG:4326) only per RFC 7946 — coordinate order is [longitude, latitude]"
+  }
+}

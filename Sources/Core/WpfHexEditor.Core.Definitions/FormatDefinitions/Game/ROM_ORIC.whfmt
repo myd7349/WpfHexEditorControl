@@ -1,0 +1,169 @@
+{
+  "diffMode": "binary",
+  "formatName": "Oric Atmos Tape / ROM",
+  "version": "1.0",
+  "extensions": [".tap", ".oric", ".rom"],
+  "description": "Tangerine Oric-1 / Oric Atmos tape image or ROM (Tangerine Computer Systems, 1983-1984). TAP format (used by the Euphoric emulator): the binary stream begins with 256 or more 0x16 sync bytes followed by a sync byte count indicator, then the file header block. File header structure: file_type (1B: 0x00=BASIC, 0xFF=machine code), auto_run (1B: 0x80=auto-run, 0x00=manual), end_address (2B big-endian), start_address (2B big-endian), then 0x00 byte, then filename (up to 16 bytes ASCII, NUL-terminated). Data bytes immediately follow the header. The Oric-1 uses a 6502A CPU at 1 MHz. The Oric Atmos (1984) improved the keyboard design; both have 16 KB or 48 KB RAM versions, AY-3-8912 3-channel PSG sound, and a 240x200 resolution mixed text/graphics display. The Oric was particularly popular in France and the UK. ROM images are raw 16 KB or 48 KB binary files containing the Oric BASIC ROM. Detection is primarily by extension due to the repeating 0x16 sync byte pattern being common.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Oric TAP File Format — Euphoric Emulator Documentation",
+      "Oric-1 / Oric Atmos Technical Reference Manual",
+      "MOS 6502A CPU Reference Manual"
+    ],
+    "WebLinks": [
+      "https://osdk.org/",
+      "https://www.oric.org/",
+      "https://en.wikipedia.org/wiki/Oric",
+      "https://github.com/oric-software"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "16",
+        "offset": 0,
+        "label": "0x16 — Oric tape sync byte (repeated 256+ times at start of TAP file)",
+        "weight": 0.3
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.1,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 256,
+      "maxSignatureOffset": 1,
+      "note": "Oric TAP files start with many 0x16 sync bytes before the actual data header. Detection is primarily by extension (.tap, .oric, .rom). ROM images are raw binary with no magic."
+    }
+  },
+  "variables": {
+    "syncByte": 0,
+    "secondByte": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Sync Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "uint8",
+      "description": "First byte of the Oric TAP file. Should be 0x16 for tape image files (the standard sync/leader byte used by the Oric cassette interface). This byte is typically repeated 256 or more times as the tape lead-in before the actual file header appears. For raw ROM images, this is simply the first byte of the ROM code.",
+      "storeAs": "syncByte"
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "description": "Second byte of the file. In an Oric TAP image this should also be 0x16 (continuing the sync leader). The transition from 0x16 sync bytes to the file header block 0x16 0x24 marker indicates the start of actual tape data.",
+      "storeAs": "secondByte"
+    },
+    {
+      "type": "metadata",
+      "name": "Sync Byte",
+      "variable": "syncByte",
+      "description": "First byte (0x16=Oric sync byte)"
+    },
+    {
+      "type": "metadata",
+      "name": "Second Byte",
+      "variable": "secondByte",
+      "description": "Second byte (should also be 0x16 for TAP)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Sync byte pattern",
+      "expression": "syncByte == 22",
+      "severity": "warning",
+      "message": "Oric TAP files should start with 0x16 (22 decimal) sync byte"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Tape Sync Leader", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "syncByte",
+    "primaryField": "secondByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Oric Tape / ROM",
+        "icon": "\uE71B",
+        "fields": ["syncByte", "secondByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Oric TAP Info (JSON)",
+      "format": "json",
+      "fields": ["syncByte", "secondByte"]
+    },
+    {
+      "name": "Oric TAP Info (CSV)",
+      "format": "csv",
+      "fields": ["syncByte", "secondByte"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Oric TAP: 256+ x 0x16 sync bytes + 0x16 (last sync) + file_type(1B: 0x00=BASIC, 0xFF=machine code) + auto_run(1B: 0x80=auto, 0x00=manual) + end_addr(2B BE) + start_addr(2B BE) + 0x00 + filename(up to 16B ASCII NUL-terminated) + data. ROM images: raw 16 KB or 48 KB binary. 6502A CPU at 1 MHz.",
+    "suggestedInspections": [
+      "Check first byte for 0x16 — if repeated, this is an Oric tape sync leader indicating a TAP tape image",
+      "Skip all leading 0x16 sync bytes to find the file header: file_type (0x00=BASIC, 0xFF=machine code)",
+      "Read file_type byte: 0x00=BASIC program, 0xFF=machine code; read auto_run byte: 0x80=auto-execute",
+      "Read end_address (2B BE) and start_address (2B BE) to determine load range; filename follows at offset +5"
+    ]
+  },
+  "software": [
+    "Euphoric (primary Oric emulator with TAP support)",
+    "Oricutron (cross-platform Oric emulator)",
+    "oric.org tools collection",
+    "MAME (Oric-1 and Atmos driver)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".tap", ".oric", ".rom"],
+    "relatedFormats": ["ROM_SPECTRUM", "ROM_MSX"],
+    "note": "The .tap extension is shared with ZX Spectrum TAP format; always check the file structure. Oric Atmos was popular in France (sold as Oric Atmos 16K/48K). Oric 1 predates the Atmos with a different keyboard layout."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of Oric-1 and Oric Atmos tape cassette software",
+    "Preservation of French and UK Oric software library",
+    "ROM hacking and 6502 disassembly of Oric games and demos",
+    "Study of early 8-bit home computer tape loading mechanisms"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 65,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Tangerine Oric-1 / Oric Atmos",
+    "CPU": "MOS 6502A at 1 MHz",
+    "Sound": "AY-3-8912 PSG (3 channels + noise)",
+    "Display": "240x200 mixed text/graphics, 8 colors",
+    "TAPSyncByte": "0x16 (repeated 256+ times as tape leader)",
+    "FileTypes": "0x00=BASIC, 0xFF=machine code"
+  }
+}

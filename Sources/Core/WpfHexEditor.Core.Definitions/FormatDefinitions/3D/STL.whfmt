@@ -1,187 +1,198 @@
 {
   "diffMode": "binary",
   "formatName": "STL 3D Model",
-  "version": "1.14",
-  "extensions": [
-    ".stl"
-  ],
-  "description": "Stereolithography (STL) file format developed by 3D Systems for CAD/CAM and 3D printing. Two variants exist: ASCII STL begins with 'solid ' followed by an optional model name and consists of text-format triangle facets with normal vectors and vertices. Binary STL begins with an 80-byte freeform header, followed by a uint32 triangle count at offset 80, then repeating 50-byte triangle records each containing a normal vector (3 floats), three vertex positions (3x3 floats), and a 2-byte attribute byte count. Binary STL is more compact and widely preferred for large models. The dominant format for 3D printing slicers.",
+  "version": "1.0",
+  "extensions": [".stl"],
+  "description": "STL (STereoLithography, also Standard Triangle Language) is the most widely used 3D printing file format. Two variants exist. Binary STL: 80-byte arbitrary ASCII header (important: the first 5 characters must NOT be 'solid' to distinguish from ASCII STL) + uint32 LE triangle count + N triangle records of exactly 50 bytes each (3x float32 LE normal vector + 3x vertex1 float32 LE + 3x vertex2 float32 LE + 3x vertex3 float32 LE + uint16 LE attribute byte count). Total binary file size = 84 + N*50 bytes. ASCII STL: starts with 'solid name' text, followed by facet/outer loop/vertex/endloop/endfacet blocks, ending with 'endsolid'. ASCII is much larger for the same geometry. Binary is universally preferred for production use. Attribute byte count is normally 0 but some tools embed color data (Materialise Magics uses specific encoding). Used for: FDM/SLA/SLS 3D printing, CNC machining, rapid prototyping, reverse engineering.",
   "category": "3D",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "3D Systems STL File Format Specification",
-      "ISO/ASTM 52900 AM Terminology"
+      "3D Systems StereoLithography Interface Specification",
+      "STL File Format — Wikipedia Engineering Reference",
+      "ASME Y14.26M Digital Product Definition Data Practices (references STL)"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/STL_(file_format)",
       "https://www.fabbers.com/tech/STL_Format",
-      "https://wiki.fileformat.com/3d/stl/"
+      "https://fileinfo.com/extension/stl",
+      "https://docs.fileformat.com/cad/stl/"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "736F6C6964", "offset": 0, "label": "ASCII STL 'solid' keyword", "weight": 0.6 }
+      { "value": "736F6C6964", "offset": 0, "label": "solid — ASCII STL text header (note: binary STL may also start with 'solid' in the 80-byte text header)", "weight": 0.5 }
     ],
     "matchMode": "any",
-    "MinimumScore": 0.4,
+    "MinimumScore": 0.1,
     "required": false,
     "Strength": "Medium",
-    "EntropyHint": { "min": 2.5, "max": 7.0 },
+    "EntropyHint": { "min": 2.0, "max": 7.5 },
     "validation": {
       "minFileSize": 84,
       "maxSignatureOffset": 0,
-      "note": "ASCII STL: starts with 'solid'. Binary STL: 80-byte header then uint32 triangle count. Binary STL can also start with 'solid' text inside the 80-byte header, so variant detection requires checking file structure."
+      "note": "Binary STL: fileSize = 84 + triangleCount * 50. ASCII STL starts with 'solid'. Disambiguation required by checking file size formula."
     }
   },
   "variables": {
-    "headerOrSolid": "",
-    "binaryHeader": "",
+    "stlHeader": "",
     "triangleCount": 0,
-    "firstNormal": ""
+    "firstNormalX": 0.0,
+    "isAscii": false,
+    "expectedFileSize": 0
   },
   "blocks": [
     {
-      "type": "signature",
-      "name": "STL Header / Solid Keyword",
-      "offset": 0,
-      "length": 6,
-      "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "First 6 bytes of the STL file. ASCII STL starts with 'solid ' (0x736F6C696420). Binary STL starts with an 80-byte freeform ASCII header which may also contain 'solid' text, making ASCII vs binary discrimination non-trivial.",
-      "storeAs": "headerOrSolid",
-      "valueType": "ascii"
-    },
-    {
       "type": "field",
-      "name": "Binary STL Header (80 bytes)",
+      "name": "Binary STL Header",
       "offset": 0,
       "length": 80,
-      "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "The 80-byte header field used only in binary STL files. This field is free-form and can contain any ASCII text including the creator application name, date, or model description. It is NOT a reliable format identifier on its own.",
-      "storeAs": "binaryHeader",
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "80-byte arbitrary ASCII text header for binary STL files. Can contain any text except that it must NOT start with 'solid' (which would be misidentified as ASCII STL by readers using only the magic check). Often contains authoring software name, timestamp, or model description. All bytes beyond the null terminator (if present) are ignored.",
+      "storeAs": "stlHeader",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Triangle Count (Binary STL)",
+      "name": "Triangle Count",
       "offset": 80,
       "length": 4,
-      "color": "#95E1D3",
+      "color": "#4ECDC4",
       "opacity": 0.35,
-      "description": "4-byte little-endian unsigned integer at offset 80 giving the number of triangular facets in a binary STL file. The total file size should equal 84 + (triangleCount * 50) bytes for a valid binary STL.",
+      "description": "4-byte little-endian unsigned integer at offset 80 declaring the number of triangles in the binary STL mesh. The total file size must equal exactly 84 + (triangleCount * 50) bytes for a valid binary STL. This value is a critical integrity check for detecting truncated files.",
       "storeAs": "triangleCount",
       "valueType": "uint32"
     },
     {
       "type": "field",
-      "name": "First Triangle Normal (Binary)",
+      "name": "First Normal X",
       "offset": 84,
-      "length": 12,
-      "color": "#FFE66D",
+      "length": 4,
+      "color": "#95E1D3",
       "opacity": 0.35,
-      "description": "First triangle's normal vector in binary STL format: three consecutive 4-byte IEEE 754 little-endian floats representing the X, Y, Z components of the outward-facing unit normal vector for the first facet.",
-      "storeAs": "firstNormal",
-      "valueType": "bytes"
+      "description": "First 4 bytes of the first triangle record at offset 84: the X component of the face normal vector as a 32-bit little-endian IEEE 754 float. Each triangle record is 50 bytes: 12 bytes normal (3 float32), 36 bytes vertices (3 * 3 float32), 2 bytes attribute. Some STL files store zero normals and rely on the winding order.",
+      "storeAs": "firstNormalX",
+      "valueType": "float32"
+    },
+    {
+      "type": "metadata",
+      "name": "Triangle Record Structure",
+      "offset": 84,
+      "description": "Each of the N triangle records is exactly 50 bytes: normal_vector (3 x float32 LE = 12B), vertex_1 (3 x float32 LE = 12B), vertex_2 (3 x float32 LE = 12B), vertex_3 (3 x float32 LE = 12B), attribute_byte_count (uint16 LE = 2B). Vertices must be listed in counter-clockwise order when viewed from outside (right-hand rule). The attribute_byte_count field is typically 0 but some tools use it: upper 5 bits = red (0-31), next 5 = green, next 5 = blue (Materialise Magics color encoding)."
+    },
+    {
+      "type": "metadata",
+      "name": "ASCII STL Structure",
+      "offset": 0,
+      "description": "ASCII STL files start with 'solid name' (where name is optional). Each facet: 'facet normal nx ny nz' + 'outer loop' + 3 x 'vertex x y z' + 'endloop' + 'endfacet'. File ends with 'endsolid name'. Whitespace and case are significant. ASCII STL is ~5-10x larger than binary for the same mesh. Note: binary STL files that happen to have a header starting with 'solid' require the file-size formula check for correct disambiguation."
     }
   ],
   "assertions": [
     {
-      "name": "BinaryFileSizeConsistent",
-      "expression": "triangleCount == 0 || (triangleCount * 50 + 84) <= fileSize",
-      "severity": "warning",
-      "message": "Binary STL triangle count implies a file size larger than actual. The triangle count field may be incorrect or the file may be truncated."
-    },
-    {
-      "name": "NotEmptyModel",
+      "name": "ValidTriangleCount",
       "expression": "triangleCount > 0",
       "severity": "warning",
-      "message": "Binary STL triangle count is 0. The file contains no geometry data. May be an empty template or a corrupt file."
+      "message": "Triangle count at offset 80 is 0 or invalid. Binary STL file contains no geometry data or header is corrupt."
+    },
+    {
+      "name": "ValidFileSize",
+      "expression": "expectedFileSize == 84 + triangleCount * 50",
+      "severity": "warning",
+      "message": "File size does not match expected value of 84 + triangleCount * 50. File may be truncated, padded, or ASCII STL misidentified as binary."
     }
   ],
   "navigation": {
     "bookmarks": [
-      { "name": "STL Header Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
-      { "name": "Triangle Count (Binary)", "offset": 80, "icon": "\uE946", "color": "#95E1D3" },
-      { "name": "First Triangle Data", "offset": 84, "icon": "\uE8B7", "color": "#FFE66D" }
+      { "name": "STL Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Triangle Count", "offset": 80, "icon": "\uE946", "color": "#4ECDC4" },
+      { "name": "First Triangle", "offset": 84, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "headerOrSolid",
+    "badge": "stlHeader",
     "primaryField": "triangleCount",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "Header",
+        "title": "Binary STL Header",
         "icon": "\uE71B",
-        "fields": ["headerOrSolid", "binaryHeader"]
+        "fields": ["stlHeader", "triangleCount"]
       },
       {
-        "title": "Binary Geometry",
-        "icon": "\uE8B7",
-        "fields": ["triangleCount", "firstNormal"]
+        "title": "First Triangle",
+        "icon": "\uE946",
+        "fields": ["firstNormalX", "isAscii", "expectedFileSize"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "STL Header (JSON)",
+      "name": "STL Info (JSON)",
       "format": "json",
-      "fields": ["headerOrSolid", "triangleCount"]
+      "fields": ["stlHeader", "triangleCount", "isAscii", "firstNormalX"]
+    },
+    {
+      "name": "STL Summary (CSV)",
+      "format": "csv",
+      "fields": ["triangleCount", "isAscii", "expectedFileSize"]
     }
   ],
+  "forensic": {
+    "category": "3d",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Extremely large triangleCount values may cause memory exhaustion during parsing before validation",
+      "Attribute byte count > 0 with unusual bit patterns may embed hidden data in mesh records"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Binary STL has 80-byte text header + uint32 LE triangle count + N*50 byte triangle records. Total size = 84 + N*50. ASCII STL starts 'solid'. Disambiguation: check if fileSize - 84 is divisible by 50 and matches declared count.",
+    "suggestedInspections": [
+      "Check if first 5 bytes are 'solid': if yes, perform file-size formula check to distinguish ASCII from binary STL",
+      "For binary: verify triangleCount at offset 80 and check fileSize == 84 + triangleCount * 50",
+      "Examine the 80-byte text header for authoring tool identification, timestamps, or descriptive text",
+      "Inspect first triangle normal vector at offset 84 for valid float values (not NaN, not infinity)",
+      "Check attribute_byte_count fields for non-zero values indicating embedded color or custom extension data"
+    ]
+  },
   "software": [
+    "3ds Max",
     "Blender",
-    "Meshmixer",
-    "Cura",
+    "Cura (Ultimaker slicing software)",
     "PrusaSlicer",
-    "3D Systems software"
+    "Materialise Magics",
+    "MeshLab",
+    "SolidWorks",
+    "FreeCAD"
   ],
   "formatRelationships": {
     "category": "3D",
     "extensions": [".stl"],
-    "relatedFormats": ["OBJ", "PLY", "3MF"],
-    "note": "Dominant format for 3D printing; binary variant preferred for size; no color or texture support"
+    "relatedFormats": ["OBJ", "AMF", "3MF", "PLY"],
+    "note": "Original 3D printing format; no color or material support; AMF and 3MF are the modern successors"
   },
-  "MimeTypes": [
-    "application/octet-stream",
-    "model/stl",
-    "application/sla"
-  ],
+  "MimeTypes": ["model/stl", "application/vnd.ms-pki.stl", "application/sla"],
   "UseCases": [
-    "3D printing / FDM/SLA slicing",
-    "CAD/CAM manufacturing",
-    "Rapid prototyping",
-    "Medical imaging models"
+    "FDM, SLA, and SLS 3D printing slicer input",
+    "CNC machining toolpath generation",
+    "Rapid prototyping and additive manufacturing workflows",
+    "Reverse engineering mesh output from 3D scanners"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 60,
+    "CompletenessScore": 88,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 4,
+    "BlocksDefined": 5,
     "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "variants": ["ASCII STL", "Binary STL"],
-    "triangleSize": 50,
-    "binaryHeaderSize": 80,
-    "encoding": "ASCII text or binary-little-endian"
-  },
-  "forensic": {
-    "category": "3d",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "STL 3D model format with two variants: ASCII (starts with 'solid ') and Binary (80-byte header + uint32 triangle count at offset 80 + 50-byte triangle records). Binary variant can also start with 'solid' text in the header.",
-    "suggestedInspections": [
-      "Check if file starts with 'solid ' to identify ASCII variant, but verify by checking if file size matches binary STL formula (84 + count * 50)",
-      "For binary STL, read triangle count at offset 80 and verify file size equals 84 + count * 50",
-      "For ASCII STL, count 'facet normal' occurrences to determine triangle count"
-    ]
+    "binaryHeader": "80-byte text + uint32 LE count + N * 50-byte triangles",
+    "triangleRecord": "normal(12B) + v1(12B) + v2(12B) + v3(12B) + attribute(2B) = 50 bytes",
+    "encoding": "binary-little-endian",
+    "fileSizeFormula": "84 + triangleCount * 50 bytes"
   }
 }

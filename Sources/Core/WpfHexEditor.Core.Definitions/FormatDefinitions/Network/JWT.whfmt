@@ -1,0 +1,183 @@
+{
+  "diffMode": "text",
+  "formatName": "JSON Web Token (JWT)",
+  "version": "1.0",
+  "extensions": [ ".jwt" ],
+  "description": "JWT (JSON Web Token, RFC 7519) — compact URL-safe token for representing claims between parties. Structure: base64url(header).base64url(payload).base64url(signature). Always starts with 'eyJ' (base64url encoding of '{\"'). Header JSON: {\"alg\":\"HS256\",\"typ\":\"JWT\"} or RS256, RS512, ES256, PS256, 'none'. JWA algorithms (RFC 7518): HS256/384/512 (HMAC-SHA-2 symmetric), RS256/384/512 (RSA PKCS#1 v1.5 asymmetric), ES256/384/512 (ECDSA asymmetric), PS256/384/512 (RSA-PSS), 'none' (DANGEROUS — no signature). Payload standard claims: iss (issuer), sub (subject), aud (audience), exp (expiration Unix epoch), nbf (not before), iat (issued at), jti (JWT unique ID). JWE (encrypted JWT, RFC 7516) has 5 parts separated by dots. Security risks: algorithm confusion attack (RS256 to HS256), 'none' algorithm bypass, weak HS256 secrets enable offline cracking, missing exp claim allows permanent tokens.",
+  "category": "Network",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 7519 — JSON Web Token (JWT)",
+      "RFC 7518 — JSON Web Algorithms (JWA)",
+      "RFC 7516 — JSON Web Encryption (JWE)"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc7519",
+      "https://jwt.io/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "65794A", "offset": 0, "label": "eyJ — base64url encoding of '{\"' — JWT header start (3 bytes)", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Medium",
+    "validation": {
+      "minFileSize": 36,
+      "maxSignatureOffset": 0,
+      "note": "All JWTs start with 'eyJ' (base64url of '{\"'). Medium confidence because base64url strings starting with eyJ could appear in other contexts. Presence of exactly 2 '.' separators strongly confirms JWT."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "jwtPrefix": "",
+    "headerDot": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte is always 0x65 ('e') for all JWTs. The first three bytes are always 'eyJ' which is the base64url encoding of '{\"'. This is the start of the base64url-encoded JSON header object.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "signature",
+      "name": "JWT eyJ Prefix",
+      "offset": 0,
+      "length": 3,
+      "color": "#4ECDC4",
+      "opacity": 0.4,
+      "description": "JWT token prefix 'eyJ' (3 ASCII bytes). This is the base64url encoding of the two characters '{\"' which begin every JSON object. All JWT header, payload, and JWE segments that start a JSON object will begin with 'eyJ' when base64url-encoded.",
+      "storeAs": "jwtPrefix",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "JWT Structure",
+      "variable": "headerDot",
+      "description": "JWT has exactly 3 parts separated by 2 dots: header.payload.signature. JWE has 5 parts: header.key.iv.ciphertext.tag. The payload and header are readable without a secret. Only the signature verification requires the secret key."
+    },
+    {
+      "type": "metadata",
+      "name": "Algorithm Warning",
+      "variable": "jwtPrefix",
+      "description": "Security: 'none' algorithm bypasses signature. Algorithm confusion: public-key RS256 algorithm with symmetric HS256 secret may bypass validation. Always validate algorithm on server. Never accept 'none' algorithm in production."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Starts with eyJ",
+      "expression": "jwtPrefix == 'eyJ'",
+      "severity": "error",
+      "message": "JWT must start with 'eyJ' (base64url encoding of '{'). File does not match expected JWT format."
+    },
+    {
+      "name": "First byte is e",
+      "expression": "firstByte == 101",
+      "severity": "error",
+      "message": "JWT first byte must be 0x65 ('e'). File does not begin with expected JWT prefix."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "JWT Header", "offset": 0, "color": "#FF4444" }
+    ]
+  },
+  "inspector": {
+    "badge": "JWT",
+    "primaryField": "jwtPrefix",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "JWT Header",
+        "icon": "",
+        "fields": [ "firstByte", "jwtPrefix" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JWT Summary (Text)",
+      "format": "text",
+      "fields": [ "jwtPrefix" ]
+    },
+    {
+      "name": "JWT Metadata (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "jwtPrefix" ]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "high",
+    "notes": "JWTs often contain authentication tokens, user identity (sub), roles, permissions (scope), and session data. Leaked JWTs allow authentication impersonation until expiration. Missing exp claim creates permanent tokens. Weak HS256 keys are offline-crackable with hashcat. JWTs found in log files, URLs, or browser storage represent high-value forensic artifacts.",
+    "suspiciousPatterns": [
+      "Algorithm 'none' in header — completely unsigned token, trivially forgeable",
+      "Missing or very distant exp claim — token never expires or has very long lifetime",
+      "Symmetric HS256 algorithm in public API — secret is shared and can be leaked",
+      "JWTs in URL query parameters are logged by proxy servers and web server access logs"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "JWT: base64url(header).base64url(payload).base64url(sig). Decode: split on '.', base64url-decode each part. Header: {alg, typ, kid}. Payload: {iss, sub, aud, exp, nbf, iat, jti, ...custom claims}. base64url uses '-' instead of '+', '_' instead of '/', no padding '='. Algorithms: HS256=HMAC-SHA256(secret), RS256=RSA-SHA256(private key sign/public key verify), ES256=ECDSA-P256-SHA256. exp is Unix epoch seconds. JWE has 5 dot-separated parts.",
+    "suggestedInspections": [
+      "Split on '.' to get 3 parts — base64url decode header and payload without any secret needed",
+      "Check 'alg' field in header: 'none' indicates unsigned token (critical security issue)",
+      "Decode payload to read exp (expiration), iat (issued at), and sub (subject/user identity) claims",
+      "Calculate token age: current_time - iat, and remaining validity: exp - current_time",
+      "Look for sensitive claims in payload: roles, permissions, email, user_id, scope",
+      "For HS256 tokens: check key length in corresponding system configuration — short secrets are offline-crackable"
+    ]
+  },
+  "software": [
+    "jwt.io — online JWT decoder and debugger",
+    "python-jose / PyJWT — Python JWT libraries",
+    "jsonwebtoken — Node.js JWT library",
+    "hashcat — offline HS256 secret key cracking",
+    "Burp Suite — web application security testing with JWT analysis extensions"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".jwt" ],
+    "relatedFormats": [ "SSH_KNOWN_HOSTS", "PGP_ASCII" ],
+    "note": "JWT is part of the JOSE (JSON Object Signing and Encryption) framework: JWT (RFC 7519), JWS (RFC 7515), JWE (RFC 7516), JWK (RFC 7517), JWA (RFC 7518). OAuth 2.0 and OpenID Connect use JWTs as access tokens and ID tokens respectively."
+  },
+  "MimeTypes": [
+    "application/jwt",
+    "text/plain"
+  ],
+  "UseCases": [
+    "OAuth 2.0 access tokens and refresh tokens",
+    "OpenID Connect ID tokens for user authentication",
+    "API authentication and authorization headers",
+    "Stateless session management in web applications",
+    "Microservice-to-microservice authentication"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "ASCII text, 3 base64url-encoded sections separated by '.'",
+    "Prefix": "Always starts with 'eyJ' (base64url of '{\"')",
+    "Algorithms": "HS256/384/512, RS256/384/512, ES256/384/512, PS256/384/512, none",
+    "RFC": "RFC 7519 (JWT), RFC 7518 (JWA algorithms), RFC 7516 (JWE encrypted JWT)",
+    "JOSE": "Part of JSON Object Signing and Encryption framework",
+    "SecurityNote": "Header and payload are readable without any key — only signature requires key"
+  }
+}

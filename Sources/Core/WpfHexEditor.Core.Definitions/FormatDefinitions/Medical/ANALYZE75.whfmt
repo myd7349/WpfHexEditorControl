@@ -1,0 +1,272 @@
+{
+  "diffMode": "binary",
+  "formatName": "Analyze 7.5 Brain Scan",
+  "version": "1.0",
+  "extensions": [".hdr", ".img"],
+  "description": "Analyze 7.5 MRI/CT brain scan format (Mayo Clinic, 1990). Paired files: .hdr (348-byte binary header) + .img (image voxel data). Header: sizeof_hdr(4B LE int32, must be 348) + data_type(10B ASCII) + db_name(18B ASCII) + extents(4B LE, should be 16384) + session_error(2B) + regular(1B, 'r'=0x72) + hkey_un0(1B) + dim[8](int16 LE: dim[0]=ndim, dim[1..7]=sizes) + unused(14B) + datatype(2B LE: 1=1-bit, 2=uint8, 4=int16, 8=int32, 16=float32, 64=float64, 128=RGB24) + bitpix(2B LE) + dim_un0(2B) + pixdim[8](float32 LE: voxel sizes mm) + vox_offset(4B float32) + cal_max(4B float32) + cal_min(4B float32) + glmax(4B LE int32) + glmin(4B LE int32). Superseded by NIfTI (same sizeof_hdr=348 but NIfTI adds magic and orientation fields).",
+  "category": "Medical",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Analyze 7.5 File Format — Mayo Foundation (1990)",
+      "SPM Analyze Format Documentation — FIL/UCL",
+      "NIfTI-1 format specification (derived from Analyze 7.5)"
+    ],
+    "WebLinks": [
+      "https://eeg.sourceforge.net/ANALYZE75.pdf",
+      "https://en.wikipedia.org/wiki/Analyze_(imaging_software)",
+      "https://www.mayo.edu/research/labs/biomedical-imaging/analyze-software"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5C010000",
+        "offset": 0,
+        "label": "sizeof_hdr=348 (0x5C010000 LE) — Analyze 7.5 / NIfTI-1 header size",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 348,
+      "maxSignatureOffset": 0,
+      "note": "Analyze 7.5 and NIfTI-1 share sizeof_hdr=348. NIfTI-1 can be distinguished by magic bytes 'ni1' or 'n+1' at offset 344. Pure Analyze 7.5 has no magic at offset 344 (zeros or junk). Disambiguation requires checking offset 344."
+    }
+  },
+  "variables": {
+    "sizeofHdr": 0,
+    "ndim": 0,
+    "dimX": 0,
+    "dimY": 0,
+    "dimZ": 0,
+    "datatype": 0,
+    "bitpix": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Header Size",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Analyze 7.5 sizeof_hdr at offset 0 (4 bytes, int32 little-endian). Must be 348 for a valid Analyze 7.5 or NIfTI-1 header. This value is the cornerstone of format detection. Both Analyze 7.5 and NIfTI-1 use 348. To distinguish, check offset 344: NIfTI-1 has 'ni1\\x00' or 'n+1\\x00', Analyze 7.5 has zeros or garbage. If byte-swapped to 0x5C010000 reads as 23068673, the file is likely big-endian (rare).",
+      "storeAs": "sizeofHdr",
+      "valueType": "int32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Dimensions",
+      "offset": 40,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "dim[0] — number of image dimensions at offset 40 (2 bytes, int16 little-endian). Typical values for brain imaging: 3 (3D anatomical: x,y,z), 4 (4D fMRI: x,y,z,t), 5 (5D: x,y,z,t,u). In Analyze 7.5, dim[0] is sometimes incorrectly set to 4 even for 3D volumes with a single time point. Values must be in range 1-7 for a valid header.",
+      "storeAs": "ndim",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "X Dimension",
+      "offset": 42,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "dim[1] — number of voxels along x-axis at offset 42 (2 bytes, int16 little-endian). For standard brain MRI, this is typically 256 (1mm isotropic) or 64-128 (fMRI EPI). In Analyze 7.5, axis orientation is ambiguous (no orientation encoding in header) — this is a known limitation corrected by NIfTI's qform/sform fields.",
+      "storeAs": "dimX",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Y Dimension",
+      "offset": 44,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "dim[2] — number of voxels along y-axis at offset 44 (2 bytes, int16 little-endian). For whole-brain structural MRI, typical values range from 192 to 256. The major limitation of Analyze 7.5 is that there is no coordinate system information — users must rely on convention (typically LAS or RAS orientation depending on the acquisition system).",
+      "storeAs": "dimY",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Z Dimension",
+      "offset": 46,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.35,
+      "description": "dim[3] — number of voxels along z-axis (slice direction) at offset 46 (2 bytes, int16 little-endian). For isotropic 1mm MRI: typically 256. For fMRI with 3-4mm slices: typically 40-80 slices. Multiplied by pixdim[3] (float32 at offset 96) gives the total z-extent in millimeters.",
+      "storeAs": "dimZ",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Data Type",
+      "offset": 70,
+      "length": 2,
+      "color": "#FFB347",
+      "opacity": 0.35,
+      "description": "Analyze 7.5 datatype at offset 70 (2 bytes, int16 little-endian). Defines voxel data type. Values: 1=DT_BINARY (1-bit), 2=DT_UNSIGNED_CHAR (uint8), 4=DT_SIGNED_SHORT (int16, most common for MRI), 8=DT_SIGNED_INT (int32), 16=DT_FLOAT (float32, common for processed data), 64=DT_DOUBLE (float64), 128=DT_RGB (3-byte RGB). Note: unsigned 16-bit (uint16) is not officially in Analyze 7.5 but commonly used (NIfTI adds it as type 512).",
+      "storeAs": "datatype",
+      "valueType": "int16",
+      "endianness": "little",
+      "valueMap": {
+        "2": "uint8 (DT_UNSIGNED_CHAR)",
+        "4": "int16 (DT_SIGNED_SHORT)",
+        "8": "int32 (DT_SIGNED_INT)",
+        "16": "float32 (DT_FLOAT)",
+        "64": "float64 (DT_DOUBLE)",
+        "128": "RGB24 (DT_RGB)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Bits Per Pixel",
+      "offset": 72,
+      "length": 2,
+      "color": "#DDA0DD",
+      "opacity": 0.35,
+      "description": "Analyze 7.5 bitpix at offset 72 (2 bytes, int16 little-endian). Must be consistent with datatype: datatype=2 -> bitpix=8, datatype=4 -> bitpix=16, datatype=8 -> bitpix=32, datatype=16 -> bitpix=32, datatype=64 -> bitpix=64, datatype=128 -> bitpix=24. Inconsistent values indicate file corruption or non-standard creation tools. bitpix is used by some tools as the authoritative voxel size.",
+      "storeAs": "bitpix",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Size",
+      "variable": "sizeofHdr",
+      "description": "348=Analyze 7.5/NIfTI-1, 540=NIfTI-2"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "ndim",
+      "description": "Number of image dimensions (3-5)"
+    },
+    {
+      "type": "metadata",
+      "name": "X/Y/Z Size",
+      "variable": "dimX",
+      "description": "Voxel count along x-axis"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Type",
+      "variable": "datatype",
+      "description": "Voxel data type (2=uint8, 4=int16, 16=float32)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Header size valid",
+      "expression": "sizeofHdr == 348",
+      "severity": "error",
+      "message": "Analyze 7.5 sizeof_hdr must be 348 — not a valid Analyze 7.5 header"
+    },
+    {
+      "name": "Dimensions valid",
+      "expression": "ndim >= 3 and ndim <= 5",
+      "severity": "warning",
+      "message": "Analyze 7.5 ndim (dim[0]) expected 3-5 for neuroimaging data"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Analyze Header Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "dim[] Array", "offset": 40, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Data Type", "offset": 70, "icon": "\uE946", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "sizeofHdr",
+    "primaryField": "sizeofHdr",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Analyze 7.5 Header",
+        "icon": "\uE71B",
+        "fields": ["sizeofHdr", "ndim", "dimX", "dimY", "dimZ", "datatype", "bitpix"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Analyze Header (JSON)",
+      "format": "json",
+      "fields": ["sizeofHdr", "ndim", "dimX", "dimY", "dimZ", "datatype", "bitpix"]
+    },
+    {
+      "name": "Analyze Dimensions (Text)",
+      "format": "text",
+      "fields": ["sizeofHdr", "ndim", "dimX", "dimY", "dimZ"]
+    }
+  ],
+  "forensic": {
+    "category": "medical-imaging",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      "Brain scan data can be de-anonymized via facial reconstruction from structural MRI",
+      "No built-in patient metadata — PHI may be embedded in db_name or companion files"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Analyze 7.5 header (348 bytes): sizeof_hdr(4B LE=348) + data_type(10B ASCII) + db_name(18B ASCII) + extents(4B LE, should=16384) + session_error(2B) + regular(1B 'r') + hkey_un0(1B) + dim[8](16B: 8*int16 LE) + unused[14B] + datatype(2B LE) + bitpix(2B LE) + dim_un0(2B) + pixdim[8](32B: 8*float32 LE) + vox_offset(4B float32) + funused[2](8B) + cal_max(4B) + cal_min(4B) + compressed(4B) + verified(4B) + glmax(4B LE) + glmin(4B LE). Image data in separate .img file. No orientation encoding (major limitation fixed by NIfTI).",
+    "suggestedInspections": [
+      "Bytes 0-3 (int32 LE): sizeof_hdr — must be 348; byte-swap test for big-endian files",
+      "Bytes 40-55: dim[0..7] int16 LE — dim[0]=ndim, dim[1..3]=x,y,z voxel counts",
+      "Bytes 70-71 (int16 LE): datatype — 4=int16 (MRI), 16=float32 (processed)",
+      "Bytes 344-347: if zeros = Analyze 7.5; if 'ni1' or 'n+1' = NIfTI-1 (upgrade)"
+    ]
+  },
+  "software": [
+    "FSL (supports Analyze 7.5 and NIfTI)",
+    "SPM (Statistical Parametric Mapping) — primary user of Analyze format",
+    "Mayo Analyze software (original)",
+    "MRIcro / MRIcroGL (Analyze reader/converter)",
+    "nibabel (Python: reads Analyze 7.5 via SpatialHeader)",
+    "FreeSurfer (can read Analyze via mri_convert)"
+  ],
+  "formatRelationships": {
+    "category": "Medical",
+    "extensions": [".hdr", ".img"],
+    "relatedFormats": ["NIFTI", "MINC", "DICOM"],
+    "note": "Analyze 7.5 was the dominant neuroimaging format in the 1990s-early 2000s. NIfTI-1 (2004) was designed as a backward-compatible replacement — same sizeof_hdr=348 but adds magic and orientation fields at unused positions. The major limitation of Analyze 7.5 is the absence of spatial coordinate encoding, leading to left-right flip errors."
+  },
+  "MimeTypes": [
+    "application/x-analyze",
+    "image/x-analyze"
+  ],
+  "UseCases": [
+    "Legacy SPM (Statistical Parametric Mapping) analysis pipelines",
+    "Reading historical neuroimaging datasets from 1990s-2000s studies",
+    "Brain atlas data distributed in Analyze format (Talairach, MNI152 early versions)",
+    "AFNI conversion from DICOM to Analyze for legacy tools",
+    "Archive access for longitudinal studies using old data"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Fixed 348-byte binary header (.hdr) + separate raw voxel data (.img)",
+    "Magic": "No magic bytes — identified by sizeof_hdr=348 at offset 0 (shared with NIfTI-1)",
+    "Standard": "Analyze 7.5 Format — Mayo Foundation (1990), no formal ISO/ANSI standard",
+    "Endianness": "little-endian (most implementations), big-endian files possible",
+    "Limitation": "No spatial orientation encoding — axis ambiguity is a known design flaw"
+  }
+}

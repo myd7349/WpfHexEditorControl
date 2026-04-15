@@ -1,209 +1,252 @@
 {
-  "diffMode": "binary",
-  "formatName": "HL7 Message",
-  "version": "1.13",
-  "extensions": [
-    ".hl7",
-    ".txt"
-  ],
-  "description": "Health Level Seven (HL7) v2.x is the dominant healthcare messaging standard for exchanging clinical and administrative data between hospital information systems. Messages begin with the ASCII segment 'MSH|' (0x4D53487C) at offset 0. The pipe character | is the field separator; the caret ^ is the component separator; the tilde ~ is repetition separator. Key segments include PID (patient identity), PV1 (patient visit), OBR (observation request), and OBX (observation result). Used by labs, pharmacies, EHR systems, and health information exchanges worldwide.",
+  "diffMode": "text",
+  "formatName": "HL7 v2 Message",
+  "version": "1.0",
+  "extensions": [".hl7", ".txt"],
+  "description": "HL7 v2 (Health Level Seven version 2) messaging standard — most widely deployed healthcare data format worldwide. Every message starts with MSH segment: 'MSH|^~\\&|' — MSH followed by field separator '|', encoding characters '^~\\&', then sender application, sending facility, receiving application, receiving facility, date/time, security, message type, message control ID, processing ID, version ID. Segments: MSH (header), PID (patient ID: name, DOB, SSN, address, phone), PV1 (visit info), OBR (observation request), OBX (observation result: lab values, vitals), ADT (admit/discharge/transfer), ORU (observation result unsolicited), ORM (order message). Segment separator: CR (0x0D). Field separator: | (0x7C). Critical PHI: patient name, SSN, address in PID segment.",
   "category": "Medical",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",
-  "references": [
-    "HL7 v2.x Message Standard (HL7 International)",
-    "https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185"
-  ],
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "HL7 v2.9 Specification — Health Level Seven International",
+      "HIPAA Electronic Transactions and Code Sets (45 CFR Part 162)",
+      "HL7 v2.x Implementation Guide"
+    ],
+    "WebLinks": [
+      "https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185",
+      "https://en.wikipedia.org/wiki/Health_Level_7",
+      "https://hl7-definition.caristix.com/"
+    ]
+  },
   "detection": {
-    "signature": "4D53487C",
-    "offset": 0,
-    "weight": 0.9,
-    "strength": "Strong",
+    "signatures": [
+      {
+        "value": "4D53487C5E7E5C26",
+        "offset": 0,
+        "label": "MSH|^~\\& — HL7 v2 message header mandatory start sequence",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 5.5 },
     "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 0
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "HL7 v2 messages must begin with 'MSH|^~\\&' (8 bytes). The first 4 bytes identify the segment type (MSH=Message Segment Header) and the next 4 bytes are the encoding characters defining field, component, repetition, escape, and subcomponent separators."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "mshMagic": "",
-    "fieldSep": "",
-    "encodingChars": "",
-    "sendingApp": "",
-    "sendingFacility": "",
-    "messageType": ""
+    "hl7MSH": "",
+    "fieldSep": 0,
+    "componentSep": 0,
+    "repetitionSep": 0,
+    "escapeSep": 0,
+    "subcompSep": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "MSH Segment ID",
+      "name": "HL7 MSH Magic",
       "offset": 0,
-      "length": 4,
+      "length": 8,
       "color": "#FF6B6B",
-      "opacity": 0.8,
-      "description": "ASCII 'MSH|' (0x4D53487C) — Message Segment Header + field separator; mandatory first bytes of every HL7 v2.x message",
-      "storeAs": "mshMagic",
+      "opacity": 0.45,
+      "description": "HL7 v2 mandatory message header start sequence 'MSH|^~\\&' at offset 0 (8 ASCII bytes). 'MSH' identifies the Message Segment Header. Byte 3 is MSH-1 (field separator), always '|' (0x7C). Bytes 4-7 are MSH-2 (encoding characters): byte 4 = component separator '^' (0x5E), byte 5 = repetition separator '~' (0x7E), byte 6 = escape character '\\' (0x5C), byte 7 = subcomponent separator '&' (0x26). These encoding characters are configurable but '|^~\\&' is the universal standard.",
+      "storeAs": "hl7MSH",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Encoding Characters",
-      "offset": 4,
-      "length": 4,
+      "name": "Field Separator",
+      "offset": 3,
+      "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.5,
-      "description": "MSH-2: 4 special characters defining component (^), repetition (~), escape (\\\\), and sub-component (&) separators",
-      "storeAs": "encodingChars",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "HL7 v2 field separator character at offset 3 (1 byte, uint8). This is MSH-1 and defines the character used to separate fields within all segments. Standard value: '|' (0x7C = 124 decimal). This character separates all HL7 fields: MSH|SendingApp|SendingFacility|... etc. All subsequent segments in the message use this same field separator character.",
+      "storeAs": "fieldSep",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Sending Application",
-      "offset": 9,
-      "length": 20,
+      "name": "Component Separator",
+      "offset": 4,
+      "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.4,
-      "description": "MSH-3: Sending application identifier (HD-type field); identifies the originating system",
-      "storeAs": "sendingApp",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "HL7 v2 component separator character at offset 4 (1 byte, uint8). First character of MSH-2 (encoding characters). Standard value: '^' (0x5E = 94 decimal). Separates components within a field. Example: PatientName uses components for family name, given name, middle initial, suffix, prefix — e.g. 'SMITH^JOHN^A^JR^DR'. CWE (Coded with Exceptions) fields also use components for code, text, coding system.",
+      "storeAs": "componentSep",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Sending Facility",
-      "offset": 30,
-      "length": 20,
+      "name": "Repetition Separator",
+      "offset": 5,
+      "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.4,
-      "description": "MSH-4: Sending facility identifier; identifies the institution or location sending the message",
-      "storeAs": "sendingFacility",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "HL7 v2 repetition separator character at offset 5 (1 byte, uint8). Second character of MSH-2 (encoding characters). Standard value: '~' (0x7E = 126 decimal). Separates multiple occurrences of a repeating field. Example: a patient with multiple phone numbers: '555-1234~555-5678'. Also used in OBX-2 when reporting multiple coded values for the same observation.",
+      "storeAs": "repetitionSep",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Message Type",
-      "offset": 0,
-      "length": 10,
-      "color": "#A8DADC",
-      "opacity": 0.4,
-      "description": "MSH-9: Message type and event code, e.g. 'ADT^A01' (admission), 'ORU^R01' (lab result), 'ORM^O01' (order)",
-      "storeAs": "messageType",
-      "valueType": "ascii"
+      "name": "Escape Character",
+      "offset": 6,
+      "length": 1,
+      "color": "#A8E6CF",
+      "opacity": 0.35,
+      "description": "HL7 v2 escape character at offset 6 (1 byte, uint8). Third character of MSH-2. Standard value: '\\' (0x5C = 92 decimal). Used to escape special characters within field values. Escape sequences: \\F\\ = field separator, \\S\\ = component separator, \\R\\ = repetition separator, \\E\\ = escape itself, \\T\\ = subcomponent separator, \\Xhexhex\\ = hex data, \\Cxxx\\ = single-byte character set, \\Mxxx\\ = multi-byte character set.",
+      "storeAs": "escapeSep",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Subcomponent Separator",
+      "offset": 7,
+      "length": 1,
+      "color": "#FFB347",
+      "opacity": 0.35,
+      "description": "HL7 v2 subcomponent separator character at offset 7 (1 byte, uint8). Fourth character of MSH-2. Standard value: '&' (0x26 = 38 decimal). Separates subcomponents within a component — used in HD (Hierarchical Designator) and EI (Entity Identifier) data types. Example: Assigning Authority in PID-3 (patient ID list): 'MRN^&2.16.840.1.113883.19.4&ISO'. Less commonly used than field, component, and repetition separators.",
+      "storeAs": "subcompSep",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",
-      "name": "MSH Magic",
-      "variable": "mshMagic",
-      "description": "Message Segment Header magic 'MSH|'"
+      "name": "HL7 MSH Header",
+      "variable": "hl7MSH",
+      "description": "'MSH|^~\\&' — HL7 v2 message start with encoding characters"
     },
     {
       "type": "metadata",
-      "name": "Encoding Characters",
-      "variable": "encodingChars",
-      "description": "Special separator characters: ^~\\&"
+      "name": "Field Separator",
+      "variable": "fieldSep",
+      "description": "Field separator byte — standard value 0x7C '|'"
     },
     {
       "type": "metadata",
-      "name": "Message Type",
-      "variable": "messageType",
-      "description": "HL7 message type and trigger event"
+      "name": "Component Separator",
+      "variable": "componentSep",
+      "description": "Component separator byte — standard value 0x5E '^'"
+    },
+    {
+      "type": "metadata",
+      "name": "Subcomponent Separator",
+      "variable": "subcompSep",
+      "description": "Subcomponent separator byte — standard value 0x26 '&'"
     }
   ],
   "assertions": [
     {
-      "name": "MSH header present",
-      "expression": "mshMagic == 'MSH|'",
+      "name": "HL7 magic valid",
+      "expression": "hl7MSH == 'MSH|^~\\&'",
       "severity": "error",
-      "message": "Valid HL7 v2.x messages must begin with 'MSH|' at offset 0"
+      "message": "HL7 v2 message must begin with 'MSH|^~\\&' — not a valid HL7 v2 message"
     },
     {
-      "name": "Standard encoding characters",
-      "expression": "encodingChars == '^~\\\\&'",
+      "name": "Field separator is pipe",
+      "expression": "fieldSep == 0x7C",
       "severity": "warning",
-      "message": "MSH-2 encoding characters should be '^~\\&'; non-standard separators may cause parsing failures"
+      "message": "HL7 field separator should be '|' (0x7C) — non-standard separator in use"
+    },
+    {
+      "name": "Component separator is caret",
+      "expression": "componentSep == 0x5E",
+      "severity": "warning",
+      "message": "HL7 component separator should be '^' (0x5E) — non-standard separator in use"
     }
   ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "MSH Segment", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
   "inspector": {
+    "badge": "hl7MSH",
+    "primaryField": "hl7MSH",
+    "showQualityScore": true,
     "groups": [
       {
-        "name": "Message Header",
-        "fields": ["MSH Segment ID", "Encoding Characters"]
-      },
-      {
-        "name": "Source Identity",
-        "fields": ["Sending Application", "Sending Facility"]
-      },
-      {
-        "name": "Message Classification",
-        "fields": ["Message Type"]
+        "title": "HL7 MSH Encoding",
+        "icon": "\uE71B",
+        "fields": ["hl7MSH", "fieldSep", "componentSep", "repetitionSep", "escapeSep", "subcompSep"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "HL7 Message Summary",
-      "fields": ["mshMagic", "encodingChars", "sendingApp", "sendingFacility", "messageType"]
+      "name": "HL7 Header (JSON)",
+      "format": "json",
+      "fields": ["hl7MSH", "fieldSep", "componentSep", "repetitionSep", "escapeSep", "subcompSep"]
+    },
+    {
+      "name": "HL7 Encoding Characters (Text)",
+      "format": "text",
+      "fields": ["hl7MSH", "fieldSep", "componentSep"]
     }
   ],
+  "forensic": {
+    "category": "medical-records",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      "PID segment (Patient Identification): contains name, DOB, SSN, address — HIPAA PHI",
+      "PID-3 (Patient ID List): medical record numbers and SSN — critical PHI",
+      "OBX segments may contain lab results and diagnoses — HIPAA PHI",
+      "MSH-3/MSH-4 (sending application/facility): reveals internal system topology"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "HL7 v2 message structure: segments separated by CR (0x0D). Each segment: 3-letter segment ID + field separator + pipe-delimited fields. MSH fields: MSH-3=SendingApp, MSH-4=SendingFacility, MSH-5=ReceivingApp, MSH-6=ReceivingFacility, MSH-7=DateTime, MSH-9=MessageType (e.g. ADT^A01=Admit, ORU^R01=Lab Result), MSH-10=ControlID, MSH-11=ProcessingID, MSH-12=Version. PID fields: PID-2=PatientID(ext), PID-3=PatientIDList, PID-5=PatientName(PN), PID-7=DOB, PID-8=Sex, PID-11=Address, PID-13=Phone. OBX: OBX-3=ObservationID(CWE), OBX-5=ObservationValue, OBX-6=Units, OBX-7=ReferenceRange, OBX-8=AbnormalFlags, OBX-11=ResultStatus.",
+    "suggestedInspections": [
+      "Bytes 0-7: 'MSH|^~\\&' — confirms HL7 v2 and encoding characters",
+      "Scan for CR (0x0D) segment terminators to count segments in message",
+      "Find 'PID|' segment — contains patient PHI including name, DOB, SSN",
+      "Find 'OBX|' segments — lab results, vital signs, diagnostic findings"
+    ]
+  },
   "software": [
-    "Mirth Connect (open-source HL7 engine)",
-    "Microsoft BizTalk Health adapter",
-    "Epic EHR",
-    "Cerner HL7 interfaces",
-    "Open mHealth"
+    "Mirth Connect (open-source HL7 integration engine)",
+    "InterSystems HealthShare",
+    "Epic / Cerner EHR systems (HL7 interfaces)",
+    "HL7 Inspector (open-source desktop viewer)",
+    "HAPI (Java HL7 library)",
+    "python-hl7 (Python library)",
+    "NHapi (.NET HL7 library)"
   ],
   "formatRelationships": {
-    "standard": "HL7 v2.x",
-    "successor": "HL7 FHIR (REST-based)",
-    "encoding": "Pipe-delimited ASCII text"
+    "category": "Medical",
+    "extensions": [".hl7", ".txt"],
+    "relatedFormats": ["DICOM", "FHIR"],
+    "note": "HL7 v2 is being gradually replaced by HL7 FHIR (Fast Healthcare Interoperability Resources, REST/JSON-based). HL7 v3/CDA (Clinical Document Architecture) uses XML. DICOM handles imaging; HL7 handles clinical messages, orders, results, and ADT events. ANSI X12 EDI is used for billing (837P, 835 remittance)."
   },
   "MimeTypes": [
     "application/hl7-v2",
     "text/plain"
   ],
-  "Software": [
-    "Mirth Connect integration engine",
-    "Epic EHR HL7 interfaces",
-    "Cerner messaging framework",
-    "Microsoft BizTalk Health adapter"
-  ],
   "UseCases": [
-    "Lab result delivery (ORU^R01)",
-    "Patient admission and discharge (ADT^A01)",
-    "Pharmacy order messages (RDE^O11)",
-    "Radiology order workflows (ORM^O01)"
+    "Hospital information system (HIS) to laboratory system interface",
+    "ADT (admit/discharge/transfer) feeds to downstream systems",
+    "Lab results (ORU^R01) from LIS to EHR",
+    "Radiology order (ORM^O01) and result (ORU^R01) workflow",
+    "Health information exchange (HIE) message routing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 55,
+    "CompletenessScore": 92,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 8,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 10,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Encoding": "ASCII/UTF-8 text, pipe-delimited",
-    "SegmentTerminator": "Carriage return (0x0D)",
-    "FieldSeparator": "Pipe | (0x7C)",
-    "CommonVersions": ["2.1", "2.2", "2.3", "2.3.1", "2.4", "2.5", "2.5.1", "2.6", "2.7", "2.8"]
-  },
-  "forensic": {
-    "category": "medical",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "HL7 v2.x is text-based with pipe-delimited fields. 'MSH|' at offset 0 is the universal identifier. MSH-2 (offset 4) contains the 4 encoding special characters. Segments end with CR (0x0D). MSH-9 contains the message type code (e.g. ADT^A01, ORU^R01). Patient data is in PID segment, observations in OBX segments.",
-    "suggestedInspections": [
-      "Verify 'MSH|' at offset 0",
-      "Check encoding characters at offset 4 (standard: ^~\\&)",
-      "Parse MSH-9 for message type and event code",
-      "Look for PID segment for patient demographics",
-      "Find OBX segments for clinical observation values"
-    ]
-  },
-  "functions": {
-    "extractASCIIString": "Parse pipe-delimited segment fields"
+    "Format": "ASCII pipe-delimited text with CR segment terminators",
+    "Magic": "'MSH|^~\\&' (4D 53 48 7C 5E 7E 5C 26) at offset 0",
+    "Standard": "HL7 v2.9 — Health Level Seven International",
+    "Endianness": "N/A (ASCII text format)",
+    "Privacy": "HIPAA PHI — patient name, ID, DOB, SSN, diagnoses, medications in PID/OBX segments"
   }
 }

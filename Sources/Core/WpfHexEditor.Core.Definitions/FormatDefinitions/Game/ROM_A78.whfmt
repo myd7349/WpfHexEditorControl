@@ -1,52 +1,55 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Atari 7800 ROM",
-  "version": "1.15",
-  "extensions": [
-    ".a78"
-  ],
-  "description": "Atari 7800 ROM format with A78 header (ProSystem standard)",
+  "version": "1.0",
+  "extensions": [".a78"],
+  "description": "Atari 7800 ProSystem cartridge ROM in the standardised A78 container format. The 128-byte header begins with 0x01 at offset 0 (reserved), followed by the 9-byte ASCII string 'ATARI7800' (0x41 0x54 0x41 0x52 0x49 0x37 0x38 0x30 0x30) at offsets 1-9, then 6 reserved bytes (offsets 10-15), followed by the cart_name (32 bytes ASCII, null-padded) at offsets 16-47, the ROM data length (uint32 BE) at offset 49, the cart_type byte at offset 53, the ctrl1 and ctrl2 bytes at offsets 55 and 56, the TV_type byte at offset 57, the save_type byte at offset 58, and 69 reserved bytes filling to offset 127. ROM data begins at offset 128. Cart types: 0=Normal, 1=SuperGame, 2=SuperGame with RAM. TV types: 0=NTSC, 1=PAL. Save types: 0=None, 1=High Score Cartridge, 2=SaveKey/AtariVox. The 6502C CPU runs at 1.79 MHz (NTSC). The MARIA chip provides 320x200 resolution with up to 25 sprites per scanline.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Atari 7800 A78 Header Specification",
-      "ProSystem ROM Header Format",
-      "Atari 7800 Programming Reference"
+      "Atari 7800 A78 Header Specification v1.0",
+      "ProSystem Emulator A78 Header Documentation",
+      "Atari 7800 Programming Reference Guide"
     ],
     "WebLinks": [
       "http://7800.8bitdev.org/index.php/A78_Header_Specification",
-      "https://sites.google.com/site/atari7800wiki/a78-header",
       "https://docs.libretro.com/library/prosystem/",
-      "https://en.wikipedia.org/wiki/Atari_7800"
+      "https://en.wikipedia.org/wiki/Atari_7800",
+      "https://atariage.com/7800/"
     ]
   },
   "detection": {
-    "signature": "415441524937383030",
-    "offset": 1,
+    "signatures": [
+      {
+        "value": "41544152493738303030",
+        "offset": 1,
+        "label": "'ATARI7800' — Atari 7800 ProSystem ROM header magic at offset 1",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
     "validation": {
-      "minFileSize": 9,
-      "maxSignatureOffset": 1024
+      "minFileSize": 128,
+      "maxSignatureOffset": 1,
+      "note": "All valid .a78 ROM files have 'ATARI7800' starting at offset 1. Offset 0 is 0x01 (version/reserved). ROM data starts at offset 128 after the fixed 128-byte header."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "gameTitle": "",
-    "romLength": 0,
-    "fileCount": 0,
-    "totalSize": 0,
-    "format": "",
     "headerVersion": 0,
     "atari7800Magic": "",
-    "specialByte": 0,
+    "gameTitle": "",
+    "romLength": 0,
+    "cartType": 0,
     "controller1": 0,
     "controller2": 0,
     "tvType": 0,
     "saveDataType": 0,
-    "romDataStart": "",
-    "formattedSize": ""
+    "romDataStart": ""
   },
   "blocks": [
     {
@@ -57,30 +60,30 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "A78 header format version (1 or 2)",
+      "description": "Reserved byte at offset 0, value 0x01. Used as a format version indicator in the A78 header specification. Emulators check this byte along with the ATARI7800 magic string to validate the header.",
       "storeAs": "headerVersion"
     },
     {
       "type": "signature",
       "name": "ATARI7800 Magic",
       "offset": 1,
-      "length": 16,
+      "length": 9,
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "ascii",
-      "description": "ATARI7800 + spaces + null - ProSystem header identifier",
+      "description": "9-byte ASCII magic string 'ATARI7800' at offsets 1-9 identifying the Atari 7800 ProSystem A78 ROM header format. This string is followed by 6 reserved bytes (all 0x00) before the game title field at offset 16.",
       "storeAs": "atari7800Magic"
     },
     {
       "type": "field",
       "name": "Game Title",
-      "offset": 17,
+      "offset": 16,
       "length": 32,
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "storeAs": "gameTitle",
-      "description": "Game title (null-terminated ASCII string)"
+      "description": "32-byte null-padded ASCII game title string at offsets 16-47. Displayed by emulators in the ROM library. Examples: 'DESERT FALCON', 'NINJA GOLF', 'BALLBLAZER'.",
+      "storeAs": "gameTitle"
     },
     {
       "type": "field",
@@ -90,31 +93,31 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
+      "endianness": "big",
+      "description": "Size of the ROM data in bytes following the 128-byte header, stored as uint32 big-endian at offset 49. This is the actual ROM content size excluding the A78 header. Typical values: 16384 (16 KB), 32768 (32 KB), 49152 (48 KB).",
       "storeAs": "romLength",
-      "description": "Length of ROM data following this 128-byte header (big-endian)",
-      "endianness": "big"
+      "validationRules": { "minValue": 1 }
     },
     {
       "type": "field",
-      "name": "Special Byte",
+      "name": "Cart Type",
       "offset": 53,
-      "length": 2,
+      "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "uint16",
-      "description": "Banking, PAL flag, and other special attributes",
-      "storeAs": "specialByte",
-      "endianness": "big"
+      "valueType": "uint8",
+      "description": "Cartridge type byte at offset 53 indicating the ROM memory layout: 0=Normal ROM (linear), 1=SuperGame (512 KB banked), 2=SuperGame with RAM (banked + 16 KB RAM at 0x4000).",
+      "storeAs": "cartType"
     },
     {
       "type": "field",
       "name": "Controller 1",
       "offset": 55,
       "length": 1,
-      "color": "#FFE66D",
+      "color": "#B8B8FF",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Controller type for port 1: 0=Joystick, 1=Light gun, 2=Paddle, 4=Trak-Ball",
+      "description": "Controller type for port 1 at offset 55: 0=Joystick, 1=Light gun, 2=Paddle, 3=Trackball, 4=Trak-Ball.",
       "storeAs": "controller1"
     },
     {
@@ -122,10 +125,10 @@
       "name": "Controller 2",
       "offset": 56,
       "length": 1,
-      "color": "#FFE66D",
+      "color": "#B8B8FF",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Controller type for port 2",
+      "description": "Controller type for port 2 at offset 56. Same values as Controller 1.",
       "storeAs": "controller2"
     },
     {
@@ -136,14 +139,9 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0=NTSC, 1=PAL",
-      "validationRules": {
-        "allowedValues": [
-          0,
-          1
-        ]
-      },
-      "storeAs": "tvType"
+      "description": "TV standard byte at offset 57: 0=NTSC (59.94 Hz, North America/Japan), 1=PAL (50 Hz, Europe). Used by emulators to set correct timing and colour palette.",
+      "storeAs": "tvType",
+      "validationRules": { "allowedValues": [0, 1] }
     },
     {
       "type": "field",
@@ -153,7 +151,7 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0=None, 1=High Score Cart, 2=SaveKey/AtariVox",
+      "description": "Save data device type at offset 58: 0=None, 1=High Score Cartridge (2 KB NVS RAM), 2=SaveKey or AtariVox (I2C EEPROM via joystick port).",
       "storeAs": "saveDataType"
     },
     {
@@ -161,11 +159,11 @@
       "name": "Reserved",
       "offset": 59,
       "length": 69,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
+      "color": "#E0E0E0",
+      "opacity": 0.2,
       "valueType": "bytes",
       "hidden": true,
-      "description": "Reserved bytes and expansion area"
+      "description": "69 reserved bytes at offsets 59-127 filling the 128-byte header to the ROM data boundary. Should be all 0x00."
     },
     {
       "type": "field",
@@ -173,90 +171,138 @@
       "offset": 128,
       "length": 4096,
       "color": "#95E1D3",
-      "opacity": 0.3,
+      "opacity": 0.25,
       "valueType": "ascii",
-      "description": "Start of actual Atari 7800 ROM code (length from ROM Data Length field)",
+      "description": "Start of the Atari 7800 ROM code at offset 128, immediately following the fixed 128-byte A78 header. The full ROM length is given by the ROM Data Length field.",
       "storeAs": "romDataStart"
     },
     {
       "type": "metadata",
-      "name": "File Count",
-      "variable": "fileCount",
-      "description": "File Count"
+      "name": "Game Title",
+      "variable": "gameTitle",
+      "description": "Game name from A78 header"
     },
     {
       "type": "metadata",
-      "name": "Total Size",
-      "variable": "totalSize",
-      "description": "Total Size"
+      "name": "ROM Length",
+      "variable": "romLength",
+      "description": "ROM data size in bytes (after header)"
     },
     {
       "type": "metadata",
-      "name": "Format",
-      "variable": "format",
-      "description": "Format"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "TV Type",
+      "variable": "tvType",
+      "description": "0=NTSC, 1=PAL"
     }
   ],
-  "software": [
-    "Emulators",
-    "Game engines"
+  "assertions": [
+    {
+      "name": "ATARI7800 magic valid",
+      "expression": "atari7800Magic == 'ATARI7800'",
+      "severity": "error",
+      "message": "A78 ROM must contain ASCII 'ATARI7800' at offset 1"
+    },
+    {
+      "name": "ROM length positive",
+      "expression": "romLength > 0",
+      "severity": "error",
+      "message": "A78 ROM data length must be greater than 0"
+    },
+    {
+      "name": "TV type valid",
+      "expression": "tvType == 0 || tvType == 1",
+      "severity": "warning",
+      "message": "TV type must be 0 (NTSC) or 1 (PAL)"
+    }
   ],
-  "formatRelationships": {
-    "category": "Game",
-    "extensions": [
-      ".a78"
+  "navigation": {
+    "bookmarks": [
+      { "name": "A78 Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Game Title", "offset": 16, "icon": "\uE71B", "color": "#4ECDC4" },
+      { "name": "ROM Data", "offset": 128, "icon": "\uE71B", "color": "#95E1D3" }
     ]
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
-  "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 67,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 15,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-03-01",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "atari7800Magic",
+    "primaryField": "gameTitle",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "A78 Header Identity",
+        "icon": "\uE71B",
+        "fields": ["headerVersion", "atari7800Magic", "gameTitle"]
+      },
+      {
+        "title": "ROM Configuration",
+        "icon": "\uE71B",
+        "fields": ["romLength", "cartType", "tvType", "saveDataType"]
+      },
+      {
+        "title": "Controllers",
+        "icon": "\uE71B",
+        "fields": ["controller1", "controller2"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "Platform": "Atari 7800"
-  },
-  "functions": {
-    "extractASCIIString": "Read filenames",
-    "readUInt32LE": "Read sizes",
-    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
-  },
+  "exportTemplates": [
+    {
+      "name": "A78 ROM Header (JSON)",
+      "format": "json",
+      "fields": ["headerVersion", "atari7800Magic", "gameTitle", "romLength", "cartType", "tvType", "saveDataType"]
+    },
+    {
+      "name": "A78 ROM Summary (CSV)",
+      "format": "csv",
+      "fields": ["gameTitle", "romLength", "cartType", "tvType"]
+    }
+  ],
   "forensic": {
     "category": "game",
     "riskLevel": "low",
     "suspiciousPatterns": []
   },
   "aiHints": {
-    "analysisContext": "Atari 7800 ROM format with A78 header (ProSystem standard)",
+    "analysisContext": "A78 header: 0x01(1B) + 'ATARI7800'(9B) + reserved(6B) + gameTitle(32B ASCII) + reserved(2B) + romLength(4B BE) + cartType(1B) + reserved(1B) + ctrl1(1B) + ctrl2(1B) + tvType(1B) + saveType(1B) + reserved(69B) = 128 bytes total. ROM data starts at offset 128.",
     "suggestedInspections": [
-      "Validate Atari 7800 ROM container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
+      "Verify 'ATARI7800' ASCII magic at offsets 1-9 (9 bytes)",
+      "Read game title at offsets 16-47 (32-byte null-padded ASCII)",
+      "Read ROM data length at offsets 49-52 (uint32 BE) — total file size should equal 128 + romLength",
+      "Check TV type at offset 57: 0=NTSC, 1=PAL — PAL ROMs run at different clock speed"
     ]
+  },
+  "software": [
+    "ProSystem (official Atari 7800 emulator)",
+    "A7800 (RetroArch core for Atari 7800)",
+    "MAME (Atari 7800 driver)",
+    "Stella (also supports some 7800 games)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".a78"],
+    "relatedFormats": ["ROM_ATARI2600"],
+    "note": "The Atari 7800 is backward compatible with most Atari 2600 games. The MARIA graphics chip provides significantly improved sprite capability over the 2600 TIA chip. A78 is the universally accepted ROM container format for 7800 preservation."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of Atari 7800 ProSystem cartridge games",
+    "Preservation of the Atari 7800 game library",
+    "ROM hacking and homebrew development for the Atari 7800",
+    "Identification of NTSC vs PAL variants via TV type byte"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 13,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Atari 7800 ProSystem",
+    "CPU": "6502C at 1.79 MHz (NTSC) / 1.77 MHz (PAL)",
+    "VideoChip": "MARIA (320x200, 25 sprites per scanline)",
+    "A78HeaderSize": "128 bytes fixed",
+    "Magic": "'ATARI7800' at offset 1 (9 bytes)"
   }
 }

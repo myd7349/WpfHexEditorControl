@@ -1,0 +1,161 @@
+{
+  "diffMode": "binary",
+  "formatName": "Nintendo 64 Save",
+  "version": "1.0",
+  "extensions": [".sra", ".fla", ".eep", ".n64"],
+  "description": "Nintendo 64 battery-backed save data. Four storage types are identified by file size: EEPROM 4 Kbit (512 bytes, serial 8-byte pages, Pokemon Snap, Ocarina of Time title screen), EEPROM 16 Kbit (2048 bytes, Zelda: Ocarina of Time, Majora's Mask), SRAM 256 Kbit (32768 bytes, 256-byte addressed pages, Zelda: OoT backup), Flash RAM 1 Mbit (131072 bytes, NEC D43256GU or compatible, 4 KB sectors with page-write, Pokemon Stadium 2). No magic header — raw save data from the cartridge. Some emulators (Project64, Mupen64Plus) may prefix saves with a 4-byte endianness marker: 0x80371240=Z64 big-endian, 0x37804012=V64 byte-swapped, 0x40123780=little-endian. N64 is a big-endian MIPS R4300i platform. Extension conventions: .eep=EEPROM, .sra=SRAM, .fla=Flash RAM.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "N64 Save Memory Types Reference (GBATEK / N64brew)",
+      "EEPROM 4K/16K Protocol Documentation",
+      "N64 Flash RAM (NEC D43256GU) Datasheet"
+    ],
+    "WebLinks": [
+      "https://n64brew.dev/wiki/Saving",
+      "https://en.wikipedia.org/wiki/Nintendo_64",
+      "https://github.com/project64/project64",
+      "https://mupen64plus.org/"
+    ]
+  },
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 512,
+      "maxSignatureOffset": 0,
+      "note": "N64 saves have no magic. Type determined by file size: 512=EEPROM 4K, 2048=EEPROM 16K, 32768=SRAM, 131072=Flash RAM. Extension is also a strong hint: .eep=EEPROM, .sra=SRAM, .fla=Flash."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "sizeByte": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "uint8",
+      "description": "First byte of the N64 save file. For raw EEPROM saves this is the first byte of the first 8-byte EEPROM page. For SRAM saves this is the first game-defined data byte. For Flash RAM saves this may be 0xFF (erased) or game data depending on save state.",
+      "storeAs": "firstByte"
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "description": "Second byte of the N64 save file. The combination of file size and initial bytes helps determine the storage chip type and the game that created this save.",
+      "storeAs": "sizeByte"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First save byte (no magic)"
+    },
+    {
+      "type": "metadata",
+      "name": "Second Byte",
+      "variable": "sizeByte",
+      "description": "Second save byte"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid N64 save size",
+      "expression": "fileSize == 512 || fileSize == 2048 || fileSize == 32768 || fileSize == 131072",
+      "severity": "warning",
+      "message": "N64 save size should be 512 B (EEPROM 4K), 2048 B (EEPROM 16K), 32768 B (SRAM), or 131072 B (Flash RAM)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Save Data Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "sizeByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "N64 Save Data",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "sizeByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "N64 Save Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "sizeByte"]
+    },
+    {
+      "name": "N64 Save Info (CSV)",
+      "format": "csv",
+      "fields": ["firstByte", "sizeByte"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "N64 save: no magic. Type by file size: 512=EEPROM 4Kbit (8-byte pages), 2048=EEPROM 16Kbit, 32768=SRAM 256Kbit, 131072=Flash RAM 1Mbit. Byte order: N64 is big-endian MIPS. Emulator byte-order marker possible at offset 0: 0x80371240=Z64, 0x37804012=V64, 0x40123780=LE. Zelda OoT EEPROM 16K: save slots at fixed page offsets.",
+    "suggestedInspections": [
+      "Check file size to determine storage type: 512=EEPROM 4K (.eep), 2048=EEPROM 16K (.eep), 32768=SRAM (.sra), 131072=Flash (.fla)",
+      "Check bytes 0-3 for emulator byte-order header: 0x80371240=Z64 BE, 0x37804012=V64 byteswapped, 0x40123780=LE",
+      "For Zelda OoT (EEPROM 16K=2048 bytes): check for 0x00-prefixed page structure with checksum at end of each save slot",
+      "For Pokemon Stadium 2 (Flash RAM=131072 bytes): look for save sector headers with game-specific magic patterns"
+    ]
+  },
+  "software": [
+    "Project64 (Windows N64 emulator)",
+    "Mupen64Plus (cross-platform N64 emulator)",
+    "RetroArch with Mupen64Plus-Next core",
+    "ROMhacking.net Save Tools"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".sra", ".fla", ".eep", ".n64"],
+    "relatedFormats": ["SAVE_GBA", "ROM_N64"],
+    "note": "Extension convention for N64 saves: .eep=EEPROM, .sra=SRAM, .fla=Flash RAM. The .n64 extension is sometimes used for complete save state snapshots. N64 game cartridges contain a string 'EEPROM', 'SRAM', or 'FLASH' identifying the save type."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Backup and restore of N64 cartridge game saves",
+    "Transfer of N64 saves between emulators and real hardware via 64drive or EverDrive",
+    "Editing Zelda OoT or Majora's Mask save files",
+    "Analysis of N64 save chip storage formats"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Nintendo 64",
+    "CPU": "NEC VR4300 (MIPS R4300i) 93.75 MHz, big-endian",
+    "StorageTypes": "EEPROM 4K/16K, SRAM 256K, Flash 1M",
+    "NoMagic": true,
+    "SizeDiscriminator": "512 / 2048 / 32768 / 131072 bytes"
+  }
+}

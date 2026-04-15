@@ -1,0 +1,226 @@
+{
+  "diffMode": "binary",
+  "formatName": "PGP/GPG Binary Keyring",
+  "version": "1.0",
+  "extensions": [ ".gpg", ".pgp", ".kbx" ],
+  "description": "PGP/GPG binary packet format (RFC 4880). Old-format packet header (bit7=1, bit6=0): bits5-2=packet tag, bits1-0=length type (0=1B, 1=2B, 2=4B, 3=indeterminate). New-format (bit7=1, bit6=1): bits5-0=packet tag, then body length encoding. Common packet tags: 1=Public-Key Encrypted Session Key, 2=Signature, 5=Secret-Key, 6=Public-Key, 7=Secret-Subkey, 11=Literal Data, 14=Public-Subkey. Public Key packet v4: version(1B:4) + timestamp(4B BE: creation time) + algorithm(1B: 1=RSA, 17=DSA, 18=ECDH, 22=EdDSA). Secret Key adds: string-to-key usage(1B: 0=unencrypted, 254=SHA-1 checksum, 255=2-byte checksum) + S2K specifier if encrypted + key material. Signature v4: version(1B:4) + sig_type(1B) + pub_algo(1B) + hash_algo(1B: 2=SHA-1, 8=SHA-256, 10=SHA-512) + hashed_subpackets_count(2B). Keybox (.kbx): different magic 'KB\\x02\\x00'. Common first byte: 0x99 (old-format public key), 0xC5 (new-format secret key), 0xC6 (new-format public key).",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 4880 — OpenPGP Message Format (binary packet format)",
+      "RFC 6637 — ECC in OpenPGP",
+      "GnuPG Keybox format documentation"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc4880#section-4",
+      "https://gnupg.org/documentation/",
+      "https://dev.gnupg.org/source/gnupg/browse/master/kbx/keybox-defs.h"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "99", "offset": 0, "label": "0x99 — GPG old-format public key packet (tag 6, 2-byte length)", "weight": 0.7 },
+      { "value": "C5", "offset": 0, "label": "0xC5 — GPG new-format secret key packet (tag 5)", "weight": 0.7 },
+      { "value": "C6", "offset": 0, "label": "0xC6 — GPG new-format public key packet (tag 6)", "weight": 0.7 },
+      { "value": "4B420200", "offset": 0, "label": "KB..  — GnuPG Keybox (.kbx) magic: 0x4B420200", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": false,
+    "Strength": "Medium",
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "PGP binary detection uses common first-byte values. 0x99 is most common for public keyrings, 0xC5/0xC6 for modern GnuPG. Keybox format has a distinct 4-byte magic."
+    }
+  },
+  "variables": {
+    "firstPacketByte": 0,
+    "keyVersion": 0,
+    "keyTimestamp": 0,
+    "keyAlgorithm": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Packet Header Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the OpenPGP binary packet. Bit 7 must be 1. Bit 6 distinguishes old-format (0) from new-format (1) headers. Common values: 0x99=old-format public key (tag 6), 0x98=old-format compressed data, 0xC5=new-format secret key (tag 5), 0xC6=new-format public key (tag 6).",
+      "storeAs": "firstPacketByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Key Version",
+      "offset": 2,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "OpenPGP public key packet version number. Version 4 is standard (RFC 4880). Version 3 is legacy (RSA keys pre-1997, shorter key IDs). Version 6 is proposed in the OpenPGP v6 draft. Offset 2 assumes old-format 2-byte length header (0x99 + 2B length).",
+      "storeAs": "keyVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Key Creation Timestamp",
+      "offset": 3,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Unix timestamp (4 bytes, big-endian) when the primary key was created. Stored in the public key packet body. Used to compute key age and validate key creation date claims. Offset 3 assumes old-format header (1B packet tag + 2B length + 1B version = offset 3 for timestamp).",
+      "storeAs": "keyTimestamp",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Key Algorithm",
+      "offset": 7,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Public key algorithm code used for this key. Determines the key material format following in the packet. Common: 1=RSA (encrypt+sign), 17=DSA (sign only), 18=ECDH (encrypt only), 22=EdDSA Ed25519 (sign only). Offset 7 = header(3B) + version(1B) + timestamp(4B) - 1 = byte 7.",
+      "storeAs": "keyAlgorithm",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "RSA encrypt and sign",
+        "17": "DSA sign only",
+        "18": "ECDH encrypt only",
+        "22": "EdDSA (Ed25519) sign only",
+        "19": "ECDSA sign only"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Packet Format",
+      "variable": "firstPacketByte",
+      "description": "OpenPGP packet format: bit7=1 (always), bit6=0 (old format: bits5-2=tag, bits1-0=length type), bit6=1 (new format: bits5-0=tag, then variable-length body length encoding)."
+    },
+    {
+      "type": "metadata",
+      "name": "Security Warning",
+      "variable": "keyVersion",
+      "description": "Files containing packet tag 5 (Secret-Key) or tag 7 (Secret-Subkey) contain private key material. Handle with maximum sensitivity. Unencrypted secret keys (S2K usage=0) are immediately usable by any party with access to the file."
+    },
+    {
+      "type": "metadata",
+      "name": "Keybox Note",
+      "variable": "keyAlgorithm",
+      "description": "GnuPG Keybox files (.kbx) use a different binary format starting with magic 4B420200 (KB..). Keybox is GnuPG's internal key storage format since GnuPG 2.1, not standard OpenPGP packet format."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Packet bit 7 set",
+      "expression": "firstPacketByte >= 128",
+      "severity": "error",
+      "message": "OpenPGP packet header bit 7 must always be 1. First byte less than 0x80 is not a valid OpenPGP packet."
+    },
+    {
+      "name": "Key version is known",
+      "expression": "keyVersion == 3 || keyVersion == 4 || keyVersion == 5 || keyVersion == 6",
+      "severity": "warning",
+      "message": "OpenPGP key version should be 3 (legacy), 4 (standard RFC 4880), 5, or 6 (draft)."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "First Packet", "offset": 0, "color": "#FF4444" },
+      { "name": "Key Version", "offset": 2, "color": "#44AAFF" },
+      { "name": "Creation Timestamp", "offset": 3, "color": "#44FF88" },
+      { "name": "Key Algorithm", "offset": 7, "color": "#FFAA44" }
+    ]
+  },
+  "inspector": {
+    "badge": "GPG",
+    "primaryField": "keyAlgorithm",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Key Packet Header",
+        "icon": "",
+        "fields": [ "firstPacketByte", "keyVersion", "keyTimestamp", "keyAlgorithm" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GPG Key Summary (JSON)",
+      "format": "json",
+      "fields": [ "firstPacketByte", "keyVersion", "keyTimestamp", "keyAlgorithm" ]
+    },
+    {
+      "name": "GPG Key Info (Text)",
+      "format": "text",
+      "fields": [ "keyVersion", "keyTimestamp", "keyAlgorithm" ]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "high",
+    "notes": "Binary GPG keyring files containing packet tag 5 (Secret-Key) or tag 7 (Secret-Subkey) hold private key material. Unencrypted private keys (S2K usage byte = 0) provide immediate access to all encrypted data. Encrypted private keys require passphrase cracking. Treat all .gpg files containing secret packets with maximum sensitivity.",
+    "suspiciousPatterns": [
+      "Packet tag 5 or 7 indicates secret key material — highest sensitivity",
+      "S2K usage byte 0 in secret key packet means unencrypted private key",
+      "Old-format packets (bit6=0) may indicate legacy key formats with weaker algorithms"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "OpenPGP binary packet: header byte (bit7=1, bit6=0 old/=1 new) + length + body. Old-format: bits5-2=tag, bits1-0=length_type(0=1B,1=2B,2=4B,3=indeterminate). Public key packet (tag 6) body: version(1B:4) + timestamp(4B BE) + algorithm(1B) + MPI key material. Secret key (tag 5): same as public + s2k_usage(1B: 0=unencrypted, 254=sha1-check, 255=2byte-check) + [s2k specifier if encrypted] + [IV if encrypted] + secret MPI. Keybox: 4B magic (4B42 0200) + 2B blob_type + blob_data.",
+    "suggestedInspections": [
+      "Check first byte: bit 7 must be 1 (all OpenPGP packets), bit 6 distinguishes old vs new format",
+      "Identify packet tag to determine if this is a public key (6), secret key (5), or signature (2) file",
+      "For secret key packets, read S2K usage byte to determine if private key is encrypted (non-zero) or plaintext (0=CRITICAL)",
+      "Read key creation timestamp and algorithm to assess key age and cryptographic strength",
+      "Check for Keybox magic (4B420200) which indicates GnuPG internal storage format vs standard RFC 4880",
+      "Scan for subkey packets (tag 14=public subkey, tag 7=secret subkey) for multi-subkey GPG key structures"
+    ]
+  },
+  "software": [
+    "GnuPG (gpg/gpg2) — primary binary keyring manager",
+    "Kleopatra — GUI for GnuPG on Windows/Linux",
+    "Seahorse — GNOME keyring manager",
+    "Gpg4win — GnuPG for Windows",
+    "OpenKeychain — Android GPG application"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [ ".gpg", ".pgp", ".kbx" ],
+    "relatedFormats": [ "PGP_ASCII", "PEM", "SSH_PRIVATE_KEY" ],
+    "note": "PGP binary (.gpg) is the raw OpenPGP packet format (RFC 4880). PGP ASCII (.asc) is the same data base64-encoded with armor headers. Keybox (.kbx) is GnuPG 2.1+ internal format for efficient key lookup, distinct from RFC 4880 packet format."
+  },
+  "MimeTypes": [
+    "application/pgp-keys",
+    "application/pgp-encrypted",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "GnuPG binary keyring storage for public key distribution",
+    "Encrypted file and email content storage",
+    "Software package signing and verification",
+    "Forensic extraction of GPG key material from compromised systems",
+    "PKI integration for OpenPGP-based certificate authorities"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary, big-endian MPIs, variable-length packet structure",
+    "PacketHeaderBit7": "Always 1",
+    "PacketHeaderBit6": "0=old-format, 1=new-format",
+    "CommonFirstBytes": "0x99=old public key, 0xC5=new secret key, 0xC6=new public key, 0x4B42=Keybox",
+    "KeyVersions": "v3 (legacy), v4 (RFC 4880 standard), v6 (draft)",
+    "Keybox": "GnuPG 2.1+ internal format, magic 0x4B420200"
+  }
+}

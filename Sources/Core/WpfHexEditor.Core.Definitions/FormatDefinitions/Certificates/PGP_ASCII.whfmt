@@ -1,0 +1,186 @@
+{
+  "diffMode": "text",
+  "formatName": "PGP/GPG ASCII Armor",
+  "version": "1.0",
+  "extensions": [ ".asc", ".gpg", ".pgp" ],
+  "description": "PGP ASCII Armor format (OpenPGP RFC 4880). Base64-encoded OpenPGP binary data wrapped in human-readable headers. Starts with '-----BEGIN PGP ' followed by content type: 'PUBLIC KEY BLOCK-----', 'PRIVATE KEY BLOCK-----', 'MESSAGE-----', 'SIGNATURE-----', 'SIGNED MESSAGE-----'. Optional headers: Version:, Hash:, Comment:, NotDashEscaped:. Base64-encoded binary follows, then '-----END PGP [TYPE]-----'. A CRC24 checksum appears on the line before the footer (=xxxx, 4 base64 chars). Cleartext signed messages: '-----BEGIN PGP SIGNED MESSAGE-----' + Hash: header + plaintext + '-----BEGIN PGP SIGNATURE-----' + signature + '-----END PGP SIGNATURE-----'. Used by GnuPG, ProtonMail, Keybase, email signing (S/MIME alternative), software package signing (Debian, RPM), and git commit signing.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 4880 — OpenPGP Message Format",
+      "RFC 6637 — Elliptic Curve Cryptography (ECC) in OpenPGP",
+      "draft-ietf-openpgp-crypto-refresh — OpenPGP v6 (LibrePGP)"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc4880",
+      "https://gnupg.org/",
+      "https://www.openpgp.org/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "2D2D2D2D2D424547494E2050475020", "offset": 0, "label": "-----BEGIN PGP  — PGP ASCII armor header (15 bytes, space after PGP)", "weight": 1.0 },
+      { "value": "2D2D2D2D2D424547494E20504750205349474E4544", "offset": 0, "label": "-----BEGIN PGP SIGNED — cleartext signed PGP message", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 27,
+      "maxSignatureOffset": 0,
+      "note": "PGP ASCII armor always starts with -----BEGIN PGP followed by a space and content type. The hex 2D2D2D2D2D424547494E205047502 is -----BEGIN PGP (with trailing space)."
+    }
+  },
+  "variables": {
+    "pgpHeader": "",
+    "nextChars": "",
+    "contentType": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "PGP ASCII Armor Header",
+      "offset": 0,
+      "length": 16,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "PGP ASCII armor opening header: '-----BEGIN PGP ' (15 bytes). Always present at the very start of any PGP ASCII armored file. The next characters identify the content type: PUBLIC KEY BLOCK, PRIVATE KEY BLOCK, MESSAGE, SIGNATURE, or SIGNED MESSAGE.",
+      "storeAs": "pgpHeader",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Content Type Identifier",
+      "offset": 16,
+      "length": 16,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "ASCII text following '-----BEGIN PGP ' identifying the content type. Expected values: 'PUBLIC KEY BLOCK', 'PRIVATE KEY BLOCK', 'MESSAGE', 'SIGNATURE', 'SIGNED MESSAGE'. Read until the trailing '-----' to get complete type.",
+      "storeAs": "nextChars",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Content Type",
+      "variable": "contentType",
+      "description": "Decoded PGP content type: PUBLIC KEY (shareable), PRIVATE KEY (highly sensitive — contains secret key material), MESSAGE (encrypted or literal data), SIGNATURE (detached signature), SIGNED MESSAGE (cleartext + signature)."
+    },
+    {
+      "type": "metadata",
+      "name": "CRC24 Checksum",
+      "variable": "pgpHeader",
+      "description": "CRC24 checksum of the binary OpenPGP data appears as '=xxxx' (4 base64 chars) on the penultimate line before the -----END PGP footer. Used to detect base64 corruption in transit."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Starts with BEGIN PGP",
+      "expression": "pgpHeader == '-----BEGIN PGP '",
+      "severity": "error",
+      "message": "PGP ASCII armor must begin with '-----BEGIN PGP ' (15 bytes). File does not match expected PGP armor header."
+    },
+    {
+      "name": "Content type is known",
+      "expression": "nextChars != ''",
+      "severity": "warning",
+      "message": "Could not determine PGP content type from header."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "PGP Header", "offset": 0, "color": "#FF4444" },
+      { "name": "Content Type", "offset": 16, "color": "#44AAFF" }
+    ]
+  },
+  "inspector": {
+    "badge": "PGP",
+    "primaryField": "nextChars",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PGP Armor Header",
+        "icon": "",
+        "fields": [ "pgpHeader", "nextChars", "contentType" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PGP Armor Summary (Text)",
+      "format": "text",
+      "fields": [ "pgpHeader", "nextChars", "contentType" ]
+    },
+    {
+      "name": "PGP Armor Metadata (JSON)",
+      "format": "json",
+      "fields": [ "pgpHeader", "nextChars", "contentType" ]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "high",
+    "notes": "PGP ASCII armor files may contain private key material (-----BEGIN PGP PRIVATE KEY BLOCK-----). Private key exposure compromises all messages encrypted to that key and all past messages if the key is not protected with a strong passphrase. Treat PRIVATE KEY BLOCK files with the highest sensitivity. Public key blocks are safe to share.",
+    "suspiciousPatterns": [
+      "PRIVATE KEY BLOCK content — contains secret key material, must be passphrase-protected",
+      "Passphrase-less private keys (no Proc-Type header) are unencrypted and immediately usable by an attacker",
+      "Unexpected Comment: fields may contain metadata about the key owner or creation tool"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PGP ASCII armor: '-----BEGIN PGP [TYPE]-----\\n' + optional headers (Header: value) + blank line + base64 data (76 chars/line) + '=' + CRC24 checksum (4 base64 chars) + '-----END PGP [TYPE]-----'. Types: PUBLIC KEY BLOCK, PRIVATE KEY BLOCK, MESSAGE, SIGNATURE, SIGNED MESSAGE. Binary inside is OpenPGP packet format (RFC 4880): packet_tag(1B) + packet_body_length + packet_body.",
+    "suggestedInspections": [
+      "Identify content type from header: PRIVATE KEY BLOCK requires immediate security escalation",
+      "Check for Version: header to identify the PGP/GPG version that created this file",
+      "For SIGNED MESSAGE: verify the Hash: header algorithm (SHA-256 preferred over SHA-1 or MD5)",
+      "Look for Comment: headers which may reveal key owner identity or organizational metadata",
+      "Check CRC24 checksum line (starts with =) before END header to verify base64 integrity",
+      "For PUBLIC KEY BLOCK: decode base64 to inspect key algorithm, key length, and creation date"
+    ]
+  },
+  "software": [
+    "GnuPG (gpg) — primary OpenPGP implementation",
+    "ProtonMail — web-based PGP email encryption",
+    "Keybase — identity verification with PGP keys",
+    "Kleopatra / Seahorse — GUI PGP key managers",
+    "Git — supports commit signing with GPG keys"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [ ".asc", ".gpg", ".pgp" ],
+    "relatedFormats": [ "PGP_BINARY", "PEM", "SSH_PRIVATE_KEY", "X509_CRL" ],
+    "note": "PGP ASCII armor is the text encoding of PGP binary packets (RFC 4880). The .asc extension is universally ASCII armor. The .gpg extension is typically binary but may also be ASCII armor. Related: S/MIME uses X.509/PKCS#7 instead of OpenPGP for email signing."
+  },
+  "MimeTypes": [
+    "application/pgp-keys",
+    "application/pgp-signature",
+    "application/pgp-encrypted",
+    "text/plain"
+  ],
+  "UseCases": [
+    "Email encryption and signing (GPG/PGP email)",
+    "Software package signing (Debian APT, RPM repositories)",
+    "Git commit and tag signing for code integrity",
+    "Secure file encryption for sensitive document transfer",
+    "Identity verification and key exchange"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Base64-encoded OpenPGP binary wrapped in ASCII armor headers",
+    "CRC": "CRC24 checksum on penultimate line (= prefix + 4 base64 chars)",
+    "LineLength": 76,
+    "KeyAlgorithms": "RSA, DSA, Elgamal, ECDH, ECDSA, EdDSA (Ed25519)",
+    "HashAlgorithms": "SHA-1 (deprecated), SHA-256, SHA-384, SHA-512",
+    "RFC": "RFC 4880 (OpenPGP v4), draft-ietf-openpgp-crypto-refresh (v6)"
+  }
+}

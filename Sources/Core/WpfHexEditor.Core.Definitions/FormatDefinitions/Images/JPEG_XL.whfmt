@@ -1,159 +1,203 @@
 {
   "diffMode": "binary",
   "formatName": "JPEG XL Image",
-  "version": "1.14",
-  "extensions": [
-    ".jxl"
-  ],
-  "description": "JPEG XL - Next-generation image format",
+  "version": "1.0",
+  "extensions": [".jxl"],
+  "description": "JPEG XL (JXL) is a next-generation image codec standardized as ISO/IEC 18181 (2022). Two container formats are supported. (1) Naked codestream: the file starts with bytes FF 0A which form the SizeHeader signature byte of the JXL bitstream. (2) ISOBMFF container: starts with the 12-byte signature 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A (box size=12, box type='JXL ', CRLF + 0x87 + 0x0A). Key features: lossless mode with bit-exact JPEG recompression (reducing existing JPEG files by ~20%), lossy compression outperforming HEIC/WebP at equal quality, animation, alpha channel, HDR, wide color gamut (Display P3, Rec.2020), and progressive decoding. Decoding is significantly faster than HEIC. Progressive browser adoption: Chrome 110+, Safari 17+, Firefox (experimental flag). Supported by GIMP 2.10+, Photoshop (plugin), darktable, and ImageMagick.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "ISO/IEC 10918-1 - Digital Compression and Coding",
-      "JFIF File Format Specification",
-      "ITU-T T.81"
+      "ISO/IEC 18181 JPEG XL Image Coding System",
+      "JPEG XL Codestream Specification — Jon Sneyers, Jyrki Alakuijala",
+      "libjxl Reference Implementation — Google / Cloudinary"
     ],
     "WebLinks": [
-      "https://www.w3.org/Graphics/JPEG/",
-      "https://jpeg.org/jpeg/",
-      "https://en.wikipedia.org/wiki/JPEG"
+      "https://jpeg.org/jpegxl/",
+      "https://github.com/libjxl/libjxl",
+      "https://en.wikipedia.org/wiki/JPEG_XL",
+      "https://cloudinary.com/blog/contemplating-codec-jxl"
     ]
   },
   "detection": {
-    "required": true,
-    "validation": {
-      "minFileSize": 2,
-      "maxSignatureOffset": 1024
-    },
     "signatures": [
-      {
-        "value": "FF0A",
-        "offset": 0,
-        "label": "JPEG_XL magic",
-        "weight": 1.0
-      }
+      { "value": "FF0A", "offset": 0, "label": "FF 0A — JPEG XL naked codestream SizeHeader signature bytes", "weight": 1.0 },
+      { "value": "0000000C4A584C200D0A870A", "offset": 0, "label": "JXL ISOBMFF 12-byte container box signature (size=12, type=JXL+CRLF+87+0A)", "weight": 1.0 }
     ],
     "matchMode": "any",
-    "MinimumScore": 1.0,
-    "Strength": "Medium"
-  },
-  "functions": {
-    "calculateCRC32": "Calculate CRC-32 for data integrity"
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.8 },
+    "validation": {
+      "minFileSize": 12,
+      "maxSignatureOffset": 0,
+      "note": "Either FF 0A (naked codestream) or the 12-byte ISOBMFF box must appear at exactly offset 0."
+    }
   },
   "variables": {
-    "jpegXlSignature": 0,
-    "codestreamHeader": 0
+    "jxlMagic": "",
+    "jxlContainer": "",
+    "jxlType": 0,
+    "jxlContainerType": "",
+    "jxlBoxSize": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "JPEG XL Signature",
+      "name": "JXL Magic",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "0xFF 0x0A magic bytes",
-      "storeAs": "jpegXlSignature",
-      "valueType": "uint16",
-      "endianness": "big"
+      "opacity": 0.45,
+      "description": "Primary 2-byte signature for JPEG XL naked codestream: FF 0A. The byte FF is the SizeHeader first byte indicating small dimensions follow; 0A is the codestream marker. This form is used when the JXL file does not need an ISOBMFF wrapper (e.g., no XMP metadata, single still image without animated container).",
+      "storeAs": "jxlMagic",
+      "valueType": "hex"
     },
     {
       "type": "field",
-      "name": "Codestream Header",
-      "offset": 2,
-      "length": 8,
+      "name": "ISOBMFF Container Check",
+      "offset": 0,
+      "length": 12,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "JPEG XL codestream header",
-      "storeAs": "codestreamHeader",
-      "valueType": "uint64",
-      "endianness": "big"
+      "opacity": 0.35,
+      "description": "12-byte ISOBMFF box used as the alternative JXL container signature: 4-byte box size (00 00 00 0C = 12), 4-byte box type (4A 58 4C 20 = 'JXL '), followed by 4-byte body (0D 0A 87 0A = CRLF + 0x87 + LF). The 0x87 byte serves as a non-printable byte guard against text processing. This container allows XMP, Exif, thumbnails, and animation metadata.",
+      "storeAs": "jxlContainer",
+      "valueType": "hex"
+    },
+    {
+      "type": "field",
+      "name": "Container Type Discriminator",
+      "offset": 0,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "First byte discriminates between the two JXL container types: 0xFF (255) indicates a naked JXL codestream beginning with the SizeHeader byte; 0x00 indicates an ISOBMFF box-based container starting with the 12-byte box header. Parsers branch on this byte to select the appropriate decoding path.",
+      "storeAs": "jxlType",
+      "valueType": "uint8",
+      "valueMap": {
+        "255": "Naked codestream — starts with FF 0A SizeHeader",
+        "0": "ISOBMFF container — starts with 12-byte JXL box"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "JXL Codestream Features",
+      "offset": 2,
+      "description": "JXL codestream contains: SizeHeader (image dimensions using variable-length encoding), ImageMetadata (bit depth, color encoding, extra channels, orientation, animation parameters), and frame data (modular or VarDCT compression mode). VarDCT is lossy (similar to JPEG); Modular mode is lossless. JPEG recompression stores the original JPEG coefficients for bit-exact reconstruction."
+    },
+    {
+      "type": "metadata",
+      "name": "ISOBMFF Box Structure",
+      "offset": 12,
+      "description": "After the 12-byte JXL signature box, the ISOBMFF container holds: ftyp box with major_brand='jxl ' and compatible_brands, jxlc box or jxlp boxes containing the JXL codestream data, optional Exif and XML (XMP) boxes for metadata, and optionally a jbrd box for original JPEG bitstream reconstruction data. Box layout follows ISO 14496-12 base media file format conventions."
     }
   ],
-  "software": [
-    "Limited support - emerging format"
+  "assertions": [
+    {
+      "name": "ValidMagic",
+      "expression": "jxlType == 255 || jxlType == 0",
+      "severity": "error",
+      "message": "First byte is neither 0xFF (naked codestream) nor 0x00 (ISOBMFF container). This is not a valid JPEG XL file."
+    },
+    {
+      "name": "ValidCodenstreamStart",
+      "expression": "jxlMagic == 'FF0A' || jxlContainer.startsWith('0000000C4A584C20')",
+      "severity": "error",
+      "message": "JPEG XL signature not confirmed. Neither FF 0A naked codestream nor 12-byte ISOBMFF JXL box was found at offset 0."
+    }
   ],
-  "formatRelationships": {
-    "category": "Images",
-    "extensions": [
-      ".jxl"
-    ]
-  },
-  "MimeTypes": [
-    "image/jpeg_xl"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 57,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "JPEG XL - Next-generation image format",
-    "suggestedInspections": [
-      "Validate JPEG XL Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+  "navigation": {
+    "bookmarks": [
+      { "name": "JXL Signature", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Container Box", "offset": 0, "icon": "\uE8B7", "color": "#FFE66D" },
+      { "name": "Codestream Data", "offset": 12, "icon": "\uE946", "color": "#4ECDC4" }
     ]
   },
   "inspector": {
-    "badge": "jpegXlSignature",
-    "primaryField": "codestreamHeader",
+    "badge": "jxlMagic",
+    "primaryField": "jxlType",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "JPEG XL Image",
-        "icon": "",
-        "fields": [
-          "jpegXlSignature",
-          "codestreamHeader"
-        ]
+        "title": "File Identification",
+        "icon": "\uE71B",
+        "fields": ["jxlMagic", "jxlType", "jxlContainerType"]
+      },
+      {
+        "title": "Container Info",
+        "icon": "\uE8B7",
+        "fields": ["jxlContainer", "jxlBoxSize"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "JPEG XL Image Header (JSON)",
+      "name": "JXL Header (JSON)",
       "format": "json",
-      "fields": [
-        "jpegXlSignature",
-        "codestreamHeader"
-      ]
+      "fields": ["jxlMagic", "jxlType", "jxlContainerType", "jxlBoxSize"]
+    },
+    {
+      "name": "JXL Summary (CSV)",
+      "format": "csv",
+      "fields": ["jxlType", "jxlContainerType"]
     }
   ],
-  "assertions": [
-    {
-      "name": "magic valid",
-      "expression": "jpegXlSignature != 0",
-      "severity": "warning",
-      "message": "JPEG_XL magic field is zero — possible detection failure"
-    }
-  ]
+  "forensic": {
+    "category": "images",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Crafted SizeHeader with extreme dimension values could trigger memory allocation issues in naive decoders",
+      "Malformed ISOBMFF box size fields may cause integer overflow during box parsing"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "JPEG XL has two valid signatures: FF 0A (naked codestream) and a 12-byte ISOBMFF box starting with 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A. The first byte (0xFF vs 0x00) disambiguates. ISOBMFF container allows richer metadata including Exif and XMP.",
+    "suggestedInspections": [
+      "Check first byte: 0xFF = naked codestream (FF 0A), 0x00 = ISOBMFF container (00 00 00 0C 4A 58 4C 20 ...)",
+      "For naked codestream: parse SizeHeader at offset 0 to extract image width and height",
+      "For ISOBMFF: enumerate boxes starting at offset 12 to find jxlc/jxlp codestream and Exif/XMP metadata",
+      "Verify 0x87 byte presence at ISOBMFF container offset 10 as non-printable guard byte",
+      "Check for jbrd box in ISOBMFF container indicating lossless JPEG recompression with original bitstream"
+    ]
+  },
+  "software": [
+    "libjxl (Google reference implementation)",
+    "Chrome 110+",
+    "Safari 17+",
+    "GIMP 2.10+",
+    "darktable",
+    "Photoshop (plugin)",
+    "ImageMagick 7.1+"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".jxl"],
+    "relatedFormats": ["JPEG", "HEIC", "AVIF", "EXR", "WebP"],
+    "note": "ISO/IEC 18181 standard; designed as long-term successor to JPEG with lossless recompression of legacy JPEG files"
+  },
+  "MimeTypes": ["image/jxl"],
+  "UseCases": [
+    "Web image delivery with better compression than WebP/HEIC",
+    "Lossless JPEG archival recompression (20% space savings)",
+    "HDR and wide-gamut photography distribution",
+    "Progressive image loading for large image web applications"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "standard": "ISO/IEC 18181",
+    "containerTypes": ["naked-codestream (FF 0A)", "ISOBMFF-box (00 00 00 0C 4A 58 4C 20 ...)"],
+    "compressionModes": ["VarDCT (lossy)", "Modular (lossless)", "JPEG recompression (bit-exact)"],
+    "colorSpaces": ["sRGB", "Display P3", "Rec.2020", "linear light"],
+    "features": ["animation", "alpha", "HDR", "wide-gamut", "progressive", "layers"]
+  }
 }

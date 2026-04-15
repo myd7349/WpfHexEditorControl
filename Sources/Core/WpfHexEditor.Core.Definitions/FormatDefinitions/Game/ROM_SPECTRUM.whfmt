@@ -1,0 +1,212 @@
+{
+  "diffMode": "binary",
+  "formatName": "ZX Spectrum Tape / ROM",
+  "version": "1.0",
+  "extensions": [".tap", ".tzx", ".z80", ".sna", ".szx"],
+  "description": "ZX Spectrum emulation file formats covering tape images, state snapshots, and ROM dumps. TZX (most common): magic 'ZXTape!' (7 bytes ASCII, 0x5A 0x58 0x54 0x61 0x70 0x65 0x21) + EOF marker 0x1A + major_version + minor_version. TZX blocks begin at offset 10: each block has a 1-byte block_id followed by block-specific data. Block 0x10 = standard speed data block, 0x11 = turbo speed, 0x12 = pure tone, 0x13 = pulse sequence. TAP format: simple sequence of (length uint16 LE + data) pairs. Z80 snapshot (version 1): 30-byte header starting with A and F register values. SNA snapshot: 27-byte header (I, HL', DE', BC', AF', HL, DE, BC, IY, IX, IFF2, R, AF, SP, IntMode, BorderColor) followed by 49152 bytes of RAM. SZX: ZXST container format used by Spectaculator with magic 'ZXST'.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "TZX File Format Specification v1.21",
+      "TAP File Format — World of Spectrum",
+      "Z80 Snapshot Format v1/v2/v3 — Z80.info",
+      "SNA Snapshot Format — Various emulator documentation"
+    ],
+    "WebLinks": [
+      "https://worldofspectrum.org/TZXformat.html",
+      "https://sinclair.wiki.zxnet.co.uk/wiki/TAP_format",
+      "https://worldofspectrum.org/faq/reference/z80format.htm",
+      "https://en.wikipedia.org/wiki/ZX_Spectrum"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5A585461706521",
+        "offset": 0,
+        "label": "'ZXTape!' — TZX enhanced tape image file magic (7 ASCII bytes)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": false,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 10,
+      "maxSignatureOffset": 0,
+      "note": "TZX files always start with 'ZXTape!' (7 bytes) followed by 0x1A then version bytes. TAP, Z80 and SNA files have no unique magic and are disambiguated by extension and size."
+    }
+  },
+  "variables": {
+    "tzxMagic": "",
+    "eofMarker": 0,
+    "majorVersion": 0,
+    "minorVersion": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "TZX Magic",
+      "offset": 0,
+      "length": 7,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "7-byte ASCII magic 'ZXTape!' at offset 0 identifying a TZX enhanced tape image. TZX was designed by Tomaz Kac to overcome the limitations of the simpler TAP format by encoding exact timing pulses, turbo-loading blocks, pure tone headers, and multi-speed recordings needed for protection loaders.",
+      "storeAs": "tzxMagic"
+    },
+    {
+      "type": "field",
+      "name": "EOF Marker",
+      "offset": 7,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "EOF control character 0x1A at offset 7. This byte was traditionally used as a CP/M and DOS end-of-file marker, here acting as a guard byte after the ASCII magic to prevent editors from truncating the file when opened as plain text.",
+      "storeAs": "eofMarker"
+    },
+    {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 8,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "TZX format major version number at offset 8. Current value is 1. Files with major version > 1 use an incompatible format and should be rejected by strict parsers.",
+      "storeAs": "majorVersion"
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 9,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "description": "TZX format minor version number at offset 9. Current standard is 1.21 (major=1, minor=21). The minor version indicates the highest TZX block type supported by the creating application.",
+      "storeAs": "minorVersion"
+    },
+    {
+      "type": "metadata",
+      "name": "TZX Magic",
+      "variable": "tzxMagic",
+      "description": "'ZXTape!' tape image identifier"
+    },
+    {
+      "type": "metadata",
+      "name": "EOF Marker",
+      "variable": "eofMarker",
+      "description": "EOF guard byte (expected 0x1A)"
+    },
+    {
+      "type": "metadata",
+      "name": "TZX Version",
+      "variable": "majorVersion",
+      "description": "TZX major version (expected 1)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "TZX magic valid",
+      "expression": "tzxMagic == 'ZXTape!'",
+      "severity": "error",
+      "message": "TZX file must begin with ASCII 'ZXTape!' (7 bytes)"
+    },
+    {
+      "name": "EOF marker present",
+      "expression": "eofMarker == 26",
+      "severity": "error",
+      "message": "TZX EOF marker at offset 7 must be 0x1A (26 decimal)"
+    },
+    {
+      "name": "Major version valid",
+      "expression": "majorVersion >= 1",
+      "severity": "warning",
+      "message": "TZX major version should be 1"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "TZX Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "First TZX Block", "offset": 10, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "tzxMagic",
+    "primaryField": "majorVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "TZX Header",
+        "icon": "\uE71B",
+        "fields": ["tzxMagic", "eofMarker", "majorVersion", "minorVersion"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "TZX Header (JSON)",
+      "format": "json",
+      "fields": ["tzxMagic", "eofMarker", "majorVersion", "minorVersion"]
+    },
+    {
+      "name": "TZX Header (CSV)",
+      "format": "csv",
+      "fields": ["majorVersion", "minorVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "TZX tape image: 'ZXTape!'(7B ASCII) + 0x1A(1B EOF guard) + major_ver(1B) + minor_ver(1B) = 10-byte header. Blocks start at offset 10: block_id(1B) + block data. Block IDs: 0x10=standard data, 0x11=turbo, 0x12=pure tone, 0x13=pulses, 0x20=pause, 0x30=text desc. TAP files have no magic: raw (length uint16 LE + data) pairs. SNA: 27-byte register dump + 49152 bytes RAM.",
+    "suggestedInspections": [
+      "Verify bytes 0-6 spell 'ZXTape!' (ASCII) for TZX format identification",
+      "Check byte 7 equals 0x1A (EOF guard) — corrupt if missing",
+      "Scan block IDs starting at offset 10: 0x10=standard block, 0x11=turbo block (most common for protection loaders)",
+      "For TAP files: read uint16 LE at offset 0 as first block length, validate data block type byte at offset 2 (0x00=header, 0xFF=data)"
+    ]
+  },
+  "software": [
+    "Fuse (Free Unix Spectrum Emulator)",
+    "ZX Spin (Windows Spectrum emulator)",
+    "SpecEmu (accurate Spectrum emulator)",
+    "RetroArch with FUSE core"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".tap", ".tzx", ".z80", ".sna", ".szx"],
+    "relatedFormats": ["ROM_MSX"],
+    "note": "TZX is the primary long-term preservation format for ZX Spectrum software. TAP is simpler but loses timing information. Z80 and SNA are memory snapshots not tape images."
+  },
+  "MimeTypes": ["application/octet-stream", "application/x-tzx"],
+  "UseCases": [
+    "Preservation of ZX Spectrum cassette tape software",
+    "Emulation of ZX Spectrum 48K and 128K games",
+    "Archiving of copy-protected Spectrum software using exact timing data",
+    "ROM hacking and disassembly of Z80-based Spectrum software"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 86,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Sinclair ZX Spectrum 48K / 128K / +2 / +3",
+    "CPU": "Zilog Z80A at 3.5 MHz",
+    "TZX_Header": "10 bytes: 'ZXTape!'(7) + 0x1A(1) + major(1) + minor(1)",
+    "TZX_CurrentVersion": "1.21",
+    "TAP_Format": "Length-prefixed (uint16 LE) data blocks, no file header"
+  }
+}

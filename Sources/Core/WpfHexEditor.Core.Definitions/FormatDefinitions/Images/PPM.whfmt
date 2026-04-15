@@ -1,166 +1,196 @@
 {
-  "diffMode": "binary",
-  "formatName": "Portable Pixmap",
-  "version": "1.14",
-  "extensions": [
-    ".ppm"
-  ],
-  "description": "Netpbm Portable Pixmap (RGB color)",
+  "diffMode": "text",
+  "formatName": "Portable Pixmap (PPM/PGM/PBM)",
+  "version": "1.0",
+  "extensions": [".ppm", ".pgm", ".pbm", ".pnm"],
+  "description": "Netpbm portable bitmap, graymap, and pixmap formats originally designed for simplicity in Unix image processing pipelines. Six magic variants: P1=PBM ASCII (1-bit black/white), P2=PGM ASCII (grayscale), P3=PPM ASCII (RGB), P4=PBM binary (1-bit packed), P5=PGM binary (grayscale bytes), P6=PPM binary (RGB bytes). P7 is the PAM (Portable Arbitrary Map) extension with TUPLTYPE header. Common header structure: 2-byte magic (P1-P6) followed by optional comment lines starting with '#', then whitespace-separated width, height, and max_val (1-65535; absent for P1/P4 which are always 1-bit). A single whitespace character separates the header from binary data in binary variants. Lossless and uncompressed. Binary formats (P4-P6) are preferred for efficiency. Used by ImageMagick, GIMP, ffmpeg, and Unix image processing chains.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "Netpbm PPM Format Specification",
-      "Portable Pixmap Format (PPM) - Plain/Raw",
-      "PPM RGB Color Image Format"
+      "Netpbm Formats Specification — Bryan Henderson",
+      "POSIX-compatible Portable Bitmap Format documentation",
+      "Netpbm Project — SourceForge"
     ],
     "WebLinks": [
       "https://netpbm.sourceforge.net/doc/ppm.html",
       "https://en.wikipedia.org/wiki/Netpbm",
-      "http://justsolve.archiveteam.org/wiki/Netpbm_formats",
-      "https://www.adobe.com/creativecloud/file-types/image/raster/ppm-file.html"
+      "https://netpbm.sourceforge.net/doc/pbm.html",
+      "https://netpbm.sourceforge.net/doc/pgm.html"
     ]
   },
   "detection": {
-    "required": true,
-    "validation": {
-      "minFileSize": 2,
-      "maxSignatureOffset": 1024
-    },
     "signatures": [
-      {
-        "value": "5033",
-        "offset": 0,
-        "label": "PPM magic",
-        "weight": 1.0
-      }
+      { "value": "5036", "offset": 0, "label": "P6 — PPM binary RGB (most common variant)", "weight": 0.8 },
+      { "value": "5035", "offset": 0, "label": "P5 — PGM binary grayscale", "weight": 0.7 },
+      { "value": "5034", "offset": 0, "label": "P4 — PBM binary 1-bit", "weight": 0.7 },
+      { "value": "5033", "offset": 0, "label": "P3 — PPM ASCII RGB text", "weight": 0.6 }
     ],
     "matchMode": "any",
-    "MinimumScore": 1.0,
-    "Strength": "Medium"
-  },
-  "functions": {
-    "extractASCIIString": "Extract width, height, maxval from ASCII header"
+    "MinimumScore": 0.4,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 1.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 7,
+      "maxSignatureOffset": 0,
+      "note": "First byte must be 0x50 ('P') and second byte must be ASCII '1' through '7' (0x31-0x37)."
+    }
   },
   "variables": {
-    "magicNumber": "",
-    "ppmMagic": 0,
-    "header": ""
+    "pnmMagic": "",
+    "firstByte": 0,
+    "secondByte": 0,
+    "formatVariant": ""
   },
   "blocks": [
     {
-      "type": "signature",
-      "name": "PPM Magic",
+      "type": "field",
+      "name": "PNM Magic",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "P3 or P6 magic number",
-      "storeAs": "ppmMagic",
-      "valueType": "uint16"
+      "opacity": 0.45,
+      "description": "2-byte ASCII magic string identifying the Netpbm format variant: P1=PBM ASCII (1-bit), P2=PGM ASCII (grayscale text), P3=PPM ASCII (RGB text), P4=PBM binary (1-bit packed), P5=PGM binary (8/16-bit grayscale), P6=PPM binary (8/16-bit RGB), P7=PAM (Portable Arbitrary Map with TUPLTYPE). Both bytes must be printable ASCII; format is identified entirely by the two-character magic.",
+      "storeAs": "pnmMagic",
+      "valueType": "ascii",
+      "valueMap": {
+        "P1": "PBM ASCII — 1-bit black/white text",
+        "P2": "PGM ASCII — grayscale text",
+        "P3": "PPM ASCII — RGB color text",
+        "P4": "PBM binary — 1-bit packed",
+        "P5": "PGM binary — grayscale bytes",
+        "P6": "PPM binary — RGB color bytes",
+        "P7": "PAM — Portable Arbitrary Map"
+      }
     },
     {
       "type": "field",
-      "name": "Header",
-      "offset": 2,
-      "length": 32,
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "ASCII header (width, height, maxval)",
-      "storeAs": "header",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "Second byte of the two-character magic, must be an ASCII digit '1' through '7' (0x31 to 0x37). This value combined with the first 'P' byte uniquely identifies the specific Netpbm sub-format and its encoding rules for width, height, max_val, and pixel data layout.",
+      "storeAs": "secondByte",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",
-      "name": "Magic Number",
-      "variable": "magicNumber",
-      "description": "P3 (ASCII) or P6 (binary)"
+      "name": "Header Dimensions",
+      "offset": 2,
+      "description": "ASCII text header following the magic bytes. May contain comment lines (starting with '#') at any whitespace boundary. Fields: width (decimal integer), height (decimal integer), max_val (decimal integer 1-65535; absent for P1 and P4 which are always binary 0/1). Fields are separated by whitespace (space, tab, CR, LF). A single whitespace after max_val (or after height for P1/P4) terminates the header and begins pixel data."
+    },
+    {
+      "type": "metadata",
+      "name": "Pixel Data Layout",
+      "offset": 2,
+      "description": "For ASCII variants (P1-P3) pixel values are whitespace-separated decimal integers in raster scan order. For binary variants (P4-P6) pixels are packed bytes following the header. P4 packs 8 pixels per byte, high bit first, with rows padded to byte boundaries. P5 stores one byte per pixel (or two bytes big-endian for max_val > 255). P6 stores three consecutive bytes per pixel for R, G, B channels."
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "ValidFirstByte",
+      "expression": "firstByte == 80",
+      "severity": "error",
+      "message": "First byte must be 0x50 ('P'). This file does not begin with a valid Netpbm magic string."
+    },
+    {
+      "name": "ValidSecondByte",
+      "expression": "secondByte >= 49 && secondByte <= 55",
+      "severity": "error",
+      "message": "Second byte must be ASCII '1' through '7' (0x31-0x37). The Netpbm format variant cannot be determined."
+    }
   ],
-  "formatRelationships": {
-    "category": "Images",
-    "extensions": [
-      ".ppm"
-    ]
-  },
-  "MimeTypes": [
-    "image/ppm"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 57,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Netpbm Portable Pixmap (RGB color)",
-    "suggestedInspections": [
-      "Validate Portable Pixmap signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+  "navigation": {
+    "bookmarks": [
+      { "name": "Magic Bytes", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Header Data", "offset": 2, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "ppmMagic",
-    "primaryField": "header",
+    "badge": "pnmMagic",
+    "primaryField": "pnmMagic",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "Portable Pixmap",
-        "icon": "",
-        "fields": [
-          "ppmMagic",
-          "header"
-        ]
+        "title": "Format Identification",
+        "icon": "\uE71B",
+        "fields": ["pnmMagic", "firstByte", "secondByte"]
+      },
+      {
+        "title": "Image Properties",
+        "icon": "\uE8B7",
+        "fields": ["formatVariant"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "Portable Pixmap Header (JSON)",
+      "name": "PNM Header (JSON)",
       "format": "json",
-      "fields": [
-        "ppmMagic",
-        "header"
-      ]
+      "fields": ["pnmMagic", "formatVariant"]
+    },
+    {
+      "name": "PNM Summary (CSV)",
+      "format": "csv",
+      "fields": ["pnmMagic", "secondByte", "formatVariant"]
     }
   ],
-  "assertions": [
-    {
-      "name": "magic valid",
-      "expression": "ppmMagic != 0",
-      "severity": "warning",
-      "message": "PPM magic field is zero — possible detection failure"
-    }
-  ]
+  "forensic": {
+    "category": "images",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Extremely large width/height ASCII values may cause integer overflow in naive parsers",
+      "Abnormal max_val values outside 1-65535 range indicate a malformed or crafted file"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Netpbm family of simple portable image formats. Two-byte magic 'P1'-'P7' at offset 0 identifies the variant. ASCII header follows with optional '#' comment lines, then width, height, max_val. Binary pixel data begins after a single whitespace following the last header value.",
+    "suggestedInspections": [
+      "Identify format variant from 2-byte magic: P1-P3 are ASCII text, P4-P6 are binary, P7 is PAM",
+      "Parse ASCII header to extract width and height for image dimension validation",
+      "Check max_val (P2, P3, P5, P6) to determine bit depth (1-255 = 8-bit, 256-65535 = 16-bit big-endian)",
+      "For binary variants verify file size matches 2 + header_length + width * height * channels",
+      "Detect '#'-prefixed comment lines in the header which may contain metadata or embedded strings"
+    ]
+  },
+  "software": [
+    "Netpbm toolkit",
+    "ImageMagick",
+    "GIMP",
+    "ffmpeg",
+    "OpenCV",
+    "darktable",
+    "GraphicsMagick"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".ppm", ".pgm", ".pbm", ".pnm"],
+    "relatedFormats": ["PNG", "BMP", "TIFF"],
+    "note": "Simple lossless uncompressed format; PNG is the modern successor for web delivery with compression"
+  },
+  "MimeTypes": ["image/x-portable-pixmap", "image/x-portable-graymap", "image/x-portable-bitmap"],
+  "UseCases": [
+    "Unix image processing pipeline intermediate format",
+    "Computer vision and machine learning dataset images",
+    "Simple lossless reference output for codec testing",
+    "Embedded system image buffers without compression overhead"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "encoding": "text-ascii-or-binary",
+    "variants": ["P1=PBM-ASCII", "P2=PGM-ASCII", "P3=PPM-ASCII", "P4=PBM-binary", "P5=PGM-binary", "P6=PPM-binary", "P7=PAM"],
+    "maxVal": "1-65535 (16-bit when > 255, stored big-endian)",
+    "compression": "none"
+  }
 }

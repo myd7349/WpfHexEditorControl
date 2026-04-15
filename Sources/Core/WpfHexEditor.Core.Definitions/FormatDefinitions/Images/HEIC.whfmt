@@ -1,85 +1,71 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "HEIF/HEIC Image",
-  "version": "2.02",
-  "extensions": [
-    ".heic",
-    ".heif",
-    ".hif"
-  ],
-  "description": "High Efficiency Image Format (HEIF/HEIC) based on the ISO Base Media File Format (ISOBMFF/MP4). Files begin with an 'ftyp' box containing a 4-byte box size, 4-byte box type ('ftyp'), 4-byte major brand identifier, 4-byte minor version, and variable-length compatible brand list. HEIC uses HEVC (H.265) compression, providing approximately 40% better compression than JPEG at equivalent quality.",
+  "version": "1.0",
+  "extensions": [".heic", ".heif", ".hif", ".avci"],
+  "description": "HEIC/HEIF (High Efficiency Image File Format) is an ISOBMFF container for HEVC-encoded still images and image sequences, standardized as ISO 23008-12. The file begins with an ftyp box at offset 0: box_size (4 bytes, big-endian) + 'ftyp' (4 bytes, 0x66 0x74 0x79 0x70) + major_brand (4 bytes). HEIC brands: 'heic' (0x68 0x65 0x69 0x63) for HEVC single still image, 'heis' for HEVC single image with HDR, 'avci' (0x61 0x76 0x63 0x69) for AVC/H.264 still image. Compatible brands list: 'mif1', 'hevc', 'heic'. Image sequence brands: 'hevc', 'hevs'. The container holds an mdat box with compressed image data and meta/moov boxes for metadata. Exif and XMP metadata stored in iinf/iloc boxes. Apple uses HEIC for iPhone camera output (iOS 11+). Supports alpha channel, burst photography, depth maps, HDR (PQ/HLG transfer functions), wide color gamut (Display P3), and Live Photos ('qtff' compatible brand).",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "ISO/IEC 23008-12 - HEIF Container Format",
-      "ISO/IEC 14496-12 - ISO Base Media File Format",
-      "High Efficiency Image File Format (HEIF)",
-      "MPEG-H Part 12 - HEVC Image Storage"
+      "ISO/IEC 23008-12 High Efficiency Image File Format",
+      "ISO/IEC 14496-12 Base Media File Format (ISOBMFF)",
+      "ITU-T H.265 / HEVC Video Coding Standard"
     ],
     "WebLinks": [
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000525.shtml",
-      "https://www.iso.org/standard/66067.html",
+      "https://nokiatech.github.io/heif/",
       "https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format",
-      "https://nokiatech.github.io/heif/technical.html"
+      "https://github.com/strukturag/libheif",
+      "https://developer.apple.com/documentation/heif"
     ]
   },
   "detection": {
-    "signature": "66747970",
-    "offset": 4,
+    "signatures": [
+      { "value": "68656963", "offset": 8, "label": "heic — HEIC ftyp major brand at offset 8 (HEVC still image)", "weight": 1.0 },
+      { "value": "68656966", "offset": 8, "label": "heif — HEIF ftyp major brand at offset 8", "weight": 0.9 },
+      { "value": "61766369", "offset": 8, "label": "avci — AVC Image ftyp brand at offset 8 (H.264 still)", "weight": 0.8 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.8 },
     "validation": {
-      "minFileSize": 12,
-      "maxSignatureOffset": 4
+      "minFileSize": 16,
+      "maxSignatureOffset": 8,
+      "note": "Bytes 4-7 must be 'ftyp' (0x66747970). Major brand at offset 8 must be a known HEIF brand."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "ftypBoxSize": 0,
-    "ftypBoxType": "",
+    "boxSize": 0,
+    "boxType": "",
     "majorBrand": "",
     "minorVersion": 0,
-    "compatBrand1": "",
-    "compatBrand2": "",
-    "compatBrand3": "",
-    "compatBrand4": "",
-    "compatBrandsCount": 0,
-    "isHEVC": false,
-    "isMultiImage": false,
-    "brandName": "",
-    "formattedSize": ""
-  },
-  "functions": {
-    "formatFileSize(var:ftypBoxSize)": "Format the ftyp box size as a human-readable string with appropriate unit suffix",
-    "computeFromVariables((ftypBoxSize - 16) / 4, compatBrandsCount)": "Calculate the number of compatible brand entries from the remaining ftyp box size after the fixed 16-byte header"
+    "ftypValid": false
   },
   "blocks": [
     {
       "type": "field",
-      "name": "ftyp Box Size",
+      "name": "Box Size",
       "offset": 0,
       "length": 4,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Total size of the ftyp (file type) box in bytes, stored as a big-endian unsigned 32-bit integer. This includes the 4-byte size field itself, the 4-byte type field, 4-byte major brand, 4-byte minor version, and all compatible brand entries. A typical HEIC ftyp box is 20-40 bytes.",
-      "storeAs": "ftypBoxSize",
-      "valueType": "uint32",
-      "endianness": "big"
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte big-endian unsigned integer specifying the total byte size of the ftyp box including this 4-byte size field. For a standard ftyp box the size is typically 20-28 bytes depending on the number of compatible brand entries listed. A value of 0 means the box extends to end of file; a value of 1 signals a 64-bit extended size follows.",
+      "storeAs": "boxSize",
+      "valueType": "uint32be"
     },
     {
-      "type": "signature",
-      "name": "ftyp Box Type",
+      "type": "field",
+      "name": "Box Type",
       "offset": 4,
       "length": 4,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "ASCII box type identifier 'ftyp' (hex 66 74 79 70). The file type box must be the first box in an ISOBMFF file. It declares the file type, version, and compatibility information needed for correct parsing.",
-      "storeAs": "ftypBoxType",
-      "valueType": "ascii",
-      "validation": {
-        "expectedValue": "ftyp"
-      }
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "4-byte ASCII box type identifier. Must be 'ftyp' (0x66 0x74 0x79 0x70) for the mandatory file type box that appears at the beginning of every ISOBMFF-based container including HEIF/HEIC. The ftyp box declares the major brand and compatible brands for the file.",
+      "storeAs": "boxType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -87,228 +73,146 @@
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "4-byte ASCII major brand identifier declaring the primary format of this file. This indicates which specification is the best description of the file's contents and determines the preferred decoder/reader.",
+      "opacity": 0.35,
+      "description": "4-byte ASCII major brand code identifying the primary format of the file. Known HEIF brands: 'heic' = HEVC-encoded single still image (most common, used by iPhone), 'heis' = HEVC single image with HDR metadata, 'avci' = AVC/H.264 single still image, 'mif1' = HEIF multi-image file, 'hevc' = HEVC image sequence, 'hevs' = HEVC image sequence variant, 'msf1' = image sequence.",
       "storeAs": "majorBrand",
-      "valueType": "ascii",
-      "valueMap": {
-        "heic": "HEIC - HEVC-coded single image (most common Apple format)",
-        "heix": "HEIX - HEVC-coded image with extended features",
-        "hevc": "HEVC - HEVC-coded image sequence",
-        "hevx": "HEVX - HEVC-coded image sequence with extensions",
-        "heim": "HEIM - HEVC-coded multi-layer image",
-        "heis": "HEIS - HEVC-coded scalable image",
-        "mif1": "MIF1 - Multi-Image Framework (generic HEIF)",
-        "msf1": "MSF1 - Multi-Image Sequence Framework",
-        "avif": "AVIF - AV1 Image File Format (not HEVC)",
-        "avis": "AVIS - AV1 Image Sequence"
-      }
+      "valueType": "ascii"
     },
     {
       "type": "field",
       "name": "Minor Version",
       "offset": 12,
       "length": 4,
-      "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "Minor version of the major brand, stored as a big-endian unsigned 32-bit integer. Provides informational version numbering for the major brand specification. Typically 0 for HEIC files.",
+      "color": "#C3A6FF",
+      "opacity": 0.35,
+      "description": "4-byte big-endian minor version number of the ftyp box. Typically 0 for HEIC files. This field follows immediately after the major brand and precedes the list of compatible brands. Compatible brands extend the ftyp box until its declared size is reached.",
       "storeAs": "minorVersion",
-      "valueType": "uint32",
-      "endianness": "big"
+      "valueType": "uint32be"
     },
     {
-      "type": "field",
-      "name": "Compatible Brand 1",
+      "type": "metadata",
+      "name": "Compatible Brands List",
       "offset": 16,
-      "length": 4,
-      "color": "#FFA07A",
-      "opacity": 0.3,
-      "description": "First compatible brand entry. Each compatible brand is a 4-byte ASCII code indicating an additional specification with which this file complies. Readers supporting any listed compatible brand should be able to process the file.",
-      "storeAs": "compatBrand1",
-      "valueType": "ascii",
-      "valueMap": {
-        "heic": "HEIC - HEVC single image compatible",
-        "heix": "HEIX - HEVC extended compatible",
-        "hevc": "HEVC - HEVC sequence compatible",
-        "mif1": "MIF1 - Multi-Image Framework compatible",
-        "msf1": "MSF1 - Sequence Framework compatible",
-        "isom": "ISOM - ISO Base Media File Format compatible",
-        "iso2": "ISO2 - ISO Base Media v2 compatible"
-      }
-    },
-    {
-      "type": "field",
-      "name": "Compatible Brand 2",
-      "offset": 20,
-      "length": 4,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
-      "description": "Second compatible brand entry. Additional format compatibility declaration. May not be present if the ftyp box is smaller than 24 bytes.",
-      "storeAs": "compatBrand2",
-      "valueType": "ascii"
-    },
-    {
-      "type": "field",
-      "name": "Compatible Brand 3",
-      "offset": 24,
-      "length": 4,
-      "color": "#B8B8FF",
-      "opacity": 0.3,
-      "description": "Third compatible brand entry. Additional format compatibility declaration. May not be present if the ftyp box is smaller than 28 bytes.",
-      "storeAs": "compatBrand3",
-      "valueType": "ascii"
-    },
-    {
-      "type": "field",
-      "name": "Compatible Brand 4",
-      "offset": 28,
-      "length": 4,
-      "color": "#FF6B9D",
-      "opacity": 0.3,
-      "description": "Fourth compatible brand entry. Additional format compatibility declaration. May not be present if the ftyp box is smaller than 32 bytes.",
-      "storeAs": "compatBrand4",
-      "valueType": "ascii"
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Compatible Brands Count",
-      "expression": "(ftypBoxSize - 16) / 4",
-      "storeAs": "compatBrandsCount",
-      "description": "Calculates the number of compatible brand entries by subtracting the fixed 16-byte ftyp header (size + type + major brand + minor version) from the total box size and dividing by 4 bytes per brand."
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "HEVC Codec Detection",
-      "expression": "majorBrand == 'heic' || majorBrand == 'heix' || majorBrand == 'hevc' || majorBrand == 'hevx' || majorBrand == 'heim' || majorBrand == 'heis'",
-      "storeAs": "isHEVC",
-      "description": "Determines whether the file uses HEVC (H.265) codec based on the major brand. HEVC brands start with 'he' while AV1-based formats use 'av' prefixed brands."
-    },
-    {
-      "type": "conditional",
-      "name": "HEVC Codec Check",
-      "condition": "majorBrand == 'heic' || majorBrand == 'heix' || majorBrand == 'hevc' || majorBrand == 'hevx'",
-      "trueLabel": "This file uses HEVC (H.265) codec for image compression",
-      "falseLabel": "This file may use an alternative codec (AV1 for AVIF, or other HEIF-compatible codec)",
-      "description": "Checks whether the major brand indicates HEVC-based encoding, which is the standard codec for Apple HEIC files."
-    },
-    {
-      "type": "conditional",
-      "name": "Multi-Image Format Check",
-      "condition": "majorBrand == 'mif1' || majorBrand == 'msf1'",
-      "trueLabel": "This is a generic HEIF multi-image container (not Apple-specific HEIC)",
-      "falseLabel": "This file uses a brand-specific HEIF variant",
-      "description": "Checks whether the file uses the generic Multi-Image Framework brand rather than a codec-specific brand, indicating a more generic HEIF container."
+      "description": "List of 4-byte ASCII brand codes specifying all format specifications the file conforms to, beyond the major brand. Common entries for HEIC: 'mif1' (multi-image file), 'hevc', 'heic'. Live Photo files include 'qtff' for QuickTime compatibility. Apple ProRAW files may include 'dng ' brand. Each brand is 4 bytes with no separators; count = (box_size - 16) / 4."
     },
     {
       "type": "metadata",
-      "name": "ftyp Box Size",
-      "variable": "ftypBoxSize",
-      "description": "Total size of the ftyp box in bytes including the size and type fields"
-    },
-    {
-      "type": "metadata",
-      "name": "Major Brand",
-      "variable": "majorBrand",
-      "description": "Primary brand identifier (heic, heix, hevc, mif1, etc.) declaring the file's primary format"
-    },
-    {
-      "type": "metadata",
-      "name": "Minor Version",
-      "variable": "minorVersion",
-      "description": "Minor version number of the major brand specification"
-    },
-    {
-      "type": "metadata",
-      "name": "Compatible Brands Count",
-      "variable": "compatBrandsCount",
-      "description": "Number of compatible brand entries in the ftyp box"
-    },
-    {
-      "type": "metadata",
-      "name": "Uses HEVC Codec",
-      "variable": "isHEVC",
-      "description": "Whether the file uses HEVC (H.265) compression based on the major brand"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Box Size",
-      "variable": "formattedSize",
-      "description": "Human-readable formatted size of the ftyp box"
+      "name": "HEIF Container Boxes",
+      "offset": 0,
+      "description": "After the ftyp box, HEIF files contain: meta box (item location 'iloc', item info 'iinf', item reference 'iref', item properties 'iprp') for metadata and image item declarations; mdat box with compressed HEVC image bitstream data; optionally idat box for small inline image data. Exif metadata is referenced via iinf and fetched by iloc. XMP stored similarly as an additional item."
     }
   ],
-  "software": [
-    "Apple Photos",
-    "iOS devices",
-    "macOS Preview",
-    "Image viewers with HEIF support"
+  "assertions": [
+    {
+      "name": "ValidBoxType",
+      "expression": "boxType == 'ftyp'",
+      "severity": "error",
+      "message": "Bytes 4-7 must be 'ftyp'. This file does not begin with an ISOBMFF ftyp box as required for HEIF/HEIC format."
+    },
+    {
+      "name": "ValidMajorBrand",
+      "expression": "majorBrand == 'heic' || majorBrand == 'heif' || majorBrand == 'avci' || majorBrand == 'heis' || majorBrand == 'mif1'",
+      "severity": "warning",
+      "message": "Major brand is not a recognized HEIF/HEIC brand. File may be a different ISOBMFF-based format."
+    },
+    {
+      "name": "ValidBoxSize",
+      "expression": "boxSize > 16",
+      "severity": "error",
+      "message": "ftyp box size must be greater than 16 bytes to accommodate the mandatory header fields. File may be corrupt."
+    }
   ],
-  "formatRelationships": {
-    "based_on": "ISO Base Media File Format (ISOBMFF/ISO 14496-12)",
-    "apple_default": "iOS 11+",
-    "replaces": "JPEG on Apple",
-    "better_than": "JPEG (40% smaller at equivalent quality)",
-    "related": [
-      "AVIF",
-      "MP4",
-      "MOV"
+  "navigation": {
+    "bookmarks": [
+      { "name": "ftyp Box", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Major Brand", "offset": 8, "icon": "\uE946", "color": "#4ECDC4" },
+      { "name": "Compatible Brands", "offset": 16, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
-  "MimeTypes": [
-    "image/heic",
-    "image/heif"
+  "inspector": {
+    "badge": "majorBrand",
+    "primaryField": "majorBrand",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ftyp Box",
+        "icon": "\uE71B",
+        "fields": ["boxSize", "boxType", "majorBrand", "minorVersion"]
+      },
+      {
+        "title": "Format Flags",
+        "icon": "\uE946",
+        "fields": ["ftypValid"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "HEIC ftyp (JSON)",
+      "format": "json",
+      "fields": ["boxSize", "boxType", "majorBrand", "minorVersion"]
+    },
+    {
+      "name": "HEIC Brands (CSV)",
+      "format": "csv",
+      "fields": ["majorBrand", "minorVersion", "boxSize"]
+    }
   ],
-  "Software": [
-    "iOS Photos",
-    "macOS Preview",
-    "CopyTrans HEIC",
-    "Windows 10+"
+  "forensic": {
+    "category": "images",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "ftyp box size exceeding actual file size may indicate a corrupted or crafted header",
+      "Unknown major brand in ISOBMFF container may indicate misidentified format or custom variant",
+      "Missing mdat or idat box in container structure indicates an incomplete or truncated file"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "HEIF/HEIC uses an ISOBMFF container (ISO 14496-12). The ftyp box at offset 0 contains a 4-byte big-endian size, 'ftyp' type, major brand at offset 8, minor version at offset 12, then compatible brands. Primary brands: heic, heif, avci.",
+    "suggestedInspections": [
+      "Verify 'ftyp' at offset 4 and check major brand at offset 8 for heic/heif/avci identification",
+      "Enumerate compatible brands from offset 16 to (offset + boxSize) to check for Live Photo 'qtff' brand",
+      "Locate the meta box after the ftyp box to access item location (iloc) and item info (iinf) tables",
+      "Find the mdat box containing the compressed HEVC image bitstream data",
+      "Check for Exif and XMP items referenced by iinf entries for photography metadata extraction"
+    ]
+  },
+  "software": [
+    "Apple Photos (iOS 11+, macOS 10.13+)",
+    "libheif (strukturag)",
+    "ImageMagick 7+",
+    "FFmpeg",
+    "GIMP 2.10+",
+    "Photoshop CC 2017+"
   ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".heic", ".heif", ".hif", ".avci"],
+    "relatedFormats": ["AVIF", "JXL", "JPEG", "MP4"],
+    "note": "HEIC uses HEVC compression in ISOBMFF; AVIF uses AV1 codec in the same ISOBMFF container model"
+  },
+  "MimeTypes": ["image/heic", "image/heif", "image/heic-sequence"],
   "UseCases": [
-    "iPhone photos",
-    "Modern compression",
-    "Space-saving images"
+    "iPhone camera output (iOS 11+ default format)",
+    "Apple Live Photos and burst photography storage",
+    "HDR photography with PQ/HLG transfer function metadata",
+    "Space-efficient image archiving with 2x better compression than JPEG"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
-    "DocumentationLevel": "comprehensive",
-    "BlocksDefined": 18,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-02-24",
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": true,
     "AutoRefined": false
   },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "High Efficiency Image Format (HEIF/HEIC) based on the ISO Base Media File Format (ISOBMFF/MP4). Files begin ...",
-    "suggestedInspections": [
-      "Validate HEIF/HEIC Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
-    ]
-  },
-  "navigation": {
-    "bookmarks": [
-      {
-        "name": "ftyp Box",
-        "offsetVar": "currentOffset",
-        "icon": ""
-      }
-    ]
-  },
   "TechnicalDetails": {
-    "ImagesFormat": true,
-    "Endianness": "big-endian (network byte order)",
-    "CompressionMethod": "HEVC (H.265) or AV1",
-    "ContainerFormat": "ISOBMFF (ISO Base Media File Format)",
-    "BoxBasedFormat": true,
-    "SupportsTransparency": true,
-    "SupportsAnimation": true,
-    "SupportsMultipleImages": true,
-    "LossyCompression": true,
-    "HDRSupport": true
+    "standard": "ISO/IEC 23008-12",
+    "container": "ISOBMFF (ISO/IEC 14496-12)",
+    "compression": "HEVC (H.265) for heic; AVC (H.264) for avci",
+    "colorSpaces": ["sRGB", "Display P3", "Rec.2020"],
+    "hdrTransferFunctions": ["PQ (SMPTE ST 2084)", "HLG (ARIB STD-B67)"],
+    "features": ["alpha", "depth-map", "burst", "live-photo", "HDR", "wide-gamut"]
   }
 }

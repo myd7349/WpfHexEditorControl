@@ -1,0 +1,186 @@
+{
+  "diffMode": "binary",
+  "formatName": "Saturn Internal Save",
+  "version": "1.0",
+  "extensions": [".bkr", ".bcr", ".ss"],
+  "description": "Sega Saturn internal backup RAM save file. The Saturn stores game saves in the internal backup RAM (BB RAM chip: Seiko S-MOS Systems, 32 KB total, divided into 256 blocks of 128 bytes). Each save directory entry occupies 64 bytes: save_id (11 bytes ASCII, game-specific identifier padded with spaces e.g. 'POWERSLAVE  '), language_code (1 byte: 0=Japanese, 1=English, 2=French, 3=German, 4=Spanish, 5=Italian), comment (10 bytes ASCII, user-visible note), date (4 bytes BCD-encoded date/time), data_size (4 bytes BE: save data size in blocks), block_size (2 bytes BE: fixed 64), start_block (2 bytes BE: block index of first data block). External backup RAM cartridge: 512 KB or 1 MB versions, same format but more blocks. BUP file format (backup file exported to PC) includes an additional header. Japanese Saturn models have 1 MB internal RAM vs 512 KB for US/EU.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Sega Saturn Internal Backup RAM File System Specification",
+      "Saturn BIOS Backup RAM API Documentation",
+      "Saturn Hardware Manual (Sega of Japan)"
+    ],
+    "WebLinks": [
+      "https://segaretro.org/Saturn_save_file",
+      "https://en.wikipedia.org/wiki/Sega_Saturn",
+      "https://www.retrodev.com/ros/saturnhw.html",
+      "https://segaxtreme.net/"
+    ]
+  },
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 64,
+      "maxSignatureOffset": 0,
+      "note": "Saturn save files have no magic. Detection is by extension (.bkr, .bcr) and directory entry structure at offset 0. A valid save has a non-empty ASCII save_id at offset 0."
+    }
+  },
+  "variables": {
+    "saveId": "",
+    "langCode": 0,
+    "comment": "",
+    "dataSize": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Save ID",
+      "offset": 0,
+      "length": 11,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "ascii",
+      "description": "11-byte ASCII game save identifier at offset 0, padded with spaces. This is the primary key used by the Saturn BIOS to associate a save file with its game. Format is game-defined: typically an uppercase ASCII abbreviation of the game title such as 'POWERSLAVE  ' or 'VIRTUA RACE '.",
+      "storeAs": "saveId"
+    },
+    {
+      "type": "field",
+      "name": "Language Code",
+      "offset": 11,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "Language code byte at offset 11: 0=Japanese, 1=English, 2=French, 3=German, 4=Spanish, 5=Italian. This field identifies the language of the save comment and is used by the Saturn BIOS file manager to display save files in the appropriate language.",
+      "storeAs": "langCode"
+    },
+    {
+      "type": "field",
+      "name": "Comment",
+      "offset": 12,
+      "length": 10,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "ascii",
+      "description": "10-byte ASCII comment at offset 12 providing a human-readable description of the save slot content, displayed in the Saturn BIOS file manager. Example: 'CLEAR DATA' or 'STAGE 5   '.",
+      "storeAs": "comment"
+    },
+    {
+      "type": "field",
+      "name": "Data Size",
+      "offset": 22,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "big",
+      "description": "Save data size in blocks (uint32 BE at offset 22). Each block is 64 bytes (block_size field). The actual payload size in bytes = data_size * 64. The Saturn BIOS allocates this many blocks in the backup RAM file allocation table.",
+      "storeAs": "dataSize"
+    },
+    {
+      "type": "metadata",
+      "name": "Save ID",
+      "variable": "saveId",
+      "description": "Game save identifier string"
+    },
+    {
+      "type": "metadata",
+      "name": "Language",
+      "variable": "langCode",
+      "description": "Language code (0=JP, 1=EN, 2=FR, ...)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Data size positive",
+      "expression": "dataSize >= 0",
+      "severity": "warning",
+      "message": "Saturn save data_size should be greater than 0"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Directory Entry", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "saveId",
+    "primaryField": "comment",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Saturn Save Directory Entry",
+        "icon": "\uE71B",
+        "fields": ["saveId", "langCode", "comment", "dataSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Saturn Save Header (JSON)",
+      "format": "json",
+      "fields": ["saveId", "langCode", "comment", "dataSize"]
+    },
+    {
+      "name": "Saturn Save Summary (CSV)",
+      "format": "csv",
+      "fields": ["saveId", "langCode", "dataSize"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Saturn save directory entry (64 bytes): saveId(11B ASCII) + langCode(1B) + comment(10B ASCII) + date(4B BCD) + dataSize(4B BE, blocks) + blockSize(2B BE=64) + startBlock(2B BE) + padding. Internal BB RAM: 32 KB total, 256 blocks x 128 bytes. Save payload follows directory entries.",
+    "suggestedInspections": [
+      "Read save_id at bytes 0-10 (11-byte ASCII, space-padded) to identify the associated game",
+      "Read language_code at byte 11: 0=Japanese, 1=English, 2=French, 3=German, 4=Spanish, 5=Italian",
+      "Read data_size at bytes 22-25 (uint32 BE): multiply by 64 for payload size in bytes",
+      "Look for BCD date at bytes 12-15 encoding year/month/day/time of last save"
+    ]
+  },
+  "software": [
+    "SSF (Sega Saturn emulator for Windows)",
+    "Yabause (cross-platform Saturn emulator)",
+    "Mednafen (accurate Saturn core)",
+    "RetroArch with Beetle Saturn core"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".bkr", ".bcr", ".ss"],
+    "relatedFormats": ["SAVE_DC_VMU", "SAVE_PS1"],
+    "note": "The Saturn backup RAM system stores directory entries and data blocks in the same 32 KB BB RAM chip. External backup cartridges (512 KB or 1 MB) extend the available block count. Japanese Saturns ship with more internal RAM than US/EU versions."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Backup and restore of Sega Saturn game save files",
+    "Transfer of saves between real hardware and emulators via backup cartridge",
+    "Editing Saturn game progress or inventory data",
+    "Preservation of Saturn game saves at risk from battery failure"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 6,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Sega Saturn",
+    "InternalRAM": "32 KB BB RAM (256 blocks x 128 bytes)",
+    "DirectoryEntry": "64 bytes per save slot",
+    "BlockSize": "64 bytes",
+    "ExternalCartridge": "512 KB or 1 MB backup RAM cartridge"
+  }
+}

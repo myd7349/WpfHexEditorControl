@@ -1,0 +1,189 @@
+{
+  "diffMode": "text",
+  "formatName": "FASTA Sequence",
+  "version": "1.0",
+  "extensions": [".fasta", ".fa", ".fna", ".faa", ".ffn", ".frn"],
+  "description": "FASTA biological sequence format (Lipman and Pearson, 1985). Each sequence begins with '>' (0x3E) + identifier + optional description on the same line, followed by sequence lines of 60-80 characters each. Multiple sequences allowed per file. Nucleotide codes: A, C, G, T, U (RNA), N (any), IUPAC ambiguity codes (R=AG, Y=CT, S=GC, W=AT, K=GT, M=AC, B=CGT, D=AGT, H=ACT, V=ACG). Protein codes: 20 amino acid letters + X (any) + * (stop codon) + - (gap). Comments: lines beginning with semicolon ';'. Wrapped typically at 60-80 characters per line. Used by BLAST, BWA, Bowtie, NCBI databases, genome assemblies (GRCh38, CHM13, T2T). FASTQ adds per-base quality scores.",
+  "category": "Science",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "FASTA format — Lipman and Pearson (1985) original publication",
+      "NCBI FASTA format documentation",
+      "IUPAC/IUB nucleotide and amino acid codes"
+    ],
+    "WebLinks": [
+      "https://blast.ncbi.nlm.nih.gov/doc/blast-topics/",
+      "https://en.wikipedia.org/wiki/FASTA_format",
+      "https://www.ncbi.nlm.nih.gov/genbank/fastaformat/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "3E",
+        "offset": 0,
+        "label": "> — FASTA sequence header delimiter at offset 0",
+        "weight": 0.8
+      },
+      {
+        "value": "3B",
+        "offset": 0,
+        "label": "; — FASTA comment line (rare, some tools)",
+        "weight": 0.3
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.4,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 1.5, "max": 4.5 },
+    "validation": {
+      "minFileSize": 2,
+      "maxSignatureOffset": 0,
+      "note": "FASTA files start with '>' or optionally ';'. Low-entropy sequences (e.g. poly-A stretches) are normal. Detection confidence should be supplemented by checking sequence content after the header line."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "seqHeader": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the FASTA file at offset 0 (1 byte, uint8). Expected value 0x3E ('>') for a standard FASTA sequence header line. Less commonly 0x3B (';') for a comment line used by some older tools such as FASTA3 and GCG. The '>' character uniquely identifies the start of a FASTA sequence definition line (defline) and serves as the primary format detection signal.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Sequence Header Start",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 8 bytes of the FASTA file (ASCII). For standard FASTA, begins with '>' followed by the sequence identifier. The defline format: '>identifier optional description' terminated by newline. For NCBI FASTA files the identifier follows GenBank format: '>gi|number|db|accession|description'. Sequence data follows on subsequent lines, wrapped at 60-80 characters per line. Case-insensitive for sequence data.",
+      "storeAs": "seqHeader",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "0x3E ('>') or 0x3B (';') — FASTA header or comment"
+    },
+    {
+      "type": "metadata",
+      "name": "Sequence Header",
+      "variable": "seqHeader",
+      "description": "First 8 bytes — FASTA defline start"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FASTA header valid",
+      "expression": "firstByte == 0x3E or firstByte == 0x3B",
+      "severity": "warning",
+      "message": "FASTA file should start with '>' (0x3E) or ';' (0x3B)"
+    },
+    {
+      "name": "Text encoding valid",
+      "expression": "seqHeader is ascii",
+      "severity": "error",
+      "message": "FASTA is an ASCII text format — binary data detected"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "First Sequence Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "seqHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "FASTA Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "seqHeader"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "FASTA Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "seqHeader"]
+    },
+    {
+      "name": "FASTA Header (Text)",
+      "format": "text",
+      "fields": ["seqHeader"]
+    }
+  ],
+  "forensic": {
+    "category": "science-data",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Unusual non-IUPAC characters in sequence lines may indicate data corruption",
+      "Very long deflines (>1000 chars) may cause buffer overflows in legacy parsers"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "FASTA: '>' starts defline (identifier + optional description, no spaces in identifier recommended). Sequence data on following lines until next '>' or EOF. Multi-FASTA: multiple records in one file separated by '>' lines. Nucleotide FASTA (.fna): A,C,G,T,U,N,R,Y,S,W,K,M,B,D,H,V,-. Protein FASTA (.faa): A,C,D,E,F,G,H,I,K,L,M,N,P,Q,R,S,T,V,W,Y,X,*,-. Empty sequences are valid. Line length: typically 60-80 chars but no standard limit.",
+    "suggestedInspections": [
+      "Byte 0: '>' (0x3E) confirms FASTA sequence file — start of defline",
+      "First line: identifier and description after '>'; look for NCBI gi|accession format",
+      "Second line: first sequence line — nucleotide (A/C/G/T) or protein (amino acid codes)",
+      "Scan for multiple '>' characters to determine number of sequences in multi-FASTA"
+    ]
+  },
+  "software": [
+    "BLAST (Basic Local Alignment Search Tool, NCBI)",
+    "BWA (Burrows-Wheeler Aligner)",
+    "Bowtie2 (short-read alignment)",
+    "SAMtools (FASTA/Q handling utilities)",
+    "Biopython (SeqIO module)",
+    "BioConductor Biostrings (R package)"
+  ],
+  "formatRelationships": {
+    "category": "Science",
+    "extensions": [".fasta", ".fa", ".fna", ".faa", ".ffn", ".frn"],
+    "relatedFormats": ["VCF_GENOMICS", "BAM", "FASTQ"],
+    "note": "FASTQ adds per-base quality scores (4 lines per sequence vs 2 in FASTA). FASTA is used for reference genomes; FASTQ for sequencing reads. The .fna extension is used for nucleotide sequences, .faa for amino acid sequences."
+  },
+  "MimeTypes": [
+    "application/x-fasta",
+    "text/x-fasta"
+  ],
+  "UseCases": [
+    "Reference genome sequences (GRCh38, CHM13, NCBI RefSeq)",
+    "BLAST database input and query sequences",
+    "Multiple sequence alignment input (MUSCLE, MAFFT, Clustal)",
+    "AlphaFold2 and ESMFold protein structure prediction input",
+    "De novo genome assembly output (contigs and scaffolds)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Plain ASCII text — '>' deflines + sequence lines",
+    "Magic": "'>' (0x3E) at offset 0 for standard FASTA",
+    "Standard": "No formal standard — NCBI BLAST format is the de-facto reference",
+    "Endianness": "N/A (ASCII text)",
+    "LineWidth": "60-80 characters per sequence line (recommended, not enforced)"
+  }
+}

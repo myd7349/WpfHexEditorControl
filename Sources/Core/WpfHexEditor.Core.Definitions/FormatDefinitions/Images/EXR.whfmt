@@ -1,52 +1,49 @@
 {
   "diffMode": "binary",
   "formatName": "OpenEXR Image",
-  "version": "1.16",
-  "extensions": [
-    ".exr"
-  ],
-  "description": "OpenEXR High Dynamic Range image format",
+  "version": "1.0",
+  "extensions": [".exr"],
+  "description": "OpenEXR HDR image format developed by Industrial Light & Magic (ILM) in 2002. Magic: 76 2F 31 01 (little-endian 0x01312F76). Version word: 4 bytes LE — lower 8 bits = file format version (2), bit 9 = single tile, bit 10 = long names, bit 11 = deep data. Header: null-terminated attribute list with name, type, size, and value. Required attributes include channels (chlist), compression (uint8: 0=None,1=RLE,2=ZIPS,3=ZIP,4=PIZ,5=PXR24,6=B44,7=B44A,8=DWAA,9=DWAB), dataWindow (box2i), displayWindow (box2i), lineOrder, pixelAspectRatio, screenWindowCenter, and screenWindowWidth. Pixel types: UINT (0), HALF (1, 16-bit IEEE 754), FLOAT (2, 32-bit IEEE 754). Supports multi-part files, deep data, tiled images, and scanline images. Industry standard for VFX, animation, and HDR photography.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
   "references": {
     "specifications": [
-      "OpenEXR Format Specification - ILM",
-      "OpenEXR HDR Image File Format",
-      "Academy Software Foundation OpenEXR"
+      "OpenEXR Format Specification — Academy Software Foundation",
+      "ILM OpenEXR Technical Introduction",
+      "ISO/IEC 23001-17 (HEIF HDR)"
     ],
     "WebLinks": [
       "https://www.openexr.com/",
       "https://github.com/AcademySoftwareFoundation/openexr",
-      "https://developer.nvidia.com/gpugems/gpugems/part-iv-image-processing/chapter-26-openexr-image-file-format",
-      "https://en.wikipedia.org/wiki/OpenEXR"
+      "https://en.wikipedia.org/wiki/OpenEXR",
+      "https://openexr.com/en/latest/OpenEXRFileLayout.html"
     ]
   },
   "detection": {
-    "required": true,
-    "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 1024
-    },
     "signatures": [
-      {
-        "value": "762F3101",
-        "offset": 0,
-        "label": "EXR magic",
-        "weight": 1.0
-      }
+      { "value": "762F3101", "offset": 0, "label": "OpenEXR magic — 0x01312F76 little-endian at offset 0", "weight": 1.0 }
     ],
     "matchMode": "any",
-    "MinimumScore": 1.0,
-    "Strength": "Strong"
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.8 },
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "Magic 0x01312F76 must be at offset 0. Lower byte of version word must equal 2."
+    }
   },
   "variables": {
-    "width": 0,
-    "height": 0,
-    "totalPixels": 0,
-    "bitsPerPixel": 0,
     "exrMagic": "",
-    "version": ""
+    "exrVersion": 0,
+    "versionNumber": 0,
+    "flags": 0,
+    "isTiled": false,
+    "longNames": false,
+    "deepData": false,
+    "multiPart": false
   },
   "blocks": [
     {
@@ -55,130 +52,188 @@
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "OpenEXR magic number",
+      "opacity": 0.45,
+      "description": "4-byte magic constant 0x01312F76 stored little-endian (bytes: 76 2F 31 01) at the absolute start of every OpenEXR file. This value is unique and provides high-confidence format identification without false positives on other HDR formats.",
       "storeAs": "exrMagic",
-      "valueType": "uint32",
-      "endianness": "big"
+      "valueType": "hex"
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "Version Word",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Version and flags",
-      "storeAs": "version",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "32-bit little-endian version word. The lower 8 bits encode the file format version (must be 2 for all current OpenEXR files). Upper bits encode capability flags: bit 9 = single-tile image, bit 10 = long attribute/channel names (> 31 characters), bit 11 = deep data (per-pixel sample arrays), bit 12 = multi-part file.",
+      "storeAs": "exrVersion",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Format Version Number",
+      "offset": 4,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Lower 8 bits of the version word specifying the OpenEXR file format version. Must equal 2 for all compliant OpenEXR files; value 1 was used in pre-release software and is no longer produced.",
+      "storeAs": "versionNumber",
+      "valueType": "uint8",
+      "valueMap": { "2": "OpenEXR file format version 2" }
+    },
+    {
+      "type": "field",
+      "name": "Capability Flags",
+      "offset": 5,
+      "length": 1,
+      "color": "#C3A6FF",
+      "opacity": 0.35,
+      "description": "Upper bits of the version word encoding capability flags that indicate which optional features the file uses. Bit 1 = isTiled (single tile image), bit 2 = longNames (attribute names > 31 chars), bit 3 = deepData (deep scanline or deep tile data), bit 4 = multiPart (multi-part container). Readers must check these flags to allocate appropriate parsers.",
+      "storeAs": "flags",
+      "valueType": "uint8",
+      "bitfields": [
+        { "name": "isTiled", "bit": 1 },
+        { "name": "longNames", "bit": 2 },
+        { "name": "deepData", "bit": 3 },
+        { "name": "multiPart", "bit": 4 }
+      ]
     },
     {
       "type": "metadata",
-      "name": "Width",
-      "variable": "width",
-      "description": "Width"
+      "name": "Attribute List Start",
+      "offset": 8,
+      "description": "Start of the null-terminated attribute list that forms the image header. Each attribute: null-terminated name + null-terminated type string + 4-byte LE size + value bytes. Header terminates with a zero-length name (single 0x00 byte). Required attributes: channels, compression, dataWindow, displayWindow, lineOrder, pixelAspectRatio, screenWindowCenter, screenWindowWidth."
     },
     {
       "type": "metadata",
-      "name": "Height",
-      "variable": "height",
-      "description": "Height"
+      "name": "Compression Type Reference",
+      "offset": 8,
+      "description": "The compression attribute (type uint8 inside the attribute list) encodes the algorithm: 0=None, 1=RLE, 2=ZIPS (single scanline ZIP), 3=ZIP (16 scanlines), 4=PIZ (wavelet), 5=PXR24 (Pixar lossy), 6=B44 (fixed-rate), 7=B44A (adaptive), 8=DWAA (DreamWorks lossy per scanline), 9=DWAB (DreamWorks lossy per 256 scanlines)."
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Total Pixels"
+      "name": "Pixel Format Reference",
+      "offset": 8,
+      "description": "Channel pixel types encoded in the chlist attribute: UINT (0) = 32-bit unsigned integer, HALF (1) = 16-bit IEEE 754 half-precision float used for most HDR channels, FLOAT (2) = 32-bit IEEE 754 single-precision float for depth and special-purpose channels."
+    },
+    {
+      "type": "metadata",
+      "name": "Data Layout",
+      "offset": 8,
+      "description": "Scanline images store rows top-to-bottom (INCREASING_Y=0) or bottom-to-top (DECREASING_Y=1); tiled images use RANDOM_Y=2. Tile images have a tiledesc attribute (xSize, ySize, mode: 0=single level, 1=mip-map, 2=rip-map). Multi-part files repeat the per-part header for each part terminated by an empty string."
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "ValidMagic",
+      "expression": "exrMagic == '762F3101'",
+      "severity": "error",
+      "message": "OpenEXR magic 0x01312F76 not found at offset 0. This is not a valid OpenEXR file."
+    },
+    {
+      "name": "ValidVersion",
+      "expression": "versionNumber == 2",
+      "severity": "error",
+      "message": "OpenEXR format version must be 2. Found an unexpected version byte indicating a non-standard or corrupt file."
+    },
+    {
+      "name": "ValidFlagBits",
+      "expression": "flags <= 31",
+      "severity": "warning",
+      "message": "OpenEXR flags byte has unknown capability bits set. File may require a newer reader that supports undocumented features."
+    }
   ],
-  "formatRelationships": {
-    "category": "Images",
-    "extensions": [
-      ".exr"
+  "navigation": {
+    "bookmarks": [
+      { "name": "EXR Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Version & Flags", "offset": 4, "icon": "\uE946", "color": "#4ECDC4" },
+      { "name": "Attribute List", "offset": 8, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
-  },
-  "MimeTypes": [
-    "image/exr"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 57,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "OpenEXR High Dynamic Range image format",
-    "suggestedInspections": [
-      "Validate OpenEXR Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
-    ]
-  },
-  "functions": {
-    "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "inspector": {
     "badge": "exrMagic",
-    "primaryField": "version",
+    "primaryField": "versionNumber",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "OpenEXR Image",
-        "icon": "",
-        "fields": [
-          "exrMagic",
-          "version"
-        ]
+        "title": "File Identification",
+        "icon": "\uE71B",
+        "fields": ["exrMagic", "exrVersion", "versionNumber"]
+      },
+      {
+        "title": "Capability Flags",
+        "icon": "\uE946",
+        "fields": ["flags", "isTiled", "longNames", "deepData", "multiPart"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "OpenEXR Image Header (JSON)",
+      "name": "EXR Header (JSON)",
       "format": "json",
-      "fields": [
-        "exrMagic",
-        "version"
-      ]
+      "fields": ["exrMagic", "versionNumber", "flags", "isTiled", "deepData", "multiPart"]
+    },
+    {
+      "name": "EXR Summary (CSV)",
+      "format": "csv",
+      "fields": ["versionNumber", "flags", "isTiled", "longNames", "deepData", "multiPart"]
     }
   ],
-  "assertions": [
-    {
-      "name": "magic valid",
-      "expression": "exrMagic != 0",
-      "severity": "warning",
-      "message": "EXR magic field is zero — possible detection failure"
-    }
-  ]
+  "forensic": {
+    "category": "images",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Flags byte with unknown bits set may indicate crafted or malformed file",
+      "Extremely large dataWindow or displayWindow values may indicate memory exhaustion attack"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "OpenEXR HDR image with 4-byte magic 0x01312F76 at offset 0, followed by 4-byte version word. Lower 8 bits of version word must be 2. Attribute list starts at offset 8 as null-terminated key/type/size/value tuples.",
+    "suggestedInspections": [
+      "Verify magic bytes 76 2F 31 01 at offset 0 for primary format identification",
+      "Check version byte at offset 4 equals 2; flag bits at offset 5 identify tiled, deep data, and multi-part capabilities",
+      "Parse attribute list starting at offset 8 to extract compression type, channel definitions, and data/display windows",
+      "Cross-reference declared dataWindow dimensions with actual file size to detect truncation or corruption",
+      "Inspect channel pixel types (HALF vs FLOAT vs UINT) to understand HDR precision and expected color space"
+    ]
+  },
+  "software": [
+    "Nuke (Foundry)",
+    "Houdini (SideFX)",
+    "Blender",
+    "Maya",
+    "3ds Max",
+    "Photoshop (with plugin)",
+    "OpenImageIO",
+    "darktable"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".exr"],
+    "relatedFormats": ["HDR", "TIFF", "DPX", "JXL"],
+    "note": "Primary HDR container for VFX pipelines; HALF pixel type closely related to IEEE 754 binary16"
+  },
+  "MimeTypes": ["image/x-exr", "image/openexr"],
+  "UseCases": [
+    "Visual effects compositing (multi-layer AOV passes)",
+    "HDR photography and image-based lighting (IBL)",
+    "PBR rendering output (albedo, normals, roughness layers)",
+    "Scientific and medical imaging with floating-point precision"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "encoding": "binary-little-endian",
+    "magicValue": "0x01312F76",
+    "headerSize": 8,
+    "attributeListOffset": 8,
+    "pixelTypes": ["UINT=0", "HALF=1 (16-bit float)", "FLOAT=2 (32-bit float)"],
+    "compressionTypes": ["None=0", "RLE=1", "ZIPS=2", "ZIP=3", "PIZ=4", "PXR24=5", "B44=6", "B44A=7", "DWAA=8", "DWAB=9"]
+  }
 }

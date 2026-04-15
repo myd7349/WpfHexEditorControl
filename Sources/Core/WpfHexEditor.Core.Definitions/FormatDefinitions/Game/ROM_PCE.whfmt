@@ -1,66 +1,89 @@
 {
   "diffMode": "binary",
-  "formatName": "PC Engine/TurboGrafx-16 ROM",
-  "version": "2.43",
-  "extensions": [
-    ".pce",
-    ".sgx"
-  ],
-  "description": "PC Engine / TurboGrafx-16 HuCard ROM format (no standard header)",
+  "formatName": "PC Engine / TurboGrafx-16 ROM",
+  "version": "1.0",
+  "extensions": [".pce"],
+  "description": "PC Engine (Japan) / TurboGrafx-16 (US) cartridge ROM (NEC/Hudson Soft, 1987). No fixed magic — raw binary HuC6280 CPU code. Some dumps include a 512-byte copier header with magic 0x40 0x00 0x00 0x00 at offset 0. Header-less ROMs begin directly with CPU code. ROM sizes range from 512 KB (Hu-card) to 2.5 MB (Super CD-ROM). Sector 0 of CD-ROM images: first 2048 bytes. Detection is primarily extension-based. Common first opcode: SEI (0x78), CLD, or JMP absolute (0x4C) for the reset vector.",
   "category": "Game",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "PC Engine / TurboGrafx-16 HuCard Format",
       "HuCard ROM Cartridge Specification",
-      "PC Engine Architecture Documentation"
+      "PC Engine Architecture Documentation",
+      "HuC6280 CPU Reference Manual"
     ],
     "WebLinks": [
       "https://www.copetti.org/writings/consoles/pc-engine/",
       "https://en.wikipedia.org/wiki/HuCard",
-      "https://cc65.github.io/doc/pce.html",
-      "https://wiki.batocera.org/systems:pcengine"
+      "https://wiki.batocera.org/systems:pcengine",
+      "https://pcedev.blockos.org/"
     ]
   },
   "detection": {
-    "offset": 0,
-    "required": false,
-    "validation": {
-      "minFileSize": 1,
-      "maxSignatureOffset": 1024
-    },
     "signatures": [
       {
-        "value": "00",
+        "value": "40000000",
         "offset": 0,
-        "label": "Raw ROM data (PC Engine HuCard — no standard file header)",
-        "weight": 1.0
+        "label": "PC Engine copier header magic at offset 0 (0x40 0x00 0x00 0x00)",
+        "weight": 0.5
+      },
+      {
+        "value": "78",
+        "offset": 0,
+        "label": "0x78 SEI — common first opcode in PC Engine ROMs without copier header",
+        "weight": 0.2
       }
     ],
     "matchMode": "any",
-    "MinimumScore": 0.3,
-    "Strength": "Weak"
+    "MinimumScore": 0.1,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 512,
+      "maxSignatureOffset": 4,
+      "note": "PCE ROMs have no guaranteed magic. Detection is primarily extension-based (.pce). Copier-headered dumps start with 0x40 0x00 0x00 0x00; raw dumps begin with CPU opcodes."
+    }
   },
   "variables": {
-    "currentOffset": 0,
-    "machineType": "",
-    "sectionCount": 0,
-    "entryPoint": 0,
-    "resetVectorEntry": 0,
+    "firstByte": 0,
+    "secondByte": 0,
+    "copierMagic": "",
     "romBank0": ""
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Reset Vector / Entry",
+      "name": "First Byte",
       "offset": 0,
-      "length": 2,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "uint8",
+      "description": "First byte of the PC Engine ROM image. For copier-headered dumps this is 0x40; for raw cartridge images this is typically a 6502-family opcode such as SEI (0x78) or JMP (0x4C) targeting the reset vector entry point.",
+      "storeAs": "firstByte"
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "uint16",
-      "description": "CPU start address (little-endian)",
-      "storeAs": "resetVectorEntry"
+      "valueType": "uint8",
+      "description": "Second byte of the ROM image. Together with the first byte this helps identify whether a 512-byte copier header (0x40 0x00 ...) is present or whether the image is a headerless HuCard dump beginning with CPU code.",
+      "storeAs": "secondByte"
+    },
+    {
+      "type": "field",
+      "name": "Copier Header Magic",
+      "offset": 0,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "valueType": "bytes",
+      "description": "4-byte copier header magic (0x40 0x00 0x00 0x00) present on ROMs dumped with a PC Engine copier device. If these bytes are not present the dump is headerless and CPU code starts at offset 0.",
+      "storeAs": "copierMagic"
     },
     {
       "type": "field",
@@ -70,100 +93,112 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "First 8KB ROM bank (Bank 0)",
+      "description": "First 8 KB bank of the PC Engine ROM cartridge. HuCard ROMs are banked in 8 KB pages mapped into the HuC6280 address space via the Memory-Paging Register (MPR). Bank 0 typically contains the reset vector and initial game code.",
       "storeAs": "romBank0"
     },
     {
       "type": "metadata",
-      "name": "Machine",
-      "variable": "machineType",
-      "description": "Machine"
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First byte of the ROM image (opcode or copier magic)"
     },
     {
       "type": "metadata",
-      "name": "Sections",
-      "variable": "sectionCount",
-      "description": "Sections"
+      "name": "ROM Bank 0",
+      "variable": "romBank0",
+      "description": "First 8 KB ROM bank"
     }
   ],
-  "software": [
-    "Emulators",
-    "Game engines"
+  "assertions": [
+    {
+      "name": "Minimum ROM size",
+      "expression": "fileSize >= 512",
+      "severity": "warning",
+      "message": "PC Engine ROMs should be at least 512 bytes (smallest valid HuCard image)"
+    }
   ],
-  "formatRelationships": {
-    "category": "Game",
-    "extensions": [
-      ".pce",
-      ".sgx"
+  "navigation": {
+    "bookmarks": [
+      { "name": "ROM Start / Copier Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ROM Bank 0", "offset": 0, "icon": "\uE71B", "color": "#95E1D3" }
     ]
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Emulator",
-    "ROM Manager",
-    "RetroArch",
-    "Hex Editor",
-    "Game Debugger"
-  ],
-  "UseCases": [
-    "Gaming",
-    "ROM hacking",
-    "Emulation",
-    "Preservation"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 50,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 4,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "romBank0",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PC Engine ROM Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "secondByte", "copierMagic"]
+      },
+      {
+        "title": "ROM Data",
+        "icon": "\uE71B",
+        "fields": ["romBank0"]
+      }
+    ]
   },
-  "TechnicalDetails": {
-    "Platform": "PC Engine"
-  },
-  "functions": {
-    "readUInt32LE": "Read executable header"
-  },
+  "exportTemplates": [
+    {
+      "name": "PCE ROM Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "secondByte", "copierMagic"]
+    },
+    {
+      "name": "PCE ROM Info (CSV)",
+      "format": "csv",
+      "fields": ["firstByte", "secondByte"]
+    }
+  ],
   "forensic": {
     "category": "game",
     "riskLevel": "low",
     "suspiciousPatterns": []
   },
   "aiHints": {
-    "analysisContext": "PC Engine / TurboGrafx-16 HuCard ROM format (no standard header)",
+    "analysisContext": "PC Engine / TurboGrafx-16 HuCard ROM. No standard magic. Copier-headered dumps start with 0x40 0x00 0x00 0x00 (512-byte copier header follows). Headerless dumps begin directly with HuC6280 CPU opcodes. ROM is banked in 8 KB pages via the MPR register. Sizes: 512 KB to 2.5 MB.",
     "suggestedInspections": [
-      "Validate PC Engine/TurboGrafx-16 ROM container magic and version header",
-      "Check resource/asset table entries and data block offsets",
-      "Inspect compression flags, checksums, and embedded file boundaries"
+      "Check bytes 0-3 for copier header magic 0x40 0x00 0x00 0x00 — if present, real ROM starts at offset 512",
+      "Inspect first opcode: SEI (0x78), CLD (0xD8), or JMP (0x4C) indicate valid CPU code entry point",
+      "Verify file size is a power-of-2 multiple of 8 KB (typical HuCard bank granularity)",
+      "For CD-ROM images confirm 2048-byte sector alignment and look for ISO 9660 structures"
     ]
   },
-  "inspector": {
-    "badge": "resetVectorEntry",
-    "primaryField": "romBank0",
-    "showQualityScore": true,
-    "groups": [
-      {
-        "title": "PC Engine/TurboGrafx-16 ROM",
-        "icon": "",
-        "fields": [
-          "resetVectorEntry",
-          "romBank0"
-        ]
-      }
-    ]
+  "software": [
+    "Mednafen (multi-system emulator with accurate PCE core)",
+    "RetroArch with Beetle PCE core",
+    "Ootake (Windows PCE emulator)",
+    "MagicEngine (commercial PCE emulator)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".pce"],
+    "relatedFormats": ["ROM_SMS", "ROM_GEN"],
+    "note": "PC Engine shares the NEC/Hudson Soft lineage. SuperGrafx (.sgx) is an enhanced PCE variant. CD-ROM games use ISO 9660 sectors but contain HuC6280 code."
   },
-  "exportTemplates": [
-    {
-      "name": "PC Engine/TurboGrafx-16 ROM Header (JSON)",
-      "format": "json",
-      "fields": [
-        "resetVectorEntry",
-        "romBank0"
-      ]
-    }
-  ]
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of PC Engine and TurboGrafx-16 cartridge games",
+    "ROM preservation and archiving of HuCard releases",
+    "ROM hacking and translation patching of PCE games",
+    "Hardware verification against original cartridge dumps"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "PC Engine / TurboGrafx-16",
+    "CPU": "HuC6280 (65C02 variant, 7.16 MHz)",
+    "ROM_Banks": "8 KB pages mapped via MPR registers",
+    "CopierHeader": "Optional 512-byte prefix starting with 0x40 0x00 0x00 0x00",
+    "MaxROMSize": "2.5 MB (Super CD-ROM)"
+  }
 }

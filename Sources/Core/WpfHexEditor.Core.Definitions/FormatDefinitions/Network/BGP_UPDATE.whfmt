@@ -1,0 +1,247 @@
+{
+  "diffMode": "binary",
+  "formatName": "BGP Update Message",
+  "version": "1.0",
+  "extensions": [ ".bgp", ".dump" ],
+  "description": "BGP (Border Gateway Protocol) message dump — RFC 4271. All BGP messages share a 19-byte header: marker(16B: all 0xFF, for synchronization and authentication) + length(2B BE: total message length including header, 19-4096 bytes) + type(1B: 1=OPEN, 2=UPDATE, 3=NOTIFICATION, 4=KEEPALIVE, 5=ROUTE-REFRESH RFC 2918). UPDATE message body: withdrawn_routes_length(2B BE) + withdrawn_routes(variable IP prefixes) + total_path_attr_length(2B BE) + path_attributes(variable) + NLRI(variable: network reachability info). Path attribute flags: Optional(bit7) + Transitive(bit6) + Partial(bit5) + Extended-length(bit4). Common attributes: ORIGIN(1: IGP/EGP/incomplete), AS_PATH(2), NEXT_HOP(3), MED(4), LOCAL_PREF(5), COMMUNITIES(8), MP_REACH_NLRI(14, RFC 4760 for IPv6). Used in MRT dump files and RouteViews/RIPE RIS BGP archives.",
+  "category": "Network",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 4271 — A Border Gateway Protocol 4 (BGP-4)",
+      "RFC 4760 — Multiprotocol Extensions for BGP-4",
+      "RFC 6396 — Multi-Threaded Routing Toolkit (MRT) Routing Information Export Format"
+    ],
+    "WebLinks": [
+      "https://www.ietf.org/rfc/rfc4271.txt",
+      "https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris",
+      "https://www.routeviews.org/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", "offset": 0, "label": "16x 0xFF — BGP marker field, all bytes must be 0xFF for standard BGP messages", "weight": 1.0 }
+    ],
+    "matchMode": "all",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 19,
+      "maxSignatureOffset": 0,
+      "note": "BGP marker is exactly 16 bytes of 0xFF at offset 0. Strong and unique identifier."
+    }
+  },
+  "variables": {
+    "bgpMarker": "",
+    "bgpLength": 0,
+    "bgpType": 0,
+    "withdrawnRoutesLength": 0,
+    "pathAttrLength": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "BGP Marker",
+      "offset": 0,
+      "length": 16,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "16-byte BGP synchronization marker: all bytes must be 0xFF. Originally used for BGP authentication (MD5 option) but now serves as a synchronization sequence. Any value other than 16x 0xFF indicates a non-standard or corrupt BGP message.",
+      "storeAs": "bgpMarker",
+      "valueType": "bytes"
+    },
+    {
+      "type": "field",
+      "name": "Message Length",
+      "offset": 16,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Total BGP message length in bytes including the 19-byte header (big-endian). Valid range: 19 (KEEPALIVE minimum) to 4096 (maximum BGP message size per RFC 4271). UPDATE messages carrying many NLRI prefixes approach this limit.",
+      "storeAs": "bgpLength",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Message Type",
+      "offset": 18,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "BGP message type code. Determines the structure of the message body following the 19-byte header. OPEN=1 (session setup), UPDATE=2 (routing information), NOTIFICATION=3 (error + close), KEEPALIVE=4 (session keep-alive, 19B only), ROUTE-REFRESH=5 (RFC 2918).",
+      "storeAs": "bgpType",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "OPEN — session establishment with capabilities",
+        "2": "UPDATE — routing table changes (withdrawals + announcements)",
+        "3": "NOTIFICATION — error message followed by session close",
+        "4": "KEEPALIVE — session keep-alive (header only, no body)",
+        "5": "ROUTE-REFRESH — request resend of routing table (RFC 2918)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Withdrawn Routes Length",
+      "offset": 19,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Length in bytes of the Withdrawn Routes field in an UPDATE message (big-endian). Value 0 means no routes are being withdrawn. Withdrawn routes are variable-length IP prefixes: length(1B) + prefix(variable).",
+      "storeAs": "withdrawnRoutesLength",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Path Attributes Length",
+      "offset": 21,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Total length in bytes of the Path Attributes field in an UPDATE message (big-endian). Path attributes encode routing policy information: AS_PATH, NEXT_HOP, MED, LOCAL_PREF, COMMUNITIES, etc. Value 0 means no path attributes (withdrawal-only UPDATE).",
+      "storeAs": "pathAttrLength",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "metadata",
+      "name": "BGP Header Size",
+      "variable": "bgpLength",
+      "description": "BGP header is always 19 bytes: 16B marker + 2B length + 1B type. Message body begins at offset 19."
+    },
+    {
+      "type": "metadata",
+      "name": "UPDATE Structure",
+      "variable": "bgpType",
+      "description": "UPDATE body (offset 19): withdrawn_routes_length(2B) + withdrawn_routes + total_path_attr_length(2B) + path_attributes + NLRI. NLRI and withdrawals are variable-length IP prefix lists."
+    },
+    {
+      "type": "metadata",
+      "name": "RFC Reference",
+      "variable": "bgpMarker",
+      "description": "BGP-4 defined in RFC 4271. IPv6 (MP-BGP) in RFC 4760. Large communities in RFC 8092. Extended communities in RFC 4360."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Marker all 0xFF",
+      "expression": "bgpMarker == 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'",
+      "severity": "error",
+      "message": "BGP marker must be all 0xFF (16 bytes). Any other value indicates corruption or non-BGP data."
+    },
+    {
+      "name": "Length valid",
+      "expression": "bgpLength >= 19 && bgpLength <= 4096",
+      "severity": "error",
+      "message": "BGP message length must be between 19 (KEEPALIVE) and 4096 bytes (RFC 4271 maximum)."
+    },
+    {
+      "name": "Type valid",
+      "expression": "bgpType >= 1 && bgpType <= 5",
+      "severity": "error",
+      "message": "BGP message type must be 1 (OPEN), 2 (UPDATE), 3 (NOTIFICATION), 4 (KEEPALIVE), or 5 (ROUTE-REFRESH)."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "BGP Marker", "offset": 0, "color": "#FF4444" },
+      { "name": "Message Length", "offset": 16, "color": "#44AAFF" },
+      { "name": "Message Type", "offset": 18, "color": "#44FF88" },
+      { "name": "UPDATE Body", "offset": 19, "color": "#FFAA44" }
+    ]
+  },
+  "inspector": {
+    "badge": "BGP",
+    "primaryField": "bgpType",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "BGP Header",
+        "icon": "",
+        "fields": [ "bgpMarker", "bgpLength", "bgpType" ]
+      },
+      {
+        "title": "UPDATE Fields",
+        "icon": "",
+        "fields": [ "withdrawnRoutesLength", "pathAttrLength" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "BGP Header (JSON)",
+      "format": "json",
+      "fields": [ "bgpMarker", "bgpLength", "bgpType" ]
+    },
+    {
+      "name": "BGP Message Summary (Text)",
+      "format": "text",
+      "fields": [ "bgpType", "bgpLength", "withdrawnRoutesLength", "pathAttrLength" ]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "high",
+    "notes": "BGP UPDATE files from RouteViews/RIPE RIS archives contain global routing table state. BGP hijacks (unauthorized route announcements) are detectable by analyzing AS_PATH attributes. Prefix hijacks can redirect traffic through malicious ASes for interception. MRT dump files contain sequences of BGP messages.",
+    "suspiciousPatterns": [
+      "NOTIFICATION messages (type 3) indicate BGP session errors — check error code and subcode",
+      "UPDATE messages with unexpectedly short AS_PATH may indicate BGP hijacking",
+      "NEXT_HOP attributes pointing to unexpected ASes may indicate route injection"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "BGP header: marker(16B 0xFF) + length(2B BE) + type(1B). UPDATE body: withdrawn_len(2B) + withdrawn_prefixes + path_attr_len(2B) + path_attributes + NLRI_prefixes. Path attribute: flags(1B) + type_code(1B) + [ext_len(2B)] + len(1B) + data. Attribute types: 1=ORIGIN(0=IGP,1=EGP,2=INCOMPLETE), 2=AS_PATH, 3=NEXT_HOP(4B IPv4), 4=MED(4B), 5=LOCAL_PREF(4B), 8=COMMUNITIES, 14=MP_REACH_NLRI. NLRI prefix: length_bits(1B) + prefix(ceil(length_bits/8) bytes).",
+    "suggestedInspections": [
+      "Verify all 16 marker bytes are 0xFF — any deviation indicates corruption or non-BGP data",
+      "Read message type at offset 18 to determine body structure: KEEPALIVE has no body, UPDATE has routing data",
+      "For UPDATE messages, decode AS_PATH (type 2) to trace routing path and detect potential hijacks",
+      "Check NEXT_HOP attribute (type 3) for expected gateway IP addresses",
+      "Analyze withdrawn routes for bulk withdrawals that may indicate network outages or hijack corrections",
+      "Look for NOTIFICATION messages (type 3) which carry BGP error codes indicating session termination reasons"
+    ]
+  },
+  "software": [
+    "Wireshark — BGP protocol dissector",
+    "bgpdump — MRT dump file parser (RIPE NCC tool)",
+    "PyBGP / scapy — Python BGP packet crafting and analysis",
+    "GoBGP — Go BGP implementation with MRT support",
+    "BIRD / FRRouting — open-source BGP router implementations"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".bgp", ".dump" ],
+    "relatedFormats": [ "MRT_DUMP", "PCAP", "PCAPNG" ],
+    "note": "BGP UPDATE messages are typically found inside MRT dump files (RFC 6396) from RouteViews or RIPE RIS archives, or captured as raw BGP TCP stream data in PCAP files. MRT wraps BGP messages with timestamp and metadata headers."
+  },
+  "MimeTypes": [
+    "application/octet-stream",
+    "application/x-bgp"
+  ],
+  "UseCases": [
+    "BGP routing table analysis and prefix hijack detection",
+    "Internet routing security research (RPKI validation)",
+    "Autonomous system path analysis and topology mapping",
+    "Network incident investigation for routing anomalies",
+    "Academic BGP measurement research (RouteViews, RIPE RIS)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary, big-endian",
+    "HeaderSize": 19,
+    "MarkerSize": 16,
+    "MaxMessageSize": 4096,
+    "Transport": "TCP port 179",
+    "PathAttributes": "Variable-length TLV (Type-Length-Value) encoding"
+  }
+}

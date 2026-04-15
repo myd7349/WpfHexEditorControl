@@ -1,41 +1,45 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "NetFlow v5",
-  "version": "1.13",
-  "extensions": [
-    ".nf",
-    ".nfcap"
-  ],
-  "description": "Cisco NetFlow v5 - Network flow data format",
+  "formatName": "NetFlow v5/v9 Capture",
+  "version": "1.0",
+  "extensions": [ ".nfcap", ".flow", ".nf" ],
+  "description": "NetFlow network traffic flow data (Cisco). v5 header (24 bytes): version(2B BE: 5) + count(2B BE: records per packet) + sys_uptime(4B BE: ms since boot) + unix_secs(4B BE) + unix_nsecs(4B BE) + flow_sequence(4B BE) + engine_type(1B) + engine_id(1B) + sampling_interval(2B BE). v5 flow record (48 bytes): srcaddr(4B) + dstaddr(4B) + nexthop(4B) + input(2B) + output(2B) + dPkts(4B) + dOctets(4B) + first(4B) + last(4B) + srcport(2B) + dstport(2B) + pad1(1B) + tcp_flags(1B) + prot(1B: IP protocol) + tos(1B) + src_as(2B) + dst_as(2B) + src_mask(1B) + dst_mask(1B) + pad2(2B). v9 uses template-based flexible records with version=9. IPFIX (v10) is the IETF standardized version. Files contain one or more NetFlow UDP datagrams concatenated.",
   "category": "Network",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "NetFlow v5 Format"
+      "Cisco NetFlow v5 Format Specification",
+      "RFC 3954 — Cisco Systems NetFlow Services Export Version 9",
+      "RFC 7011 — IPFIX Protocol (NetFlow v10)"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/NF"
+      "https://www.cisco.com/c/en/us/td/docs/net_mgmt/netflow_collection_engine/3-6/user/guide/format.html",
+      "https://www.ietf.org/rfc/rfc3954.txt",
+      "https://www.ietf.org/rfc/rfc7011.txt"
     ]
   },
   "detection": {
-    "signature": "0005",
-    "offset": 0,
+    "signatures": [
+      { "value": "0005", "offset": 0, "label": "NetFlow v5 version field — 0x0005 big-endian at offset 0", "weight": 0.8 },
+      { "value": "0009", "offset": 0, "label": "NetFlow v9 version field — 0x0009 big-endian at offset 0", "weight": 0.8 },
+      { "value": "000A", "offset": 0, "label": "IPFIX (NetFlow v10) version field — 0x000A big-endian at offset 0", "weight": 0.8 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
     "required": true,
+    "Strength": "Medium",
     "validation": {
-      "minFileSize": 2,
-      "maxSignatureOffset": 1024
+      "minFileSize": 24,
+      "maxSignatureOffset": 0,
+      "note": "NetFlow version field at offset 0 is 2 bytes big-endian. Low weight because 0x0005 at offset 0 could appear in other binary formats."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "version": 0,
-    "flowCount": 0,
+    "nfVersion": 0,
+    "nfCount": 0,
     "sysUptime": 0,
     "unixSecs": 0,
-    "netflowVersion": 0,
-    "systemUptime": 0,
-    "unixSeconds": 0,
     "unixNanoseconds": 0,
     "flowSequence": 0,
     "engineType": 0,
@@ -49,21 +53,28 @@
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Version 5 (0x0005)",
-      "storeAs": "netflowVersion",
-      "valueType": "uint16"
+      "opacity": 0.45,
+      "description": "NetFlow version number (2 bytes, big-endian). Identifies the NetFlow protocol version: 5=NetFlow v5 (most common, fixed record format), 9=NetFlow v9 (template-based flexible records), 10=IPFIX (IETF standardized, RFC 7011).",
+      "storeAs": "nfVersion",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "5": "NetFlow v5 — fixed 48-byte flow records",
+        "9": "NetFlow v9 — template-based variable records",
+        "10": "IPFIX (NetFlow v10) — IETF RFC 7011 standard"
+      }
     },
     {
       "type": "field",
-      "name": "Flow Count",
+      "name": "Flow Record Count",
       "offset": 2,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Number of flow records",
-      "storeAs": "flowCount",
-      "valueType": "uint16"
+      "opacity": 0.35,
+      "description": "Number of flow records in this NetFlow datagram (big-endian). For v5: maximum 30 records per datagram (24B header + 30 x 48B = 1464B, fits in one 1500B Ethernet MTU UDP packet).",
+      "storeAs": "nfCount",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -72,9 +83,10 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Milliseconds since device boot",
-      "storeAs": "systemUptime",
-      "valueType": "uint32"
+      "description": "Milliseconds since the exporting device (router/switch) last booted (big-endian). Used together with unix_secs and unix_nsecs to compute absolute flow start and end timestamps by subtracting relative uptime timestamps in flow records.",
+      "storeAs": "sysUptime",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -83,9 +95,10 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Unix timestamp seconds",
-      "storeAs": "unixSeconds",
-      "valueType": "uint32"
+      "description": "Unix timestamp (seconds since 1970-01-01 00:00:00 UTC) at the time this NetFlow export packet was sent. Used as the reference time for converting relative flow timestamps to absolute wall-clock times.",
+      "storeAs": "unixSecs",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -94,20 +107,22 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Residual nanoseconds",
+      "description": "Residual nanoseconds beyond the unix_secs timestamp. Provides sub-second precision for the export packet timestamp. Combined with unix_secs gives full nanosecond-precision export time.",
       "storeAs": "unixNanoseconds",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Flow Sequence",
+      "name": "Flow Sequence Number",
       "offset": 16,
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Sequence counter",
+      "description": "Sequence counter incremented by the number of flow records exported in all previous datagrams. Used to detect missed or out-of-order NetFlow datagrams — gaps in sequence indicate lost UDP packets.",
       "storeAs": "flowSequence",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -116,7 +131,7 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Flow switching engine type",
+      "description": "Type of flow-switching engine in the exporting device. 0=RP (Route Processor), 1=VIP or Linecard, 2=PFC (Policy Feature Card). Identifies which hardware component generated this flow data.",
       "storeAs": "engineType",
       "valueType": "uint8"
     },
@@ -127,7 +142,7 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Slot number of flow switching engine",
+      "description": "Slot number or identifier of the flow-switching engine. Together with engine_type uniquely identifies the exporting hardware component in devices with multiple line cards or processors.",
       "storeAs": "engineId",
       "valueType": "uint8"
     },
@@ -138,75 +153,136 @@
       "length": 2,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Sampling mode and interval",
+      "description": "Sampling mode and interval (big-endian). Bits 15-14: sampling mode (00=no sampling, 01=systematic count, 10=random). Bits 13-0: sampling interval. Value 0 means every packet is sampled (full sampling).",
       "storeAs": "samplingInterval",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "metadata",
-      "name": "Version",
-      "variable": "version",
-      "description": "Version"
+      "name": "Header Size",
+      "variable": "nfVersion",
+      "description": "NetFlow v5 header is 24 bytes. Flow records begin at offset 24. Each v5 record is exactly 48 bytes."
     },
     {
       "type": "metadata",
-      "name": "Flow Count",
-      "variable": "flowCount",
-      "description": "Flow Count"
+      "name": "Flow Records",
+      "variable": "nfCount",
+      "description": "Flow records follow the 24-byte header. v5: count x 48 bytes = total record payload size."
     }
   ],
-  "software": [
-    "Wireshark",
-    "tcpdump"
+  "assertions": [
+    {
+      "name": "Version is known",
+      "expression": "nfVersion == 5 || nfVersion == 9 || nfVersion == 10",
+      "severity": "error",
+      "message": "NetFlow version must be 5, 9, or 10 (IPFIX). Other values indicate an unsupported or corrupt file."
+    },
+    {
+      "name": "Flow count is sane",
+      "expression": "nfCount > 0 && nfCount <= 30",
+      "severity": "warning",
+      "message": "NetFlow v5 count should be between 1 and 30 records per datagram. Higher values may indicate v9 template records."
+    }
   ],
-  "formatRelationships": {
-    "category": "Network",
-    "extensions": [
-      ".nf",
-      ".nfcap"
+  "navigation": {
+    "bookmarks": [
+      { "name": "NetFlow Version", "offset": 0, "color": "#FF4444" },
+      { "name": "Flow Count", "offset": 2, "color": "#44AAFF" },
+      { "name": "Timestamps", "offset": 8, "color": "#44FF88" },
+      { "name": "Flow Sequence", "offset": 16, "color": "#FFAA44" },
+      { "name": "First Flow Record", "offset": 24, "color": "#AA44FF" }
     ]
   },
-  "MimeTypes": [
-    "application/octet-stream"
-  ],
-  "Software": [
-    "Wireshark",
-    "tcpdump",
-    "NetworkMiner",
-    "Fiddler",
-    "Charles Proxy"
-  ],
-  "UseCases": [
-    "Network analysis",
-    "Packet capture",
-    "Debugging",
-    "Security analysis"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 62,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 11,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+  "inspector": {
+    "badge": "NFv5",
+    "primaryField": "nfVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "NetFlow Header",
+        "icon": "",
+        "fields": [ "nfVersion", "nfCount", "flowSequence", "sysUptime", "unixSecs" ]
+      },
+      {
+        "title": "Engine Info",
+        "icon": "",
+        "fields": [ "engineType", "engineId", "samplingInterval" ]
+      }
+    ]
   },
-  "TechnicalDetails": {},
-  "functions": {
-    "readUInt16BE": "Read NetFlow header",
-    "readUInt32BE": "Read timestamps and counts"
-  },
+  "exportTemplates": [
+    {
+      "name": "NetFlow Summary (Text)",
+      "format": "text",
+      "fields": [ "nfVersion", "nfCount", "unixSecs", "flowSequence", "engineType", "samplingInterval" ]
+    },
+    {
+      "name": "NetFlow Metadata (CSV)",
+      "format": "csv",
+      "fields": [ "nfVersion", "nfCount", "sysUptime", "unixSecs", "unixNanoseconds", "flowSequence", "samplingInterval" ]
+    }
+  ],
   "forensic": {
     "category": "network",
     "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "notes": "NetFlow data contains source/destination IP addresses, ports, protocols, and byte/packet counts. More privacy-preserving than PCAP (no payload content) but can reveal communication patterns and identify endpoints. Useful for behavioral analysis and threat hunting.",
+    "suspiciousPatterns": [
+      "Gaps in flow_sequence numbers indicate dropped NetFlow datagrams — possible data loss",
+      "Flows with unusually high byte counts may indicate data exfiltration",
+      "Sampling intervals greater than 0 indicate sampled (not full) flow collection"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Cisco NetFlow v5 - Network flow data format",
+    "analysisContext": "NetFlow v5 header: version(2B BE) + count(2B BE) + sys_uptime(4B BE) + unix_secs(4B BE) + unix_nsecs(4B BE) + flow_sequence(4B BE) + engine_type(1B) + engine_id(1B) + sampling_interval(2B BE). Each v5 record (48B): srcaddr(4B)+dstaddr(4B)+nexthop(4B)+input(2B)+output(2B)+dPkts(4B)+dOctets(4B)+first(4B)+last(4B)+srcport(2B)+dstport(2B)+pad1(1B)+tcp_flags(1B)+prot(1B)+tos(1B)+src_as(2B)+dst_as(2B)+src_mask(1B)+dst_mask(1B)+pad2(2B).",
     "suggestedInspections": [
-      "Validate NetFlow v5 file header: magic, version, link-layer type",
-      "Check packet record timestamps and capture lengths",
-      "Inspect captured protocol headers (Ethernet/IP/TCP/UDP)"
+      "Check version field at offset 0 to determine v5 (fixed records) vs v9 (template-based) format",
+      "Verify flow sequence numbers are consecutive across datagrams to detect dropped UDP packets",
+      "Compute absolute timestamps: unix_secs - (sys_uptime - first_flow_uptime) / 1000",
+      "Scan flow records for high dOctets values on port 443 (HTTPS) indicating potential data exfiltration",
+      "Check sampling_interval bits 15-14 for sampling mode — sampled captures undercount actual traffic",
+      "Correlate src_as and dst_as BGP autonomous system numbers for routing analysis"
     ]
+  },
+  "software": [
+    "nfdump — NetFlow dump file reader and analyzer",
+    "ntop / ntopng — network flow visualization",
+    "Wireshark — can decode NetFlow UDP datagrams",
+    "SiLK (System for Internet-Level Knowledge) — large-scale flow analysis",
+    "Elasticsearch + Logstash — flow indexing and analysis pipeline"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".nfcap", ".flow", ".nf" ],
+    "relatedFormats": [ "IPFIX", "SFLOW", "PCAP", "PCAPNG" ],
+    "note": "NetFlow v5 uses fixed 48-byte records. v9 is template-based (RFC 3954). IPFIX (v10, RFC 7011) is the IETF standardization of v9. sFlow is an alternative flow protocol by Inmon. All are complementary to PCAP (flow summaries vs full packet capture)."
+  },
+  "MimeTypes": [
+    "application/octet-stream",
+    "application/x-netflow"
+  ],
+  "UseCases": [
+    "Network traffic baseline and anomaly detection",
+    "Bandwidth monitoring and capacity planning",
+    "Security threat hunting and behavioral analysis",
+    "ISP peering and transit traffic accounting",
+    "BGP routing and AS path analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Binary, big-endian, UDP datagram-based",
+    "v5HeaderSize": 24,
+    "v5RecordSize": 48,
+    "MaxRecordsPerDatagram": 30,
+    "v9": "Template-based, version=9, FlowSet and TemplateSet records",
+    "IPFIX": "RFC 7011, version=10, Message Header + Sets"
   }
 }

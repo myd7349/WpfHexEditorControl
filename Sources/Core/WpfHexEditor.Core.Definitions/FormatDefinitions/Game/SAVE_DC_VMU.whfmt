@@ -1,0 +1,231 @@
+{
+  "diffMode": "binary",
+  "formatName": "Dreamcast VMU Save",
+  "version": "1.0",
+  "extensions": [".vmu", ".vms", ".dci"],
+  "description": "Sega Dreamcast VMU (Visual Memory Unit) save file in VMS format. The 128-byte VMS header contains: description (16 bytes wide characters, Shift-JIS encoded, as displayed on the VMU LCD), short_description (32 bytes wide characters, as displayed in the Dreamcast file manager), application_name (16 bytes ASCII, name of the game that created this file), icon_count (uint16 LE, number of animation frames for the VMU icon: 1=static, 2+=animated), animation_speed (uint16 LE, frames between icon animation steps), eyecatch_type (uint16 LE: 0=none, 1=16-color palette 512 bytes, 2=256-color palette 2048 bytes, 3=true-color 8064 bytes), CRC (uint16 LE, CRC-16 of the entire file), data_size (uint32 LE, size of the save data in bytes following the header and icon data), header_size (uint16 LE: typically 128), 20 unused bytes. The DCI format adds an additional 32-byte DCI header before the VMS data for use with DC Tools.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Sega Dreamcast VMS File Format Specification",
+      "Dreamcast Technical Specifications (Sega)",
+      "VMU File System Documentation"
+    ],
+    "WebLinks": [
+      "https://mc.pp.se/dc/vms/fileheader.html",
+      "https://en.wikipedia.org/wiki/VMU",
+      "https://segaretro.org/VMU",
+      "https://github.com/kazade/dreamcast-docs"
+    ]
+  },
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 128,
+      "maxSignatureOffset": 0,
+      "note": "VMU saves have no magic. VMS files start directly with the 128-byte header. DCI files have a 32-byte DCI header before the VMS content. Detection is by extension and header field plausibility."
+    }
+  },
+  "variables": {
+    "description": "",
+    "shortDesc": "",
+    "appName": "",
+    "iconCount": 0,
+    "crc": 0,
+    "dataSize": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Description",
+      "offset": 0,
+      "length": 16,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "valueType": "ascii",
+      "description": "16-byte wide-character description string at offset 0, encoded in Shift-JIS. Displayed on the VMU's small LCD screen (48x32 pixels). Characters beyond the displayable width are truncated. This field forms the primary identification string for the save slot.",
+      "storeAs": "description"
+    },
+    {
+      "type": "field",
+      "name": "Short Description",
+      "offset": 16,
+      "length": 32,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "ascii",
+      "description": "32-byte wide-character short description at offset 16, Shift-JIS encoded. Displayed in the Dreamcast file manager (Flannel) as the save file title. Typically contains the game name and save slot number or character name.",
+      "storeAs": "shortDesc"
+    },
+    {
+      "type": "field",
+      "name": "Application Name",
+      "offset": 48,
+      "length": 16,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "ascii",
+      "description": "16-byte ASCII application name at offset 48 identifying the game or application that created this save file. Used to match saves back to their corresponding game. Example: 'SONICADV_INT' for Sonic Adventure.",
+      "storeAs": "appName"
+    },
+    {
+      "type": "field",
+      "name": "Icon Count",
+      "offset": 64,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "Number of animation frames for the VMU save icon (uint16 LE at offset 64). Value 1 = single static icon frame. Values 2 or more = animated icon with that many frames displayed sequentially at the animation_speed rate.",
+      "storeAs": "iconCount"
+    },
+    {
+      "type": "field",
+      "name": "CRC",
+      "offset": 68,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "CRC-16 checksum of the entire VMS file (uint16 LE at offset 68). Computed over all bytes of the file with the CRC field itself zeroed. The VMU file system uses this for integrity verification during copy and load operations.",
+      "storeAs": "crc"
+    },
+    {
+      "type": "field",
+      "name": "Data Size",
+      "offset": 72,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "little",
+      "description": "Size of the game save data payload in bytes (uint32 LE at offset 72). This is the size of the data following the 128-byte header and any icon frame data. The total VMS file size equals header (128 bytes) + icon data + data_size.",
+      "storeAs": "dataSize"
+    },
+    {
+      "type": "metadata",
+      "name": "Description",
+      "variable": "description",
+      "description": "VMU LCD display string (Shift-JIS)"
+    },
+    {
+      "type": "metadata",
+      "name": "App Name",
+      "variable": "appName",
+      "description": "Creating application name"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Size",
+      "variable": "dataSize",
+      "description": "Save data payload size in bytes"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Data size positive",
+      "expression": "dataSize > 0",
+      "severity": "error",
+      "message": "VMU save data_size must be greater than 0"
+    },
+    {
+      "name": "Icon count valid",
+      "expression": "iconCount >= 1",
+      "severity": "warning",
+      "message": "VMU icon_count should be at least 1 (1=static icon, 2+=animated)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "VMS Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Icon Data", "offset": 128, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "appName",
+    "primaryField": "description",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "VMS Identification",
+        "icon": "\uE71B",
+        "fields": ["description", "shortDesc", "appName"]
+      },
+      {
+        "title": "VMS Metadata",
+        "icon": "\uE71B",
+        "fields": ["iconCount", "crc", "dataSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "VMU Save Header (JSON)",
+      "format": "json",
+      "fields": ["description", "shortDesc", "appName", "iconCount", "crc", "dataSize"]
+    },
+    {
+      "name": "VMU Save Summary (CSV)",
+      "format": "csv",
+      "fields": ["appName", "iconCount", "dataSize", "crc"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "VMS 128-byte header: description(16B Shift-JIS) + shortDesc(32B Shift-JIS) + appName(16B ASCII) + iconCount(2B LE) + animSpeed(2B LE) + eyecatchType(2B LE: 0-3) + CRC(2B LE) + dataSize(4B LE) + headerSize(2B LE=128) + unused(20B). DCI adds 32-byte prefix header before VMS data.",
+    "suggestedInspections": [
+      "Read application_name at bytes 48-63 (ASCII) to identify which Dreamcast game created this save",
+      "Read icon_count at bytes 64-65 (uint16 LE): 1=static icon, 2+=animated",
+      "Check eyecatch_type at bytes 68-69 to determine icon data size before the save payload",
+      "Verify CRC-16 at bytes 68-69 by recomputing over file with CRC field zeroed"
+    ]
+  },
+  "software": [
+    "DreamShell (Dreamcast homebrew OS with VMU tools)",
+    "DC Tools / dcvmutils (VMS file extraction)",
+    "NullDC (Dreamcast emulator)",
+    "Redream (modern Dreamcast emulator)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".vmu", ".vms", ".dci"],
+    "relatedFormats": ["SAVE_PS1", "SAVE_SATURN"],
+    "note": "The VMU is a standalone handheld device with its own CPU (Sanyo LC8670), 128 KB Flash, LCD, and buttons. DCI format wraps VMS for use with DC Tools for backup. Dreamcast games typically reserve 200 blocks (1 block = 512 bytes) on the 128 KB VMU."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Backup and restore of Sega Dreamcast VMU game saves",
+    "Transfer of saves between real VMU hardware and emulators",
+    "Editing Dreamcast game save data for cheats or completion",
+    "Preservation of rare Dreamcast game save collections"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 9,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Sega Dreamcast VMU",
+    "VMU_CPU": "Sanyo LC8670 (8-bit) at 6 MHz",
+    "VMU_Flash": "128 KB (200 user blocks of 512 bytes)",
+    "VMS_HeaderSize": "128 bytes",
+    "DCI_PrefixSize": "32 bytes",
+    "Encoding": "Shift-JIS for description fields"
+  }
+}

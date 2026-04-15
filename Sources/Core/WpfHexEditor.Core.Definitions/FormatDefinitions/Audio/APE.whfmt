@@ -1,391 +1,240 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Monkey's Audio",
-  "version": "1.14",
-  "extensions": [
-    ".ape"
-  ],
-  "description": "Monkey's Audio (APE) — a lossless audio compression codec developed by Matthew T. Ashland. The file begins with the 4-byte 'MAC ' (Monkey's Audio Compression) signature. Version numbers below 3980 use a legacy header layout; version 3980 and above use the unified APE Descriptor block (MAC_DESCRIPTOR, 52 bytes). Compression levels: 1000=Fast, 2000=Normal, 3000=High, 4000=Extra High, 5000=Insane. All numeric fields are little-endian. APEv2 tags (if present) appear at the end of the file.",
+  "version": "1.0",
+  "extensions": [".ape", ".mac"],
+  "description": "Monkey's Audio (APE) is a lossless audio compression format developed by Matthew T. Welch. Files begin with the four-byte ASCII magic 'MAC ' (0x4D414320) followed by a 16-bit little-endian version number. Compression levels range from 1000 (Fast) to 5000 (Insane). The descriptor block records size information allowing decoders to seek directly to the header, seektable, and audio data sections. APE is widely used among audiophiles for archival quality audio storage without any quality loss.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "audio-viewer",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "Monkey's Audio SDK — MAC_SDK (Matthew T. Ashland)",
-      "APEv2 Tag Specification — Hydrogenaudio Wiki",
-      "Monkey's Audio Source Code — github.com/fernandojsg/monkeys-audio"
+      "Monkey's Audio SDK documentation (monkeysaudio.com)",
+      "APE Tag v1.0 and v2.0 specifications"
     ],
     "WebLinks": [
       "https://www.monkeysaudio.com/",
-      "https://en.wikipedia.org/wiki/Monkey%27s_Audio",
-      "https://wiki.hydrogenaudio.org/index.php?title=Monkey%27s_Audio",
-      "https://wiki.hydrogenaud.io/index.php?title=APEv2_specification"
+      "https://wiki.hydrogenaud.io/index.php?title=Monkey%27s_Audio"
     ]
   },
   "detection": {
-    "signature": "4D414320",
-    "offset": 0,
-    "required": true,
+    "signatures": [
+      {
+        "value": "4D414320",
+        "offset": 0,
+        "label": "MAC  — Monkey's Audio magic bytes",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "First",
+    "MinimumScore": 0.9,
+    "required": ["MAC  — Monkey's Audio magic bytes"],
     "Strength": "Strong",
-    "EntropyHint": { "min": 5.0, "max": 8.0 },
+    "EntropyHint": {
+      "min": 3.0,
+      "max": 7.5,
+      "comment": "Lossless audio varies widely; low compression levels yield moderate entropy"
+    },
     "validation": {
-      "minFileSize": 16,
-      "maxSignatureOffset": 0
+      "notes": "Magic must be 'MAC ' (with trailing space); version in range 3800-3990"
     }
   },
   "variables": {
     "apeMagic": "",
-    "version": 0,
+    "apeVersion": 0,
+    "descriptorBytes": 0,
     "compressionLevel": 0,
-    "formatFlags": 0,
     "channels": 0,
-    "sampleRate": 0,
-    "bitsPerSample": 0,
-    "totalFrames": 0,
-    "finalFrameBlocks": 0,
-    "totalBlocks": 0,
-    "headerDataCrc32": 0,
-    "byteRate": 0,
-    "estimatedDuration": 0
+    "sampleRate": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "APE Magic",
+      "name": "apeMagic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "Monkey's Audio file signature: ASCII 'MAC ' (0x4D 0x41 0x43 0x20 — note the trailing space). Stands for 'Monkey's Audio Compression'. This 4-byte signature with a trailing space is unique to Monkey's Audio and not shared with any other widely-used format.",
+      "opacity": 0.85,
+      "description": "Monkey's Audio file identifier — ASCII string 'MAC ' (0x4D414320); the trailing space is mandatory and distinguishes APE from other MAC-prefixed formats",
       "storeAs": "apeMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "apeVersion",
       "offset": 4,
       "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "APE file format version as a 16-bit little-endian unsigned integer. Values are in the range 1000-9999 representing the version × 1000 (e.g., 3990 = version 3.99). The header structure changed significantly at version 3.97 (3970) and again at 3.98 (3980) which introduced the unified descriptor block. Modern encoders produce version 3990+.",
-      "storeAs": "version",
-      "valueType": "uint16",
-      "endianness": "little",
-      "valueMap": {
-        "3990": "v3.99 — current stable",
-        "3980": "v3.98 — introduced unified descriptor",
-        "3970": "v3.97 — legacy header layout",
-        "3960": "v3.96 — legacy",
-        "3950": "v3.95 — legacy"
-      }
+      "opacity": 0.75,
+      "description": "APE format version as a little-endian uint16 multiplied by 1000; common values are 3800-3990+; version determines which header fields are present and their layout",
+      "storeAs": "apeVersion",
+      "valueType": "uint16LE"
     },
     {
       "type": "field",
-      "name": "Compression Level",
+      "name": "descriptorBytes",
       "offset": 6,
       "length": 2,
-      "color": "#FFE66D",
-      "opacity": 0.35,
-      "description": "Compression level used when encoding, as a 16-bit little-endian unsigned integer. Higher compression levels achieve smaller file sizes but require more CPU time to encode and decode. Level 5000 (Insane) can be 100× slower than Level 1000 (Fast) with only modest additional compression.",
-      "storeAs": "compressionLevel",
-      "valueType": "uint16",
-      "endianness": "little",
-      "valueMap": {
-        "1000": "Fast — minimal compression, fastest encode/decode",
-        "2000": "Normal — balanced compression (recommended for most use)",
-        "3000": "High — good compression, moderate CPU",
-        "4000": "Extra High — high compression, significant CPU",
-        "5000": "Insane — maximum compression, extremely slow"
-      }
+      "color": "#95E1D3",
+      "opacity": 0.75,
+      "description": "Size of the APE descriptor block in bytes (little-endian); used to locate the header block which immediately follows the descriptor",
+      "storeAs": "descriptorBytes",
+      "valueType": "uint16LE"
     },
     {
       "type": "field",
-      "name": "Format Flags",
+      "name": "compressionLevel",
       "offset": 8,
       "length": 2,
-      "color": "#FFA07A",
-      "opacity": 0.35,
-      "description": "Format flags as a 16-bit little-endian unsigned integer. Controls optional features and encoding options for the APE stream.",
-      "storeAs": "formatFlags",
-      "valueType": "uint16",
-      "endianness": "little",
-      "bitfields": [
-        { "name": "Has Peak Level", "bits": "2", "description": "Bit 2: peak level was stored in the header" },
-        { "name": "Has Seek Elements", "bits": "4", "description": "Bit 4: seek table elements are present" },
-        { "name": "Create WAV Header", "bits": "5", "description": "Bit 5: a WAV header was prepended to the data during encoding" }
-      ]
+      "color": "#FFE66D",
+      "opacity": 0.75,
+      "description": "APE compression level: 1000=Fast, 2000=Normal, 3000=High, 4000=Extra High, 5000=Insane; higher levels yield smaller files at cost of encoding/decoding speed",
+      "storeAs": "compressionLevel",
+      "valueType": "uint16LE"
     },
     {
       "type": "field",
-      "name": "Channels",
+      "name": "channels",
       "offset": 10,
       "length": 2,
-      "color": "#95E1D3",
-      "opacity": 0.35,
-      "description": "Number of audio channels as a 16-bit little-endian unsigned integer. 1=Mono, 2=Stereo. Monkey's Audio supports mono and stereo; multi-channel encoding is not officially supported in the standard codec.",
+      "color": "#A8E6CF",
+      "opacity": 0.75,
+      "description": "Number of audio channels in the stream (little-endian uint16); 1=mono, 2=stereo; Monkey's Audio supports multi-channel in newer versions",
       "storeAs": "channels",
-      "valueType": "uint16",
-      "endianness": "little",
-      "valueMap": {
-        "1": "1 channel — Mono",
-        "2": "2 channels — Stereo"
-      }
+      "valueType": "uint16LE"
     },
     {
       "type": "field",
-      "name": "Sample Rate",
+      "name": "sampleRate",
       "offset": 12,
       "length": 4,
-      "color": "#45B7D1",
-      "opacity": 0.35,
-      "description": "Audio sample rate in Hz as a 32-bit little-endian unsigned integer. Common values: 44100 (CD), 48000 (DAT/DVD), 88200, 96000 (high resolution). Monkey's Audio supports any sample rate supported by the source PCM.",
-      "storeAs": "sampleRate",
-      "valueType": "uint32",
-      "endianness": "little",
-      "valueMap": {
-        "44100": "44100 Hz — CD quality",
-        "48000": "48000 Hz — DAT/DVD/broadcast",
-        "88200": "88200 Hz — high resolution 2× CD",
-        "96000": "96000 Hz — high resolution",
-        "176400": "176400 Hz — 4× CD",
-        "192000": "192000 Hz — ultra high resolution"
-      }
-    },
-    {
-      "type": "field",
-      "name": "Bits Per Sample",
-      "offset": 16,
-      "length": 2,
-      "color": "#FFEAA7",
-      "opacity": 0.30,
-      "description": "Bit depth per audio sample as a 16-bit little-endian unsigned integer. Standard values: 8, 16, 24. Monkey's Audio supports 8-24 bit PCM. 16-bit is most common (CD quality). 24-bit for studio/mastering quality.",
-      "storeAs": "bitsPerSample",
-      "valueType": "uint16",
-      "endianness": "little",
-      "valueMap": {
-        "8": "8-bit PCM",
-        "16": "16-bit PCM — CD quality",
-        "24": "24-bit PCM — studio quality"
-      }
-    },
-    {
-      "type": "field",
-      "name": "Total Frames",
-      "offset": 18,
-      "length": 4,
       "color": "#DDA0DD",
-      "opacity": 0.30,
-      "description": "Total number of compressed audio frames in the file as a 32-bit little-endian unsigned integer. Each frame except the final one contains a fixed number of PCM blocks (samples per channel). The final frame contains finalFrameBlocks samples.",
-      "storeAs": "totalFrames",
-      "valueType": "uint32",
-      "endianness": "little"
-    },
-    {
-      "type": "field",
-      "name": "Final Frame Blocks",
-      "offset": 22,
-      "length": 4,
-      "color": "#87CEEB",
-      "opacity": 0.30,
-      "description": "Number of PCM sample blocks in the final compressed frame as a 32-bit little-endian unsigned integer. Used to compute the exact total sample count: totalBlocks = (totalFrames - 1) × blocksPerFrame + finalFrameBlocks.",
-      "storeAs": "finalFrameBlocks",
-      "valueType": "uint32",
-      "endianness": "little"
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Uncompressed Byte Rate",
-      "expression": "sampleRate * bitsPerSample * channels / 8",
-      "storeAs": "byteRate",
-      "description": "Uncompressed PCM byte rate = sampleRate × bitsPerSample × channels / 8 bytes/second"
-    },
-    {
-      "type": "metadata",
-      "name": "Version",
-      "variable": "version",
-      "description": "APE format version (e.g., 3990 = v3.99)"
-    },
-    {
-      "type": "metadata",
-      "name": "Compression Level",
-      "variable": "compressionLevel",
-      "description": "1000=Fast, 2000=Normal, 3000=High, 4000=Extra High, 5000=Insane"
-    },
-    {
-      "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "1=Mono, 2=Stereo"
-    },
-    {
-      "type": "metadata",
-      "name": "Sample Rate",
-      "variable": "sampleRate",
-      "description": "Sample rate in Hz"
-    },
-    {
-      "type": "metadata",
-      "name": "Bits Per Sample",
-      "variable": "bitsPerSample",
-      "description": "Bit depth per sample (8, 16, or 24)"
-    },
-    {
-      "type": "metadata",
-      "name": "Total Frames",
-      "variable": "totalFrames",
-      "description": "Number of compressed audio frames"
-    },
-    {
-      "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Uncompressed byte rate = sampleRate × bitsPerSample × channels / 8"
+      "opacity": 0.75,
+      "description": "Audio sample rate in Hz stored as a little-endian uint32; common values are 44100, 48000, 88200, 96000 Hz for high-fidelity audio archiving",
+      "storeAs": "sampleRate",
+      "valueType": "uint32LE"
     }
   ],
   "assertions": [
     {
-      "name": "APE magic valid",
-      "expression": "apeMagic == 'MAC '",
-      "severity": "error",
-      "message": "APE magic must be 'MAC ' (0x4D414320) — not a valid Monkey's Audio file"
+      "field": "apeMagic",
+      "op": "eq",
+      "value": "MAC ",
+      "message": "APE magic must be 'MAC ' (with trailing space)"
     },
     {
-      "name": "Version is plausible",
-      "expression": "version >= 3800 && version <= 9999",
-      "severity": "warning",
-      "message": "APE version below 3800 is an extremely old legacy format or indicates corruption"
+      "field": "apeVersion",
+      "op": "range",
+      "min": 3800,
+      "max": 9999,
+      "message": "APE version must be >= 3800"
     },
     {
-      "name": "Compression level is known",
-      "expression": "compressionLevel == 1000 || compressionLevel == 2000 || compressionLevel == 3000 || compressionLevel == 4000 || compressionLevel == 5000",
-      "severity": "warning",
-      "message": "Compression level should be 1000/2000/3000/4000/5000 — non-standard value detected"
-    },
-    {
-      "name": "Channel count valid",
-      "expression": "channels == 1 || channels == 2",
-      "severity": "warning",
-      "message": "Monkey's Audio standard codec supports 1 (mono) or 2 (stereo) channels"
-    },
-    {
-      "name": "Sample rate non-zero",
-      "expression": "sampleRate > 0",
-      "severity": "error",
-      "message": "Sample rate must be non-zero"
+      "field": "compressionLevel",
+      "op": "in",
+      "value": [1000, 2000, 3000, 4000, 5000],
+      "message": "Compression level must be one of 1000/2000/3000/4000/5000"
     }
   ],
   "navigation": {
     "bookmarks": [
-      {
-        "name": "APE Header",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      }
+      { "name": "APE Magic", "offset": 0, "length": 4, "color": "#FF6B6B" },
+      { "name": "Format Version", "offset": 4, "length": 2, "color": "#4ECDC4" },
+      { "name": "Descriptor Size", "offset": 6, "length": 2, "color": "#95E1D3" },
+      { "name": "Compression Level", "offset": 8, "length": 2, "color": "#FFE66D" },
+      { "name": "Channels", "offset": 10, "length": 2, "color": "#A8E6CF" },
+      { "name": "Sample Rate", "offset": 12, "length": 4, "color": "#DDA0DD" }
     ]
   },
   "inspector": {
-    "badge": "compressionLevel",
-    "primaryField": "sampleRate",
+    "badge": "APE",
+    "primaryField": "apeVersion",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "File Identity",
-        "icon": "\uE71B",
-        "fields": ["apeMagic", "version", "compressionLevel"]
+        "name": "File Identity",
+        "fields": ["apeMagic", "apeVersion"]
       },
       {
-        "title": "Audio Parameters",
-        "icon": "\uE767",
-        "fields": ["channels", "sampleRate", "bitsPerSample"]
-      },
-      {
-        "title": "Frame Structure",
-        "icon": "\uE9D9",
-        "fields": ["totalFrames", "finalFrameBlocks", "byteRate"]
+        "name": "Audio Properties",
+        "fields": ["compressionLevel", "channels", "sampleRate"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "APE Header (JSON)",
-      "format": "json",
-      "fields": ["apeMagic", "version", "compressionLevel", "channels", "sampleRate", "bitsPerSample", "totalFrames", "byteRate"]
+      "name": "APE Header Summary",
+      "format": "text",
+      "template": "Magic: {apeMagic} | Version: {apeVersion} | Compression: {compressionLevel} | Channels: {channels} | SampleRate: {sampleRate}"
     },
     {
-      "name": "APE_HEADER (C struct)",
-      "format": "c-struct",
-      "structName": "ape_header",
-      "fields": ["apeMagic", "version", "compressionLevel", "formatFlags", "channels", "sampleRate", "bitsPerSample", "totalFrames", "finalFrameBlocks"]
+      "name": "APE JSON Report",
+      "format": "json",
+      "template": "{ \"version\": {apeVersion}, \"compressionLevel\": {compressionLevel}, \"channels\": {channels}, \"sampleRate\": {sampleRate} }"
     }
   ],
   "forensic": {
-    "category": "audio",
+    "category": "Audio",
     "riskLevel": "low",
     "suspiciousPatterns": [
-      {
-        "name": "Invalid compression level",
-        "condition": "compressionLevel != 1000 && compressionLevel != 2000 && compressionLevel != 3000 && compressionLevel != 4000 && compressionLevel != 5000",
-        "severity": "warning",
-        "description": "Compression level is not one of the five standard values. May indicate a modified or malformed APE header."
-      },
-      {
-        "name": "Unsupported channel count",
-        "condition": "channels == 0 || channels > 2",
-        "severity": "warning",
-        "description": "Monkey's Audio standard codec only supports 1-2 channels. Higher channel counts may cause decoder failures."
-      }
+      "Version below 3800 may indicate corrupted or ancient incompatible file",
+      "Unknown compression level value (not 1000/2000/3000/4000/5000) indicates malformed header",
+      "Sample rate outside 8000-192000 Hz range is highly unusual for legitimate files"
     ]
   },
   "aiHints": {
-    "analysisContext": "Monkey's Audio (APE) file layout (all LE): 'MAC '(4) + version(2,LE) + compressionLevel(2,LE: 1000/2000/3000/4000/5000) + formatFlags(2,LE) + channels(2,LE) + sampleRate(4,LE) + bitsPerSample(2,LE) + totalFrames(4,LE) + finalFrameBlocks(4,LE). For v3.98+ a 52-byte MAC_DESCRIPTOR precedes this layout. APEv2 tags at EOF: 'APETAGEX' marker + 32-byte footer. Note: version field is version × 1000 (3990 = v3.99).",
+    "analysisContext": "Monkey's Audio uses a descriptor + header + seektable + audio data layout. The descriptorBytes field points past the descriptor to the APE header. Compression level directly impacts decode speed and is important for performance analysis. Version 3990+ introduced descriptor-based layout.",
     "suggestedInspections": [
-      "Verify 'MAC ' magic at offset 0 (4D 41 43 20)",
-      "Read version at offset 4 (LE uint16) — should be >= 3800",
-      "Check compressionLevel at offset 6 — should be 1000/2000/3000/4000/5000",
-      "Verify channels (1 or 2) and sampleRate (non-zero)",
-      "Check EOF for APEv2 tag: 'APETAGEX' at EOF-32 or EOF-footer_size"
+      "Verify 'MAC ' magic with trailing space at offset 0",
+      "Read apeVersion to determine header layout (pre-3980 vs post-3980 formats differ)",
+      "Decode compressionLevel to understand encoding tradeoff used",
+      "Use descriptorBytes to locate the APE header and seektable positions",
+      "Validate sampleRate against common audiophile rates (44100, 48000, 96000 Hz)",
+      "Check for APE tag at end of file (ID3v1 or APEv2 tag structures)"
     ]
   },
   "software": [
     "Monkey's Audio (official encoder/decoder)",
     "foobar2000",
-    "VLC media player",
-    "MediaMonkey",
-    "Winamp (with plugin)",
-    "Audacity (with FFmpeg)",
-    "dBpoweramp"
+    "FFmpeg",
+    "VLC Media Player",
+    "dBpoweramp",
+    "MediaInfo"
   ],
   "formatRelationships": {
     "category": "Audio",
-    "extensions": [".ape"],
-    "relatedFormats": ["FLAC", "WV", "TTA", "ALAC"],
-    "note": "Monkey's Audio is Windows-centric and proprietary despite having an open SDK. FLAC is preferred for cross-platform lossless audio."
+    "extensions": [".ape", ".mac"],
+    "relatedFormats": ["FLAC", "WavPack", "TTA", "WAV", "AIFF"],
+    "note": "APE is a proprietary lossless format; FLAC is the open-source alternative with wider software support"
   },
-  "MimeTypes": [
-    "audio/x-ape",
-    "audio/ape"
-  ],
+  "MimeTypes": ["audio/x-ape", "audio/ape"],
   "UseCases": [
-    "Lossless CD ripping (Windows audiophile community)",
-    "Audio archiving requiring maximum compression",
-    "foobar2000 / Windows-centric audio libraries"
+    "Audiophile lossless music archiving",
+    "CD ripping with perfect reconstruction",
+    "High-resolution audio (96kHz/24-bit) storage",
+    "Music library management with metadata tags",
+    "Long-term digital preservation of audio masters"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 78,
+    "CompletenessScore": 90,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 14,
-    "ValidationRules": 5,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "AudioFormat": true,
-    "Endianness": "little-endian",
-    "Compression": "Lossless — Monkey's Audio proprietary compression",
-    "MaxChannels": 2,
-    "MaxBitDepth": 24,
-    "TagFormat": "APEv2 (at EOF)"
+    "compressionLevels": {
+      "1000": "Fast",
+      "2000": "Normal",
+      "3000": "High",
+      "4000": "Extra High",
+      "5000": "Insane"
+    },
+    "typicalSampleRates": [44100, 48000, 88200, 96000],
+    "minVersion": 3800,
+    "lossless": true,
+    "seekTableSupport": true
   }
 }
