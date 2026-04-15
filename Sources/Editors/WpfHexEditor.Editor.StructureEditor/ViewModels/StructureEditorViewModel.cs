@@ -15,6 +15,9 @@ using System.Text.Json.Serialization;
 using System.Windows.Threading;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.ViewModels;
+using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.Core.Validation;
+using WpfHexEditor.Editor.StructureEditor.Services;
 
 namespace WpfHexEditor.Editor.StructureEditor.ViewModels;
 
@@ -24,6 +27,12 @@ internal sealed class StructureEditorViewModel : ViewModelBase
 
     internal event EventHandler? DirtyChanged;
     internal event EventHandler? ValidationCompleted;
+
+    // ── Undo/Redo ─────────────────────────────────────────────────────────────
+
+    internal UndoRedoService UndoRedo { get; } = new();
+
+    private bool _isUndoRedoInProgress;
 
     // ── Child VMs ─────────────────────────────────────────────────────────────
 
@@ -41,6 +50,10 @@ internal sealed class StructureEditorViewModel : ViewModelBase
     public ObservableCollection<ChecksumViewModel>      Checksums       { get; } = [];
     public ObservableCollection<ExportTemplateViewModel> ExportTemplates { get; } = [];
 
+    /// <summary>Live variable source for autocomplete — aggregates Variables tab + block tree.</summary>
+    public IVariableSource VariableSource => _variableSource ??= new VariablesViewModelAdapter(Variables, Blocks);
+    private IVariableSource? _variableSource;
+
     // ── Validation ────────────────────────────────────────────────────────────
 
     public ObservableCollection<ValidationSummaryItem> ValidationSummary { get; } = [];
@@ -54,6 +67,13 @@ internal sealed class StructureEditorViewModel : ViewModelBase
 
     private bool _isDirty;
     public bool IsDirty { get => _isDirty; private set { if (SetField(ref _isDirty, value)) DirtyChanged?.Invoke(this, EventArgs.Empty); } }
+
+    /// <summary>
+    /// Fired on every content change, regardless of <see cref="IsDirty"/> state.
+    /// Unlike <see cref="DirtyChanged"/>, this fires on every <see cref="MarkDirty"/> call,
+    /// making it suitable for driving live preview refresh timers.
+    /// </summary>
+    public event EventHandler? ContentChanged;
 
     // ── JSON options ──────────────────────────────────────────────────────────
 
@@ -109,6 +129,8 @@ internal sealed class StructureEditorViewModel : ViewModelBase
         LoadCollection(ExportTemplates, def.ExportTemplates, (vm, t) => vm.LoadFrom(t), () => new ExportTemplateViewModel());
 
         IsDirty = false;
+        if (!_isUndoRedoInProgress)
+            UndoRedo.Clear();
     }
 
     internal FormatDefinition BuildDefinition()
@@ -152,6 +174,30 @@ internal sealed class StructureEditorViewModel : ViewModelBase
     {
         LoadFromDefinition(new FormatDefinition());
         IsDirty = false;
+    }
+
+    /// <summary>Undoes the last change by restoring the previous JSON snapshot.</summary>
+    internal void Undo()
+    {
+        var json = UndoRedo.Undo(SerializeToJson());
+        if (json is null) return;
+        _isUndoRedoInProgress = true;
+        LoadFromJson(json);
+        IsDirty = true;
+        _isUndoRedoInProgress = false;
+        TriggerValidationNow();
+    }
+
+    /// <summary>Redoes the last undone change.</summary>
+    internal void Redo()
+    {
+        var json = UndoRedo.Redo(SerializeToJson());
+        if (json is null) return;
+        _isUndoRedoInProgress = true;
+        LoadFromJson(json);
+        IsDirty = true;
+        _isUndoRedoInProgress = false;
+        TriggerValidationNow();
     }
 
     /// <summary>Forces an immediate validation cycle (bypasses debounce).</summary>
@@ -198,11 +244,16 @@ internal sealed class StructureEditorViewModel : ViewModelBase
         var results = await _validateAsync(json);
 
         ValidationSummary.Clear();
-        foreach (var item in results.Take(10))
+        foreach (var item in results)
             ValidationSummary.Add(item);
 
         ErrorCount   = results.Count(r => r.Severity == ValidationSeverity.Error);
         WarningCount = results.Count(r => r.Severity == ValidationSeverity.Warning);
+
+        // Push undo snapshot after validation (skip during undo/redo to avoid double-push)
+        if (!_isUndoRedoInProgress)
+            UndoRedo.PushState(json);
+
         ValidationCompleted?.Invoke(this, EventArgs.Empty);
     }
 
@@ -228,6 +279,7 @@ internal sealed class StructureEditorViewModel : ViewModelBase
     private void MarkDirty()
     {
         IsDirty = true;
+        ContentChanged?.Invoke(this, EventArgs.Empty);
         _debounce?.Stop();
         _debounce?.Start();
     }

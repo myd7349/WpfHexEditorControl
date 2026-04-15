@@ -1,0 +1,124 @@
+{
+  "formatName": "NES Sound Format",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "NES Sound Format (.nsf) — container for NES/Famicom music code; contains 6502 machine code that plays back through the NES APU and optional expansion audio chips.",
+  "extensions": [ ".nsf", ".nsfe" ],
+  "category": "Audio",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "4E45534D1A",
+      "offset": 0,
+      "label": "'NESM\\x1A' — NES Sound Format header magic (5 bytes)",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 5,
+  "structure": {
+    "fields": [
+      { "offset": 0,   "size": 5,  "name": "magic",            "type": "ascii",    "description": "File magic: 'NESM' + 0x1A",                              "storeAs": "nsfMagic" },
+      { "offset": 5,   "size": 1,  "name": "version",          "type": "uint8",    "description": "NSF version, must be 1" },
+      { "offset": 6,   "size": 1,  "name": "total_songs",      "type": "uint8",    "description": "Total number of subtunes (1–255)",                       "storeAs": "nsfSongs" },
+      { "offset": 7,   "size": 1,  "name": "starting_song",    "type": "uint8",    "description": "Default subtune index (1-based)" },
+      { "offset": 8,   "size": 2,  "name": "load_address",     "type": "uint16le", "description": "NES CPU address where ROM data is loaded ($6000–$FFFF)" },
+      { "offset": 10,  "size": 2,  "name": "init_address",     "type": "uint16le", "description": "CPU address of init subroutine" },
+      { "offset": 12,  "size": 2,  "name": "play_address",     "type": "uint16le", "description": "CPU address of play subroutine (called each frame)" },
+      { "offset": 14,  "size": 32, "name": "song_name",        "type": "ascii",    "description": "Song title (null-padded 32 bytes)",                      "storeAs": "nsfTitle" },
+      { "offset": 46,  "size": 32, "name": "artist_name",      "type": "ascii",    "description": "Artist / composer name (null-padded 32 bytes)",           "storeAs": "nsfArtist" },
+      { "offset": 78,  "size": 32, "name": "copyright",        "type": "ascii",    "description": "Copyright / year string (null-padded 32 bytes)" },
+      { "offset": 110, "size": 2,  "name": "play_speed_ntsc",  "type": "uint16le", "description": "NTSC frame period in µs (16666 ≈ 60 Hz)" },
+      { "offset": 112, "size": 8,  "name": "bankswitch_init",  "type": "bytes",    "description": "Initial bank values for 8 × 4KB bank slots (all zero = no bankswitching)" },
+      { "offset": 120, "size": 2,  "name": "play_speed_pal",   "type": "uint16le", "description": "PAL frame period in µs (20000 ≈ 50 Hz)" },
+      { "offset": 122, "size": 1,  "name": "pal_ntsc_bits",    "type": "uint8",    "description": "Bit 0: PAL; bit 1: dual PAL+NTSC support" },
+      { "offset": 123, "size": 1,  "name": "extra_chips",      "type": "uint8",    "description": "Expansion audio: b0=VRC6,b1=VRC7,b2=FDS,b3=MMC5,b4=Namco163,b5=Sunsoft5B", "storeAs": "nsfChips" },
+      { "offset": 124, "size": 4,  "name": "nsf2_reserved",    "type": "bytes",    "description": "Reserved for NSF2 extensions" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "nsfTitle", "nsfArtist", "nsfSongs", "nsfChips", "load_address" ],
+    "valueMaps": {
+      "nsfChips": {
+        "0":  "APU only (standard NES)",
+        "1":  "VRC6 (Castlevania III JP)",
+        "2":  "VRC7 (Lagrange Point)",
+        "4":  "FDS wavetable",
+        "8":  "MMC5 (Castlevania III US)",
+        "16": "Namco 163",
+        "32": "Sunsoft 5B (Gimmick!)"
+      }
+    },
+    "tooltips": {
+      "nsfMagic":      "Must be 'NESM' followed by 0x1A (5 bytes total)",
+      "load_address":  "Must be ≥$6000; values below indicate invalid or non-standard file",
+      "nsfChips":      "Bitmask: multiple expansion chips can be combined",
+      "play_speed_ntsc":"Default 16639 µs (≈60.1 Hz NTSC); custom values enable non-standard rates"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "nsfMagic",     "operator": "startsWith", "value": "NESM",  "description": "First 4 bytes must be 'NESM'" },
+    { "id": "A2", "field": "total_songs",  "operator": "gte",        "value": 1,       "description": "Must have at least 1 subtune" },
+    { "id": "A3", "field": "load_address", "operator": "gte",        "value": 0x6000,  "description": "Load address must be ≥$6000 (NES CPU map)" },
+    { "id": "A4", "field": "version",      "operator": "eq",         "value": 1,       "description": "NSF version byte must be 1" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,   "label": "Magic 'NESM\\x1A'",  "color": "#E74C3C" },
+      { "offset": 6,   "label": "Subtune Count",       "color": "#3498DB" },
+      { "offset": 8,   "label": "Addresses",           "color": "#F39C12" },
+      { "offset": 14,  "label": "Song Title",          "color": "#27AE60" },
+      { "offset": 46,  "label": "Artist Name",         "color": "#9B59B6" },
+      { "offset": 112, "label": "Bankswitch Init",     "color": "#1ABC9C" },
+      { "offset": 123, "label": "Expansion Chips",     "color": "#E67E22" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "NSF Metadata Text",
+      "fields": [ "nsfTitle", "nsfArtist", "copyright", "nsfSongs", "nsfChips" ],
+      "format": "text"
+    },
+    {
+      "name": "NSF Metadata JSON",
+      "fields": [ "nsfTitle", "nsfArtist", "copyright", "nsfSongs", "starting_song", "load_address", "init_address", "play_address", "nsfChips" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "NSF files contain real NES 6502 machine code; playback requires a full NES CPU + APU emulator — the code is NOT a standalone executable.",
+    "The extra_chips byte at offset 123 is a bitmask: non-zero values require additional hardware emulation (VRC6/VRC7/FDS/MMC5/N163/5B) to produce correct audio.",
+    "Bankswitching (non-zero bankswitch_init): the NSF data is divided into 4KB banks; players swap these into the CPU address window $8000–$FFFF during playback.",
+    "NSFE (NSF Extended) is a chunked superset of NSF adding per-track metadata, durations, and fade times; look for 'NSFE' magic instead of 'NESM'.",
+    "The load_address constraint (≥$6000) comes from the NES memory map: $0000–$5FFF is RAM/registers; ROM lives at $6000–$FFFF.",
+    "NSFPlay (Windows) and FCEUX (full emulator) are the most accurate players for expansion chip emulation."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "NSF payloads are NES 6502 code; they cannot execute on any modern architecture without a full NES emulator.",
+      "Title/artist strings are plain ASCII; useful for cataloguing game music archives.",
+      "No known parser-level security vulnerabilities; risk limited to emulation accuracy bugs."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "SID",  "relationship": "analog",     "note": "SID is the Commodore 64 equivalent: 6502 code driving the SID chip." },
+    { "format": "SPC",  "relationship": "analog",     "note": "SPC is the SNES equivalent: SPC700 RAM snapshot for the S-SMP processor." },
+    { "format": "GBS",  "relationship": "analogous",  "note": "GBS is the Game Boy equivalent (Z80-based)." }
+  ],
+  "software": [
+    { "name": "NotSoFatso", "role": "NSF Winamp plugin (classic reference player)" },
+    { "name": "NSFPlay",    "role": "Accurate Windows NSF player with expansion support" },
+    { "name": "FCEUX",      "role": "Full NES emulator with NSF loading" },
+    { "name": "nsf2wav",    "role": "Command-line NSF to WAV renderer" }
+  ],
+  "useCases": [
+    "NES / Famicom game music archiving and playback",
+    "Chiptune composition for NES hardware",
+    "Game sound research with expansion chip analysis",
+    "Retro music preservation and cataloguing"
+  ],
+  "technicalDetails": "NES Sound Format stores 6502 machine code that runs on a simulated NES CPU. The APU (Audio Processing Unit) provides 2 pulse channels, 1 triangle, 1 noise, and 1 DPCM channel. Expansion chips add additional synthesis: VRC6 (2 pulse + sawtooth), FDS (wavetable), MMC5 (2 pulse + PCM), Namco 163 (up to 8 wavetable channels), Sunsoft 5B (3 AY-3-8910 square waves). The play subroutine is called at 60 Hz NTSC or 50 Hz PAL per the pal_ntsc_bits field.",
+  "completenessScore": 85
+}

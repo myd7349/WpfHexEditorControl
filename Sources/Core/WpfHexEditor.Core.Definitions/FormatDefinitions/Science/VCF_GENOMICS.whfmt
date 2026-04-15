@@ -1,0 +1,188 @@
+{
+  "diffMode": "text",
+  "formatName": "Variant Call Format (VCF)",
+  "version": "1.0",
+  "extensions": [
+    ".vcf",
+    ".vcf.gz"
+  ],
+  "description": "VCF (Variant Call Format) — tab-delimited text format for storing DNA sequence variants (SNPs, indels, structural variants). Every VCF file starts with '##fileformat=VCF' meta-information lines. Meta lines: ##fileformat=VCFv4.x, ##FILTER (filter definitions), ##INFO (INFO field descriptions), ##FORMAT (genotype format), ##contig (reference sequence info), ##reference. The column header line starts with '#CHROM' and defines 8 mandatory columns plus optional FORMAT and sample columns. Data lines: CHROM, POS (1-based), ID (dbSNP rs ID or '.'), REF, ALT, QUAL (Phred quality), FILTER (PASS or filter name), INFO (semicolon-separated key=value or flags). Optional: FORMAT column defining per-sample genotype fields (GT, DP, GQ, AD, PL). Used by GATK, bcftools, VEP, FreeBayes. BCF is the binary-encoded VCF equivalent (BGZF-compressed).",
+  "category": "Science",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "VCF 4.3 Specification — samtools.github.io/hts-specs/VCFv4.3.pdf",
+      "VCF 4.2 Specification — samtools.github.io/hts-specs/VCFv4.2.pdf",
+      "GATK VCF Documentation — gatk.broadinstitute.org/hc/en-us/articles/360035531692"
+    ],
+    "WebLinks": [
+      "https://samtools.github.io/hts-specs/VCFv4.3.pdf",
+      "https://en.wikipedia.org/wiki/Variant_Call_Format",
+      "https://gatk.broadinstitute.org/",
+      "https://www.ensembl.org/info/docs/tools/vep/"
+    ]
+  },
+  "detection": {
+    "signature": "232366696C65666F726D61743D564346",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 3.0, "max": 5.5 },
+    "validation": {
+      "minFileSize": 20
+    }
+  },
+  "variables": {
+    "vcfMagic": "",
+    "nextByte": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "VCF Format Header Line",
+      "offset": 0,
+      "length": 16,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "VCF mandatory first line prefix: '##fileformat=VCF' (16 bytes: 23 23 66 69 6C 65 66 6F 72 6D 61 74 3D 56 43 46). Every valid VCF file must begin with this exact prefix. The complete first line is '##fileformat=VCFv4.x' where x is the minor version (1, 2, or 3). The double-hash (##) denotes a meta-information line.",
+      "storeAs": "vcfMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "##fileformat=VCF" }
+    },
+    {
+      "type": "field",
+      "name": "VCF Version Specifier Byte",
+      "offset": 16,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First byte of the VCF version identifier that follows '##fileformat=VCF'. Expected value is 0x76 ('v') for 'VCFv4.x' format strings. The complete version string is typically 'v4.1', 'v4.2', or 'v4.3'. The 'v' prefix before the version number is mandatory.",
+      "storeAs": "nextByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "118": "0x76 'v' — VCF version prefix (VCFv4.1 / VCFv4.2 / VCFv4.3)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "VCF Format Header",
+      "variable": "vcfMagic",
+      "description": "VCF mandatory header prefix '##fileformat=VCF'"
+    },
+    {
+      "type": "metadata",
+      "name": "Version Prefix",
+      "variable": "nextByte",
+      "description": "First byte of version string after ##fileformat=VCF: 0x76 ('v') for VCFv4.x"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "VCF header must be '##fileformat=VCF'",
+      "expression": "vcfMagic == '##fileformat=VCF'",
+      "severity": "error",
+      "message": "VCF file must begin with '##fileformat=VCF' — not a valid Variant Call Format file"
+    },
+    {
+      "name": "Version prefix must be 'v'",
+      "expression": "nextByte == 118",
+      "severity": "warning",
+      "message": "Expected 'v' (0x76) after ##fileformat=VCF to form VCFv4.x — missing version prefix indicates non-standard VCF"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "##fileformat Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "vcfMagic",
+    "primaryField": "vcfMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "VCF Identity",
+        "icon": "\uE71B",
+        "fields": ["vcfMagic", "nextByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "VCF header (JSON)",
+      "format": "json",
+      "fields": ["vcfMagic", "nextByte"]
+    },
+    {
+      "name": "VCF info (text)",
+      "format": "text",
+      "fields": ["vcfMagic"]
+    }
+  ],
+  "forensic": {
+    "category": "science",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Missing ##fileformat header",
+        "condition": "vcfMagic != '##fileformat=VCF'",
+        "severity": "error",
+        "description": "File does not start with ##fileformat=VCF. Not a valid VCF file or has been truncated."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "VCF structure: meta-lines (## prefix, e.g. ##INFO=<ID=DP,...>), header line (#CHROM POS ID REF ALT QUAL FILTER INFO [FORMAT sample1...]), data lines (tab-separated variant records). POS is 1-based. REF and ALT are DNA sequences (ACGTN or symbolic alleles like <DEL>). INFO field: semicolon-separated key=value or flag-only (e.g. DP=100;AF=0.5;SOMATIC). FORMAT column defines per-sample field order (GT:DP:GQ). Genotype encoding: 0=REF, 1=first ALT, '/' phased, '|' unphased.",
+    "suggestedInspections": [
+      "Verify first 16 bytes are ASCII '##fileformat=VCF'",
+      "Find the complete version line '##fileformat=VCFv4.1/4.2/4.3'",
+      "Locate the #CHROM header line to confirm 8+ tab-separated column names",
+      "Count ##INFO and ##FORMAT meta-lines to understand annotation fields",
+      "Search for sample names after FORMAT column in #CHROM header line"
+    ]
+  },
+  "software": [
+    "GATK (Genome Analysis Toolkit) — Broad Institute",
+    "bcftools (samtools project)",
+    "VEP (Ensembl Variant Effect Predictor)",
+    "FreeBayes",
+    "DeepVariant (Google)",
+    "SNPeff",
+    "ANNOVAR"
+  ],
+  "formatRelationships": {
+    "category": "Science",
+    "extensions": [".vcf", ".vcf.gz"],
+    "relatedFormats": ["BAM", "ZARR"],
+    "containerVariant": "BCF = binary VCF (BGZF-compressed); VCF.gz = bgzip-compressed VCF with .tbi or .csi index"
+  },
+  "MimeTypes": [
+    "text/x-vcf",
+    "application/x-vcf"
+  ],
+  "UseCases": [
+    "DNA variant calling output from NGS pipelines (GATK, FreeBayes, DeepVariant)",
+    "Population genomics variant databases (gnomAD, dbSNP, ClinVar)",
+    "Clinical genomics reporting (ACMG variant classification)",
+    "Pharmacogenomics and personalized medicine workflows"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FileType": "Tab-delimited text variant annotation format",
+    "EncodingStandard": "VCF 4.1 / 4.2 / 4.3 — samtools hts-specs",
+    "TextEncoding": "ASCII/UTF-8",
+    "LineEndings": "LF (Unix) or CRLF",
+    "CoordinateSystem": "1-based, half-open intervals",
+    "BinaryEquivalent": "BCF (Binary Call Format, BGZF-compressed)"
+  }
+}

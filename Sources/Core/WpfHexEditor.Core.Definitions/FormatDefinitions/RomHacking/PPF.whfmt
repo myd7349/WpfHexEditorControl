@@ -1,0 +1,211 @@
+{
+  "diffMode": "binary",
+  "formatName": "PPF Patch (PlayStation)",
+  "version": "1.0",
+  "extensions": [".ppf"],
+  "description": "PPF (PlayStation Patch Format) — a binary patch format specifically designed for PlayStation 1 disc image files. Three versions exist: PPF 1.0 magic 'PPF10' (0x50 0x50 0x46 0x31 0x30), PPF 2.0 magic 'PPF20' (0x50 0x50 0x46 0x32 0x30), PPF 3.0 magic 'PPF30' (0x50 0x50 0x46 0x33 0x30). After the 5-byte magic: patch_description (50 bytes ASCII). For PPF 2.0+: encoding_method (1B: 0=raw BIN, 1=GZip compressed), image_type (1B: 0=BIN/CUE 2048-byte sectors, 1=GI/CDI/IMG), block_check_flag (1B: 0/1), undo_data_flag (1B: 0/1). PPF 3.0 adds: sector_size_id (1B: 1=2352-byte raw sectors, 2=2048-byte cooked), file_id_count (4B LE, number of file ID strings). Records: file_offset (4B or 8B LE) + data_length (1B) + data (data_length bytes) + optional_undo_data. Widely used for PSX fan translations and game patches distributed on ROMhacking.net. Created by Paradox PPF-O-MATIC.",
+  "category": "RomHacking",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "PPF 2.0 Format Specification by Paradox",
+      "PPF 3.0 Format Extension Documentation",
+      "PSX Disc Image Formats Reference"
+    ],
+    "WebLinks": [
+      "https://www.romhacking.net/utilities/356/",
+      "https://www.psxdev.net/forum/viewtopic.php?t=2116",
+      "https://en.wikipedia.org/wiki/PlayStation_Disk_System",
+      "https://github.com/meunierd/ppf"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "505046333030",
+        "offset": 0,
+        "label": "'PPF30' (0x50 0x50 0x46 0x33 0x30) — PlayStation Patch Format version 3.0",
+        "weight": 1.0
+      },
+      {
+        "value": "505046323030",
+        "offset": 0,
+        "label": "'PPF20' (0x50 0x50 0x46 0x32 0x30) — PlayStation Patch Format version 2.0",
+        "weight": 0.9
+      },
+      {
+        "value": "505046313030",
+        "offset": 0,
+        "label": "'PPF10' (0x50 0x50 0x46 0x31 0x30) — PlayStation Patch Format version 1.0",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 56,
+      "maxSignatureOffset": 0,
+      "note": "All PPF files start with 'PPF10', 'PPF20', or 'PPF30' (5 bytes). Minimum size is 5 (magic) + 50 (description) + 1 (at least 1 record byte) = 56 bytes."
+    }
+  },
+  "variables": {
+    "ppfMagic": "",
+    "ppfVersion": 0,
+    "description": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "PPF Magic",
+      "offset": 0,
+      "length": 5,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "5-byte ASCII magic at offset 0 identifying the PPF format and version: 'PPF10' for v1.0, 'PPF20' for v2.0, 'PPF30' for v3.0. The version character is bytes 3-4 ('10', '20', '30'). PPF was specifically created for PlayStation BIN/CUE disc images to handle large file offsets beyond the 16 MB IPS limit.",
+      "storeAs": "ppfMagic"
+    },
+    {
+      "type": "field",
+      "name": "Version Byte",
+      "offset": 3,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "ASCII digit character at offset 3 indicating the major version number: 0x31='1' (PPF v1.0), 0x32='2' (PPF v2.0), 0x33='3' (PPF v3.0). Used to determine the header structure and supported features such as GZip compression and undo data.",
+      "storeAs": "ppfVersion"
+    },
+    {
+      "type": "field",
+      "name": "Patch Description",
+      "offset": 5,
+      "length": 50,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "ascii",
+      "description": "50-byte null-padded ASCII patch description at offsets 5-54. Contains a human-readable description of the patch content, typically the game name, patch type (translation, bug fix), and author. Displayed by PPF-O-MATIC and other PPF tools.",
+      "storeAs": "description"
+    },
+    {
+      "type": "metadata",
+      "name": "PPF Magic",
+      "variable": "ppfMagic",
+      "description": "'PPF10', 'PPF20', or 'PPF30'"
+    },
+    {
+      "type": "metadata",
+      "name": "PPF Version",
+      "variable": "ppfVersion",
+      "description": "PPF version digit (ASCII '1', '2', '3')"
+    },
+    {
+      "type": "metadata",
+      "name": "Description",
+      "variable": "description",
+      "description": "Patch description text"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "PPF magic valid",
+      "expression": "ppfMagic == 'PPF10' || ppfMagic == 'PPF20' || ppfMagic == 'PPF30'",
+      "severity": "error",
+      "message": "PPF patch file must begin with 'PPF10', 'PPF20', or 'PPF30'"
+    },
+    {
+      "name": "PPF version valid",
+      "expression": "ppfVersion == 49 || ppfVersion == 50 || ppfVersion == 51",
+      "severity": "error",
+      "message": "PPF version byte must be '1' (0x31), '2' (0x32), or '3' (0x33)"
+    },
+    {
+      "name": "Minimum PPF file size",
+      "expression": "fileSize >= 56",
+      "severity": "warning",
+      "message": "PPF file should be at least 56 bytes (5B magic + 50B description + records)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "PPF Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Patch Description", "offset": 5, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "ppfMagic",
+    "primaryField": "description",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PPF Header",
+        "icon": "\uE71B",
+        "fields": ["ppfMagic", "ppfVersion", "description"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PPF Patch Header (JSON)",
+      "format": "json",
+      "fields": ["ppfMagic", "ppfVersion", "description"]
+    },
+    {
+      "name": "PPF Patch Summary (CSV)",
+      "format": "csv",
+      "fields": ["ppfMagic", "description"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "PPF format: 'PPF10/20/30'(5B) + description(50B ASCII). PPF2.0+ adds encoding_method(1B) + image_type(1B) + block_check(1B) + undo_flag(1B). PPF3.0 adds sector_size(1B) + file_id_count(4B LE). Records: offset(4B or 8B LE) + data_len(1B) + data. Designed for PS1 BIN disc images.",
+    "suggestedInspections": [
+      "Read bytes 0-4 for magic: 'PPF10'=v1, 'PPF20'=v2, 'PPF30'=v3",
+      "Read description at bytes 5-54 (50-byte null-padded ASCII) for patch identification",
+      "For PPF 2.0/3.0: read encoding_method at offset 55 (0=raw, 1=GZip) and image_type at offset 56 (0=BIN/CUE, 1=IMG)",
+      "For PPF 3.0: check sector_size_id at offset 60 (1=2352-byte raw sectors, 2=2048-byte cooked)"
+    ]
+  },
+  "software": [
+    "PPF-O-MATIC v3 (Windows PPF patch application tool)",
+    "UniPatcher (Android — supports PPF)",
+    "CDmage (PS1 disc image manager with PPF support)",
+    "ImgBurn (can apply PPF patches to disc images)"
+  ],
+  "formatRelationships": {
+    "category": "RomHacking",
+    "extensions": [".ppf"],
+    "relatedFormats": ["IPS", "UPS"],
+    "note": "PPF was specifically designed for PlayStation 1 BIN disc images. Unlike IPS, PPF supports 4-byte (PPF 2.0) or 8-byte (PPF 3.0) file offsets, enabling patching of full PS1 disc images up to 650 MB."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Applying fan translation patches to PlayStation 1 disc images",
+    "Distributing bug-fix patches for PSX game releases",
+    "ROM hacking patches for PlayStation 1 games in BIN/CUE format",
+    "Applying multiplayer and modding patches to PS1 games"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Versions": "PPF 1.0, PPF 2.0, PPF 3.0",
+    "Magic": "'PPF10'/'PPF20'/'PPF30' (5 bytes) at offset 0",
+    "DescriptionField": "50 bytes ASCII at offset 5",
+    "RecordOffsetSize": "4 bytes (PPF 1.0/2.0) or 8 bytes (PPF 3.0)",
+    "MaxTargetOffset": "Effectively unlimited (4B=4 GB, 8B=16 EB)"
+  }
+}

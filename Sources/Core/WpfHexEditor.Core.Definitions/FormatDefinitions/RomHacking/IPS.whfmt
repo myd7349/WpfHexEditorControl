@@ -1,0 +1,202 @@
+{
+  "diffMode": "binary",
+  "formatName": "IPS ROM Patch",
+  "version": "1.0",
+  "extensions": [".ips"],
+  "description": "IPS (International Patching System) — the oldest and most widely distributed ROM patch format, originating in the SNES and NES ROM hacking era. Magic: 'PATCH' = 0x50 0x41 0x54 0x43 0x48 (5 ASCII bytes) at offset 0. The patch body consists of a sequence of records, each comprising: offset (3 bytes big-endian, 24-bit unsigned, position in target ROM), size (2 bytes big-endian: 0 = RLE record, >0 = raw data length). For raw records (size > 0): 'size' bytes of replacement data follow. For RLE records (size == 0): rle_size (2B BE, repeat count) + rle_byte (1B, value to repeat). The patch ends when the 3-byte offset field reads as the magic 'EOF' = 0x45 0x4F 0x46. Maximum addressable offset: 0xFFFFFF (16,777,215 bytes = 16 MB). IPS has no source or target integrity checking (no CRC/MD5). A minimum valid IPS file is 8 bytes ('PATCH' + 'EOF'). Superseded by BPS and UPS for large ROMs requiring checksums. Distributed heavily on ROMhacking.net for SNES, NES, GBA, and PSX translation patches.",
+  "category": "RomHacking",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "IPS Binary Patch Format — just-solve-the-file-format-problem.readthedocs.io",
+      "IPS Patch Format Description — zerosoft.zophar.net",
+      "ROMhacking.net IPS Patch Format Reference"
+    ],
+    "WebLinks": [
+      "http://justsolve.archiveteam.org/wiki/IPS_(binary_patch_format)",
+      "https://www.romhacking.net/utilities/240/",
+      "https://segaretro.org/IPS",
+      "https://github.com/Alcaro/Flips"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5041544348",
+        "offset": 0,
+        "label": "'PATCH' (0x50 0x41 0x54 0x43 0x48) — IPS ROM patch magic identifier",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 1.5, "max": 6.5 },
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "IPS files always start with ASCII 'PATCH' (5 bytes). Minimum valid file = 'PATCH' + 'EOF' = 8 bytes."
+    }
+  },
+  "variables": {
+    "ipsHeader": "",
+    "firstRecordOffset": 0,
+    "firstRecordSize": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "IPS Magic",
+      "offset": 0,
+      "length": 5,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "5-byte ASCII magic 'PATCH' (0x50 0x41 0x54 0x43 0x48) at offset 0. This is the universal identifier for IPS ROM patch files used by ROM hackers since the early 1990s. Tools that apply IPS patches validate this magic before processing records. The format was designed for simplicity: no version byte, no header length, no integrity field.",
+      "storeAs": "ipsHeader"
+    },
+    {
+      "type": "field",
+      "name": "First Record Offset",
+      "offset": 5,
+      "length": 3,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "big",
+      "description": "24-bit big-endian offset of the first patch record in the target ROM file, stored at bytes 5-7. This 3-byte field limits IPS to a 16 MB (0xFFFFFF) maximum target address space. When these 3 bytes read as 0x45 0x4F 0x46 ('EOF') the patch ends — this is the end-of-patch marker, not a real record.",
+      "storeAs": "firstRecordOffset"
+    },
+    {
+      "type": "field",
+      "name": "First Record Size",
+      "offset": 8,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "big",
+      "description": "Payload size of the first patch record (uint16 BE at offset 8). Non-zero value: this many bytes of patch data follow immediately (raw replacement). Zero value: RLE record follows — next 2 bytes are the RLE repeat count (uint16 BE) and the following 1 byte is the fill value.",
+      "storeAs": "firstRecordSize"
+    },
+    {
+      "type": "metadata",
+      "name": "IPS Magic",
+      "variable": "ipsHeader",
+      "description": "'PATCH' — IPS file identifier"
+    },
+    {
+      "type": "metadata",
+      "name": "First Record Offset",
+      "variable": "firstRecordOffset",
+      "description": "Target ROM offset of first patch record (3B BE)"
+    },
+    {
+      "type": "metadata",
+      "name": "First Record Size",
+      "variable": "firstRecordSize",
+      "description": "First record size (0=RLE, >0=raw bytes)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "IPS magic valid",
+      "expression": "ipsHeader == 'PATCH'",
+      "severity": "error",
+      "message": "IPS patch file must begin with ASCII 'PATCH' (0x50 0x41 0x54 0x43 0x48)"
+    },
+    {
+      "name": "Minimum IPS size",
+      "expression": "fileSize >= 8",
+      "severity": "error",
+      "message": "IPS file must be at least 8 bytes: 'PATCH' (5B) + 'EOF' (3B)"
+    },
+    {
+      "name": "First record offset not EOF",
+      "expression": "firstRecordOffset != 4542278",
+      "severity": "warning",
+      "message": "First record offset 0x454F46 ('EOF') would indicate an empty patch with no records"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "IPS Magic Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "First Patch Record", "offset": 5, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "ipsHeader",
+    "primaryField": "firstRecordOffset",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "IPS Patch Header",
+        "icon": "\uE71B",
+        "fields": ["ipsHeader", "firstRecordOffset", "firstRecordSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "IPS Patch Header (JSON)",
+      "format": "json",
+      "fields": ["ipsHeader", "firstRecordOffset", "firstRecordSize"]
+    },
+    {
+      "name": "IPS Patch Summary (CSV)",
+      "format": "csv",
+      "fields": ["ipsHeader", "firstRecordOffset", "firstRecordSize"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "IPS format: 'PATCH'(5B ASCII) + records + 'EOF'(3B=0x454F46). Record: offset(3B BE) + size(2B BE); if size>0: data(size bytes); if size==0: rleCount(2B BE) + rleValue(1B). End: when offset field reads 0x454F46 ('EOF'). No CRC, no source hash. Max target offset: 0xFFFFFF (16 MB). Minimum valid file: 8 bytes.",
+    "suggestedInspections": [
+      "Bytes 0-4: must be ASCII 'PATCH' (0x50 0x41 0x54 0x43 0x48)",
+      "Bytes 5-7: first record target offset in ROM (3B BE uint24, 0x454F46='EOF' means empty patch)",
+      "Bytes 8-9: first record size (uint16 BE: 0=RLE record, >0=raw data length in bytes)",
+      "Scan file backwards: last 3 bytes must be 'EOF' (0x45 0x4F 0x46) end-of-patch marker"
+    ]
+  },
+  "software": [
+    "Lunar IPS (Windows IPS patch tool — most popular)",
+    "Floating IPS / flips (cross-platform, also applies BPS)",
+    "UniPatcher (Android ROM patch application)",
+    "RetroArch (built-in IPS soft-patching on ROM load)"
+  ],
+  "formatRelationships": {
+    "category": "RomHacking",
+    "extensions": [".ips"],
+    "relatedFormats": ["UPS", "PATCH_BPS", "PPF"],
+    "note": "IPS is the oldest widely-used ROM patch format (1990s). Limitations: 16 MB max address, no integrity checks, cannot truncate target. BPS supersedes IPS with CRC32 validation. UPS supports unlimited target size. PPF targets PS1 disc images."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Distributing fan translation patches for SNES, NES, and GBA games",
+    "Sharing ROM hacks and bug-fix patches via ROMhacking.net",
+    "Applying gameplay modification patches to retro console ROMs",
+    "Legacy patch distribution for classic console emulation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Magic": "'PATCH' ASCII (5 bytes) at offset 0; 'EOF' (3 bytes 0x454F46) end marker",
+    "RecordFormat": "offset(3B BE) + size(2B BE) + [data(size B) | rleCount(2B BE) + rleVal(1B)]",
+    "MaxTargetOffset": "0xFFFFFF (16,777,215 bytes = 16 MB)",
+    "Integrity": "None — no CRC or source hash",
+    "Successor": "BPS (Beat Patching System) with CRC32 validation"
+  }
+}

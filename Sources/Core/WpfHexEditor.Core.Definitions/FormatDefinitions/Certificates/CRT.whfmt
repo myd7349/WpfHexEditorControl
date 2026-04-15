@@ -1,0 +1,248 @@
+{
+  "diffMode": "binary",
+  "formatName": "X.509 Certificate",
+  "version": "1.0",
+  "extensions": [
+    ".crt",
+    ".cer",
+    ".der",
+    ".pem"
+  ],
+  "description": "X.509 digital certificate in DER binary or PEM Base64 encoding. DER (Distinguished Encoding Rules): starts with 30 82 (ASN.1 SEQUENCE tag 0x30 + long-form length 0x82 meaning next 2 bytes are the length). PEM: starts with '-----BEGIN CERTIFICATE-----' (ASCII 2D 2D 2D 2D 2D 42 45 47 49 4E). DER structure (RFC 5280): SEQUENCE { TBSCertificate { version [0] EXPLICIT INTEGER (v3=2), serialNumber INTEGER, signature AlgorithmIdentifier, issuer Name, validity Validity{notBefore, notAfter}, subject Name, subjectPublicKeyInfo {algorithm, subjectPublicKey BIT STRING}, extensions [3] EXPLICIT Extensions }, signatureAlgorithm AlgorithmIdentifier, signature BIT STRING }. Versions: v1=0 (no extensions), v2=1 (add UniqueID), v3=2 (add Extensions). Extensions include: SAN, KeyUsage, ExtKeyUsage, BasicConstraints (isCA flag, pathLenConstraint), SubjectKeyIdentifier, AuthorityKeyIdentifier, CRLDistributionPoints, OCSP AIA.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 5280 — Internet X.509 Public Key Infrastructure Certificate and CRL Profile",
+      "ITU-T X.509 — The Directory: Public-key and attribute certificate frameworks",
+      "ITU-T X.690 — ASN.1 DER/BER/CER encoding rules"
+    ],
+    "WebLinks": [
+      "https://datatracker.ietf.org/doc/html/rfc5280",
+      "https://en.wikipedia.org/wiki/X.509",
+      "https://www.rfc-editor.org/rfc/rfc5280",
+      "https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3082", "offset": 0, "label": "30 82 — ASN.1 SEQUENCE with 2-byte length (DER X.509 certificate)", "weight": 0.7 },
+      { "value": "2D2D2D2D2D424547494E20434552544946494341544520", "offset": 0, "label": "-----BEGIN CERTIFICATE  — PEM encoded certificate header", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 10,
+      "maxSignatureOffset": 0,
+      "note": "DER 0x30 0x82 is shared with P12/PFX and other DER-encoded ASN.1 structures. PEM '-----BEGIN CERTIFICATE-----' is highly specific."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "asnTag": 0,
+    "asnLength": 0,
+    "tbsByte": 0,
+    "encoding": "",
+    "certVersion": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte (Encoding Indicator)",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the certificate file. 0x30 (48) = DER-encoded ASN.1 SEQUENCE — binary DER certificate. 0x2D (45) = '-' (PEM header '-----BEGIN CERTIFICATE-----') — Base64 PEM encoded certificate. DER certificates start directly with the outer SEQUENCE tag. PEM certificates start with the 5-dash header line, followed by Base64-encoded DER, and end with '-----END CERTIFICATE-----'. Multiple PEM certificates can be concatenated (certificate chain) in a single .pem file.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "48": "0x30 — DER binary SEQUENCE (binary certificate)",
+        "45": "0x2D — PEM text header '-----BEGIN..."
+      }
+    },
+    {
+      "type": "field",
+      "name": "ASN.1 Tag and Length",
+      "offset": 0,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 2 bytes of DER-encoded certificate: ASN.1 SEQUENCE tag (0x30) + length encoding byte. If length byte is 0x82: the following 2 bytes are the 16-bit big-endian length. If length byte is 0x81: the following 1 byte is the length. Typical values: 0x3082 (standard cert, length > 127 bytes), 0x3081 (small cert). The SEQUENCE wraps the entire certificate structure including TBSCertificate, signatureAlgorithm, and signature.",
+      "storeAs": "asnTag",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Certificate Content Length",
+      "offset": 2,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint16 big-endian byte length of the DER certificate content (when first 2 bytes are 0x30 0x82). Total file size = this value + 4 bytes (for the 0x30 0x82 + 2 length bytes). Typical X.509 certificate sizes: 500-3000 bytes for leaf certificates, larger for intermediate CAs (up to 5KB). Certificates with many extensions or large RSA-4096 keys are on the higher end.",
+      "storeAs": "asnLength",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "TBSCertificate Tag",
+      "offset": 4,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "First byte of the TBSCertificate (To-Be-Signed Certificate) structure nested inside the outer SEQUENCE. Should be 0x30 (another SEQUENCE) for all standard X.509 certificates. This inner SEQUENCE contains all certificate fields up to but not including the signature. For v3 certificates, the first element of TBSCertificate is [0] EXPLICIT INTEGER (version=2 = v3) before the serial number.",
+      "storeAs": "tbsByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "Encoding",
+      "variable": "encoding",
+      "description": "Certificate encoding format: 'DER' (binary ASN.1) or 'PEM' (Base64 text with header/footer lines)"
+    },
+    {
+      "type": "metadata",
+      "name": "Certificate Version",
+      "variable": "certVersion",
+      "description": "X.509 version: 1 (v1, no extensions), 2 (v2, adds UniqueID fields), 3 (v3, adds Extensions — required for CA and SAN)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid DER or PEM start",
+      "expression": "firstByte == 48 || firstByte == 45",
+      "severity": "error",
+      "message": "Certificate must start with 0x30 (DER SEQUENCE) or 0x2D ('-' for PEM) — not a valid X.509 certificate encoding"
+    },
+    {
+      "name": "Valid DER SEQUENCE for binary cert",
+      "expression": "firstByte != 48 || (asnTag == 12418 || asnTag == 12417)",
+      "severity": "warning",
+      "message": "DER certificate SEQUENCE should start with 0x3082 (long 2-byte length) or 0x3081 (short 1-byte length)"
+    },
+    {
+      "name": "TBSCertificate is SEQUENCE",
+      "expression": "firstByte != 48 || tbsByte == 48",
+      "severity": "warning",
+      "message": "TBSCertificate at offset 4 should be an ASN.1 SEQUENCE (0x30) — structure may be non-standard"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Certificate Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Content Length", "offset": 2, "icon": "\uE8A5", "color": "#FFE66D" },
+      { "name": "TBSCertificate", "offset": 4, "icon": "\uE9D9", "color": "#C7CEEA" }
+    ]
+  },
+  "inspector": {
+    "badge": "encoding",
+    "primaryField": "certVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Certificate Encoding",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "encoding", "asnTag", "asnLength"]
+      },
+      {
+        "title": "Certificate Structure",
+        "icon": "\uE9D9",
+        "fields": ["tbsByte", "certVersion"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Certificate Header (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "encoding", "asnTag", "asnLength", "certVersion"]
+    },
+    {
+      "name": "DER Certificate Header (C struct)",
+      "format": "c-struct",
+      "structName": "X509_HEADER",
+      "fields": ["asnTag", "asnLength", "tbsByte"]
+    },
+    {
+      "name": "Python certificate check",
+      "format": "python-bytes",
+      "fields": ["firstByte", "asnTag"]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Weak signature algorithm",
+        "condition": "true",
+        "severity": "warning",
+        "description": "Inspect the signatureAlgorithm field for deprecated algorithms: MD5withRSA (broken), SHA1withRSA (deprecated by CA/B Forum), or RSA < 2048 bits. These indicate an old or improperly issued certificate."
+      },
+      {
+        "name": "Self-signed certificate",
+        "condition": "true",
+        "severity": "info",
+        "description": "If issuer == subject (compare ASN.1 Name structures), this is a self-signed certificate. Self-signed certificates are used for root CAs and development environments but should not be trusted for production."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "X.509 DER certificate structure: SEQUENCE { TBSCertificate { [0] INTEGER (version: 0=v1, 1=v2, 2=v3), INTEGER (serialNumber), SEQUENCE (signature AlgID: OID + params), SEQUENCE (issuer Name), SEQUENCE (validity: UTCTime/GeneralizedTime notBefore + notAfter), SEQUENCE (subject Name), SEQUENCE (subjectPublicKeyInfo: AlgID + BIT STRING key), [3] Extensions (v3 only) }, SEQUENCE (signatureAlgID), BIT STRING (signature) }. Common extension OIDs: 2.5.29.17=SAN, 2.5.29.15=KeyUsage, 2.5.29.37=ExtKeyUsage, 2.5.29.19=BasicConstraints (CA), 2.5.29.14=SubjectKeyIdentifier. Parse with: openssl x509 -in cert.crt -text -noout",
+    "suggestedInspections": [
+      "Check first byte: 0x30 (DER) or 0x2D (PEM '---') for encoding type",
+      "For DER: bytes 0-1 = 0x30 0x82, bytes 2-3 = uint16 BE certificate length",
+      "Use openssl x509 -in cert.crt -text -noout to display all certificate fields",
+      "Verify notAfter validity date — expired certificates indicate certificate lifecycle issues",
+      "Check BasicConstraints extension: isCA=TRUE indicates a CA certificate, not an end-entity cert",
+      "Verify SubjectAlternativeName for TLS certificates — required by all modern browsers"
+    ]
+  },
+  "software": [
+    "OpenSSL (openssl x509 -text -noout -in cert.crt)",
+    "Java keytool (keytool -printcert -file cert.crt)",
+    "Windows Certificate Manager (certmgr.msc)",
+    "Python cryptography library (load_pem_x509_certificate)",
+    "Let's Encrypt / ACME clients (issue DV certificates)"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [".crt", ".cer", ".der", ".pem"],
+    "relatedFormats": ["P12", "JKS", "PEM", "AGE"],
+    "note": ".crt and .cer are functionally identical — both can be DER or PEM. .der is always binary DER. .pem is always Base64 with header/footer. A .pem file can contain multiple certificates (chain) while .der/.crt/.cer typically contain one. P12/PFX bundles certificate + private key; CRT/DER/PEM contains only the public certificate."
+  },
+  "MimeTypes": [
+    "application/x-x509-ca-cert",
+    "application/x-x509-user-cert",
+    "application/pkix-cert"
+  ],
+  "UseCases": [
+    "TLS/HTTPS server certificate distribution",
+    "Code signing certificate for software authenticity",
+    "Client certificate for mutual TLS authentication",
+    "Root and intermediate CA certificate distribution",
+    "Email encryption and signing (S/MIME certificates)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Encodings": "DER (binary ASN.1) and PEM (Base64 with header/footer lines)",
+    "ASN1Schema": "RFC 5280 ASN.1 module — Certificate, TBSCertificate, AlgorithmIdentifier, Name, Validity, SubjectPublicKeyInfo, Extensions",
+    "Versions": "v1 (no extensions), v2 (UniqueID added), v3 (Extensions — current standard)",
+    "CommonAlgorithms": "RSA-2048/4096 + SHA-256/384, ECDSA P-256/P-384 + SHA-256/384, Ed25519",
+    "SupportsStreaming": false
+  }
+}

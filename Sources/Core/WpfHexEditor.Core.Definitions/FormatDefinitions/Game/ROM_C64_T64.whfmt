@@ -1,0 +1,245 @@
+{
+  "diffMode": "binary",
+  "formatName": "Commodore 64 Tape Image (T64)",
+  "version": "1.0",
+  "extensions": [".t64"],
+  "description": "T64 Commodore 64 tape archive format (created by Markus Brenner for VICE emulator). The file contains a 64-byte header followed by directory entries and file data. Header magic varies: the most common variant begins with 'C64S tape file' (0x43 0x36 0x34 0x53 0x20 0x74 0x61 0x70 0x65 0x20 0x66 0x69 0x6C 0x65) or 'C64 tape image file' (0x43 0x36 0x34 0x20 0x74 0x61 0x70 0x65 0x20 0x69 0x6D 0x61 0x67 0x65 0x20 0x66 0x69 0x6C 0x65). Header fields at offset 32: tape_version (uint16 LE: 0x0100 or 0x0200), max_directory_entries (uint16 LE), used_entries (uint16 LE), padding (2B), tape_name (24 bytes ASCII). Directory entries (32 bytes each, starting at offset 64): entry_type (1B: 1=normal tape file, 3=tape snapshot), file_type (1B: 0x82=PRG etc.), start_address (uint16 LE), end_address (uint16 LE), reserved (2B), offset (uint32 LE, byte offset to file data from file start), reserved (4B), file_name (16 bytes ASCII PETSCII). The T64 format is widely used by C64 emulators (VICE, CCS64) for software distribution.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "T64 File Format Specification — Markus Brenner / VICE Documentation",
+      "Commodore 64 PETSCII Character Set Reference",
+      "VICE Emulator Technical Documentation"
+    ],
+    "WebLinks": [
+      "https://vice-emu.sourceforge.io/",
+      "https://www.c64-wiki.com/wiki/T64",
+      "https://en.wikipedia.org/wiki/Commodore_64",
+      "https://csdb.dk/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "4336345320746170652066696C65",
+        "offset": 0,
+        "label": "'C64S tape file' — T64 tape archive magic (C64S variant, 14 bytes ASCII)",
+        "weight": 1.0
+      },
+      {
+        "value": "433634207461706520",
+        "offset": 0,
+        "label": "'C64 tape ' — T64 tape archive magic (C64 variant prefix, 9 bytes ASCII)",
+        "weight": 0.9
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 64,
+      "maxSignatureOffset": 0,
+      "note": "T64 files begin with 'C64S tape file' or 'C64 tape image file' ASCII string. Header is 64 bytes. Directory entries follow at offset 64."
+    }
+  },
+  "variables": {
+    "t64Magic": "",
+    "tapeVersion": 0,
+    "maxEntries": 0,
+    "usedEntries": 0,
+    "tapeName": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "T64 Magic",
+      "offset": 0,
+      "length": 19,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "Up to 32-byte tape magic string at offset 0. Common values: 'C64S tape file' (14 characters, VICE C64S variant) or 'C64 tape image file' (19 characters, original variant). This string occupies the first portion of the 32-byte header magic field (bytes 0-31), null-padded to 32 bytes.",
+      "storeAs": "t64Magic"
+    },
+    {
+      "type": "field",
+      "name": "Tape Version",
+      "offset": 32,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "T64 format version at offset 32 (uint16 LE). Value 0x0200 = T64 version 2.0 (most common); 0x0100 = version 1.0 (earlier, fewer features). Version 2.0 corrects several bugs from version 1.0 and adds better handling of non-PRG file types.",
+      "storeAs": "tapeVersion"
+    },
+    {
+      "type": "field",
+      "name": "Max Directory Entries",
+      "offset": 34,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "Maximum number of directory entries in this T64 archive (uint16 LE at offset 34). Determines the size of the directory block: max_entries * 32 bytes starting at offset 64. Typical values: 1 for single-file archives, larger for multi-file tape collections.",
+      "storeAs": "maxEntries"
+    },
+    {
+      "type": "field",
+      "name": "Used Entries",
+      "offset": 36,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "Number of actually used directory entries (uint16 LE at offset 36). Must be less than or equal to max_directory_entries. Each used entry references a C64 program, SEQ, or snapshot file stored within the T64 archive.",
+      "storeAs": "usedEntries"
+    },
+    {
+      "type": "field",
+      "name": "Tape Name",
+      "offset": 40,
+      "length": 24,
+      "color": "#B8B8FF",
+      "opacity": 0.35,
+      "valueType": "ascii",
+      "description": "24-byte ASCII tape collection name at offset 40, right-padded with spaces. Displayed by C64 emulators in the tape file browser. Typically contains the game title or demo group name in uppercase PETSCII.",
+      "storeAs": "tapeName"
+    },
+    {
+      "type": "metadata",
+      "name": "T64 Magic",
+      "variable": "t64Magic",
+      "description": "Tape archive magic string"
+    },
+    {
+      "type": "metadata",
+      "name": "Tape Version",
+      "variable": "tapeVersion",
+      "description": "T64 version (0x0100 or 0x0200)"
+    },
+    {
+      "type": "metadata",
+      "name": "Used Entries",
+      "variable": "usedEntries",
+      "description": "Number of files in archive"
+    },
+    {
+      "type": "metadata",
+      "name": "Tape Name",
+      "variable": "tapeName",
+      "description": "Tape collection name"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "T64 magic contains tape",
+      "expression": "tapeVersion == 256 || tapeVersion == 512",
+      "severity": "warning",
+      "message": "T64 tape version should be 0x0100 (256) or 0x0200 (512)"
+    },
+    {
+      "name": "Used entries not exceeding max",
+      "expression": "usedEntries <= maxEntries",
+      "severity": "error",
+      "message": "T64 used_entries must not exceed max_directory_entries"
+    },
+    {
+      "name": "Minimum file size for header",
+      "expression": "fileSize >= 64",
+      "severity": "error",
+      "message": "T64 file must be at least 64 bytes (32B tape info + 32B header fields)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "T64 Tape Info", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "T64 Header Fields", "offset": 32, "icon": "\uE71B", "color": "#4ECDC4" },
+      { "name": "First Directory Entry", "offset": 64, "icon": "\uE71B", "color": "#95E1D3" }
+    ]
+  },
+  "inspector": {
+    "badge": "tapeName",
+    "primaryField": "usedEntries",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "T64 Header",
+        "icon": "\uE71B",
+        "fields": ["t64Magic", "tapeVersion", "tapeName"]
+      },
+      {
+        "title": "Directory",
+        "icon": "\uE71B",
+        "fields": ["maxEntries", "usedEntries"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "T64 Archive Header (JSON)",
+      "format": "json",
+      "fields": ["t64Magic", "tapeVersion", "maxEntries", "usedEntries", "tapeName"]
+    },
+    {
+      "name": "T64 Archive Summary (CSV)",
+      "format": "csv",
+      "fields": ["tapeName", "tapeVersion", "usedEntries", "maxEntries"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "T64 header: tape_magic(32B, 'C64S tape file' or 'C64 tape image file') + version(2B LE) + max_entries(2B LE) + used_entries(2B LE) + padding(2B) + tape_name(24B) = 64-byte header. Directory entries at offset 64: 32 bytes each — entry_type(1B) + file_type(1B) + start(2B LE) + end(2B LE) + reserved(2B) + offset(4B LE) + reserved(4B) + filename(16B PETSCII).",
+    "suggestedInspections": [
+      "Check bytes 0-12 for 'C64S tape file' or bytes 0-18 for 'C64 tape image file' ASCII magic",
+      "Read tape_version at bytes 32-33 (uint16 LE): 0x0100=v1.0, 0x0200=v2.0 (preferred)",
+      "Read used_entries at bytes 36-37 (uint16 LE) to determine number of C64 files in archive",
+      "Read first directory entry at offset 64: entry_type(1B) + file_type(1B) + start_addr(2B LE) + end_addr(2B LE) + file_offset(4B LE) + filename(16B PETSCII)"
+    ]
+  },
+  "software": [
+    "VICE (Versatile Commodore Emulator — primary C64 emulator)",
+    "CCS64 (Windows C64 emulator with T64 support)",
+    "RetroArch with VICE C64 core",
+    "DirMaster (Commodore disk/tape image tool)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".t64"],
+    "relatedFormats": ["ROM_C64_D64"],
+    "note": "T64 is a multi-file archive wrapping C64 PRG/SEQ programs in a single container. The .d64 format is the equivalent for C64 disk images (1541 floppy). PETSCII filenames in directory entries use Commodore's character set which differs from ASCII."
+  },
+  "MimeTypes": ["application/octet-stream", "application/x-c64-tape"],
+  "UseCases": [
+    "Emulation of Commodore 64 tape cassette software using VICE",
+    "Archiving collections of C64 programs in a single T64 file",
+    "Distribution of C64 game and demo releases in T64 container format",
+    "Extraction and conversion of C64 programs to PRG for real hardware"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Commodore 64",
+    "CPU": "MOS 6510 at 0.985 MHz (PAL) / 1.023 MHz (NTSC)",
+    "T64_HeaderSize": "64 bytes",
+    "DirectoryEntrySize": "32 bytes each",
+    "FilenameEncoding": "PETSCII (Commodore character set, differs from ASCII)",
+    "Versions": "T64 v1.0 (0x0100) and v2.0 (0x0200)"
+  }
+}

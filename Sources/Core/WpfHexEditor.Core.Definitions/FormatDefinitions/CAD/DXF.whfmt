@@ -1,172 +1,186 @@
 {
-  "diffMode": "binary",
+  "diffMode": "text",
   "formatName": "AutoCAD DXF",
-  "version": "1.15",
-  "extensions": [
-    ".dxf"
-  ],
-  "description": "DXF (Drawing Exchange Format) is Autodesk's open, documented CAD interchange format designed to enable data interoperability between AutoCAD and other CAD applications. DXF exists in two forms: ASCII DXF (plain text, group-code/value pairs) and Binary DXF (compact binary with a fixed 21-byte header). ASCII DXF files start with group code '  0' (two spaces + zero, newline) followed by value 'SECTION' to begin the first section. The file is structured into named sections: HEADER ($ACADVER, $INSBASE, $LIMMIN, $LIMMAX, drawing settings), CLASSES (custom class definitions, DXF R14+), TABLES (layers, linetypes, textstyles, viewports, UCS, apps, dimstyles, block records), BLOCKS (block definitions), ENTITIES (drawing entities: LINE, ARC, CIRCLE, POLYLINE, LWPOLYLINE, TEXT, INSERT, HATCH, etc.), OBJECTS (non-graphical objects, DXF R13+), and THUMBNAILIMAGE (preview). Binary DXF begins with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' (21 bytes). The $ACADVER variable in the HEADER section carries the same AC version codes as DWG files (AC1009=R12 through AC1032=2018+).",
+  "version": "1.0",
+  "extensions": [".dxf"],
+  "description": "DXF (Drawing Exchange Format) is AutoCAD's open text-based CAD interchange format created by Autodesk. ASCII DXF starts with '  0' (two spaces + '0') on line 1 followed by 'SECTION' on line 2, then '  2' and 'HEADER' for the first section. The group code system: an integer group code on one line followed by its string or numeric value on the next line. Group code 0 = entity/section type, code 2 = name string, code 1 = primary text, codes 10/20/30 = X/Y/Z coordinates, codes 70-79 = integer flags. Sections: HEADER ($ACADVER, $INSUNITS, $EXTMIN/EXTMAX, etc.), CLASSES, TABLES (layers, linetypes, text styles, dimension styles, block records, UCSs, views), BLOCKS (named block definitions), ENTITIES (LINE, ARC, CIRCLE, LWPOLYLINE, POLYLINE, INSERT, TEXT, MTEXT, DIMENSION, HATCH, SPLINE, 3DFACE, SOLID, ELLIPSE), OBJECTS (non-graphic objects: dictionaries, groups, layouts, plotsettings), THUMBNAILIMAGE (preview PNG), EOF marker. Binary DXF: starts with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' (22 bytes).",
   "category": "CAD",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "AutoCAD DXF Reference — Autodesk Documentation",
-      "DXF Format Specification — Autodesk Developer Network"
+      "AutoCAD DXF Reference — Autodesk Developer Documentation",
+      "DXF Format Specification AutoCAD 2018 — Autodesk",
+      "Open Design Alliance DXF Reference (OpenDWG)"
     ],
     "WebLinks": [
       "https://help.autodesk.com/view/OARX/2024/ENU/?guid=GUID-235B22E0-A567-4CF6-92D3-38A2306D73F3",
-      "https://en.wikipedia.org/wiki/DXF",
-      "https://www.autodesk.com/techpubs/autocad/acad2000/dxf/"
+      "https://en.wikipedia.org/wiki/AutoCAD_DXF",
+      "https://www.opendesign.com/blog/2021/march/dxf-file-format",
+      "https://docs.fileformat.com/cad/dxf/"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "20203020 0D0A534543 54494F4E", "offset": 0, "label": "'  0\\r\\nSECTION' — ASCII DXF standard opening (CRLF)", "weight": 1.0 },
-      { "value": "20203020 0A534543 54494F4E", "offset": 0, "label": "'  0\\nSECTION' — ASCII DXF opening (LF only)", "weight": 0.9 },
-      { "value": "4175746F434144 2042696E617279 2044584600", "offset": 0, "label": "'AutoCAD Binary DXF' — Binary DXF header prefix", "weight": 1.0 },
-      { "value": "3020", "offset": 0, "label": "'0 ' — DXF group code 0 (weak, short prefix)", "weight": 0.4 }
+      { "value": "2020300A53454354494F4E", "offset": 0, "label": "  0\\nSECTION — ASCII DXF group code 0 followed by SECTION entity type", "weight": 0.9 },
+      { "value": "4175746F43414420426 96E61727920445846", "offset": 0, "label": "AutoCAD Binary DXF — binary DXF 18-byte text header prefix", "weight": 1.0 }
     ],
     "matchMode": "any",
     "MinimumScore": 0.4,
-    "required": false,
+    "required": true,
     "Strength": "Medium",
-    "EntropyHint": { "min": 3.0, "max": 5.5 },
+    "EntropyHint": { "min": 2.0, "max": 6.5 },
     "validation": {
-      "minFileSize": 20,
+      "minFileSize": 30,
       "maxSignatureOffset": 0,
-      "note": "ASCII DXF starts with group code '  0' (spaces+digit) followed by SECTION on the next line. Binary DXF starts with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' (21 bytes). Detection relies on extension + opening bytes. Short group-code prefix '0 ' alone has low confidence."
+      "note": "ASCII DXF: starts with '  0\\n'. Binary DXF: starts with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00'."
     }
   },
   "variables": {
-    "dxfOpeningCode": "",
-    "dxfOpeningValue": "",
-    "dxfBinaryMagic": "",
-    "dxfType": ""
+    "firstByte": 0,
+    "dxfHeader": "",
+    "acadVersion": "",
+    "isBinary": false
   },
   "blocks": [
     {
       "type": "field",
-      "name": "DXF Opening Group Code",
+      "name": "First Byte",
       "offset": 0,
-      "length": 4,
+      "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.45,
-      "description": "ASCII DXF first group code: '  0\\r' or '  0\\n' (spaces + digit zero + line terminator). In ASCII DXF, every data element is represented as a group code (integer on one line) followed by a value (on the next line). Group code 0 introduces entity/section/table names. The opening '  0' followed by 'SECTION' is the universal start of all valid ASCII DXF files from R12 onward. Binary DXF instead starts with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00'.",
-      "storeAs": "dxfOpeningCode",
-      "valueType": "ascii"
+      "description": "First byte of the DXF file. For ASCII DXF: 0x20 (space character), since the first line is '  0' (two spaces). For Binary DXF: 0x41 ('A' for 'AutoCAD Binary DXF'). This byte is the fastest discriminator between ASCII and binary DXF formats.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "DXF Opening Value / Binary Magic",
-      "offset": 4,
-      "length": 17,
+      "name": "DXF Header Start",
+      "offset": 0,
+      "length": 10,
       "color": "#4ECDC4",
       "opacity": 0.35,
-      "description": "ASCII DXF: first group code value 'SECTION' (7 chars + newline) confirming the file opens with the mandatory first section declaration. Binary DXF: continuation of 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' 21-byte magic header that unambiguously identifies binary DXF independent of extension. After the binary header, binary DXF encodes group codes as 16-bit integers and values in binary representation.",
-      "storeAs": "dxfOpeningValue",
+      "description": "First 10 bytes identifying the DXF format. ASCII DXF: '  0\\nSECTIO' (two spaces, '0', newline, start of 'SECTION'). Binary DXF: 'AutoCAD Bi' (first 10 of the 22-byte binary magic 'AutoCAD Binary DXF\\r\\n\\x1A\\x00'). Used in combination with the first byte to distinguish format variants.",
+      "storeAs": "dxfHeader",
       "valueType": "ascii"
     },
     {
       "type": "metadata",
-      "name": "DXF Opening Code",
-      "variable": "dxfOpeningCode",
-      "description": "First group code ('  0' for ASCII, binary prefix for Binary DXF)"
+      "name": "HEADER Section Variables",
+      "offset": 0,
+      "description": "The HEADER section contains AutoCAD drawing variables as group code / value pairs. Key variables: $ACADVER (DXF version string: AC1015=2000, AC1018=2004, AC1021=2007, AC1024=2010, AC1027=2013, AC1032=2018, AC1035=2021), $INSUNITS (insertion units: 0=unitless, 1=inches, 2=feet, 4=mm, 5=cm, 6=m), $EXTMIN and $EXTMAX (drawing extents), $ORTHOMODE, $LTSCALE (line type scale), $LIMMIN/$LIMMAX (drawing limits), $MEASUREMENT (0=Imperial, 1=Metric)."
     },
     {
       "type": "metadata",
-      "name": "DXF Opening Value",
-      "variable": "dxfOpeningValue",
-      "description": "First group value ('SECTION' for ASCII DXF) or binary magic continuation"
+      "name": "Entity Types Reference",
+      "offset": 0,
+      "description": "Common DXF entity types in the ENTITIES and BLOCKS sections: LINE (group codes 10/20/30 = start point, 11/21/31 = end point), ARC (10/20/30 = center, 40 = radius, 50 = start angle, 51 = end angle), CIRCLE (center + radius), LWPOLYLINE (lightweight 2D polyline with vertex list), INSERT (block reference with name + insertion point + scale + rotation), TEXT and MTEXT (string content + position + height + style), DIMENSION (measurement annotations), HATCH (area fill with boundary paths), SPLINE (NURBS curve)."
     }
   ],
   "assertions": [
     {
-      "name": "DXF opens with group code 0",
-      "expression": "dxfOpeningCode == '  0\\r' || dxfOpeningCode == '  0\\n' || dxfOpeningCode == '0\\r\\n' || dxfOpeningValue == 'AutoCAD'",
+      "name": "ValidFirstByte",
+      "expression": "firstByte == 32 || firstByte == 65",
+      "severity": "error",
+      "message": "First byte must be 0x20 (space, ASCII DXF) or 0x41 ('A', Binary DXF). This does not appear to be a valid DXF file."
+    },
+    {
+      "name": "ValidGroupCodeStructure",
+      "expression": "dxfHeader.startsWith('  0') || dxfHeader.startsWith('AutoCAD')",
       "severity": "warning",
-      "message": "DXF file should open with group code '  0' (SECTION) or Binary DXF magic — may be non-standard or corrupt"
+      "message": "DXF format not confirmed: file does not start with '  0' (ASCII) or 'AutoCAD Binary DXF' (binary). May be a non-standard variant."
     }
   ],
   "navigation": {
     "bookmarks": [
-      { "name": "DXF File Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+      { "name": "DXF Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "HEADER Section", "offset": 0, "icon": "\uE8B7", "color": "#FFE66D" },
+      { "name": "ENTITIES Section", "offset": 0, "icon": "\uE946", "color": "#4ECDC4" }
     ]
   },
   "inspector": {
-    "badge": "dxfOpeningValue",
-    "primaryField": "dxfOpeningCode",
+    "badge": "dxfHeader",
+    "primaryField": "acadVersion",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "DXF Header",
+        "title": "File Identification",
         "icon": "\uE71B",
-        "fields": ["dxfOpeningCode", "dxfOpeningValue"]
+        "fields": ["firstByte", "dxfHeader", "isBinary"]
+      },
+      {
+        "title": "Drawing Info",
+        "icon": "\uE946",
+        "fields": ["acadVersion"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "DXF Header (JSON)",
+      "name": "DXF Info (JSON)",
       "format": "json",
-      "fields": ["dxfOpeningCode", "dxfOpeningValue"]
+      "fields": ["dxfHeader", "acadVersion", "isBinary"]
+    },
+    {
+      "name": "DXF Summary (CSV)",
+      "format": "csv",
+      "fields": ["acadVersion", "isBinary"]
     }
   ],
   "forensic": {
     "category": "cad",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "THUMBNAILIMAGE section may contain an embedded PNG that could be inspected for steganographic content",
+      "External OLE object references in OLEFRAME entities may link to external resources"
+    ]
   },
   "aiHints": {
-    "analysisContext": "DXF ASCII structure: group-code/value pairs — integer code on one line, string/float/int value on next line. Sections delimited by '  0\\nSECTION' / '  0\\nENDSEC'. Section order: HEADER ($ACADVER, $INSBASE, $EXTMIN, $EXTMAX, etc.), CLASSES, TABLES (LAYER, LTYPE, STYLE, APPID, DIMSTYLE, BLOCK_RECORD), BLOCKS, ENTITIES (LINE, ARC, CIRCLE, LWPOLYLINE, INSERT, TEXT, MTEXT, HATCH, DIMENSION, SPLINE, ELLIPSE, 3DFACE, SOLID), OBJECTS, THUMBNAILIMAGE, EOF. Key group codes: 0=entity type, 1=text string, 2=name, 5=handle, 6=linetype, 7=textstyle, 8=layer, 10/20/30=X/Y/Z coord, 38=elevation, 39=thickness, 40-48=doubles, 62=color, 67=space(0=model,1=paper), 100=subclass marker, 330=owner handle. $ACADVER in HEADER section = DWG version code (AC1009-AC1032). Binary DXF: 21-byte header 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' then group codes as 16-bit LE integers.",
+    "analysisContext": "ASCII DXF is a line-oriented group-code format starting with '  0\\nSECTION'. Group codes (integers) on one line, values on the next. Sections: HEADER, CLASSES, TABLES, BLOCKS, ENTITIES, OBJECTS, THUMBNAILIMAGE. Binary DXF starts with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00'.",
     "suggestedInspections": [
-      "Bytes 0-3: should be '  0\\r' or '  0\\n' for ASCII DXF; 'Auto' for Binary DXF",
-      "Search for '$ACADVER' in HEADER section to find AutoCAD version (AC1009-AC1032)",
-      "Count SECTION/ENDSEC pairs to identify present sections (HEADER, TABLES, ENTITIES, etc.)",
-      "Check for Binary DXF magic 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' at offset 0 (21 bytes)"
+      "Identify ASCII vs binary DXF from first byte: 0x20 (space) = ASCII, 0x41 ('A') = binary",
+      "For ASCII DXF: scan for $ACADVER variable to determine AutoCAD version compatibility",
+      "Enumerate section boundaries by finding group code 0 / 'SECTION' and 0 / 'ENDSEC' pairs",
+      "Count entity types in ENTITIES section to estimate drawing complexity and content categories",
+      "Check for THUMBNAILIMAGE section to extract embedded preview PNG for quick content identification"
     ]
   },
   "software": [
-    "AutoCAD (Autodesk)",
+    "AutoCAD",
     "LibreCAD",
+    "FreeCAD",
     "QCAD",
     "BricsCAD",
-    "ZWCAD",
-    "Inkscape (limited)",
-    "OpenSCAD",
-    "FreeCAD"
+    "SketchUp",
+    "Inkscape (2D DXF import/export)"
   ],
   "formatRelationships": {
     "category": "CAD",
     "extensions": [".dxf"],
-    "relatedFormats": ["DWG", "DWF", "DWT", "SVG"],
-    "note": "DXF is the open, documented interchange format for AutoCAD's proprietary DWG format. Both share the same $ACADVER version codes (AC1009=R12 through AC1032=2018+). DXF is human-readable ASCII (or compact binary); DWG is proprietary binary. DXF is the universal CAD exchange format supported by virtually all CAD software."
+    "relatedFormats": ["DWG", "DWF", "STEP", "IGES"],
+    "note": "Open text-based alternative to proprietary DWG; both are Autodesk formats; DXF preferred for interoperability"
   },
-  "MimeTypes": [
-    "application/dxf",
-    "image/vnd.dxf",
-    "application/x-dxf"
-  ],
+  "MimeTypes": ["image/vnd.dxf", "application/dxf", "text/plain"],
   "UseCases": [
-    "CAD drawing interchange between different software packages",
-    "Import/export of 2D and 3D drawings",
-    "Programmatic generation of CAD geometry",
-    "GIS and mapping data export to CAD format"
+    "2D and 3D CAD drawing interchange between different software",
+    "Laser cutting and CNC router toolpath import",
+    "Architecture and engineering plan export for consultation",
+    "GIS vector data import/export workflows"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 60,
+    "CompletenessScore": 88,
     "DocumentationLevel": "detailed",
     "BlocksDefined": 4,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Format": "ASCII text (group code/value pairs) or Binary DXF (21-byte header + binary-encoded pairs)",
-    "Encoding": "ASCII or binary; ASCII variant is human-readable and editable",
-    "Sections": "HEADER, CLASSES, TABLES, BLOCKS, ENTITIES, OBJECTS, THUMBNAILIMAGE, EOF",
-    "VersionCodes": "Same AC1009-AC1032 codes as DWG, stored in $ACADVER header variable",
-    "BinaryDXF": "Starts with 'AutoCAD Binary DXF\\r\\n\\x1A\\x00' (21 bytes); group codes as 16-bit LE integers"
+    "encoding": "ASCII-text-group-codes or binary",
+    "groupCodeSystem": "integer code on one line, value on next line",
+    "sections": ["HEADER", "CLASSES", "TABLES", "BLOCKS", "ENTITIES", "OBJECTS", "THUMBNAILIMAGE"],
+    "versionCodes": ["AC1015=R2000", "AC1018=R2004", "AC1021=R2007", "AC1024=R2010", "AC1027=R2013", "AC1032=R2018"]
   }
 }

@@ -1,0 +1,177 @@
+{
+  "diffMode": "text",
+  "formatName": ".env Environment File",
+  "version": "1.0",
+  "extensions": [ ".env", ".env.local", ".env.production" ],
+  "description": "dotenv environment variable file format. KEY=VALUE pairs, one per line (POSIX shell convention). Keys: UPPER_CASE_WITH_UNDERSCORES by convention (SCREAMING_SNAKE_CASE). Values: unquoted (raw), double-quoted (\"value\", backslash escapes, variable expansion $VAR or ${VAR} in some loaders), or single-quoted ('value', no escapes, no expansion). Comments: # starting at first non-whitespace character on a line. Inline comments: only supported by some implementations (dotenv-expand). Blank lines ignored. Multi-line values: supported via double-quoted strings with embedded newlines or \n escapes. Variable expansion: $VAR or ${VAR} supported in dotenv-expand for Node.js. Special files: .env (default), .env.local (local overrides, gitignored), .env.development, .env.test, .env.production (environment-specific), .env.development.local. CRITICAL security rule: .env files MUST be in .gitignore — they contain secrets (API keys, database passwords, OAuth tokens, JWT secrets, encryption keys). Used by: Node.js (dotenv package), Python (python-dotenv), Docker Compose (env_file:), Heroku, Vercel, Netlify, many web frameworks.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "dotenv specification — github.com/motdotla/dotenv",
+      "Docker Compose env_file directive documentation",
+      "12-Factor App methodology — config via environment variables"
+    ],
+    "WebLinks": [
+      "https://github.com/motdotla/dotenv",
+      "https://12factor.net/config",
+      "https://github.com/bkeepers/dotenv"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "23", "offset": 0, "label": "# — .env file starting with comment line", "weight": 0.3 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 1,
+      "maxSignatureOffset": 512,
+      "note": "No binary magic. .env files are primarily identified by filename (.env or .env.* pattern). Content detection requires finding KEY=VALUE patterns."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "firstChars": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte of the .env file. 0x23=# (comment line — common), 0x41-5A=A-Z (uppercase key name), 0x61-7A=a-z (lowercase key, non-conventional), 0x0A=LF (empty first line). Most .env files start with a comment describing the file purpose.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Characters",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 4 ASCII characters of the .env file. Common patterns: '# En' (# Environment variables comment), '# .en' (# .env file comment), 'NODE' (NODE_ENV=), 'DATA' (DATABASE_URL=), 'REAC' (REACT_APP_), 'NEXT' (NEXT_PUBLIC_), 'APP_' (APP_ prefix).",
+      "storeAs": "firstChars",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Format Rules",
+      "variable": "firstChars",
+      "description": ".env format: KEY=VALUE (no spaces around = in strict mode). Values: unquoted (no whitespace trimming), double-quoted (escape sequences \\n \\t \\\" \\\\), single-quoted (literal, no escapes). # on its own line or after whitespace is a comment. Some loaders strip inline comments after values."
+    },
+    {
+      "type": "metadata",
+      "name": "Critical Security Warning",
+      "variable": "firstByte",
+      "description": ".env files contain plaintext secrets. MUST be added to .gitignore before creating. Common leaked secrets: DATABASE_URL with password, SECRET_KEY, JWT_SECRET, API_KEY, AWS_SECRET_ACCESS_KEY, STRIPE_SECRET_KEY, SENDGRID_API_KEY, TWILIO_AUTH_TOKEN."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File has content",
+      "expression": "firstByte > 0",
+      "severity": "warning",
+      "message": ".env file is empty."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": ".env",
+    "primaryField": "firstChars",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "",
+        "fields": [ "firstByte", "firstChars" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": ".env Summary (Text)",
+      "format": "text",
+      "fields": [ "firstChars" ]
+    },
+    {
+      "name": ".env Metadata (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "firstChars" ]
+    }
+  ],
+  "forensic": {
+    "category": "configuration",
+    "riskLevel": "high",
+    "notes": ".env files are the most common source of credential leaks in public git repositories. They contain database passwords, API keys for cloud services (AWS, GCP, Azure, Stripe, Twilio, SendGrid), JWT signing secrets, OAuth client secrets, and encryption keys. A single leaked .env file can expose an entire application's infrastructure. Always scan repositories for accidentally committed .env files.",
+    "suspiciousPatterns": [
+      "DATABASE_URL or DB_PASSWORD with plaintext password in connection string",
+      "AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY combination — provides cloud infrastructure access",
+      "SECRET_KEY or JWT_SECRET — signing key for session tokens or JWTs",
+      "STRIPE_SECRET_KEY, SENDGRID_API_KEY, TWILIO_AUTH_TOKEN — third-party API credentials",
+      "PRIVATE_KEY or SSH_PRIVATE_KEY — private key material embedded as environment variable"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": ".env format: KEY=VALUE (one per line). Keys are UPPER_CASE by convention. Values: unquoted (DB_HOST=localhost), double-quoted (DB_PASS=\"my password\"), single-quoted (API_KEY='abc123'). Comments: # (full line). Blank lines: ignored. Variable expansion: ${VAR} or $VAR in dotenv-expand. Multi-line: DB_CERT=\"-----BEGIN CERTIFICATE-----\\nMIIB...\" (with \\n escapes) or literal newlines inside double quotes.",
+    "suggestedInspections": [
+      "Scan all KEY=VALUE pairs for credential patterns: PASSWORD, SECRET, KEY, TOKEN, API, PRIVATE",
+      "Look for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY — cloud infrastructure access credentials",
+      "Check DATABASE_URL for embedded usernames and passwords in the connection string",
+      "Identify JWT_SECRET or SECRET_KEY values — length and entropy determine crackability",
+      "Look for PRIVATE_KEY values that may contain PEM-encoded key material (multi-line in .env)",
+      "Check for .env.production or .env.*.local variants that may contain production secrets"
+    ]
+  },
+  "software": [
+    "dotenv (Node.js) — loads .env into process.env",
+    "python-dotenv — Python .env file loader",
+    "Docker Compose — env_file: directive loads .env into container environment",
+    "Heroku CLI — heroku config:set from .env",
+    "direnv — automatic .env loading per directory"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [ ".env", ".env.local", ".env.production" ],
+    "relatedFormats": [ "YAML", "TOML", "DOCKERFILE", "NGINX_CONF" ],
+    "note": ".env files follow the Unix shell assignment syntax convention but are NOT shell scripts — most loaders do not support shell expansion, subshell execution, or conditional logic. Docker Compose extends .env with environment variable substitution. The 12-Factor App methodology recommends environment variables for all configuration."
+  },
+  "MimeTypes": [
+    "text/plain",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Local development environment configuration",
+    "CI/CD pipeline secret injection via environment files",
+    "Docker Compose service environment variable configuration",
+    "Node.js/Python application configuration per deployment environment",
+    "Secret management for testing environments (never in production without vault)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "UTF-8 text, KEY=VALUE pairs, one per line",
+    "Comments": "# at start of line (full-line comments only in strict mode)",
+    "ValueQuoting": "None, double-quoted (backslash escapes), or single-quoted (literal)",
+    "VariableExpansion": "$VAR or ${VAR} (dotenv-expand only, not base dotenv)",
+    "Variants": ".env, .env.local, .env.development, .env.test, .env.production, .env.*.local",
+    "GitIgnore": "MUST be in .gitignore to prevent credential exposure"
+  }
+}

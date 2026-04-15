@@ -1,0 +1,244 @@
+{
+  "diffMode": "binary",
+  "formatName": "Windows App Package (APPX/MSIX)",
+  "version": "1.0",
+  "extensions": [
+    ".appx",
+    ".msix",
+    ".appxbundle",
+    ".msixbundle"
+  ],
+  "description": "Windows App Package format used by Microsoft Store and Windows 10/11 app deployment. ZIP-based (PK magic 50 4B 03 04). Contains: AppxManifest.xml (app metadata: identity, capabilities, entry points, visual assets, extensions), AppxBlockMap.xml (per-file SHA-256 block hash map for integrity verification), AppxSignature.p7x (Authenticode CMS signature over the block map), and app assets (DLLs, EXEs, resources). MSIX is the evolution of APPX introduced in Windows 10 version 1809 with additional integrity and uninstall guarantees. Bundles (.appxbundle/.msixbundle) are ZIP containers holding multiple .appx/.msix packages for different CPU architectures (x86, x64, ARM64).",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "MSIX packaging documentation — learn.microsoft.com/en-us/windows/msix/overview",
+      "AppxManifest schema — docs.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/schema-root",
+      "APPX package format specification — learn.microsoft.com/en-us/uwp/schemas/blockmapschema/schema-root"
+    ],
+    "WebLinks": [
+      "https://learn.microsoft.com/en-us/windows/msix/overview",
+      "https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/msix-overview",
+      "https://github.com/microsoft/msix-packaging",
+      "https://en.wikipedia.org/wiki/MSIX"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "PK ZIP header — APPX/MSIX Windows App Package", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 4.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "APPX/MSIX shares PK ZIP magic with many formats. AppxManifest.xml and AppxBlockMap.xml internal entries are definitive identifiers."
+    }
+  },
+  "variables": {
+    "pkMagic": "",
+    "zipVersion": 0,
+    "compressionMethod": 0,
+    "fileNameLength": 0,
+    "appxIdentityName": "",
+    "appxPublisher": "",
+    "appxVersion": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "ZIP Local File Header Signature",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ZIP local file header signature 0x504B0304 identifying this as a ZIP-format container. APPX/MSIX packages are valid ZIP archives. Key required internal files: AppxManifest.xml (app identity, capabilities, entry points), AppxBlockMap.xml (cryptographic integrity hash tree), AppxSignature.p7x (Authenticode signature). Bundles additionally contain AppxBundleManifest.xml. Windows App Installer and winget validate the Authenticode signature before sideloading or installing packages.",
+      "storeAs": "pkMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ZIP Version Needed",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint16 little-endian minimum ZIP version needed. APPX packages require version 20 (basic DEFLATE). ZIP64 extensions (version 45) are required for packages with more than 65535 files or files exceeding 4 GB. Bundles containing multiple architecture packages typically use ZIP64.",
+      "storeAs": "zipVersion",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint16 little-endian compression method for the first ZIP entry. APPX/MSIX typically stores most content with DEFLATE (8). AppxBlockMap.xml and AppxManifest.xml are usually the first entries. Executables and DLLs may be stored uncompressed (0) for direct execution from the package.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "8": "DEFLATE compressed"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Entry File Name Length",
+      "offset": 26,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint16 little-endian byte length of the first ZIP entry file name. APPX first entries are typically 'AppxManifest.xml' (16 bytes) or '[Content_Types].xml' (20 bytes). The actual file name string follows at offset 30.",
+      "storeAs": "fileNameLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "App Identity Name",
+      "variable": "appxIdentityName",
+      "description": "Application package identity name from AppxManifest.xml Identity/@Name attribute (reverse-domain format, e.g. 'Microsoft.WindowsTerminal')"
+    },
+    {
+      "type": "metadata",
+      "name": "Publisher",
+      "variable": "appxPublisher",
+      "description": "Publisher distinguished name from AppxManifest.xml Identity/@Publisher (X.509 DN, e.g. 'CN=Microsoft Corporation, O=Microsoft Corporation')"
+    },
+    {
+      "type": "metadata",
+      "name": "App Version",
+      "variable": "appxVersion",
+      "description": "Four-part version string from AppxManifest.xml Identity/@Version (e.g. '1.19.10302.0')"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid PK ZIP magic",
+      "expression": "pkMagic == 1347093252",
+      "severity": "error",
+      "message": "File does not begin with PK ZIP signature — not a valid APPX/MSIX package"
+    },
+    {
+      "name": "Known compression method",
+      "expression": "compressionMethod == 0 || compressionMethod == 8",
+      "severity": "warning",
+      "message": "Unexpected first-entry compression method — APPX/MSIX uses Stored (0) or DEFLATE (8)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ZIP Signature", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ZIP Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Compression", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "appxIdentityName",
+    "primaryField": "appxVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ZIP Container",
+        "icon": "\uE71B",
+        "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+      },
+      {
+        "title": "App Identity",
+        "icon": "\uE946",
+        "fields": ["appxIdentityName", "appxVersion", "appxPublisher"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "APPX/MSIX Header (JSON)",
+      "format": "json",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "appxIdentityName", "appxVersion", "appxPublisher"]
+    },
+    {
+      "name": "APPX ZIP Header (C struct)",
+      "format": "c-struct",
+      "structName": "APPX_ZIP_HEADER",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+    }
+  ],
+  "forensic": {
+    "category": "executable",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Missing Authenticode signature",
+        "condition": "true",
+        "severity": "warning",
+        "description": "APPX/MSIX packages must be Authenticode-signed (AppxSignature.p7x) for Store distribution. Unsigned packages can only be sideloaded with developer mode enabled. Verify signature presence and chain before installation."
+      },
+      {
+        "name": "Sideloading package",
+        "condition": "true",
+        "severity": "info",
+        "description": "MSIX packages from outside the Microsoft Store require manual trust policy configuration or a developer signing certificate — review capabilities declared in AppxManifest.xml before installing"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "APPX/MSIX packages are ZIP archives with three critical files: AppxManifest.xml (identity, capabilities, visual assets, entry points), AppxBlockMap.xml (block-level SHA-256 hashes for file integrity), AppxSignature.p7x (CMS/PKCS#7 Authenticode signature over the block map). AppxManifest.xml Identity element: Name, Publisher (X.509 DN), Version (a.b.c.d), ProcessorArchitecture. Capabilities element declares declared access rights. Applications element defines executable entry points. Use: makeappx.exe pack/unpack, signtool.exe verify /pa AppxSignature.p7x, or expand the ZIP with any tool.",
+    "suggestedInspections": [
+      "List ZIP contents — verify AppxManifest.xml, AppxBlockMap.xml, AppxSignature.p7x presence",
+      "Extract AppxManifest.xml and read Identity/@Name, @Publisher, @Version, @ProcessorArchitecture",
+      "Review Capabilities element for sensitive capability declarations (runFullTrust, privateNetworkClientServer, etc.)",
+      "Verify AppxSignature.p7x Authenticode chain — confirm publisher certificate matches AppxManifest Publisher",
+      "Check AppxBlockMap.xml for file list and verify SHA-256 hashes against actual file contents"
+    ]
+  },
+  "software": [
+    "makeappx.exe (Windows SDK — pack/unpack MSIX)",
+    "signtool.exe (Windows SDK — Authenticode signing)",
+    "Windows App Installer (WinAppDeployCmd, Add-AppxPackage PowerShell)",
+    "winget (Windows Package Manager — uses MSIX)",
+    "MSIX Packaging Tool (GUI repackaging tool)"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".appx", ".msix", ".appxbundle", ".msixbundle"],
+    "relatedFormats": ["ZIP", "VSIX", "SNAP"],
+    "note": "APPX (Windows 8/10) was superseded by MSIX (Windows 10 1809+). MSIX added: per-user installation without admin rights, clean uninstall, modification packages, and app installer support. Bundles (.appxbundle/.msixbundle) contain architecture-specific inner packages."
+  },
+  "MimeTypes": [
+    "application/x-ms-appx",
+    "application/vnd.ms-appx",
+    "application/zip"
+  ],
+  "UseCases": [
+    "Microsoft Store application distribution",
+    "Windows 10/11 enterprise app deployment via Intune/SCCM",
+    "Win32 application modernization via MSIX packaging",
+    "Side-loading approved business applications in enterprise environments"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Container": "ZIP archive (PK 0x504B0304) with AppxManifest.xml and AppxBlockMap.xml",
+    "Signing": "Authenticode CMS/PKCS#7 in AppxSignature.p7x",
+    "Integrity": "Per-file SHA-256 block hash map in AppxBlockMap.xml",
+    "BundleSupport": "Multi-architecture bundles via .appxbundle/.msixbundle",
+    "SupportsStreaming": false,
+    "PlatformLock": "Windows 8+ (APPX), Windows 10 1809+ (MSIX)"
+  }
+}

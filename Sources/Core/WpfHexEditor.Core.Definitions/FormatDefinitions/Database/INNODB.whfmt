@@ -1,0 +1,309 @@
+{
+  "diffMode": "binary",
+  "formatName": "InnoDB Tablespace",
+  "version": "1.0",
+  "extensions": [
+    ".ibd",
+    ".ibdata"
+  ],
+  "description": "InnoDB tablespace file — MySQL/MariaDB InnoDB storage engine binary format. Each .ibd file stores one table's data and indexes. Page size: 16KB default (16384 bytes). Page 0: File Space Header (FSP_HDR). Page 1: Insert Buffer Bitmap. Page 2: Inode page. Page 3: Insert Buffer Header. Pages 4-7: Root pages for system indexes. Each 16KB page consists of: FIL header (38 bytes) + page-type-specific content + FIL trailer (8 bytes). FIL header layout: checksum(4B LE), page_offset(4B LE = page number), prev_page(4B LE), next_page(4B LE), LSN(8B LE), page_type(2B LE), flush_LSN(8B LE), space_id(4B LE). Page types: 1=FIL_PAGE_INDEX, 3=FIL_PAGE_UNDO_LOG, 4=FIL_PAGE_INODE, 5=FIL_PAGE_IBUF_FREE_LIST, 6=FSP_HDR, 7=XDES (extent descriptor), 8=BLOB, 17853=FIL_PAGE_TYPE_ALLOCATED.",
+  "category": "Database",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "MySQL 8.0 InnoDB Storage Engine Internals — dev.mysql.com/doc/internals/en/innodb.html",
+      "InnoDB Page Structure — Jeremy Cole's InnoDB Ruby documentation",
+      "MySQL Source: storage/innobase/include/fil0fil.h"
+    ],
+    "WebLinks": [
+      "https://dev.mysql.com/doc/refman/8.0/en/innodb-tablespace.html",
+      "https://blog.jcole.us/innodb/",
+      "https://github.com/jeremycole/innodb_ruby",
+      "https://en.wikipedia.org/wiki/InnoDB"
+    ]
+  },
+  "detection": {
+    "signature": "",
+    "offset": 0,
+    "required": false,
+    "Strength": "Weak",
+    "MinimumScore": 0.0,
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 16384,
+      "note": "InnoDB has no fixed magic bytes at offset 0 — detection relies on page structure and extension"
+    }
+  },
+  "variables": {
+    "page0Checksum": 0,
+    "page0Number": 0,
+    "prevPage": 0,
+    "nextPage": 0,
+    "pageLSN": 0,
+    "pageType": 0,
+    "flushLSN": 0,
+    "spaceId": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "FIL Header — Page Checksum",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "FIL (File-level) header checksum for this page (4-byte little-endian uint32). InnoDB uses either the legacy InnoDB checksum algorithm or CRC32 (configurable via innodb_checksum_algorithm). The checksum covers the page body but not the FIL header checksum field itself or the FIL trailer.",
+      "storeAs": "page0Checksum",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Page Number (Offset)",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.40,
+      "description": "Physical page number within the tablespace, stored as a 4-byte little-endian uint32. Page 0 is the FSP_HDR (File Space Header). This value must match the page's logical position in the file (file_offset / page_size). Used for consistency verification and recovery.",
+      "storeAs": "page0Number",
+      "valueType": "uint32",
+      "endianness": "little",
+      "validation": { "expectedValue": 0, "note": "Must be 0 for the first page of any tablespace" }
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Previous Page Number",
+      "offset": 8,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Page number of the previous page in a doubly-linked list of pages of the same type (4-byte little-endian uint32). Value 0xFFFFFFFF (FIL_NULL) indicates no previous page. Used in INDEX leaf page chains and UNDO log page chains for sequential scans.",
+      "storeAs": "prevPage",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Next Page Number",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Page number of the next page in the same doubly-linked page list (4-byte little-endian uint32). Value 0xFFFFFFFF (FIL_NULL) indicates no next page. Combined with the previous-page field, these form the doubly-linked page chain used by B-tree leaf level scans.",
+      "storeAs": "nextPage",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Page LSN",
+      "offset": 16,
+      "length": 8,
+      "color": "#FFEAA7",
+      "opacity": 0.30,
+      "description": "Log Sequence Number (LSN) of the last modification applied to this page (8-byte little-endian uint64). Used during crash recovery to determine which redo log records apply to this page. Pages with LSN less than the checkpoint LSN are guaranteed to be durable.",
+      "storeAs": "pageLSN",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Page Type",
+      "offset": 24,
+      "length": 2,
+      "color": "#FF8C69",
+      "opacity": 0.40,
+      "description": "Type code identifying the content and structure of this 16KB InnoDB page (2-byte little-endian uint16). The page type determines how the remainder of the page body is interpreted. Common types include B-tree index pages (1), undo log pages (3), inode pages (4), and the FSP header page (6).",
+      "storeAs": "pageType",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "1": "FIL_PAGE_INDEX — B-tree index page (table data and secondary indexes)",
+        "3": "FIL_PAGE_UNDO_LOG — Transaction undo log segment page",
+        "4": "FIL_PAGE_INODE — Inode page tracking segment extent lists",
+        "5": "FIL_PAGE_IBUF_FREE_LIST — Insert Buffer free list page",
+        "6": "FIL_PAGE_TYPE_FSP_HDR — File Space Header (page 0 only)",
+        "7": "FIL_PAGE_TYPE_XDES — Extent Descriptor page",
+        "8": "FIL_PAGE_TYPE_BLOB — Externally stored BLOB overflow page",
+        "17853": "FIL_PAGE_TYPE_ALLOCATED — Freshly allocated, not yet initialized"
+      }
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Flush LSN",
+      "offset": 26,
+      "length": 8,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "Flush LSN stored only in the first page (page 0) of the system tablespace (ibdata1). Represents the LSN up to which the log has been flushed to disk. In all other pages and tablespaces this field is unused and should be zero.",
+      "storeAs": "flushLSN",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "FIL Header — Tablespace Space ID",
+      "offset": 34,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.35,
+      "description": "Tablespace ID assigned by InnoDB when the tablespace was created (4-byte little-endian uint32). Space ID 0 is the system tablespace (ibdata1). Per-table .ibd files receive non-zero IDs. Consistent across all pages in the same tablespace; can be used to verify page belongs to correct file.",
+      "storeAs": "spaceId",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Number",
+      "variable": "page0Number",
+      "description": "Physical page number within the tablespace (0-indexed, page size 16384 bytes by default)"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Type",
+      "variable": "pageType",
+      "description": "InnoDB page type code determining how the page body is structured"
+    },
+    {
+      "type": "metadata",
+      "name": "Space ID",
+      "variable": "spaceId",
+      "description": "Tablespace identifier — 0 for system tablespace, non-zero for file-per-table .ibd files"
+    },
+    {
+      "type": "metadata",
+      "name": "Page LSN",
+      "variable": "pageLSN",
+      "description": "Log Sequence Number of last modification — used during InnoDB crash recovery"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Page 0 number must be zero",
+      "expression": "page0Number == 0",
+      "severity": "error",
+      "message": "First page of any InnoDB tablespace must have page number 0 in the FIL header — mismatch indicates corruption or file truncation"
+    },
+    {
+      "name": "Page type must be a known InnoDB type",
+      "expression": "pageType == 1 || pageType == 3 || pageType == 4 || pageType == 5 || pageType == 6 || pageType == 7 || pageType == 8 || pageType == 17853",
+      "severity": "warning",
+      "message": "Page type at offset 24 is not a recognized InnoDB FIL page type — file may be from an unsupported MySQL version or be corrupted"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "FIL Header Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Page Type Field", "offset": 24, "icon": "\uE8A5", "color": "#FF8C69" },
+      { "name": "Space ID Field", "offset": 34, "icon": "\uE9D9", "color": "#87CEEB" },
+      { "name": "FIL Trailer (page end)", "offset": 16376, "icon": "\uE72E", "color": "#FFEAA7" }
+    ]
+  },
+  "inspector": {
+    "badge": "pageType",
+    "primaryField": "spaceId",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Page Identity",
+        "icon": "\uE71B",
+        "fields": ["page0Number", "pageType", "spaceId"]
+      },
+      {
+        "title": "Recovery Information",
+        "icon": "\uE8A5",
+        "fields": ["pageLSN", "flushLSN", "page0Checksum"]
+      },
+      {
+        "title": "Page Chain Links",
+        "icon": "\uE8B7",
+        "fields": ["prevPage", "nextPage"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "InnoDB FIL Header (JSON)",
+      "format": "json",
+      "fields": ["page0Checksum", "page0Number", "prevPage", "nextPage", "pageLSN", "pageType", "flushLSN", "spaceId"]
+    },
+    {
+      "name": "fil_page_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "fil_page_header",
+      "fields": ["page0Checksum", "page0Number", "prevPage", "nextPage", "pageLSN", "pageType", "flushLSN", "spaceId"]
+    }
+  ],
+  "forensic": {
+    "category": "database",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Page number mismatch",
+        "condition": "page0Number != 0",
+        "severity": "error",
+        "description": "Page 0 of tablespace must have page number 0. A mismatch indicates file truncation, data block transplant, or physical corruption of the FIL header."
+      },
+      {
+        "name": "Unknown page type",
+        "condition": "pageType > 8 && pageType != 17853",
+        "severity": "warning",
+        "description": "Unrecognized InnoDB page type. Could indicate a newer MySQL version format or deliberate data tampering."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "InnoDB .ibd tablespace: pages are 16384 bytes each. Every page starts with a 38-byte FIL header. Page 0 (FSP_HDR) is always the first page and contains the File Space Header. FIL header: checksum(4B LE) + page_number(4B LE) + prev_page(4B LE) + next_page(4B LE) + LSN(8B LE) + page_type(2B LE) + flush_LSN(8B LE) + space_id(4B LE). FIL trailer (last 8 bytes): old-style checksum(4B LE) + LSN low 32 bits(4B LE). No file-level magic — detection by structure and extension.",
+    "suggestedInspections": [
+      "Verify page 0 FIL header page_number field is exactly 0",
+      "Check page_type at offset 24 is a known InnoDB page type value",
+      "Verify space_id is consistent across multiple pages in the same file",
+      "Examine flush_LSN at offset 26 — non-zero only on page 0 of ibdata1",
+      "Scan for repeated 0xFFFFFFFF (FIL_NULL) in prev/next page fields on standalone pages"
+    ]
+  },
+  "software": [
+    "MySQL 5.5+",
+    "MariaDB 10.x",
+    "Percona Server",
+    "innodb_ruby (Jeremy Cole)",
+    "MySQL Shell",
+    "Percona XtraBackup"
+  ],
+  "formatRelationships": {
+    "category": "Database",
+    "extensions": [".ibd", ".ibdata"],
+    "relatedFormats": ["SQLITE", "ROCKSDB_LOG"],
+    "containerVariant": "ibdata1 = system tablespace (multi-table); .ibd = per-table file-per-table mode"
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "MySQL/MariaDB database table storage and recovery",
+    "Database forensics — extracting records from .ibd files without MySQL",
+    "InnoDB crash recovery analysis",
+    "Database migration and backup verification"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 8,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DatabaseEngine": "InnoDB (MySQL/MariaDB)",
+    "DefaultPageSize": 16384,
+    "FILHeaderSize": 38,
+    "FILTrailerSize": 8,
+    "Endianness": "little-endian for all multi-byte fields",
+    "ChecksumAlgorithms": ["innodb (legacy)", "crc32", "none"],
+    "SupportsEncryption": true,
+    "SupportsCompression": true,
+    "SpaceIDZero": "System tablespace (ibdata1)"
+  }
+}

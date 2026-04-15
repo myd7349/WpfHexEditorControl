@@ -9,6 +9,7 @@
 //////////////////////////////////////////////
 
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.ViewModels;
@@ -35,6 +36,28 @@ internal sealed class BlocksViewModel : ViewModelBase
     public ICommand MoveUpCommand    => new RelayCommand(MoveUp,            () => CanMoveUp());
     public ICommand MoveDownCommand  => new RelayCommand(MoveDown,          () => CanMoveDown());
     public ICommand DuplicateCommand => new RelayCommand(DuplicateSelected, () => SelectedBlock is not null);
+    public ICommand CopyBlockCommand  => new RelayCommand(CopyBlock,  () => SelectedBlock is not null);
+    public ICommand PasteBlockCommand => new RelayCommand(PasteBlock, CanPasteBlock);
+
+    // ── Filter ───────────────────────────────────────────────────────────────
+
+    private string _filterText = "";
+
+    public string FilterText
+    {
+        get => _filterText;
+        set
+        {
+            if (!SetField(ref _filterText, value)) return;
+            OnPropertyChanged(nameof(FilteredBlockTree));
+        }
+    }
+
+    /// <summary>Returns blocks matching the current filter (case-insensitive on name, description, and children).</summary>
+    public IEnumerable<BlockViewModel> FilteredBlockTree =>
+        string.IsNullOrWhiteSpace(_filterText)
+            ? BlockTree
+            : BlockTree.Where(b => b.MatchesFilter(_filterText));
 
     // ── Load / Save ───────────────────────────────────────────────────────────
 
@@ -59,7 +82,7 @@ internal sealed class BlocksViewModel : ViewModelBase
         {
             Type  = blockType,
             Name  = name,
-            Color = "#4ECDC4",
+            Color = StructureEditorConstants.DefaultBlockColor,
         };
         var vm = CreateViewModel(b);
         BlockTree.Add(vm);
@@ -121,6 +144,54 @@ internal sealed class BlocksViewModel : ViewModelBase
         var idx = BlockTree.IndexOf(SelectedBlock);
         return idx >= 0 && idx < BlockTree.Count - 1;
     }
+
+    // ── Copy / Paste ─────────────────────────────────────────────────────────
+
+    private const string ClipboardPrefix = "WHFMT_BLOCK:";
+
+    private void CopyBlock()
+    {
+        if (SelectedBlock is null) return;
+        Clipboard.SetText(ClipboardPrefix + SelectedBlock.ToRawJson());
+    }
+
+    private void PasteBlock()
+    {
+        var text = Clipboard.GetText();
+        if (!text.StartsWith(ClipboardPrefix, StringComparison.Ordinal)) return;
+        var json = text[ClipboardPrefix.Length..];
+        var vm = new BlockViewModel();
+        vm.LoadFromRawJson(json);
+        WireViewModel(vm);
+        var idx = SelectedBlock is not null ? BlockTree.IndexOf(SelectedBlock) + 1 : BlockTree.Count;
+        BlockTree.Insert(idx, vm);
+        SelectedBlock = vm;
+        RaiseChanged();
+    }
+
+    private static bool CanPasteBlock()
+    {
+        try { return Clipboard.GetText().StartsWith(ClipboardPrefix, StringComparison.Ordinal); }
+        catch { return false; }
+    }
+
+    // ── Drag-and-drop ─────────────────────────────────────────────────────────
+
+    /// <summary>Moves <paramref name="source"/> to <paramref name="targetIndex"/> in the flat block list.</summary>
+    internal void MoveBlock(BlockViewModel source, int targetIndex)
+    {
+        var idx = BlockTree.IndexOf(source);
+        if (idx < 0 || idx == targetIndex) return;
+        BlockTree.Move(idx, Math.Clamp(targetIndex, 0, BlockTree.Count - 1));
+        RaiseChanged();
+    }
+
+    // ── Variable cross-reference ──────────────────────────────────────────────
+
+    /// <summary>All distinct variable names referenced by any block in the tree.</summary>
+    public IEnumerable<string> ReferencedVariableNames =>
+        BlockTree.SelectMany(b => b.GetReferencedVariables())
+                 .Distinct(StringComparer.Ordinal);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

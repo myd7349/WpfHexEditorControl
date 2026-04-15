@@ -1,0 +1,207 @@
+{
+  "diffMode": "text",
+  "formatName": "MSBuild Project File",
+  "version": "1.0",
+  "extensions": [
+    ".csproj",
+    ".vbproj",
+    ".fsproj",
+    ".vcxproj",
+    ".props",
+    ".targets"
+  ],
+  "description": "MSBuild XML project file (.csproj, .vbproj, .fsproj, .vcxproj, .props, .targets). UTF-8 or UTF-8-BOM XML. Root element is <Project> with either Sdk= attribute (SDK-style, .NET Core/.NET 5+) or ToolsVersion= attribute (classic, .NET Framework). SDK-style projects auto-include all source files matching language glob patterns. Contains: <PropertyGroup> (TargetFramework, AssemblyName, OutputType, Nullable, LangVersion), <ItemGroup> (PackageReference, ProjectReference, Compile, Content, EmbeddedResource, None), <Target> (custom MSBuild build steps with Tasks). .props files are property sheets imported early in the build. .targets files define MSBuild targets and are imported later. Used by Visual Studio, dotnet CLI, and MSBuild.exe.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "MSBuild project file schema reference — learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-project-file-schema-reference",
+      "MSBuild SDK-style projects — learn.microsoft.com/en-us/dotnet/core/project-sdk/overview",
+      "MSBuild targets reference — learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-targets"
+    ],
+    "WebLinks": [
+      "https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild",
+      "https://learn.microsoft.com/en-us/dotnet/core/project-sdk/overview",
+      "https://github.com/dotnet/msbuild",
+      "https://en.wikipedia.org/wiki/MSBuild"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3C50726F6A656374", "offset": 0, "label": "<Project — MSBuild project root element at file start", "weight": 0.8 },
+      { "value": "3C3F786D6C", "offset": 0, "label": "<?xml — XML declaration before Project element", "weight": 0.5 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 10,
+      "maxSignatureOffset": 3,
+      "note": "MSBuild project files are UTF-8 XML. They may start with a BOM (EF BB BF) before the XML declaration or directly with <Project. Extension-based detection is more reliable."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "xmlOrProject": "",
+    "sdkAttribute": "",
+    "targetFramework": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "File Start Marker",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the MSBuild project file. ASCII '<' (0x3C) indicates the file starts directly with an XML element (typical for SDK-style projects: <Project Sdk=\"...\">). A UTF-8 BOM (0xEF) indicates a BOM-prefixed XML file (legacy .csproj from older Visual Studio versions). The absence of a BOM is recommended for modern SDK-style projects and .NET 5+ cross-platform compatibility.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "60": "< — Direct XML start (SDK-style, no BOM)",
+        "239": "BOM start (0xEF) — UTF-8 BOM prefix"
+      }
+    },
+    {
+      "type": "field",
+      "name": "XML/Project Header",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 8 bytes of the file for header pattern matching. SDK-style .csproj files start with '<Project' (3C 50 72 6F 6A 65 63 74). Classic .csproj and BOM-prefixed files start with the XML declaration '<?xml ve' (3C 3F 78 6D 6C 20 76 65) or UTF-8 BOM 'EF BB BF 3C'. The SDK attribute on the Project element identifies the .NET SDK being used (Microsoft.NET.Sdk, Microsoft.NET.Sdk.Web, Microsoft.NET.Sdk.Worker, etc.).",
+      "storeAs": "xmlOrProject",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "SDK Attribute",
+      "variable": "sdkAttribute",
+      "description": "Value of the Sdk= attribute on the <Project> root element (e.g. 'Microsoft.NET.Sdk', 'Microsoft.NET.Sdk.Web', 'Microsoft.NET.Sdk.Worker')"
+    },
+    {
+      "type": "metadata",
+      "name": "Target Framework",
+      "variable": "targetFramework",
+      "description": "Value of <TargetFramework> or <TargetFrameworks> property (e.g. 'net9.0', 'net8.0-windows', 'net48', 'netstandard2.1')"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File starts with XML or BOM",
+      "expression": "firstByte == 60 || firstByte == 239",
+      "severity": "error",
+      "message": "MSBuild project file should start with '<' or UTF-8 BOM (0xEF) — file may be binary or corrupted"
+    },
+    {
+      "name": "Contains Project element",
+      "expression": "xmlOrProject contains '<Project' || xmlOrProject contains '<?xml'",
+      "severity": "warning",
+      "message": "File does not begin with expected XML header or <Project element — may not be a valid MSBuild project"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "sdkAttribute",
+    "primaryField": "targetFramework",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "xmlOrProject"]
+      },
+      {
+        "title": "Project Properties",
+        "icon": "\uE946",
+        "fields": ["sdkAttribute", "targetFramework"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "MSBuild Project Info (JSON)",
+      "format": "json",
+      "fields": ["xmlOrProject", "sdkAttribute", "targetFramework"]
+    },
+    {
+      "name": "Project Header summary",
+      "format": "text",
+      "fields": ["sdkAttribute", "targetFramework"]
+    }
+  ],
+  "forensic": {
+    "category": "source",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Inline MSBuild task",
+        "condition": "true",
+        "severity": "info",
+        "description": "MSBuild .targets and .csproj files can contain inline C# code via UsingTask/Task elements — these execute arbitrary code during build. Inspect all <UsingTask> and <Exec> elements in untrusted project files."
+      },
+      {
+        "name": "External imports",
+        "condition": "true",
+        "severity": "info",
+        "description": "MSBuild <Import> elements can pull in remote .targets files from network paths or NuGet packages — review all Import paths for supply chain risks"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "MSBuild project files are XML with two styles: SDK-style (<Project Sdk='Microsoft.NET.Sdk'>) and classic (<Project xmlns='...' ToolsVersion='...'> with explicit SDK imports). SDK-style is the modern standard for .NET 5+. PropertyGroup contains build settings; ItemGroup contains file references and package dependencies; Target elements define custom build steps. PackageReference elements specify NuGet dependencies with version attributes. The .props/.targets extension indicates shared MSBuild property/target files imported by multiple projects (Directory.Build.props, Directory.Build.targets are auto-imported).",
+    "suggestedInspections": [
+      "Check for Sdk= attribute on <Project> — identifies SDK-style vs classic project format",
+      "Read <TargetFramework> or <TargetFrameworks> for .NET version targeting",
+      "List all <PackageReference> elements to enumerate NuGet dependencies and versions",
+      "Check for <Target> elements with unusual conditions or <Exec> tasks that run commands",
+      "Look for <Import> elements referencing external .targets files from NuGet or network paths"
+    ]
+  },
+  "software": [
+    "Visual Studio (project file editor and build host)",
+    "dotnet CLI (dotnet build, dotnet restore)",
+    "MSBuild.exe (standalone build engine)",
+    "Rider (JetBrains IDE for .NET)",
+    "VS Code with C# Dev Kit extension"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".csproj", ".vbproj", ".fsproj", ".vcxproj", ".props", ".targets"],
+    "relatedFormats": ["NUSPEC", "SOLUTIONFILE"],
+    "note": ".csproj (C#), .vbproj (VB.NET), .fsproj (F#), .vcxproj (C++) all use the same MSBuild XML format with different default properties and imports. .props and .targets are property/target sheets included by other project files."
+  },
+  "MimeTypes": [
+    "application/xml",
+    "text/xml"
+  ],
+  "UseCases": [
+    ".NET project definition and build configuration",
+    "NuGet package dependency management",
+    "Multi-targeting cross-platform library builds",
+    "Custom build pipeline steps via MSBuild targets",
+    "Enterprise build automation and CI/CD integration"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Encoding": "UTF-8 (BOM optional, discouraged for SDK-style)",
+    "Schema": "MSBuild XML schema — no fixed namespace for SDK-style projects",
+    "Styles": "SDK-style (Sdk= attribute, .NET Core+) and Classic (ToolsVersion=, .NET Framework)",
+    "BuildEngine": "MSBuild 17.x (Visual Studio 2022), dotnet build (cross-platform)",
+    "SupportsStreaming": false
+  }
+}

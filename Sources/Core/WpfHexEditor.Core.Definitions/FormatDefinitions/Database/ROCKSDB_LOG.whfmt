@@ -1,0 +1,258 @@
+{
+  "diffMode": "binary",
+  "formatName": "RocksDB WAL Log",
+  "version": "1.0",
+  "extensions": [
+    ".log"
+  ],
+  "description": "RocksDB Write-Ahead Log (WAL) file — record-based binary format used by Facebook RocksDB and LevelDB for durability. Records are grouped into 32KB blocks (32768 bytes). Each record starts with a 7-byte header: checksum(4B LE CRC32 of type+data), length(2B LE), type(1B: 1=FULL, 2=FIRST, 3=MIDDLE, 4=LAST). Records larger than one block are fragmented across blocks using FIRST/MIDDLE/LAST types. Within a record, WriteBatch format: sequence_number(8B LE uint64) + count(4B LE uint32) + N records, each: value_type(1B: 0=kTypeDeletion, 1=kTypeValue, 2=kTypeMerge) + key(varint-length-prefixed) + value(varint-length-prefixed). Used alongside .sst SSTable files. No file-level magic — detection by CRC32 record structure and block alignment.",
+  "category": "Database",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RocksDB WAL Format — github.com/facebook/rocksdb/wiki/Write-Ahead-Log-File-Format",
+      "LevelDB Log Format — github.com/google/leveldb/blob/main/doc/log_format.md",
+      "RocksDB Source: db/log_format.h — facebook/rocksdb"
+    ],
+    "WebLinks": [
+      "https://github.com/facebook/rocksdb/wiki/Write-Ahead-Log-File-Format",
+      "https://rocksdb.org/",
+      "https://github.com/google/leveldb/blob/main/doc/log_format.md",
+      "https://en.wikipedia.org/wiki/RocksDB"
+    ]
+  },
+  "detection": {
+    "signature": "",
+    "offset": 0,
+    "required": false,
+    "Strength": "Weak",
+    "MinimumScore": 0.0,
+    "EntropyHint": { "min": 2.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 7,
+      "note": "No fixed magic — RocksDB WAL uses record CRC headers; detection by file extension and record structure"
+    }
+  },
+  "variables": {
+    "firstCRC": 0,
+    "firstRecordLength": 0,
+    "firstRecordType": 0,
+    "sequenceNumber": 0,
+    "batchCount": 0,
+    "firstValueType": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Record CRC32 Checksum",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.40,
+      "description": "CRC32 checksum of the first WAL record (4-byte little-endian uint32). Computed over the concatenation of the record type byte and the record data payload. RocksDB uses the CRC32 masked checksum (rotated: ((crc >> 15) | (crc << 17)) + 0xa282ead8). Allows detection of file corruption at the record level.",
+      "storeAs": "firstCRC",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Record Data Length",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Length of the first WAL record data payload in bytes (2-byte little-endian uint16), not including the 7-byte record header. For a WriteBatch record this includes the sequence number (8B), count (4B), and all individual write entries. Maximum per-block record data: 32768 - 7 = 32761 bytes.",
+      "storeAs": "firstRecordLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Record Type",
+      "offset": 6,
+      "length": 1,
+      "color": "#FFEAA7",
+      "opacity": 0.40,
+      "description": "Record fragmentation type for the first WAL record (1-byte uint8). FULL(1) means the entire record fits within one block. FIRST(2), MIDDLE(3), LAST(4) are used for records that span multiple 32KB blocks. Zero(0) is used for padding when less than 7 bytes remain at the end of a block.",
+      "storeAs": "firstRecordType",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Zero — padding fill bytes at block boundary",
+        "1": "kFullType — complete record within a single block",
+        "2": "kFirstType — first fragment of a multi-block record",
+        "3": "kMiddleType — middle fragment of a multi-block record",
+        "4": "kLastType — final fragment of a multi-block record"
+      }
+    },
+    {
+      "type": "field",
+      "name": "WriteBatch Sequence Number",
+      "offset": 7,
+      "length": 8,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Sequence number of the first WriteBatch in this WAL record (8-byte little-endian uint64). Monotonically increasing across all write operations. Sequence numbers are assigned at commit time and used for MVCC snapshot reads and point-in-time recovery. First WAL sequence number is typically 1.",
+      "storeAs": "sequenceNumber",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "WriteBatch Record Count",
+      "offset": 15,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.30,
+      "description": "Number of individual Put/Delete/Merge operations bundled in this WriteBatch (4-byte little-endian uint32). Each counted operation is one key-value mutation. Batching multiple operations into a single WAL record improves write throughput by amortizing fsync overhead.",
+      "storeAs": "batchCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "First Record Type",
+      "variable": "firstRecordType",
+      "description": "WAL record fragmentation type: 1=FULL, 2=FIRST, 3=MIDDLE, 4=LAST"
+    },
+    {
+      "type": "metadata",
+      "name": "Sequence Number",
+      "variable": "sequenceNumber",
+      "description": "WriteBatch sequence number — monotonically increasing MVCC write counter"
+    },
+    {
+      "type": "metadata",
+      "name": "Batch Record Count",
+      "variable": "batchCount",
+      "description": "Number of key-value mutations in the first WriteBatch"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC32 Checksum",
+      "variable": "firstCRC",
+      "description": "Masked CRC32 of the first WAL record (type byte + data payload)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Record type must be valid",
+      "expression": "firstRecordType >= 1 && firstRecordType <= 4",
+      "severity": "warning",
+      "message": "First WAL record type must be 1 (FULL), 2 (FIRST), 3 (MIDDLE), or 4 (LAST) — other values indicate a corrupt or non-RocksDB log file"
+    },
+    {
+      "name": "WriteBatch count must be positive",
+      "expression": "batchCount > 0",
+      "severity": "warning",
+      "message": "WriteBatch record count at offset 15 should be greater than zero — a zero count indicates an empty batch or file corruption"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "First Record Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "WriteBatch Sequence", "offset": 7, "icon": "\uE8A5", "color": "#95E1D3" },
+      { "name": "Second Block", "offset": 32768, "icon": "\uE9D9", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstRecordType",
+    "primaryField": "sequenceNumber",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Record Header",
+        "icon": "\uE71B",
+        "fields": ["firstCRC", "firstRecordLength", "firstRecordType"]
+      },
+      {
+        "title": "WriteBatch",
+        "icon": "\uE8A5",
+        "fields": ["sequenceNumber", "batchCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "WAL Record Header (JSON)",
+      "format": "json",
+      "fields": ["firstCRC", "firstRecordLength", "firstRecordType", "sequenceNumber", "batchCount"]
+    },
+    {
+      "name": "rocksdb_wal_record_t (C struct)",
+      "format": "c-struct",
+      "structName": "rocksdb_wal_record",
+      "fields": ["firstCRC", "firstRecordLength", "firstRecordType", "sequenceNumber", "batchCount"]
+    }
+  ],
+  "forensic": {
+    "category": "database",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid record type",
+        "condition": "firstRecordType == 0 || firstRecordType > 4",
+        "severity": "warning",
+        "description": "Record type byte at offset 6 is outside the valid range 1-4. Zero is a padding byte that should not appear at offset 0. May indicate a corrupt WAL or a non-RocksDB log file."
+      },
+      {
+        "name": "Zero batch count",
+        "condition": "batchCount == 0",
+        "severity": "warning",
+        "description": "WriteBatch count of zero at offset 15 is unusual. Either the file is corrupt or this is a special internal write (e.g., a compaction pointer update)."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "RocksDB WAL block layout: records fill 32768-byte blocks. Record header (7B): CRC32(4B LE masked) + length(2B LE) + type(1B). WriteBatch payload: sequence(8B LE) + count(4B LE) + entries. Each entry: kTypeValue(1) = key_len(varint) + key + value_len(varint) + value; kTypeDeletion(0) = key_len(varint) + key. CRC32 is masked: value = ((crc >> 15) | (crc << 17)) + 0xa282ead8ul. Block end padding: when < 7 bytes remain, fill with zeros.",
+    "suggestedInspections": [
+      "Check record type byte at offset 6 is in range 1-4 (FULL/FIRST/MIDDLE/LAST)",
+      "Verify record length at offset 4 is reasonable (non-zero, less than 32761)",
+      "Parse WriteBatch sequence number at offset 7 (8B LE) — should be >= 1",
+      "Check batch count at offset 15 (4B LE) — should be >= 1",
+      "Verify CRC32 at offset 0 matches masked CRC of (type byte + data payload)"
+    ]
+  },
+  "software": [
+    "RocksDB (Facebook/Meta)",
+    "LevelDB (Google)",
+    "TiKV (PingCAP)",
+    "CockroachDB",
+    "MyRocks (MySQL RocksDB engine)",
+    "Ceph BlueStore"
+  ],
+  "formatRelationships": {
+    "category": "Database",
+    "extensions": [".log"],
+    "relatedFormats": ["LMDB", "INNODB"],
+    "containerVariant": "Companion files: MANIFEST (version edits), CURRENT, *.sst (SSTables), OPTIONS"
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "RocksDB write durability and crash recovery",
+    "Database replication (WAL-based change data capture)",
+    "Performance analysis of RocksDB write paths",
+    "Recovery of RocksDB databases after partial writes"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DatabaseType": "Write-Ahead Log for LSM-tree key-value store",
+    "BlockSize": 32768,
+    "RecordHeaderSize": 7,
+    "ChecksumAlgorithm": "CRC32 (masked)",
+    "Endianness": "little-endian",
+    "FragmentationTypes": ["FULL", "FIRST", "MIDDLE", "LAST"],
+    "WriteBatchSequenceWidth": "64-bit monotonic counter",
+    "ValueTypes": ["kTypeDeletion=0", "kTypeValue=1", "kTypeMerge=2"]
+  }
+}

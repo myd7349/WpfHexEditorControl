@@ -1,0 +1,221 @@
+{
+  "diffMode": "binary",
+  "formatName": "LUKS Encrypted Volume",
+  "version": "1.0",
+  "extensions": [ ".img", ".luks" ],
+  "description": "LUKS (Linux Unified Key Setup) encrypted disk volume format. Magic: 6 bytes 'LUKS' + 0xBA 0xBE (0x4C554B53BABE). LUKS1 header (592 bytes total): magic (6B), version uint16 BE = 1, cipher_name (32B ASCII e.g. 'aes'), cipher_mode (32B ASCII e.g. 'xts-plain64'), hash_spec (32B ASCII e.g. 'sha256'), payload_offset (4B BE — first data sector), key_bytes (4B BE: 16/24/32 for 128/192/256-bit AES), mk_digest (20B), mk_digest_salt (32B), mk_digest_iterations (4B BE), uuid (40B ASCII). Followed by 8 key slot structures of 48 bytes each. LUKS2 uses the same magic with version=2 and adds a JSON metadata area after the header.",
+  "category": "Crypto",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://gitlab.com/cryptsetup/cryptsetup/-/wikis/LUKS-standard/on-disk-format.pdf",
+    "https://man7.org/linux/man-pages/man8/cryptsetup.8.html"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "4C554B53BABE",
+        "offset": 0,
+        "label": "LUKS magic + 0xBA 0xBE — LUKS encrypted volume header magic (6 bytes)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "Strength": "Strong"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "luksMagic",
+      "offset": 0,
+      "size": 6,
+      "type": "bytes",
+      "description": "LUKS magic identifier — 6 bytes at offset 0: ASCII 'LUKS' (0x4C 0x55 0x4B 0x53) followed by 0xBA 0xBE; this 6-byte sequence is the mandatory magic for all LUKS version 1 and version 2 encrypted volume headers",
+      "storeAs": "luksMagic"
+    },
+    {
+      "name": "luksVersion",
+      "offset": 6,
+      "size": 2,
+      "type": "uint16",
+      "endian": "BE",
+      "description": "LUKS format version — 2-byte big-endian unsigned integer at offset 6; value 1 indicates LUKS1 with a fixed 592-byte header; value 2 indicates LUKS2 with an extended JSON metadata area after the binary header",
+      "storeAs": "luksVersion",
+      "valueMap": {
+        "1": "LUKS1 — standard 592-byte header",
+        "2": "LUKS2 — extended JSON header"
+      }
+    },
+    {
+      "name": "cipherName",
+      "offset": 8,
+      "size": 32,
+      "type": "ascii",
+      "description": "Cipher algorithm name — 32-byte null-terminated ASCII string at offset 8 specifying the symmetric cipher used for disk encryption; typical values are 'aes', 'twofish', or 'serpent'",
+      "storeAs": "cipherName"
+    },
+    {
+      "name": "cipherMode",
+      "offset": 40,
+      "size": 32,
+      "type": "ascii",
+      "description": "Cipher mode and IV specification — 32-byte null-terminated ASCII string at offset 40 specifying the block cipher mode and initialization vector generation method; typical values are 'xts-plain64', 'cbc-essiv:sha256'",
+      "storeAs": "cipherMode"
+    },
+    {
+      "name": "hashSpec",
+      "offset": 72,
+      "size": 32,
+      "type": "ascii",
+      "description": "Hash algorithm specification — 32-byte null-terminated ASCII string at offset 72 specifying the hash function used for PBKDF2 key derivation; typical values are 'sha256', 'sha512', 'sha1', 'ripemd160'",
+      "storeAs": "hashSpec"
+    },
+    {
+      "name": "payloadOffset",
+      "offset": 104,
+      "size": 4,
+      "type": "uint32",
+      "endian": "BE",
+      "description": "Payload sector offset — 4-byte big-endian unsigned integer at offset 104 indicating the sector number (512-byte sectors by default) where the encrypted data payload begins; header and key slots occupy sectors before this offset",
+      "storeAs": "payloadOffset"
+    },
+    {
+      "name": "keyBytes",
+      "offset": 108,
+      "size": 4,
+      "type": "uint32",
+      "endian": "BE",
+      "description": "Master key length — 4-byte big-endian unsigned integer at offset 108 specifying the length in bytes of the master encryption key; 16=128-bit AES, 24=192-bit AES, 32=256-bit AES",
+      "storeAs": "keyBytes",
+      "valueMap": {
+        "16": "128-bit AES",
+        "24": "192-bit AES",
+        "32": "256-bit AES"
+      }
+    },
+    {
+      "name": "mkDigest",
+      "offset": 112,
+      "size": 20,
+      "type": "bytes",
+      "description": "Master key digest — 20-byte hash value at offset 112 used to verify that the correct master key has been derived from a passphrase; computed as PBKDF2-HMAC-SHA1 of the master key with mk_digest_salt"
+    },
+    {
+      "name": "mkDigestSalt",
+      "offset": 132,
+      "size": 32,
+      "type": "bytes",
+      "description": "Master key digest salt — 32-byte random salt at offset 132 used in the PBKDF2 computation for the master key digest verification; unique per volume, stored in plaintext in the header"
+    },
+    {
+      "name": "luksUuid",
+      "offset": 168,
+      "size": 40,
+      "type": "ascii",
+      "description": "Volume UUID — 40-byte null-terminated ASCII string at offset 168 containing the UUID uniquely identifying this LUKS volume; format is standard UUID with hyphens e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'",
+      "storeAs": "luksUuid"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MagicValid",
+      "expression": "luksMagic[0] == 0x4C && luksMagic[1] == 0x55 && luksMagic[2] == 0x4B && luksMagic[3] == 0x53 && luksMagic[4] == 0xBA && luksMagic[5] == 0xBE",
+      "severity": "error",
+      "message": "LUKS magic at offset 0 must be exactly 4C 55 4B 53 BA BE ('LUKS' + 0xBA 0xBE); file is not a valid LUKS encrypted volume"
+    },
+    {
+      "name": "VersionValid",
+      "expression": "luksVersion == 1 || luksVersion == 2",
+      "severity": "error",
+      "message": "LUKS version at offset 6 must be 1 (LUKS1) or 2 (LUKS2); unknown version number indicates an unsupported or corrupt header"
+    },
+    {
+      "name": "KeyBytesValid",
+      "expression": "keyBytes == 16 || keyBytes == 24 || keyBytes == 32",
+      "severity": "warning",
+      "message": "Master key size at offset 108 should be 16 (128-bit), 24 (192-bit), or 32 (256-bit) bytes; non-standard key size may indicate a corrupt header or unusual cipher configuration"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "LUKS Header", "offset": 0, "size": 208, "description": "Main LUKS header fields: magic, version, cipher, hash, UUID, and digest" },
+      { "name": "Key Slots", "offset": 208, "size": 384, "description": "8 key slot structures of 48 bytes each (offsets 208-591); each slot can hold one passphrase" },
+      { "name": "Payload", "offset": -1, "size": -1, "description": "Encrypted data payload beginning at payloadOffset sectors; all bytes are ciphertext" }
+    ]
+  },
+  "inspector": {
+    "badge": "LUKS",
+    "primaryField": "luksUuid",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Identity",
+        "fields": [ "luksMagic", "luksVersion", "luksUuid" ]
+      },
+      {
+        "name": "Crypto Parameters",
+        "fields": [ "cipherName", "cipherMode", "hashSpec", "keyBytes" ]
+      },
+      {
+        "name": "Layout",
+        "fields": [ "payloadOffset" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Volume Summary",
+      "format": "text",
+      "template": "LUKS Encrypted Volume\nVersion: LUKS{luksVersion}\nUUID: {luksUuid}\nCipher: {cipherName} / {cipherMode}\nHash: {hashSpec}\nKey Size: {keyBytes} bytes\nPayload at sector: {payloadOffset}"
+    },
+    {
+      "name": "Crypto Parameters CSV",
+      "format": "csv",
+      "template": "Field,Value\nVersion,{luksVersion}\nUUID,{luksUuid}\nCipher,{cipherName}\nCipherMode,{cipherMode}\nHash,{hashSpec}\nKeyBytes,{keyBytes}\nPayloadOffset,{payloadOffset}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "high",
+    "notes": "LUKS full-disk encryption volume. Cipher name, mode, hash spec, and UUID are stored in plaintext in the header. Master key is protected by PBKDF2-derived key encryption in up to 8 key slots. Without a passphrase the payload is computationally infeasible to decrypt. UUID can link this volume to other forensic artifacts."
+  },
+  "aiHints": {
+    "analysisContext": "LUKS stores cryptographic parameters in a plaintext header even though the data payload is fully encrypted. For forensic analysis: extract the UUID to correlate with system logs, identify the cipher and hash for cryptanalytic assessment, check how many key slots are active (active slot has a specific iteration count), and note payloadOffset to determine where the key material area ends and data begins.",
+    "suggestedInspections": [
+      "Verify 6-byte LUKS magic (4C 55 4B 53 BA BE) at offset 0",
+      "Read version at offset 6 (BE uint16): 1=LUKS1 fixed header, 2=LUKS2 with JSON extension",
+      "Read cipher name at offset 8 and cipher mode at offset 40 for encryption algorithm",
+      "Read hash spec at offset 72 for PBKDF2 hash function used in key derivation",
+      "Read UUID at offset 168 (40 bytes ASCII) for volume correlation in forensic context",
+      "Check key slot structures at offsets 208-591 to determine which slots are active"
+    ]
+  },
+  "software": [
+    { "name": "cryptsetup", "url": "https://gitlab.com/cryptsetup/cryptsetup", "role": "volume manager" },
+    { "name": "dm-crypt", "url": "https://www.kernel.org/doc/html/latest/admin-guide/device-mapper/dm-crypt.html", "role": "kernel driver" }
+  ],
+  "formatRelationships": [
+    { "format": "VERACRYPT", "relation": "alternative — VeraCrypt volumes use plausible deniability with no visible header; LUKS stores plaintext metadata" }
+  ],
+  "MimeTypes": [ "application/x-luks" ],
+  "UseCases": [
+    "Linux full-disk encryption with cryptsetup",
+    "Encrypted container file forensic analysis",
+    "Cipher and key parameter extraction for security auditing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "headerSize": 592,
+    "magicOffset": 0,
+    "magicBytes": "4C554B53BABE",
+    "endianness": "big-endian",
+    "keySlots": 8,
+    "keySlotSize": 48,
+    "notes": "LUKS1 header is 592 bytes with 8 key slots. LUKS2 extends this with JSON metadata. Big-endian byte order for all header integers. The payload_offset field is in 512-byte sectors. Each active key slot contains an encrypted copy of the master key."
+  }
+}

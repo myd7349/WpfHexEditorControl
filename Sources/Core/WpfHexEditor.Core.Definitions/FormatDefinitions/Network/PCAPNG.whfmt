@@ -1,19 +1,16 @@
 {
   "diffMode": "binary",
-  "formatName": "PCAPNG Network Capture",
-  "version": "1.15",
-  "extensions": [
-    ".pcapng",
-    ".pcap.ng"
-  ],
-  "description": "PCAPNG (PCAP Next Generation) is the modern network packet capture format defined in RFC 2324 (IETF), designed as an extensible replacement for the older libpcap PCAP format. PCAPNG files are composed of blocks: Section Header Block (SHB), Interface Description Block (IDB), Enhanced Packet Block (EPB), Simple Packet Block (SPB), Name Resolution Block (NRB), Interface Statistics Block (ISB), and custom blocks. Each block starts with a Block Type (4B), Block Total Length (4B), block-specific content, and ends with Block Total Length (4B, repeated). The first block in every PCAPNG file is the Section Header Block starting with magic 0x0A0D0D0A (the 'magic number' to detect byte order and correct line ending corruption), followed by Byte Order Magic 0x1A2B3C4D (LE) or 0x4D3C2B1A (BE). The IDB specifies the capture interface with Link Type (DLT_EN10MB=1 for Ethernet, DLT_RAW=101, DLT_IEEE802_11=105, etc.). EPBs contain the actual captured packets with microsecond or nanosecond timestamps.",
+  "formatName": "PCAP-NG Capture",
+  "version": "1.0",
+  "extensions": [ ".pcapng", ".ntar" ],
+  "description": "PCAP-NG (Next Generation) block-based network packet capture format (IETF draft). Section Header Block (SHB): type(4B LE: 0x0A0D0D0A) + block_total_length(4B) + byte_order_magic(4B: 0x1A2B3C4D=LE or 0x4D3C2B1A=BE) + major_version(2B: 1) + minor_version(2B: 0) + section_length(8B: -1 for unknown) + options + block_total_length_repeat(4B). Block types: 0x00000001=Interface Description Block (IDB), 0x00000006=Enhanced Packet Block (EPB), 0x00000003=Simple Packet Block (SPB), 0x0000000A=Name Resolution Block (NRB), 0x00000005=Interface Statistics Block (ISB). IDB: link_type(2B) + reserved(2B) + snap_len(4B) + options. EPB: interface_id(4B) + timestamp_high(4B) + timestamp_low(4B) + capture_len(4B) + packet_len(4B) + data. Link types same as libpcap: 1=Ethernet, 105=802.11 WiFi. Magic 0x0A0D0D0A chosen to detect text-mode line-ending corruption.",
   "category": "Network",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "PCAPNG File Format — IETF Draft (pcapng specification)",
-      "RFC 2324 (historic reference) — libpcap PCAP format"
+      "PCAPNG File Format — IETF Draft draft-ietf-opsawg-pcapng",
+      "IANA LINKTYPE Registry"
     ],
     "WebLinks": [
       "https://www.ietf.org/archive/id/draft-ietf-opsawg-pcapng-00.txt",
@@ -23,7 +20,7 @@
   },
   "detection": {
     "signatures": [
-      { "value": "0A0D0D0A", "offset": 0, "label": "0x0A0D0D0A — PCAPNG Section Header Block type magic", "weight": 1.0 }
+      { "value": "0A0D0D0A", "offset": 0, "label": "PCAPNG SHB block type 0x0A0D0D0A — Section Header Block magic, detects line-ending corruption", "weight": 1.0 }
     ],
     "matchMode": "any",
     "MinimumScore": 1.0,
@@ -33,13 +30,16 @@
     "validation": {
       "minFileSize": 28,
       "maxSignatureOffset": 0,
-      "note": "All PCAPNG files start with 0x0A0D0D0A (Section Header Block type). This magic was chosen to detect line-ending corruption: 0x0A=LF, 0x0D=CR, 0x0D0A=CRLF — any text-mode transfer that corrupts line endings will produce a detectable corruption."
+      "note": "SHB magic 0x0A0D0D0A chosen to detect text-mode corruption: LF=0x0A, CR=0x0D — any line-ending conversion corrupts this sequence detectably."
     }
   },
   "variables": {
     "pcapngSHBType": 0,
     "pcapngBlockLength": 0,
-    "pcapngByteOrderMagic": 0
+    "pcapngByteOrderMagic": 0,
+    "pcapngVersionMajor": 0,
+    "pcapngVersionMinor": 0,
+    "pcapngSectionLength": 0
   },
   "blocks": [
     {
@@ -49,7 +49,7 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.45,
-      "description": "PCAPNG Section Header Block (SHB) block type magic: 0x0A0D0D0A (168755466 decimal). This 4-byte value uniquely identifies the start of a PCAPNG file's Section Header Block. The value was chosen as 0x0A 0x0D 0x0D 0x0A to detect text-mode transfer corruption: any OS that converts LF↔CRLF line endings will corrupt this specific byte sequence in a detectable way, making the file identifiable as corrupted. The SHB marks the beginning of a 'section' — a PCAPNG file may contain multiple sections.",
+      "description": "PCAPNG SHB block type magic: 0x0A0D0D0A (big-endian). Uniquely identifies the PCAPNG file. Value chosen as 0x0A 0x0D 0x0D 0x0A to detect text-mode transfer corruption — any OS converting LF/CRLF line endings will corrupt this byte sequence detectably.",
       "storeAs": "pcapngSHBType",
       "valueType": "uint32",
       "endianness": "big"
@@ -61,7 +61,7 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.35,
-      "description": "Total length of the Section Header Block in bytes at offset 4. The SHB is typically 28 bytes minimum (4B type + 4B length + 4B byte-order magic + 2B major version + 2B minor version + 8B section length + 4B trailing length). After the SHB, Interface Description Blocks (IDBs) define capture interfaces, and Enhanced Packet Blocks (EPBs) contain captured packets. Note: the byte order of this field and subsequent fields is determined by the Byte Order Magic field at offset 8.",
+      "description": "Total length of the Section Header Block in bytes. Minimum SHB size is 28 bytes: 4B type + 4B length + 4B byte-order magic + 2B major + 2B minor + 8B section_length + 4B trailing length. Byte order determined by Byte Order Magic at offset 8.",
       "storeAs": "pcapngBlockLength",
       "valueType": "uint32",
       "endianness": "little"
@@ -73,56 +73,93 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.35,
-      "description": "Byte Order Magic at offset 8 (4 bytes). Value 0x1A2B3C4D in the file's native byte order — the reader uses this to determine if the file is little-endian or big-endian. If bytes read as 0x1A2B3C4D: file is little-endian (same as CPU if x86). If bytes read as 0x4D3C2B1A: file is big-endian. Modern PCAPNG files from Wireshark/tcpdump on x86 are always little-endian (0x4D3C2B1A as raw bytes). This byte-order detection applies to all subsequent block type and length fields in the file.",
+      "description": "Byte order detection: value 0x1A2B3C4D read in file's native order. If raw bytes are 4D 3C 2B 1A: file is little-endian (typical x86/AMD64). If raw bytes are 1A 2B 3C 4D: file is big-endian. All subsequent fields must be read in the determined byte order.",
       "storeAs": "pcapngByteOrderMagic",
       "valueType": "uint32",
       "endianness": "little",
       "valueMap": {
-        "439041101": "0x1A2B3C4D — little-endian PCAPNG (x86/AMD64, typical)",
-        "1312767820": "0x4D3C2B1A — big-endian PCAPNG (SPARC, PowerPC)"
+        "439041101": "0x1A2B3C4D — little-endian PCAPNG (x86/AMD64, typical from Wireshark)",
+        "1312767820": "0x4D3C2B1A — big-endian PCAPNG (SPARC/PowerPC systems)"
       }
     },
     {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 12,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "PCAPNG format major version number. Current standard value is 1. Indicates the major revision of the PCAPNG specification this file conforms to.",
+      "storeAs": "pcapngVersionMajor",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 14,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "PCAPNG format minor version number. Current standard value is 0. Together with major version 1 this forms version 1.0 of the PCAPNG specification.",
+      "storeAs": "pcapngVersionMinor",
+      "valueType": "uint16"
+    },
+    {
       "type": "metadata",
-      "name": "SHB Type",
+      "name": "SHB Type Value",
       "variable": "pcapngSHBType",
-      "description": "0x0A0D0D0A — PCAPNG Section Header Block type"
+      "description": "0x0A0D0D0A — PCAPNG Section Header Block type identifier"
     },
     {
       "type": "metadata",
       "name": "Block Length",
       "variable": "pcapngBlockLength",
-      "description": "Section Header Block total length in bytes"
+      "description": "Section Header Block total length in bytes including trailing length field"
     },
     {
       "type": "metadata",
       "name": "Byte Order",
       "variable": "pcapngByteOrderMagic",
-      "description": "Byte order detection: 0x1A2B3C4D=LE, 0x4D3C2B1A=BE"
+      "description": "File byte order: 0x1A2B3C4D=little-endian, 0x4D3C2B1A=big-endian"
     }
   ],
   "assertions": [
     {
-      "name": "PCAPNG SHB magic valid",
+      "name": "SHB magic valid",
       "expression": "pcapngSHBType == 168755466",
       "severity": "error",
-      "message": "PCAPNG file must start with Section Header Block magic 0x0A0D0D0A — not a valid PCAPNG file"
+      "message": "PCAPNG file must start with Section Header Block magic 0x0A0D0D0A."
+    },
+    {
+      "name": "Byte order magic valid",
+      "expression": "pcapngByteOrderMagic == 439041101 || pcapngByteOrderMagic == 1312767820",
+      "severity": "error",
+      "message": "Byte Order Magic must be 0x1A2B3C4D (LE) or 0x4D3C2B1A (BE)."
+    },
+    {
+      "name": "Version major is 1",
+      "expression": "pcapngVersionMajor == 1",
+      "severity": "warning",
+      "message": "PCAPNG version_major should be 1 per current IETF draft specification."
     }
   ],
   "navigation": {
     "bookmarks": [
-      { "name": "Section Header Block", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+      { "name": "SHB Magic", "offset": 0, "color": "#FF6B6B" },
+      { "name": "Byte Order Magic", "offset": 8, "color": "#95E1D3" },
+      { "name": "Version", "offset": 12, "color": "#FFE66D" },
+      { "name": "First Block after SHB", "offset": 28, "color": "#AA44FF" }
     ]
   },
   "inspector": {
-    "badge": "pcapngByteOrderMagic",
-    "primaryField": "pcapngSHBType",
+    "badge": "PCAPNG",
+    "primaryField": "pcapngByteOrderMagic",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "PCAPNG Header",
-        "icon": "\uE71B",
-        "fields": ["pcapngSHBType", "pcapngBlockLength", "pcapngByteOrderMagic"]
+        "title": "Section Header Block",
+        "icon": "",
+        "fields": [ "pcapngSHBType", "pcapngBlockLength", "pcapngByteOrderMagic", "pcapngVersionMajor", "pcapngVersionMinor" ]
       }
     ]
   },
@@ -130,60 +167,73 @@
     {
       "name": "PCAPNG Header (JSON)",
       "format": "json",
-      "fields": ["pcapngSHBType", "pcapngBlockLength", "pcapngByteOrderMagic"]
+      "fields": [ "pcapngSHBType", "pcapngBlockLength", "pcapngByteOrderMagic", "pcapngVersionMajor", "pcapngVersionMinor" ]
+    },
+    {
+      "name": "PCAPNG Summary (Text)",
+      "format": "text",
+      "fields": [ "pcapngSHBType", "pcapngByteOrderMagic", "pcapngVersionMajor", "pcapngVersionMinor" ]
     }
   ],
   "forensic": {
     "category": "network",
-    "riskLevel": "medium",
-    "suspiciousPatterns": []
+    "riskLevel": "high",
+    "notes": "PCAPNG files contain full raw packet payloads including cleartext credentials and PII. Richer than PCAP — may include interface names, OS info, capture tool version, and capture comments in option fields. Multiple interfaces may reveal network topology.",
+    "suspiciousPatterns": [
+      "Custom block types (0x80000000+) may indicate proprietary extensions or tampered files",
+      "Section length of -1 (0xFFFFFFFFFFFFFFFF) is normal for streaming captures"
+    ]
   },
   "aiHints": {
-    "analysisContext": "PCAPNG block structure: each block = BlockType(4B) + BlockTotalLength(4B) + body + BlockTotalLength(4B, repeated). Byte order determined by SHB Byte Order Magic (0x1A2B3C4D=LE, 0x4D3C2B1A=BE). Block types: 0x0A0D0D0A=SHB, 0x00000001=IDB, 0x00000006=EPB, 0x00000003=SPB, 0x00000004=NRB, 0x00000005=ISB, 0x00000BAD=Custom. SHB body: ByteOrderMagic(4B), MajorVersion(2B,=1), MinorVersion(2B,=0), SectionLength(8B, -1=unknown), Options(variable). IDB body: LinkType(2B), Reserved(2B,=0), SnapLen(4B), Options(variable). Key IDB Link Types: 1=DLT_EN10MB (Ethernet), 0=DLT_NULL, 101=DLT_RAW, 105=DLT_IEEE802_11, 127=DLT_IEEE802_11_RADIO, 228=DLT_IPV4, 229=DLT_IPV6. EPB body: InterfaceID(4B), Timestamp(8B, microseconds*10^-6 or ns per IDB options), CapturedPacketLength(4B), OriginalPacketLength(4B), PacketData, Options.",
+    "analysisContext": "PCAPNG block structure: BlockType(4B) + BlockTotalLength(4B) + body + BlockTotalLength(4B repeated). Byte order from SHB Byte Order Magic. Block types: 0x0A0D0D0A=SHB, 0x00000001=IDB, 0x00000006=EPB, 0x00000003=SPB, 0x00000004=NRB, 0x00000005=ISB. SHB: ByteOrderMagic(4B)+MajorVersion(2B)+MinorVersion(2B)+SectionLength(8B)+Options. IDB: LinkType(2B)+Reserved(2B)+SnapLen(4B)+Options. EPB: InterfaceID(4B)+Timestamp(8B)+CapturedLen(4B)+OriginalLen(4B)+PacketData+Options.",
     "suggestedInspections": [
-      "Bytes 0-3: 0x0A0D0D0A — PCAPNG SHB magic (vs 0xD4C3B2A1/0xA1B2C3D4 for legacy PCAP)",
-      "Bytes 8-11: Byte Order Magic 0x1A2B3C4D (LE) or 0x4D3C2B1A (BE)",
-      "After SHB: Interface Description Block (type 0x00000001) with LinkType for DLT",
-      "EPB blocks (type 0x00000006): 8-byte timestamp + captured/original lengths + packet data"
+      "Verify SHB magic 0x0A0D0D0A at offset 0 — corruption of this value indicates text-mode transfer damage",
+      "Read Byte Order Magic at offset 8 to determine endianness before parsing any subsequent length fields",
+      "Locate first IDB block (type 0x00000001) after SHB to identify link type and interface parameters",
+      "Check EPB blocks (type 0x00000006) for 8-byte timestamps, captured vs original lengths, and packet data",
+      "Look for Name Resolution Blocks (0x0000000A) which may contain DNS mappings revealing internal hostnames",
+      "Scan ISB blocks (0x00000005) for dropped packet counts indicating capture quality issues"
     ]
   },
   "software": [
-    "Wireshark (primary PCAPNG tool)",
-    "tcpdump 4.x+ (with -Z option for PCAPNG)",
-    "tshark (Wireshark CLI)",
-    "Scapy (Python packet manipulation)",
-    "NetworkMiner (forensics)"
+    "Wireshark — primary PCAPNG creation and analysis tool (default save format since v1.8)",
+    "tcpdump 4.x+ — command-line capture with PCAPNG support",
+    "tshark — Wireshark command-line interface",
+    "Scapy — Python packet manipulation library",
+    "NetworkMiner — forensic network analysis"
   ],
   "formatRelationships": {
     "category": "Network",
-    "extensions": [".pcapng"],
-    "relatedFormats": ["PCAP", "ETHERPEEK", "SNOOP", "NETTL"],
-    "note": "PCAPNG is the modern successor to legacy libpcap PCAP (magic 0xA1B2C3D4). PCAPNG supports multiple interfaces, nanosecond timestamps, file/interface metadata, name resolution blocks, and statistics blocks. Wireshark saves PCAPNG by default since version 1.8 (2012)."
+    "extensions": [ ".pcapng", ".ntar" ],
+    "relatedFormats": [ "PCAP", "ETHERPEEK", "SNOOP", "NETTL", "NETMON" ],
+    "note": "PCAPNG is the modern successor to legacy libpcap PCAP (magic 0xA1B2C3D4). PCAPNG adds multi-interface support, nanosecond timestamps, interface metadata, name resolution, statistics, and extensible block types."
   },
   "MimeTypes": [
     "application/vnd.tcpdump.pcap",
+    "application/x-pcapng",
     "application/octet-stream"
   ],
   "UseCases": [
-    "Network traffic analysis and protocol debugging",
-    "Security incident response and forensics",
-    "Network performance monitoring and troubleshooting",
-    "IDS/IPS signature development and testing"
+    "Multi-interface network traffic capture and analysis",
+    "Long-term network monitoring with interface metadata",
+    "Security incident response and forensic investigation",
+    "IDS/IPS rule development and protocol research"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 90,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 6,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Format": "Block-based binary (IETF draft standard)",
-    "Magic": "0x0A0D0D0A (Section Header Block type) at offset 0",
+    "Format": "Block-based binary, IETF draft standard",
+    "Magic": "0x0A0D0D0A (SHB block type) at offset 0",
     "ByteOrder": "Self-describing via Byte Order Magic 0x1A2B3C4D at offset 8",
-    "Blocks": "SHB, IDB (interface), EPB (enhanced packet), SPB (simple packet), NRB, ISB",
-    "Timestamps": "64-bit microseconds (default) or nanoseconds (IDB option)"
+    "MinSHBSize": 28,
+    "BlockStructure": "BlockType(4B) + BlockTotalLength(4B) + body + BlockTotalLength(4B)",
+    "Timestamps": "64-bit microseconds (default) or nanoseconds (IDB option if_tsresol)"
   }
 }

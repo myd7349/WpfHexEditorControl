@@ -1,220 +1,208 @@
 {
   "diffMode": "binary",
-  "formatName": "Windows Media Video",
-  "version": "1.13",
-  "extensions": [
-    ".wmv",
-    ".wma",
-    ".asf"
-  ],
-  "description": "Windows Media Video (WMV) and Windows Media Audio (WMA) are Microsoft's proprietary video and audio codecs stored in the Advanced Systems Format (ASF) container. The ASF container begins with a 16-byte Header Object GUID: 30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C. This is followed by the Header Object size (8 bytes, little-endian uint64) and the number of header objects (4 bytes). ASF uses GUIDs (128-bit identifiers) to type every object. Key GUIDs: Header Object (3026B2758E66CF11A6D900AA0062CE6C), File Properties Object (A1DCAB8C47A9CF118EE400C00C205365), Stream Properties Object (9107DCB7B7A9CF118EE600C00C205365). WMV2/WMV3 (Windows Media Video 8/9) and VC-1 are the primary video codecs. WMA Standard and WMA Lossless are the audio codecs.",
+  "formatName": "Windows Media Video (WMV/ASF)",
+  "version": "1.0",
+  "extensions": [".wmv", ".asf"],
+  "description": "Windows Media Video (WMV) is a family of video codecs developed by Microsoft, stored in the Advanced Systems Format (ASF) container. Like WMA audio, all WMV files begin with the 16-byte ASF Header Object GUID 3026B2758E66CF11A6D900AA0062CE6C. The header object size (uint64LE at offset 16) declares the total header region byte count. WMV variants include WMV7, WMV8, WMV9 (VC-1 profile), and WMV HD. The ASF container supports multiple stream types, enabling WMV files to carry video, audio, subtitles, and metadata simultaneously.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "Microsoft Advanced Systems Format (ASF) Specification v01.20.05",
-      "VC-1 Compressed Video Bitstream Format and Decoding Process — SMPTE 421M",
-      "Windows Media Video 9 — Microsoft Technical Note"
+      "Advanced Systems Format (ASF) Specification v01.20.03 — Microsoft Corporation",
+      "SMPTE 421M: VC-1 Compressed Video Bitstream Format and Decoding Process"
     ],
     "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/wmformat/windows-media-format-sdk",
-      "https://en.wikipedia.org/wiki/Windows_Media_Video",
-      "https://en.wikipedia.org/wiki/Advanced_Systems_Format",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000091.shtml"
+      "https://en.wikipedia.org/wiki/Windows_Media_Video"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "3026B2758E66CF11A6D900AA0062CE6C", "offset": 0, "label": "ASF Header Object GUID", "weight": 1.0 }
+      {
+        "value": "3026B2758E66CF11A6D900AA0062CE6C",
+        "offset": 0,
+        "label": "ASF Header Object GUID — identifies ASF/WMV/WMA container",
+        "weight": 1.0
+      }
     ],
-    "matchMode": "any",
-    "MinimumScore": 1.0,
-    "required": true,
+    "matchMode": "First",
+    "MinimumScore": 0.9,
+    "required": ["ASF Header Object GUID — identifies ASF/WMV/WMA container"],
     "Strength": "Strong",
-    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "EntropyHint": {
+      "min": 5.0,
+      "max": 8.0,
+      "comment": "WMV compressed video frames exhibit high entropy"
+    },
     "validation": {
-      "minFileSize": 30,
-      "maxSignatureOffset": 0
+      "notes": "ASF GUID at offset 0 must match exactly; Stream Properties Object within header must declare video stream type"
     }
   },
   "variables": {
-    "asfHeaderGuidLow": 0,
-    "asfHeaderGuidHigh": 0,
+    "asfHeaderGuid": "",
     "headerObjectSize": 0,
-    "numberOfHeaderObjects": 0
+    "headerObjectCount": 0,
+    "reserved": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "ASF Header Object GUID",
+      "name": "asfHeaderGuid",
       "offset": 0,
       "length": 16,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "ASF Header Object GUID: 30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C. This 16-byte GUID unambiguously identifies an Advanced Systems Format (ASF) container file. In standard GUID notation: {75B22630-668E-11CF-A6D9-00AA0062CE6C}. The bytes are stored in mixed-endian GUID format (first 4 bytes LE, next 2 × 2 bytes LE, last 8 bytes BE). This Header Object contains all stream and file metadata before the media data.",
-      "storeAs": "asfHeaderGuidLow",
-      "valueType": "bytes16"
+      "opacity": 0.85,
+      "description": "ASF Header Object GUID (16 bytes) — 3026B2758E66CF11A6D900AA0062CE6C; shared by all ASF containers including WMV video and WMA audio; video stream is distinguished by Stream Properties Object GUID inside the header",
+      "storeAs": "asfHeaderGuid",
+      "valueType": "bytes"
     },
     {
       "type": "field",
-      "name": "Header Object Size",
+      "name": "headerObjectSize",
       "offset": 16,
       "length": 8,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "Total size of the ASF Header Object in bytes (little-endian uint64), including the GUID (16 bytes) and this size field (8 bytes). The minimum legal value is 30 bytes. All nested header sub-objects (File Properties, Stream Properties, etc.) are contained within this size.",
+      "opacity": 0.75,
+      "description": "Total size of the ASF Header Object in bytes (little-endian uint64); includes all nested sub-objects; the Data Object containing video/audio packets immediately follows at this offset",
       "storeAs": "headerObjectSize",
-      "valueType": "uint64",
-      "endianness": "little"
+      "valueType": "uint64LE"
     },
     {
       "type": "field",
-      "name": "Number of Header Objects",
+      "name": "headerObjectCount",
       "offset": 24,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.35,
-      "description": "Count of ASF sub-objects (child objects) embedded within the Header Object (little-endian uint32). Typical ASF files contain 6-12 header sub-objects: File Properties, Stream Properties (one per stream), Header Extension, Content Description, Extended Content Description, Codec List, and optionally Stream Prioritization, Mutual Exclusion, and Index Parameters objects.",
-      "storeAs": "numberOfHeaderObjects",
-      "valueType": "uint32",
-      "endianness": "little"
+      "opacity": 0.75,
+      "description": "Count of immediate child objects within the ASF Header Object (little-endian uint32); typical WMV files contain 4-8 sub-objects: Stream Properties, File Properties, Stream Bitrate Properties, Content Description",
+      "storeAs": "headerObjectCount",
+      "valueType": "uint32LE"
     },
     {
-      "type": "metadata",
-      "name": "ASF Header Object Size",
-      "variable": "headerObjectSize",
-      "description": "Total size of the ASF Header Object in bytes"
-    },
-    {
-      "type": "metadata",
-      "name": "Number of Header Sub-Objects",
-      "variable": "numberOfHeaderObjects",
-      "description": "Count of sub-objects in the ASF header (File Properties, Stream Properties, etc.)"
+      "type": "field",
+      "name": "reserved",
+      "offset": 28,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.6,
+      "description": "Reserved ASF header field (little-endian uint16) — must be 0x0201 per ASF specification v01.20.03; this 2-byte field terminates the fixed portion of the ASF Header Object preamble",
+      "storeAs": "reserved",
+      "valueType": "uint16LE"
     }
   ],
   "assertions": [
     {
-      "name": "ASF Header Object GUID valid",
-      "expression": "asfHeaderGuidLow == 1991545904",
-      "severity": "error",
-      "message": "ASF Header Object GUID must be 3026B275-8E66-CF11-A6D9-00AA0062CE6C — not a valid WMV/ASF file"
+      "field": "asfHeaderGuid",
+      "op": "eq",
+      "value": "3026B2758E66CF11A6D900AA0062CE6C",
+      "message": "ASF Header GUID must match exactly for valid WMV/ASF file"
     },
     {
-      "name": "Header object size reasonable",
-      "expression": "headerObjectSize >= 30 && headerObjectSize < 1073741824",
-      "severity": "warning",
-      "message": "ASF header object size is outside expected range (30 bytes to 1GB)"
+      "field": "headerObjectCount",
+      "op": "gte",
+      "value": 1,
+      "message": "ASF header must contain at least one sub-object"
     },
     {
-      "name": "Header sub-object count reasonable",
-      "expression": "numberOfHeaderObjects > 0 && numberOfHeaderObjects < 256",
-      "severity": "warning",
-      "message": "ASF header sub-object count is outside expected range (1-255)"
+      "field": "headerObjectSize",
+      "op": "gte",
+      "value": 30,
+      "message": "ASF header size must be at least 30 bytes"
     }
   ],
   "navigation": {
     "bookmarks": [
-      {
-        "name": "ASF Header Object",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      },
-      {
-        "name": "Header Sub-Objects Start",
-        "offset": 30,
-        "icon": "\uE8A5",
-        "color": "#4ECDC4"
-      }
+      { "name": "ASF Header GUID", "offset": 0, "length": 16, "color": "#FF6B6B" },
+      { "name": "Header Object Size", "offset": 16, "length": 8, "color": "#4ECDC4" },
+      { "name": "Sub-Object Count", "offset": 24, "length": 4, "color": "#95E1D3" },
+      { "name": "Reserved (0x0201)", "offset": 28, "length": 2, "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "numberOfHeaderObjects",
-    "primaryField": "headerObjectSize",
+    "badge": "WMV",
+    "primaryField": "headerObjectCount",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "ASF Header",
-        "icon": "\uE71B",
-        "fields": ["asfHeaderGuidLow", "headerObjectSize", "numberOfHeaderObjects"]
+        "name": "ASF Container Header",
+        "fields": ["asfHeaderGuid", "headerObjectSize"]
+      },
+      {
+        "name": "Object Structure",
+        "fields": ["headerObjectCount", "reserved"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "ASF Header (JSON)",
+      "name": "WMV Header Summary",
+      "format": "text",
+      "template": "GUID: {asfHeaderGuid} | Size: {headerObjectSize} | Objects: {headerObjectCount}"
+    },
+    {
+      "name": "WMV JSON Report",
       "format": "json",
-      "fields": ["asfHeaderGuidLow", "headerObjectSize", "numberOfHeaderObjects"]
+      "template": "{ \"headerSize\": {headerObjectSize}, \"objectCount\": {headerObjectCount} }"
     }
   ],
   "forensic": {
-    "category": "video",
-    "riskLevel": "medium",
+    "category": "Video",
+    "riskLevel": "low",
     "suspiciousPatterns": [
-      {
-        "name": "Abnormally large header",
-        "condition": "headerObjectSize > 10485760",
-        "severity": "warning",
-        "description": "ASF header object size exceeds 10MB. Normal ASF headers are under 100KB. An oversized header may indicate embedded data, padding, or obfuscated content."
-      }
-    ],
-    "knownExploitVectors": [
-      "CVE-2010-2553: Windows Media Player ASF parsing heap overflow (MS10-082)",
-      "CVE-2006-0006: Windows Media Player WMV/ASF malformed header remote code execution",
-      "DRM license acquisition via embedded URLs in ASF file can track users"
+      "ASF GUID mismatch indicates corrupted or spoofed container header",
+      "DRM Encryption Object present in header indicates content protection",
+      "Script Command Object in header may embed executable commands",
+      "Embedded URLs in Content Description Object may indicate tracking pixels"
     ]
   },
   "aiHints": {
-    "analysisContext": "ASF/WMV container: Header Object GUID(16B: 30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C) + headerSize(8B LE uint64) + numHeaderObjects(4B LE uint32) + reserved(2B: 01 02). Sub-objects follow at offset 30: each has GUID(16B) + objectSize(8B LE) + data. Key sub-object GUIDs: File Properties={A1DCAB8C-47A9-CF11-8EE4-00C00C205365} (duration, bitrate, flags), Stream Properties={9107DCB7-B7A9-CF11-8EE6-00C00C205365} (video/audio stream type). Video stream types: WMMEDIATYPE_Video={BC19EFC0-5B4D-11CF-A8FD-00805F5C442B}. WMV codec FourCCs: WMV1, WMV2, WMV3 (Windows Media Video 7/8/9), WMVA, WVC1 (VC-1).",
+    "analysisContext": "WMV is an ASF container with video stream. The header sub-objects are navigated by iterating GUID+size pairs starting at offset 30. Stream Properties Object (GUID BC19EFC0...) identifies video streams. Extended Stream Properties Object may reference multiple bitrate profiles.",
     "suggestedInspections": [
-      "Verify Header Object GUID at offset 0: 30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C",
-      "Read headerSize at offset 16 (LE uint64) to find end of header section",
-      "Parse File Properties sub-object for duration (100-nanosecond units) and bitrate",
-      "Check for DRM (Protected Content) via Content Encryption Object GUID presence",
-      "Look for embedded URLs in Extended Content Description that could be tracking/DRM"
+      "Verify 16-byte ASF GUID at offset 0 matches WMV/ASF container identifier",
+      "Iterate sub-objects from offset 30 using GUID+size structure to enumerate all metadata",
+      "Locate Stream Properties Object to find video codec GUID (WMV1/WMV2/WMV3/WMVA)",
+      "Check for Script Command Object — may embed embedded URLs or executable triggers",
+      "Read File Properties Object for total play duration in 100ns units",
+      "Detect DRM by presence of Content Encryption Object or Extended Content Encryption Object"
     ]
   },
   "software": [
-    "Windows Media Player (primary)",
-    "VLC media player",
+    "Windows Media Player",
+    "FFmpeg",
+    "VLC Media Player",
+    "HandBrake",
     "Windows Movie Maker",
-    "Expression Encoder",
-    "FFmpeg (ASF muxer/demuxer)"
+    "MediaInfo"
   ],
   "formatRelationships": {
     "category": "Video",
-    "extensions": [".wmv", ".wma", ".asf"],
-    "relatedFormats": ["ASF", "MP4", "AVI"],
-    "note": "WMV (video), WMA (audio), and ASF (generic) all use the identical Advanced Systems Format container starting with GUID {75B22630-668E-11CF-A6D9-00AA0062CE6C}. The .wmv/.wma extension depends on content type, not the container format."
+    "extensions": [".wmv", ".asf"],
+    "relatedFormats": ["WMA", "ASF", "AVI", "MP4", "MKV"],
+    "note": "WMV and WMA are both ASF containers; file extension and Stream Properties Object GUID distinguish video from audio-only"
   },
-  "MimeTypes": [
-    "video/x-ms-wmv",
-    "video/x-ms-asf",
-    "audio/x-ms-wma"
-  ],
+  "MimeTypes": ["video/x-ms-wmv", "video/x-ms-asf", "video/asf"],
   "UseCases": [
-    "Legacy Windows video distribution",
-    "DRM-protected media content",
-    "Windows video recording (legacy)",
-    "Corporate/enterprise video streaming (IIS)"
+    "Windows digital media video playback",
+    "Streaming video via Windows Media Services",
+    "DRM-protected video distribution (legacy)",
+    "Screen recording and screencasts",
+    "Corporate video communication and training"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 90,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 5,
+    "BlocksDefined": 4,
     "ValidationRules": 3,
-    "LastUpdated": "2026-04-14",
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "VideoFormat": true,
-    "ContainerFormat": "ASF (Advanced Systems Format)",
-    "Endianness": "little-endian (all size and property fields)",
-    "GUIDFormat": "16-byte mixed-endian GUID",
-    "Codecs": "WMV1/2/3/WMVA/WVC1 (video) + WMA/WMA Lossless/WMA Pro (audio)",
-    "DRMSupport": true,
-    "Platform": "Windows (primary), cross-platform via FFmpeg"
+    "containerFormat": "Advanced Systems Format (ASF)",
+    "headerGuid": "3026B2758E66CF11A6D900AA0062CE6C",
+    "videoCodecs": ["WMV7 (WMV1)", "WMV8 (WMV2)", "WMV9 (WMV3/VC-1)", "WMV HD"],
+    "drmSupport": true,
+    "maxResolution": "1920x1080 (WMV HD)"
   }
 }

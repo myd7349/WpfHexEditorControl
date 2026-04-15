@@ -1,0 +1,303 @@
+{
+  "diffMode": "binary",
+  "formatName": "Windows Imaging Format",
+  "version": "1.0",
+  "extensions": [".wim", ".esd", ".swm"],
+  "description": "Microsoft Windows Imaging Format container for system images. Used for Windows installation media (install.wim, boot.wim). Supports content-addressed deduplication via SHA-1. ESD variant uses stronger compression for Electronic Software Delivery.",
+  "category": "Archives",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "MS-WIM: Windows Imaging (WIM) File Format specification v20220429",
+      "WIMGAPI documentation — Microsoft",
+      "wimlib documentation — Eric Biggers"
+    ],
+    "WebLinks": [
+      "https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/wim-vs-ffu-image-file-comparison",
+      "https://en.wikipedia.org/wiki/Windows_Imaging_Format",
+      "https://wimlib.net/git/?p=wimlib;a=blob;f=doc/wimlib.txt"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "4D5357494D000000",
+        "offset": 0,
+        "label": "'MSWIM\\x00\\x00\\x00' — WIM file signature (8 bytes). Present at offset 0 in all WIM, ESD, and SWM files.",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 1.0,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 208
+    }
+  },
+  "variables": {
+    "wimSignature": "",
+    "wimHeaderSize": 0,
+    "wimVersion": 0,
+    "wimFlags": 0,
+    "wimChunkSize": 0,
+    "wimPartNumber": 0,
+    "wimTotalParts": 0,
+    "wimImageCount": 0,
+    "wimBootIndex": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "WIM Signature",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "'MSWIM\\x00\\x00\\x00' — 8-byte WIM file signature. The three trailing null bytes are padding to align the signature field. This signature is identical in standard WIM, ESD (Electronic Software Delivery), and SWM (split WIM) variants.",
+      "storeAs": "wimSignature",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Size",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "Size of the WIM header in bytes as uint32 LE. Should be 0xD0 (208) for WIM format version 1.13. For WIM 1.14 (ESD) with extended header (cbSize includes extended header), may differ. Used to locate the first data resource.",
+      "storeAs": "wimHeaderSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "WIM Version",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "WIM format version as uint32 LE. 0x00010D00 (68864) = WIM 1.13 (standard Windows PE/installation media). 0x0001000E (69646) = WIM 1.14 used by ESD (Electronic Software Delivery) with LZMS or XPRESS HUF compression.",
+      "storeAs": "wimVersion",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "68864": "WIM 1.13 — Standard installation media (install.wim, boot.wim)",
+        "69646": "WIM 1.14 — ESD / Electronic Software Delivery (stronger compression)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Volume Flags",
+      "offset": 16,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "WIM volume flags as uint32 LE bitmask. Key bits: bit0=compressed, bit1=read_only, bit6=spanned (SWM), bit8=resource_only, bit11=metadata_only, bit13=write_in_progress. Spanned flag indicates this is part of a split WIM set.",
+      "storeAs": "wimFlags",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Chunk Size",
+      "offset": 20,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Compression chunk size in bytes as uint32 LE. Default is 32768 (32 KiB) for standard WIM. LZMS-compressed ESD files use larger chunks (e.g., 131072). Affects memory required during decompression.",
+      "storeAs": "wimChunkSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Part Number",
+      "offset": 40,
+      "length": 2,
+      "color": "#F8B500",
+      "opacity": 0.3,
+      "description": "1-based part number for split WIM (SWM) files. For a non-split WIM this is always 1. For a SWM set this identifies which part this file represents (1 through total_parts).",
+      "storeAs": "wimPartNumber",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Total Parts",
+      "offset": 42,
+      "length": 2,
+      "color": "#F8B500",
+      "opacity": 0.2,
+      "description": "Total number of parts in a split WIM (SWM) set. For non-split WIM files this is always 1. Values greater than 1 indicate a split WIM where image data is distributed across multiple .swm files.",
+      "storeAs": "wimTotalParts",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Image Count",
+      "offset": 44,
+      "length": 4,
+      "color": "#FF8C94",
+      "opacity": 0.3,
+      "description": "Number of Windows images contained in this WIM file as uint32 LE. install.wim from Windows ISO typically contains multiple editions (Home, Pro, Enterprise, Education). Must be at least 1 for a valid WIM with content.",
+      "storeAs": "wimImageCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Boot Image Index",
+      "offset": 120,
+      "length": 4,
+      "color": "#B5EAD7",
+      "opacity": 0.3,
+      "description": "1-based index of the bootable image within this WIM, or 0 if no image is marked as bootable. boot.wim typically has bootIndex=1. install.wim has bootIndex=0 (not directly bootable, loaded by bootmgr).",
+      "storeAs": "wimBootIndex",
+      "valueType": "uint32",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "WIM signature valid",
+      "expression": "wimSignature == 'MSWIM'",
+      "severity": "error",
+      "message": "WIM signature 'MSWIM\\x00\\x00\\x00' not found — file is not a valid WIM/ESD/SWM image"
+    },
+    {
+      "name": "Header size is 208",
+      "expression": "wimHeaderSize == 208",
+      "severity": "warning",
+      "message": "WIM header size is not 208 bytes — may be an extended or non-standard WIM variant"
+    },
+    {
+      "name": "At least one image",
+      "expression": "wimImageCount > 0",
+      "severity": "error",
+      "message": "WIM image count is 0 — the WIM contains no images and cannot be applied"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "WIM Header",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "GUID",
+        "offset": 24,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Offset Table Reshdr",
+        "offset": 48,
+        "icon": "\uE9D9",
+        "color": "#95E1D3"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "wimImageCount",
+    "primaryField": "wimVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "WIM Identity",
+        "icon": "\uE8B7",
+        "fields": ["wimSignature", "wimHeaderSize", "wimVersion"]
+      },
+      {
+        "title": "Volume Properties",
+        "icon": "\uE8A5",
+        "fields": ["wimFlags", "wimChunkSize", "wimImageCount", "wimBootIndex"]
+      },
+      {
+        "title": "Split WIM Info",
+        "icon": "\uE9D9",
+        "fields": ["wimPartNumber", "wimTotalParts"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "WIM Header (JSON)",
+      "format": "json",
+      "fields": ["wimSignature", "wimHeaderSize", "wimVersion", "wimFlags", "wimChunkSize", "wimImageCount", "wimPartNumber", "wimTotalParts", "wimBootIndex"]
+    },
+    {
+      "name": "WIM Header Summary (text)",
+      "format": "text",
+      "fields": ["wimVersion", "wimImageCount", "wimChunkSize", "wimBootIndex", "wimPartNumber", "wimTotalParts"]
+    }
+  ],
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "ESD format (possible license restriction)",
+        "condition": "wimVersion == 69646",
+        "severity": "info",
+        "description": "WIM 1.14 ESD format used for Electronic Software Delivery. LZMS-compressed. May contain EULA-restricted Windows builds."
+      },
+      {
+        "name": "Split WIM part",
+        "condition": "wimTotalParts > 1",
+        "severity": "info",
+        "description": "This is part of a split WIM set — full image requires all parts. Missing parts will cause extraction failure."
+      }
+    ],
+    "knownExploitVectors": [
+      "WIM files can contain arbitrary Windows system binaries",
+      "Compromised install.wim used in supply chain attacks on OEM systems",
+      "Bootkit injection via modified boot.wim"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "WIM = content-addressable container. Files are stored once (SHA-1 deduplication) even when shared across multiple images. XML catalog embedded at xml_data reshdr (offset 72) describes all images with metadata. wimlib-imagex or DISM needed to extract.",
+    "suggestedInspections": [
+      "Read XML catalog at xml_data reshdr offset 72 to enumerate all Windows editions in the WIM",
+      "Check wimFlags bit0 to determine if compression is enabled and identify compression type",
+      "Verify wimBootIndex — boot.wim should have index 1; install.wim should have 0",
+      "For ESD (wimVersion=69646), note that standard DISM may fail — wimlib handles LZMS",
+      "Check wimPartNumber/wimTotalParts to detect if this is a split SWM and locate missing parts"
+    ]
+  },
+  "software": ["DISM", "ImageX", "7-Zip", "wimlib", "WimMount", "wimlib-imagex"],
+  "formatRelationships": {
+    "category": "Archives",
+    "extensions": [".wim", ".esd", ".swm"],
+    "relatedFormats": ["ISO", "VHD", "VHDX", "FFU"]
+  },
+  "MimeTypes": ["application/x-ms-wim"],
+  "UseCases": [
+    "Windows installation media (install.wim, boot.wim in Windows ISO)",
+    "System image deployment via DISM or WDS",
+    "Electronic Software Delivery (ESD) for Windows Update and MSDN downloads",
+    "Split SWM for FAT32 media (DVD/USB limited to 4GB files)"
+  ],
+  "TechnicalDetails": {
+    "DeduplicationMethod": "SHA-1 content-addressable storage",
+    "CompressionTypes": "XPRESS (4K, 8K, 16K), LZX, LZMS (ESD only)",
+    "XMLCatalog": "Embedded UTF-16 LE XML at xml_data reshdr describing each image",
+    "ResourceHeader": "24-byte reshdr structure: size_in_wim(8B) + flags(1B) + offset(8B) + original_size(8B)",
+    "GUID": "16-byte GUID at offset 24 uniquely identifies the WIM file"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 84,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

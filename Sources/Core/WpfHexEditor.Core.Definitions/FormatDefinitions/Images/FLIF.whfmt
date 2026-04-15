@@ -1,51 +1,49 @@
 {
   "diffMode": "binary",
   "formatName": "Free Lossless Image Format",
-  "version": "1.15",
-  "extensions": [
-    ".flif"
-  ],
-  "description": "FLIF - Free Lossless Image Format",
+  "version": "1.0",
+  "extensions": [".flif"],
+  "description": "FLIF (Free Lossless Image Format) is an experimental lossless image format created by Jon Sneyers in 2015. The 4-byte ASCII magic 'FLIF' (46 4C 49 46) appears at offset 0. Byte 4 encodes two fields: the upper nibble (bits 7-4) specifies interlacing and animation (1=non-interlaced still, 2=interlaced still, 3=non-interlaced animation, 4=interlaced animation) and the lower nibble (bits 3-0) specifies channels (1=grayscale, 2=grayscale+alpha, 3=RGB, 4=RGBA). Byte 5 encodes bit depth as an ASCII character: '1' (0x31) = 8-bit per channel, '2' (0x32) = 16-bit per channel. Starting at byte 6, variable-length integers (varints) encode: width-1, height-1, and for animated files the frame count minus 1. FLIF uses MANIAC (Meta-Adaptive Near-zero Integer Arithmetic Coding) entropy coding which achieves significantly better compression than PNG for photographic content. Development stalled around 2017 and the format was superseded by JPEG XL which inherited several FLIF concepts.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "image-viewer",
-  "references": {
-    "specifications": [
-      "FLIF16 Specification - Free Lossless Image Format",
-      "FLIF MANIAC Compression Algorithm",
-      "Free Lossless Image Format v1.0"
-    ],
-    "WebLinks": [
-      "https://flif.info/",
-      "https://flif.info/spec.html",
-      "https://github.com/FLIF-hub/FLIF",
-      "https://en.wikipedia.org/wiki/Free_Lossless_Image_Format"
-    ]
-  },
+  "references": [
+    {
+      "specifications": [
+        "FLIF Format Specification — Jon Sneyers (2015-2017)",
+        "MANIAC Entropy Coding Description — Sneyers, Wuille",
+        "FLIF vs PNG Compression Comparison Study"
+      ],
+      "WebLinks": [
+        "https://flif.info/",
+        "https://github.com/FLIF-hub/FLIF",
+        "https://en.wikipedia.org/wiki/Free_Lossless_Image_Format",
+        "https://flif.info/spec.html"
+      ]
+    }
+  ],
   "detection": {
-    "required": true,
-    "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 1024
-    },
     "signatures": [
-      {
-        "value": "464C4946",
-        "offset": 0,
-        "label": "FLIF magic",
-        "weight": 1.0
-      }
+      { "value": "464C4946", "offset": 0, "label": "FLIF — Free Lossless Image Format 4-byte ASCII magic at offset 0", "weight": 1.0 }
     ],
     "matchMode": "any",
-    "MinimumScore": 1.0,
-    "Strength": "Strong"
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.8 },
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "Magic 'FLIF' must be at offset 0. Byte 4 upper nibble must be 1-4, lower nibble 1-4. Byte 5 must be 0x31 or 0x32."
+    }
   },
   "variables": {
-    "dimensions": 0,
-    "dataType": "",
-    "arrayCount": 0,
     "flifMagic": "",
-    "headerByte": 0
+    "flifFlags": 0,
+    "interlacingMode": 0,
+    "channelCount": 0,
+    "bitDepth": 0,
+    "isAnimated": false
   },
   "blocks": [
     {
@@ -54,128 +52,156 @@
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "FLIF magic bytes",
+      "opacity": 0.45,
+      "description": "4-byte ASCII magic string 'FLIF' (0x46 0x4C 0x49 0x46) at the absolute start of every FLIF file. This is a strong unique identifier with no known false positives among other image formats.",
       "storeAs": "flifMagic",
-      "valueType": "uint32"
+      "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Header Byte",
+      "name": "Flags Byte",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Format flags",
-      "storeAs": "headerByte",
+      "opacity": 0.35,
+      "description": "Combined flags byte encoding two fields in two nibbles. Upper nibble (bits 7-4): interlacing and animation mode — 1=non-interlaced still image, 2=interlaced still image (Adam7-like progressive scan), 3=non-interlaced animation, 4=interlaced animation. Lower nibble (bits 3-0): channel configuration — 1=grayscale (Y), 2=grayscale with alpha (YA), 3=RGB (no alpha), 4=RGBA (with alpha channel).",
+      "storeAs": "flifFlags",
       "valueType": "uint8"
     },
     {
-      "type": "metadata",
-      "name": "Dimensions",
-      "variable": "dimensions",
-      "description": "Dimensions"
+      "type": "field",
+      "name": "Bit Depth",
+      "offset": 5,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Bit depth encoded as an ASCII character: 0x31 ('1') indicates 8-bit per channel encoding (standard dynamic range); 0x32 ('2') indicates 16-bit per channel encoding (high dynamic range or medical imaging). Using ASCII digit characters was an intentional design choice to make the header partially human-readable.",
+      "storeAs": "bitDepth",
+      "valueType": "uint8",
+      "valueMap": {
+        "49": "8-bit per channel (ASCII '1' = 0x31)",
+        "50": "16-bit per channel (ASCII '2' = 0x32)"
+      }
     },
     {
       "type": "metadata",
-      "name": "Data Type",
-      "variable": "dataType",
-      "description": "Data Type"
+      "name": "Dimension Varints",
+      "offset": 6,
+      "description": "Variable-length integer (varint) encoded dimensions starting at offset 6. First varint: image width minus 1. Second varint: image height minus 1. For animated files a third varint encodes frame count minus 1. FLIF varints use: value < 0x80 stored as 1 byte; value < 0x4000 stored as 2 bytes with high bit set; larger values use additional continuation bytes similar to MIDI variable-length quantities."
     },
     {
       "type": "metadata",
-      "name": "Array Count",
-      "variable": "arrayCount",
-      "description": "Array Count"
+      "name": "MANIAC Entropy Coding",
+      "offset": 6,
+      "description": "FLIF uses MANIAC (Meta-Adaptive Near-zero Integer Arithmetic Coding) as its entropy coder. MANIAC employs a forest of decision trees that adapt to local image statistics during encoding and decoding. Each channel is coded independently. For animated frames, inter-frame prediction (temporal delta coding) is used. The MANIAC tree structure is itself encoded in the bitstream and rebuilt by the decoder during the first pass."
     }
   ],
-  "software": [
-    "Image viewers",
-    "GIMP"
+  "assertions": [
+    {
+      "name": "ValidMagic",
+      "expression": "flifMagic == 'FLIF'",
+      "severity": "error",
+      "message": "Magic 'FLIF' not found at offset 0. This is not a valid FLIF image file."
+    },
+    {
+      "name": "ValidFlagsUpperNibble",
+      "expression": "(flifFlags >> 4) >= 1 && (flifFlags >> 4) <= 4",
+      "severity": "error",
+      "message": "FLIF flags upper nibble (interlacing/animation mode) must be 1-4. File header is corrupt or uses an unsupported FLIF variant."
+    },
+    {
+      "name": "ValidBitDepth",
+      "expression": "bitDepth == 49 || bitDepth == 50",
+      "severity": "error",
+      "message": "FLIF bit depth byte must be 0x31 ('1' for 8-bit) or 0x32 ('2' for 16-bit). Unrecognized bit depth value."
+    }
   ],
-  "formatRelationships": {
-    "category": "Images",
-    "extensions": [
-      ".flif"
-    ]
-  },
-  "MimeTypes": [
-    "image/flif"
-  ],
-  "Software": [
-    "Photoshop",
-    "GIMP",
-    "Paint.NET",
-    "IrfanView",
-    "XnView"
-  ],
-  "UseCases": [
-    "Image viewing",
-    "Photo editing",
-    "Graphics design",
-    "Web publishing"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 57,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": true
-  },
-  "TechnicalDetails": {
-    "ImagesFormat": true,
-    "BitDepth": 8
-  },
-  "functions": {
-    "readUInt32BE": "Read scientific header",
-    "multiply": "Calculate dimensions"
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "FLIF - Free Lossless Image Format",
-    "suggestedInspections": [
-      "Validate Free Lossless Image Format signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+  "navigation": {
+    "bookmarks": [
+      { "name": "FLIF Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Flags + BitDepth", "offset": 4, "icon": "\uE946", "color": "#4ECDC4" },
+      { "name": "Dimensions (varints)", "offset": 6, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
   "inspector": {
     "badge": "flifMagic",
-    "primaryField": "headerByte",
+    "primaryField": "flifFlags",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "Free Lossless Image Format",
-        "icon": "",
-        "fields": [
-          "flifMagic",
-          "headerByte"
-        ]
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["flifMagic", "flifFlags", "bitDepth"]
+      },
+      {
+        "title": "Image Properties",
+        "icon": "\uE946",
+        "fields": ["interlacingMode", "channelCount", "isAnimated"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "Free Lossless Image Format Header (JSON)",
+      "name": "FLIF Header (JSON)",
       "format": "json",
-      "fields": [
-        "flifMagic",
-        "headerByte"
-      ]
+      "fields": ["flifMagic", "flifFlags", "bitDepth", "interlacingMode", "channelCount"]
+    },
+    {
+      "name": "FLIF Summary (CSV)",
+      "format": "csv",
+      "fields": ["flifMagic", "flifFlags", "bitDepth", "isAnimated"]
     }
   ],
-  "assertions": [
-    {
-      "name": "magic valid",
-      "expression": "flifMagic != 0",
-      "severity": "warning",
-      "message": "FLIF magic field is zero — possible detection failure"
-    }
-  ]
+  "forensic": {
+    "category": "images",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Invalid flags nibble values (0 or > 4) indicate a corrupt or crafted header",
+      "Mismatched bit depth byte with image content could cause decoder errors"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "FLIF starts with 4-byte ASCII magic 'FLIF', followed by a flags byte encoding interlacing mode (upper nibble 1-4) and channel count (lower nibble 1-4), then a bit depth ASCII byte (0x31=8-bit or 0x32=16-bit), then varint-encoded dimensions.",
+    "suggestedInspections": [
+      "Verify ASCII magic 'FLIF' (46 4C 49 46) at offset 0 for primary identification",
+      "Decode flags byte at offset 4: upper nibble = interlacing/animation mode, lower nibble = channel count",
+      "Check bit depth at offset 5: 0x31 = 8-bit, 0x32 = 16-bit per channel",
+      "Parse varint-encoded width and height starting at offset 6 to determine image dimensions",
+      "For animated files (upper nibble 3 or 4) parse additional varint for frame count at offset following height"
+    ]
+  },
+  "software": [
+    "FLIF reference encoder/decoder (flif.info)",
+    "ImageMagick (with FLIF delegate)",
+    "GIMP (with FLIF plugin)",
+    "Krita (experimental)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".flif"],
+    "relatedFormats": ["PNG", "JXL", "WebP"],
+    "note": "Experimental format; JPEG XL succeeded FLIF incorporating MANIAC-inspired entropy coding; development halted 2017"
+  },
+  "MimeTypes": ["image/flif"],
+  "UseCases": [
+    "Lossless image compression research and benchmarking",
+    "Legacy FLIF image archive reading",
+    "Comparison reference for PNG and JXL compression evaluation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "magic": "FLIF (0x464C4946)",
+    "entropyCode": "MANIAC (Meta-Adaptive Near-zero Integer Arithmetic Coding)",
+    "bitDepths": ["8-bit (0x31)", "16-bit (0x32)"],
+    "channels": ["grayscale(1)", "grayscale+alpha(2)", "RGB(3)", "RGBA(4)"],
+    "interlacingModes": ["non-interlaced still(1)", "interlaced still(2)", "non-interlaced anim(3)", "interlaced anim(4)"]
+  }
 }

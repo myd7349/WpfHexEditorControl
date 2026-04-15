@@ -1,0 +1,189 @@
+{
+  "diffMode": "binary",
+  "formatName": "Visual Studio Performance Report",
+  "version": "1.0",
+  "extensions": [
+    ".diagsession",
+    ".vsp",
+    ".vspx",
+    ".psess"
+  ],
+  "description": "Visual Studio profiling session and performance report file. Multiple format variants under these extensions: .vspx is a ZIP archive (PK magic 50 4B 03 04) containing VSP XML report and binary measurement data — opened by VS Performance Profiler. .psess is an XML text configuration file starting with '<?xml' — defines profiling session settings. .diagsession is the VS 2019+ diagnosis session format (also ZIP-based or XML). .vsp legacy format is a proprietary binary starting with a VS version-specific header. .vspx and .diagsession contain: CPU usage samples, call stacks, memory allocations, ETW event data, timeline data, thread activity. Used by Visual Studio Performance Profiler, CPU Usage tool, Memory Usage tool, .NET Object Allocations tool, Database Query tool. Detection is weak due to multiple binary and text variants sharing the same extensions.",
+  "category": "System",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Visual Studio Profiling Tools documentation — learn.microsoft.com/en-us/visualstudio/profiling/",
+      "Visual Studio Diagnostics Hub — github.com/microsoft/vs-diagnostics",
+      "VSP/VSPX format — Visual Studio SDK"
+    ],
+    "WebLinks": [
+      "https://learn.microsoft.com/en-us/visualstudio/profiling/",
+      "https://en.wikipedia.org/wiki/Visual_Studio",
+      "https://devblogs.microsoft.com/visualstudio/category/performance/",
+      "https://learn.microsoft.com/en-us/visualstudio/profiling/choose-performance-collection-method"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "PK ZIP — .vspx or .diagsession ZIP container", "weight": 0.5 },
+      { "value": "3C3F786D6C", "offset": 0, "label": "<?xml — .psess performance session XML configuration", "weight": 0.4 }
+    ],
+    "required": false,
+    "Strength": "Weak",
+    "MinimumScore": 0.2,
+    "EntropyHint": { "min": 3.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 4
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "magicBytes": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.30,
+      "description": "First byte of the Visual Studio profiling file. Value 0x50 ('P') indicates a ZIP-based container (.vspx or .diagsession starting with 'PK'). Value 0x3C ('<') indicates an XML-based file (.psess or XML .diagsession). Other values indicate a legacy binary .vsp format with proprietary VS version header.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "80": "0x50 'P' — ZIP container start (PK magic follows, .vspx/.diagsession)",
+        "60": "0x3C '<' — XML content start (.psess or XML .diagsession)",
+        "239": "0xEF — UTF-8 BOM before XML content"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Magic Bytes (first 4)",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "First 4 bytes of the profiling file as a 32-bit value. For ZIP-based files (.vspx, .diagsession): 50 4B 03 04 (PK ZIP local file header magic). For XML files (.psess): 3C 3F 78 6D ('<?xm'). For legacy binary .vsp files: proprietary version-specific magic bytes.",
+      "storeAs": "magicBytes",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "1347093252": "0x504B0304 — ZIP local file header (PK + 03 04 = vspx/diagsession)",
+        "1008813165": "0x3C3F786D — '<?xm' XML declaration (psess/XML diagsession)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Container Type",
+      "variable": "firstByte",
+      "description": "File container type: 'P'=ZIP (.vspx/.diagsession), '<'=XML (.psess), other=legacy binary"
+    },
+    {
+      "type": "metadata",
+      "name": "Magic Bytes",
+      "variable": "magicBytes",
+      "description": "First 4 bytes identifying the format variant: PK ZIP or XML declaration"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File starts with recognizable magic",
+      "expression": "firstByte == 80 || firstByte == 60 || firstByte == 239",
+      "severity": "info",
+      "message": "VS profiling file expected to start with 'P' (ZIP/vspx), '<' (XML/psess), or UTF-8 BOM — other values may indicate legacy .vsp binary format"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "magicBytes",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["magicBytes", "firstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "VS Profile header (JSON)",
+      "format": "json",
+      "fields": ["magicBytes", "firstByte"]
+    },
+    {
+      "name": "VS Profile info (text)",
+      "format": "text",
+      "fields": ["magicBytes"]
+    }
+  ],
+  "forensic": {
+    "category": "system",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Unknown format variant",
+        "condition": "firstByte != 80 && firstByte != 60 && firstByte != 239",
+        "severity": "info",
+        "description": "File does not start with ZIP or XML magic. May be a legacy binary .vsp format or a corrupted file."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": ".vspx and .diagsession with PK magic are ZIP files. Extract with any ZIP tool. Contents vary by tool: CPU sampling = ETW trace + symbol data; memory = heap snapshots; .NET = GC heap dumps. .psess XML contains TargetApp, TargetFramework, ProfilingType, CollectionMethod configuration. Legacy .vsp files use a proprietary binary format tied to specific VS versions.",
+    "suggestedInspections": [
+      "Check first 4 bytes: PK (50 4B) = ZIP container, <?xml (3C 3F) = XML text file",
+      "If ZIP: list contents with any ZIP tool to see internal file structure",
+      "If XML (.psess): look for TargetApp, ProfilingType, CollectionMethod elements",
+      "For .diagsession ZIP: look for settings.json or manifest.json inside the archive",
+      "Check file extension: .vspx=ZIP report, .psess=XML config, .diagsession=VS2019+ combined"
+    ]
+  },
+  "software": [
+    "Visual Studio 2010-2022 (Performance Profiler)",
+    "Visual Studio 2019+ (Diagnostics Hub)",
+    "Visual Studio Enterprise CPU/Memory profiling tools",
+    "dotnet-trace (.NET CLI profiling tool)",
+    "PerfView (Microsoft open-source ETW analyzer)"
+  ],
+  "formatRelationships": {
+    "category": "System",
+    "extensions": [".diagsession", ".vsp", ".vspx", ".psess"],
+    "relatedFormats": ["ETL", "CRASHDUMP_WIN"],
+    "containerVariant": ".vspx/.diagsession = ZIP container; .psess = XML config; .vsp = legacy binary"
+  },
+  "MimeTypes": [
+    "application/zip",
+    "application/xml",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "CPU performance profiling and hotspot identification",
+    "Memory leak detection and heap analysis",
+    ".NET garbage collection profiling",
+    "Database query performance analysis from Visual Studio"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 65,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 2,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FormatVariants": [".vspx (ZIP container)", ".psess (XML config)", ".diagsession (ZIP or XML)", ".vsp (legacy binary)"],
+    "ZIPVariant": "Standard ZIP (PK magic) with VS-specific internal structure",
+    "XMLVariant": "UTF-8 XML configuration for profiling session parameters",
+    "LegacyBinary": ".vsp proprietary binary format (VS 2010-2015 era)"
+  }
+}

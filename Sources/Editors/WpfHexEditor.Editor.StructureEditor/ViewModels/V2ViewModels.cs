@@ -17,6 +17,26 @@ using WpfHexEditor.Core.ViewModels;
 
 namespace WpfHexEditor.Editor.StructureEditor.ViewModels;
 
+/// <summary>One row in the Quality tab type-distribution chip list.</summary>
+internal sealed record TypeDistributionItem(string Type, int Count)
+{
+    public string Badge => Type switch
+    {
+        "field"               => "FD",
+        "conditional"         => "IF",
+        "loop"                => "LP",
+        "pointer"             => "PT",
+        "repeating"           => "RP",
+        "computeFromVariables"=> "CV",
+        "metadata"            => "MD",
+        "signature"           => "SG",
+        "action"              => "AC",
+        "data"                => "DA",
+        "header"              => "HD",
+        _                     => "??"
+    };
+}
+
 // ── AssertionViewModel ─────────────────────────────────────────────────────────
 
 internal sealed class AssertionViewModel : ViewModelBase
@@ -538,6 +558,13 @@ internal sealed class QualityMetricsViewModel : ViewModelBase
     private int    _blocksDefined;
     private int    _validationRules;
 
+    // ── Computed metrics (refreshed from Blocks/Variables) ────────────────
+    private int    _blockCoverage;
+    private int    _maxNestingDepth;
+    private int    _assertionCount;
+    private int    _variableCount;
+    private IReadOnlyList<TypeDistributionItem> _typeDistribution = [];
+
     public int    CompletenessScore    { get => _completenessScore;    set => SetField(ref _completenessScore, value); }
     public string DocumentationLevel   { get => _documentationLevel;   set { if (SetField(ref _documentationLevel, value)) RaiseChanged(); } }
     public string LastUpdated          { get => _lastUpdated;          set { if (SetField(ref _lastUpdated, value))         RaiseChanged(); } }
@@ -545,6 +572,49 @@ internal sealed class QualityMetricsViewModel : ViewModelBase
     public bool   AutoRefined          { get => _autoRefined;          set => SetField(ref _autoRefined, value); }
     public int    BlocksDefined        { get => _blocksDefined;        set => SetField(ref _blocksDefined, value); }
     public int    ValidationRulesCount { get => _validationRules;      set => SetField(ref _validationRules, value); }
+
+    public int    BlockCoverage        { get => _blockCoverage;        set => SetField(ref _blockCoverage, value); }
+    public int    MaxNestingDepth      { get => _maxNestingDepth;      set => SetField(ref _maxNestingDepth, value); }
+    public int    AssertionCount       { get => _assertionCount;       set => SetField(ref _assertionCount, value); }
+    public int    VariableCount        { get => _variableCount;        set => SetField(ref _variableCount, value); }
+    public IReadOnlyList<TypeDistributionItem> TypeDistribution
+    {
+        get => _typeDistribution;
+        set => SetField(ref _typeDistribution, value);
+    }
+
+    /// <summary>Recompute live metrics from current Blocks/Variables/Assertions state.</summary>
+    internal void Refresh(BlocksViewModel blocks, VariablesViewModel variables, int assertionCount = 0)
+    {
+        var allBlocks = FlattenBlocks(blocks.BlockTree).ToList();
+        int total     = allBlocks.Count;
+        int withDesc  = allBlocks.Count(b => !string.IsNullOrWhiteSpace(b.Description));
+
+        BlocksDefined   = total;
+        BlockCoverage   = total > 0 ? (int)Math.Round(withDesc * 100.0 / total) : 0;
+        MaxNestingDepth = allBlocks.Count > 0 ? allBlocks.Max(b => b.Depth) : 0;
+        VariableCount   = variables.Items.Count;
+        AssertionCount  = assertionCount;
+
+        var dist = allBlocks
+            .GroupBy(b => b.BlockType)
+            .OrderByDescending(g => g.Count())
+            .Select(g => new TypeDistributionItem(g.Key, g.Count()))
+            .ToList();
+        TypeDistribution = dist;
+    }
+
+    private static IEnumerable<BlockViewModel> FlattenBlocks(
+        System.Collections.ObjectModel.ObservableCollection<BlockViewModel> nodes, int depth = 0)
+    {
+        foreach (var n in nodes)
+        {
+            n.Depth = depth;
+            yield return n;
+            foreach (var child in FlattenBlocks(n.Children, depth + 1))
+                yield return child;
+        }
+    }
 
     public static IReadOnlyList<string> DocumentationLevelOptions { get; } =
         ["basic", "standard", "detailed", "comprehensive"];

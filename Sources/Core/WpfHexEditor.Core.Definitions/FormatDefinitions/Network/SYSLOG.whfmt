@@ -1,0 +1,181 @@
+{
+  "diffMode": "text",
+  "formatName": "Syslog File",
+  "version": "1.0",
+  "extensions": [ ".log", ".syslog" ],
+  "description": "Syslog text log file supporting both RFC 3164 (BSD syslog) and RFC 5424 (structured syslog) formats. RFC 3164: 'MMM DD HH:MM:SS hostname process[pid]: message'. RFC 5424: '<PRI>VERSION TIMESTAMP HOSTNAME APP-ID PROCID MSGID STRUCTURED-DATA MSG'. PRI field = facility*8 + severity (range 0-191 enclosed in < >). Facilities: 0=kern, 1=user, 2=mail, 3=daemon, 4=auth, 5=syslog, 6=lpr, 7=news, 8=uucp, 9=cron, 10=authpriv, 11=ftp, 16-23=local0-local7. Severities: 0=emerg, 1=alert, 2=crit, 3=err, 4=warning, 5=notice, 6=info, 7=debug. BSD timestamps: 'Jan  1 00:00:00'. ISO 8601: '2006-01-02T15:04:05.000Z'. Structured data: [exampleSDID@32473 iut=3 eventSource=Application]. Used by: rsyslog, syslog-ng, systemd journal export, Cisco/Juniper network devices.",
+  "category": "Network",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 3164 — The BSD Syslog Protocol",
+      "RFC 5424 — The Syslog Protocol (structured)",
+      "RFC 5426 — Transmission of Syslog Messages over UDP"
+    ],
+    "WebLinks": [
+      "https://www.ietf.org/rfc/rfc3164.txt",
+      "https://www.ietf.org/rfc/rfc5424.txt",
+      "https://www.rsyslog.com/doc/",
+      "https://www.syslog-ng.com/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3C", "offset": 0, "label": "< — RFC 5424 PRI field opening angle bracket", "weight": 0.4 },
+      { "value": "4A616E20", "offset": 0, "label": "Jan  — BSD syslog January month abbreviation", "weight": 0.3 },
+      { "value": "4665622", "offset": 0, "label": "Feb — BSD syslog February month abbreviation", "weight": 0.3 },
+      { "value": "4D617220", "offset": 0, "label": "Mar  — BSD syslog March month abbreviation", "weight": 0.3 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 1,
+      "maxSignatureOffset": 512,
+      "note": "Syslog has no binary magic. Detection based on common text patterns at file start."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "priOrMonth": "",
+    "syslogFormat": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte determines syslog format: 0x3C=< indicates RFC 5424 with PRI field, 0x4A/4D/41/... indicates BSD month abbreviation (Jan/Mar/Apr/...), other = non-standard or rotated log.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Format Header",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 4 bytes as ASCII. RFC 5424: starts with <NNN> where NNN is 1-3 digit PRI value. BSD syslog: starts with three-letter month abbreviation (Jan, Feb, Mar...) followed by space. Used to distinguish syslog format variant.",
+      "storeAs": "priOrMonth",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Syslog Format",
+      "variable": "syslogFormat",
+      "description": "Detected syslog format: RFC 5424 (structured, PRI field), RFC 3164 (BSD, month timestamp), or unknown. PRI value range 0-191 encodes facility and severity."
+    },
+    {
+      "type": "metadata",
+      "name": "PRI Decode",
+      "variable": "firstByte",
+      "description": "PRI = facility * 8 + severity. Facility: 0=kern,1=user,3=daemon,4=auth,10=authpriv,16-23=local0-7. Severity: 0=emerg,3=err,4=warning,6=info,7=debug."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File has content",
+      "expression": "firstByte > 0",
+      "severity": "warning",
+      "message": "Syslog file appears to be empty."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Log Start", "offset": 0, "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "SYSLOG",
+    "primaryField": "priOrMonth",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Log Header",
+        "icon": "",
+        "fields": [ "firstByte", "priOrMonth", "syslogFormat" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Syslog Summary (Text)",
+      "format": "text",
+      "fields": [ "priOrMonth", "syslogFormat" ]
+    },
+    {
+      "name": "Syslog Metadata (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "priOrMonth", "syslogFormat" ]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "medium",
+    "notes": "Syslog files may contain authentication attempts, privilege escalation events, network connection records, and service start/stop events. Critical for incident response. authpriv facility (10) logs contain sensitive authentication details. Rotated logs may be compressed (.gz) or missing — check for log gaps.",
+    "suspiciousPatterns": [
+      "Large number of auth/authpriv severity 7 (debug) entries may indicate verbose logging enabled for monitoring",
+      "Gaps in timestamps may indicate log deletion or rotation manipulation",
+      "Messages from facility 4 (auth) or 10 (authpriv) warrant security review",
+      "Emergency (severity 0) or alert (severity 1) messages require immediate review"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "RFC 5424 line: '<PRI>VERSION TIMESTAMP HOSTNAME APP-ID PROCID MSGID [SD-ELEMENT...] MSG'. PRI = (facility*8)+severity. RFC 3164: 'MMM DD HH:MM:SS hostname process[pid]: msg'. Structured data: [SD-ID param=value ...]. Severity 0=emerg,1=alert,2=crit,3=err,4=warning,5=notice,6=info,7=debug. Common facilities: 3=daemon,4=auth,10=authpriv.",
+    "suggestedInspections": [
+      "Detect syslog format variant: RFC 5424 (starts with <) vs RFC 3164 (starts with month abbreviation)",
+      "Scan for PRI values with facility=4 (auth) or facility=10 (authpriv) for authentication events",
+      "Look for severity 0-2 (emerg/alert/crit) messages indicating system-level failures",
+      "Search for 'failed password', 'authentication failure', 'invalid user' in auth log lines",
+      "Check for timestamp gaps that may indicate log tampering or rotation issues",
+      "Identify source hostnames in RFC 5424 HOSTNAME field for multi-host log aggregation analysis"
+    ]
+  },
+  "software": [
+    "rsyslog — high-performance syslog implementation (Linux)",
+    "syslog-ng — next-generation syslog with filtering and routing",
+    "systemd-journald — binary journal with syslog export",
+    "Splunk — enterprise log aggregation and analysis",
+    "Graylog / Elasticsearch — open-source log management"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".log", ".syslog" ],
+    "relatedFormats": [ "ETL", "NETFLOW", "PCAP" ],
+    "note": "Syslog is the universal Unix/Linux log format. Windows uses Event Log (ETL/EVTX). Network devices (Cisco, Juniper) export syslog via UDP port 514 or TCP. Structured syslog (RFC 5424) adds key-value pairs in the STRUCTURED-DATA field."
+  },
+  "MimeTypes": [
+    "text/plain",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "System and application event logging on Unix/Linux",
+    "Security event monitoring and alerting (SIEM ingestion)",
+    "Network device log collection (Cisco, Juniper, F5)",
+    "Incident response timeline reconstruction",
+    "Compliance auditing (PCI-DSS, HIPAA, SOX)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 70,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Plain text, UTF-8, one event per line",
+    "RFC3164": "BSD format: MMM DD HH:MM:SS hostname process[pid]: message",
+    "RFC5424": "Structured: <PRI>VERSION TIMESTAMP HOSTNAME APP-ID PROCID MSGID SD MSG",
+    "PRIRange": "0-191 (facility 0-23 * 8 + severity 0-7)",
+    "DefaultPort": "UDP/TCP 514 for syslog over network",
+    "Rotation": "Typically compressed to .gz via logrotate"
+  }
+}

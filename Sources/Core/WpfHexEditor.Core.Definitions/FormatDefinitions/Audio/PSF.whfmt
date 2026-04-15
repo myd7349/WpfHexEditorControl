@@ -1,0 +1,283 @@
+{
+  "diffMode": "binary",
+  "formatName": "Portable Sound Format",
+  "version": "1.0",
+  "extensions": [
+    ".psf",
+    ".psf1",
+    ".psf2",
+    ".minipsf",
+    ".minipsf2",
+    ".usf",
+    ".gsf",
+    ".snsf",
+    ".dsf",
+    ".ssf",
+    ".qsf",
+    ".2sf"
+  ],
+  "description": "PSF (Portable Sound Format) — multi-platform game music rip format created by Neill Corlett (2003). Magic: 'PSF' (50 53 46) + platform_byte (1B). Platform codes: 0x01=PlayStation 1 (PSF/PSF1), 0x02=PlayStation 2 (PSF2), 0x11=Sega Saturn (SSF), 0x12=Dreamcast (DSF), 0x21=SNES (SNSF), 0x22=Game Boy Advance (GSF), 0x24=Nintendo DS (2SF), 0x41=QSound arcade (QSF). Fixed 16-byte header: magic(3B 'PSF') + version(1B platform code) + reserved_area_size(4B LE) + compressed_program_size(4B LE) + compressed_program_crc32(4B LE). Data layout after header: [reserved area (reserved_area_size bytes)] + [zlib-compressed program data (compressed_program_size bytes)] + optional UTF-8 tag section starting with '[TAG]' marker. Tags: title, artist, game, year, genre, comment, length, fade. Mini-PSF files reference a PSF library file and contain only patch data.",
+  "category": "Audio",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "PSF Format Specification v1.6 — Neill Corlett — neillcorlett.com/psf/",
+      "PSF2 Specification — Neill Corlett — neillcorlett.com/psf2/",
+      "PSF Player SDK — github.com/kode54/vgmstream"
+    ],
+    "WebLinks": [
+      "https://neillcorlett.com/psf/",
+      "https://en.wikipedia.org/wiki/Portable_Sound_Format",
+      "https://www.zophar.net/music",
+      "https://www.vgmpf.com/Wiki/index.php/PSF"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "50534601", "offset": 0, "label": "PSF + 0x01 — PlayStation 1 Portable Sound Format", "weight": 1.0 },
+      { "value": "50534602", "offset": 0, "label": "PSF + 0x02 — PlayStation 2 Portable Sound Format", "weight": 1.0 },
+      { "value": "50534611", "offset": 0, "label": "PSF + 0x11 — Sega Saturn SSF", "weight": 0.9 },
+      { "value": "50534612", "offset": 0, "label": "PSF + 0x12 — Sega Dreamcast DSF", "weight": 0.9 },
+      { "value": "50534621", "offset": 0, "label": "PSF + 0x21 — SNES SNSF", "weight": 0.9 },
+      { "value": "50534622", "offset": 0, "label": "PSF + 0x22 — Game Boy Advance GSF", "weight": 0.9 }
+    ],
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 5.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 16,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "psfMagic": "",
+    "psfVersion": 0,
+    "reservedAreaSize": 0,
+    "programSize": 0,
+    "programCRC32": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "PSF Magic",
+      "offset": 0,
+      "length": 3,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Portable Sound Format magic: ASCII 'PSF' (50 53 46). This 3-byte magic identifies the file as a PSF game music rip. The immediately following version byte distinguishes the target platform. PSF was created by Neill Corlett in 2003 as a platform-agnostic container for game music executable rips.",
+      "storeAs": "psfMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "PSF" }
+    },
+    {
+      "type": "field",
+      "name": "Platform Version",
+      "offset": 3,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.40,
+      "description": "Platform identifier byte (1-byte uint8). Determines which game console or arcade hardware the compressed program binary targets. Each value specifies a different emulation back-end required to play the audio. Mini-PSF files use the same platform code as their parent library.",
+      "storeAs": "psfVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "0x01 — PlayStation 1 (PSF/PSF1): MIPS R3000A + SPU",
+        "2": "0x02 — PlayStation 2 (PSF2): MIPS R5900 EE + IOP SPU2",
+        "17": "0x11 — Sega Saturn (SSF): SH-2 CPU + SCSP DSP",
+        "18": "0x12 — Sega Dreamcast (DSF): SH-4 CPU + AICA",
+        "33": "0x21 — Super Nintendo (SNSF): SPC700 APU",
+        "34": "0x22 — Game Boy Advance (GSF): ARM7TDMI",
+        "36": "0x24 — Nintendo DS (2SF): ARM9+ARM7",
+        "65": "0x41 — QSound arcade hardware (QSF)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Reserved Area Size",
+      "offset": 4,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.30,
+      "description": "Size of the reserved area in bytes (4-byte little-endian uint32). The reserved area follows the 16-byte header and precedes the compressed program data. Typically 0 for most PSF files. Non-zero values indicate platform-specific auxiliary data placed before the zlib-compressed program.",
+      "storeAs": "reservedAreaSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compressed Program Size",
+      "offset": 8,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Size of the zlib-compressed program data in bytes (4-byte little-endian uint32). The compressed data starts at offset 16 + reserved_area_size. After decompression with zlib inflate, the data is the game's executable code and audio driver for the target platform. Must be > 0 for valid PSF files.",
+      "storeAs": "programSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compressed Program CRC32",
+      "offset": 12,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.35,
+      "description": "CRC32 checksum of the compressed program data (4-byte little-endian uint32). Used to verify the integrity of the compressed binary payload. Computed over the zlib-compressed bytes (not the decompressed data). CRC32 polynomial: IEEE 802.3 standard (0xEDB88320 reflected).",
+      "storeAs": "programCRC32",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Platform",
+      "variable": "psfVersion",
+      "description": "Target platform: 1=PS1, 2=PS2, 17=Saturn, 18=Dreamcast, 33=SNES, 34=GBA, 36=NDS, 65=QSound"
+    },
+    {
+      "type": "metadata",
+      "name": "Program Size (compressed)",
+      "variable": "programSize",
+      "description": "Size of zlib-compressed game executable in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC32",
+      "variable": "programCRC32",
+      "description": "CRC32 integrity checksum of the compressed program payload"
+    },
+    {
+      "type": "metadata",
+      "name": "Reserved Area Size",
+      "variable": "reservedAreaSize",
+      "description": "Optional reserved area size in bytes (0 for most PSF files)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "PSF magic must be 'PSF'",
+      "expression": "psfMagic == 'PSF'",
+      "severity": "error",
+      "message": "PSF file must start with ASCII 'PSF' (50 53 46) — not a valid Portable Sound Format file"
+    },
+    {
+      "name": "Platform code must be recognized",
+      "expression": "psfVersion == 1 || psfVersion == 2 || psfVersion == 17 || psfVersion == 18 || psfVersion == 33 || psfVersion == 34 || psfVersion == 36 || psfVersion == 65",
+      "severity": "warning",
+      "message": "PSF platform code is not a recognized value — may be an unsupported platform or corrupted header"
+    },
+    {
+      "name": "Compressed program size must be positive",
+      "expression": "programSize > 0",
+      "severity": "error",
+      "message": "PSF compressed program size at offset 8 must be > 0 — a zero-size program cannot produce audio"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "PSF Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Platform Byte", "offset": 3, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Program Size + CRC", "offset": 8, "icon": "\uE9D9", "color": "#95E1D3" },
+      { "name": "Compressed Data Start", "offset": 16, "icon": "\uE8B7", "color": "#FFEAA7" }
+    ]
+  },
+  "inspector": {
+    "badge": "psfVersion",
+    "primaryField": "programSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PSF Identity",
+        "icon": "\uE71B",
+        "fields": ["psfMagic", "psfVersion"]
+      },
+      {
+        "title": "Program Data",
+        "icon": "\uE8A5",
+        "fields": ["reservedAreaSize", "programSize", "programCRC32"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PSF Header (JSON)",
+      "format": "json",
+      "fields": ["psfMagic", "psfVersion", "reservedAreaSize", "programSize", "programCRC32"]
+    },
+    {
+      "name": "psf_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "psf_header",
+      "fields": ["psfMagic", "psfVersion", "reservedAreaSize", "programSize", "programCRC32"]
+    }
+  ],
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Unknown platform code",
+        "condition": "psfVersion != 1 && psfVersion != 2 && psfVersion != 17 && psfVersion != 18 && psfVersion != 33 && psfVersion != 34 && psfVersion != 36 && psfVersion != 65",
+        "severity": "warning",
+        "description": "PSF platform code is not a recognized console identifier. May be an undocumented platform or file corruption."
+      },
+      {
+        "name": "Zero program size",
+        "condition": "programSize == 0",
+        "severity": "error",
+        "description": "Compressed program size is zero. The PSF file contains no audio code and cannot be played."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PSF layout: 3B magic 'PSF' + 1B platform + 4B LE reserved_size + 4B LE program_size + 4B LE program_crc32 = 16-byte header. Then: reserved_size bytes (optional) + program_size bytes (zlib deflate-compressed) + optional UTF-8 tag section (starts with '[TAG]\\n' after compressed data). Tags use 'key=value\\n' format. Mini-PSF files have a '_lib=filename.psf' tag pointing to the shared library PSF.",
+    "suggestedInspections": [
+      "Verify bytes 0-2 are ASCII 'PSF' (50 53 46)",
+      "Read platform byte at offset 3 — use valueMap to identify console",
+      "Read programSize at offset 8 (4B LE) — must be non-zero",
+      "After 16 + reservedAreaSize bytes, verify zlib header: 78 9C (deflate default compression)",
+      "Search after compressed data for '[TAG]' UTF-8 marker to find embedded metadata tags"
+    ]
+  },
+  "software": [
+    "foobar2000 (with PSF plugin by kode54)",
+    "Winamp (with PSF plugin)",
+    "Highly Experimental (PS1/PS2 PSF player)",
+    "Audio Overload (macOS PSF player)",
+    "vgmstream",
+    "PSFPoint (PSF creation tool)"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".psf", ".psf1", ".psf2", ".minipsf", ".minipsf2", ".usf", ".gsf", ".snsf", ".dsf", ".ssf", ".qsf", ".2sf"],
+    "relatedFormats": ["GBS", "SPC"],
+    "containerVariant": "Mini-PSF = PSF with only patch data, references shared .psflib; USF=N64 Nintendo 64"
+  },
+  "MimeTypes": [
+    "audio/x-psf",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Video game music preservation (PlayStation, Saturn, Dreamcast libraries)",
+    "Chiptune and VGM listening and archiving",
+    "Game audio research and study",
+    "Game music ripping from console ROM and disc images"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 5,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "HeaderSize": 16,
+    "Compression": "zlib deflate for program data",
+    "TagFormat": "UTF-8 key=value lines prefixed by '[TAG]\\n'",
+    "ChecksumAlgorithm": "CRC32 (IEEE 802.3) over compressed program bytes",
+    "Endianness": "little-endian",
+    "MiniPSFPattern": "_lib tag references shared library PSF file"
+  }
+}

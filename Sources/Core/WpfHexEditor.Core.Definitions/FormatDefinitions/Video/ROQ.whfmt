@@ -1,0 +1,109 @@
+{
+  "formatName": "Id Software RoQ Video",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "Id Software RoQ proprietary video format (.roq) — a chunk-based vector quantization (VQ) codec used in Quake III Arena and other id Software engine titles for cinematic sequences.",
+  "extensions": [ ".roq" ],
+  "category": "Video",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "8410",
+      "offset": 0,
+      "label": "RoQ file header chunk ID 0x1084 (little-endian: 0x84 0x10) — identifies RoQ container",
+      "weight": 0.9,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 2,
+  "structure": {
+    "fields": [
+      { "offset": 0,  "size": 2, "name": "header_id",        "type": "uint16le", "description": "RoQ file header chunk ID, must be 0x1084",             "storeAs": "roqHeaderId" },
+      { "offset": 2,  "size": 4, "name": "header_size",      "type": "uint32le", "description": "Header chunk size, must be 0xFFFFFFFF (file header marker)" },
+      { "offset": 6,  "size": 2, "name": "frame_rate",       "type": "uint16le", "description": "Playback frame rate (typically 30)" },
+      { "offset": 8,  "size": 2, "name": "first_chunk_id",   "type": "uint16le", "description": "Second chunk ID (0x1001 = RoQ_INFO with video dimensions)" }
+    ],
+    "chunkTypes": [
+      { "id": "0x1001", "name": "RoQ_INFO",            "description": "Video info chunk: width(2B), height(2B), reserved(4B)" },
+      { "id": "0x1002", "name": "RoQ_QUAD_CODEBOOK",   "description": "Vector quantization codebook for 2×2 and 4×4 block vectors" },
+      { "id": "0x1011", "name": "RoQ_QUAD_VQ",         "description": "Compressed video frame using VQ codebook" },
+      { "id": "0x1020", "name": "RoQ_SOUND_MONO",      "description": "DPCM compressed mono audio chunk" },
+      { "id": "0x1021", "name": "RoQ_SOUND_STEREO",    "description": "DPCM compressed stereo audio chunk" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "roqHeaderId", "header_size", "frame_rate" ],
+    "valueMaps": {
+      "roqHeaderId": {
+        "4228": "0x1084 — Valid RoQ file header"
+      },
+      "first_chunk_id": {
+        "4097": "0x1001 — RoQ_INFO (standard first chunk)"
+      }
+    },
+    "tooltips": {
+      "roqHeaderId":  "Must be 0x1084 (4228 decimal, LE stored as 0x84 0x10)",
+      "header_size":  "Must be 0xFFFFFFFF (4294967295) — distinguishes file header from data chunks",
+      "frame_rate":   "Typical value is 30 fps; must be > 0"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "roqHeaderId",  "operator": "eq",  "value": 0x1084,      "description": "Header chunk ID must be 0x1084" },
+    { "id": "A2", "field": "header_size",  "operator": "eq",  "value": 0xFFFFFFFF,  "description": "Header chunk size must be 0xFFFFFFFF" },
+    { "id": "A3", "field": "frame_rate",   "operator": "gte", "value": 1,           "description": "Frame rate must be at least 1" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "File Header (0x1084)", "color": "#E74C3C" },
+      { "offset": 6, "label": "Frame Rate",           "color": "#3498DB" },
+      { "offset": 8, "label": "First Data Chunk",     "color": "#27AE60" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "RoQ Header Summary",
+      "fields": [ "roqHeaderId", "header_size", "frame_rate" ],
+      "format": "text"
+    },
+    {
+      "name": "RoQ Metadata JSON",
+      "fields": [ "roqHeaderId", "frame_rate", "first_chunk_id" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "RoQ uses a chunk-based format: each chunk has a 2-byte ID + 4-byte size + 2-byte argument + payload; traverse chunks sequentially to find video/audio data.",
+    "The 0xFFFFFFFF chunk size in the file header is a sentinel value used only for the first chunk — all other chunks have legitimate sizes.",
+    "RoQ_QUAD_CODEBOOK (0x1002) must precede the first RoQ_QUAD_VQ (0x1011) frame; the codebook is reused for subsequent frames until updated.",
+    "Audio uses a simple 16-bit DPCM codec with per-channel mean subtraction; the chunk_arg field for audio chunks holds the initial prediction value.",
+    "The RoQ format was written by Timothy Loucks around 1995 and was released as open specification when id Software published the Quake III source.",
+    "Dimensions are not in the file header but in the first RoQ_INFO chunk at offset 10 (width 2B LE + height 2B LE after the 8-byte chunk header)."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "RoQ files contain only compressed video and DPCM audio; no executable content.",
+      "Open specification published with Quake III source code; ffmpeg provides full decode support.",
+      "RoQ files are found in id Software game data directories (.pk3 ZIP archives)."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "BIK", "relationship": "contemporary", "note": "Bink and RoQ were competing game video codecs in the late 1990s." },
+    { "format": "SMK", "relationship": "contemporary",  "note": "Smacker predates RoQ slightly; both were used in DOS/early Windows game titles." }
+  ],
+  "software": [
+    { "name": "ioquake3",      "role": "Open-source Quake 3 engine with native RoQ playback" },
+    { "name": "ffmpeg",        "role": "Full RoQ decode and encode support" },
+    { "name": "RoQ player",    "role": "Standalone RoQ file viewer tools" },
+    { "name": "Quake 3 Arena", "role": "Commercial title using RoQ for all cinematics" }
+  ],
+  "useCases": [
+    "Quake III Arena and id Software engine cinematic playback",
+    "Game modding: custom FMV sequences in idTech 3 games",
+    "Open-spec video format analysis",
+    "Retro game video research and extraction"
+  ],
+  "technicalDetails": "Id Software RoQ codec (Timothy Loucks, ~1995). Chunk-based streaming format. Video uses vector quantization (VQ) with 2×2 and 4×4 block codebooks. Each frame is encoded as a series of block-level decisions: skip, motion, codebook lookup. Supports alpha channel. Audio encoded as 16-bit DPCM. The specification is publicly available via the Quake III source code release. ffmpeg implements full encode and decode.",
+  "completenessScore": 78
+}

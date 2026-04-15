@@ -1,0 +1,136 @@
+{
+  "diffMode": "text",
+  "formatName": "SAMI Subtitle",
+  "version": "1.0",
+  "extensions": [ ".smi", ".sami" ],
+  "description": "SAMI (Synchronized Accessible Media Interchange) subtitle format, developed by Microsoft. Text file encoded in UTF-8 or Windows-1252. Begins with the '<SAMI>' or '<sami>' tag. Structure: HEAD section containing a STYLE block with CSS class definitions (e.g. .ENCC for English Closed Captions). BODY section contains SYNC tags with START attribute in milliseconds, each containing a P element with a CLASS attribute matching a CSS language class. Supports multiple language tracks via distinct CSS classes. Commonly used with Windows Media Player.",
+  "category": "Subtitles",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "CodeEditor",
+  "references": [
+    "https://docs.microsoft.com/en-us/windows/win32/wmp/sami-file-format",
+    "https://learn.microsoft.com/en-us/previous-versions/windows/desktop/windows-media-player-sdk/creating-sami-files"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "3C53414D49",
+        "offset": 0,
+        "label": "<SAMI — uppercase SAMI subtitle file opening tag at offset 0",
+        "weight": 1.0
+      },
+      {
+        "value": "3C73616D69",
+        "offset": 0,
+        "label": "<sami — lowercase SAMI subtitle file opening tag at offset 0",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "Strength": "Strong"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of the SAMI file at offset 0 — must be 0x3C (ASCII less-than sign '<') indicating the start of the SAMI opening tag; presence of this byte is the primary content-based detection cue",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "smiTag",
+      "offset": 0,
+      "size": 5,
+      "type": "ascii",
+      "description": "SAMI opening tag prefix — 5-byte ASCII string at offset 0 expected to be '<SAMI' or '<sami'; this tag-like prefix is the unique identifier for the SAMI subtitle format and distinguishes it from HTML and XML files",
+      "storeAs": "smiTag"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FirstByteIsLessThan",
+      "expression": "firstByte == 60",
+      "severity": "error",
+      "message": "First byte must be 0x3C ('<'); SAMI files must begin with the '<SAMI>' or '<sami>' opening tag"
+    },
+    {
+      "name": "SmiTagValid",
+      "expression": "smiTag == '<SAMI' || smiTag == '<sami'",
+      "severity": "warning",
+      "message": "First 5 bytes should be '<SAMI' or '<sami'; file may be SAMI with a BOM prefix or a different XML-based subtitle format"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "File Start", "offset": 0, "size": 64, "description": "Opening tag and beginning of SAMI document structure" }
+    ]
+  },
+  "inspector": {
+    "badge": "SMI",
+    "primaryField": "smiTag",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "File Header",
+        "fields": [ "firstByte", "smiTag" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "File Summary",
+      "format": "text",
+      "template": "SAMI Subtitle File\nOpening Tag: {smiTag}\nFormat: Microsoft SAMI synchronized subtitle\nEncoding: UTF-8 or Windows-1252"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nSmiTag,{smiTag}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "SAMI subtitle text file. No executable content. May contain accessibility-related CSS styling and multi-language subtitle tracks. Plain text format safe for inspection."
+  },
+  "aiHints": {
+    "analysisContext": "SAMI files are HTML-like text documents. The HEAD/STYLE section defines language classes (e.g. .ENCC, .KRCC). The BODY contains SYNC tags with millisecond timestamps. Each SYNC block contains a P element with a CLASS attribute identifying the language track. An empty P tag typically clears the subtitle display.",
+    "suggestedInspections": [
+      "Verify file starts with '<SAMI>' or '<sami>' tag (case-insensitive)",
+      "Locate the HEAD/STYLE section to enumerate all language class definitions",
+      "Count SYNC START= tags in the BODY to estimate subtitle count",
+      "Check for multiple P CLASS= entries within a single SYNC block for multi-language content",
+      "Inspect millisecond timestamps for gaps or overlaps in subtitle timing",
+      "Verify text encoding (UTF-8 BOM, Windows-1252, or ASCII) for internationalization"
+    ]
+  },
+  "software": [
+    { "name": "Windows Media Player", "url": "https://support.microsoft.com/en-us/windows/windows-media-player", "role": "media player" },
+    { "name": "VLC", "url": "https://www.videolan.org/vlc/", "role": "media player" },
+    { "name": "Subtitle Edit", "url": "https://www.nikse.dk/subtitleedit", "role": "subtitle editor" }
+  ],
+  "formatRelationships": [
+    { "format": "LRC", "relation": "alternative — LRC uses simpler timestamp syntax for music lyrics; SAMI is richer and HTML-based" },
+    { "format": "SRT", "relation": "alternative — SRT is simpler sequential subtitle format without multi-language CSS support" }
+  ],
+  "MimeTypes": [ "text/sami", "application/x-sami" ],
+  "UseCases": [
+    "Windows Media Player subtitle and closed caption display",
+    "Multi-language subtitle track distribution",
+    "Accessibility captioning for video content"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "encoding": "UTF-8 or Windows-1252",
+    "structure": "HTML-like with HEAD/STYLE and BODY/SYNC tags",
+    "timestampUnit": "milliseconds",
+    "notes": "SYNC START attribute is in milliseconds from stream start. CSS class names in STYLE define language tracks. An empty P tag clears the display. Windows Media Player is the primary consumer."
+  }
+}

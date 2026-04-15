@@ -1,0 +1,190 @@
+{
+  "diffMode": "text",
+  "formatName": "iCalendar",
+  "version": "1.0",
+  "extensions": [
+    ".ics",
+    ".ical",
+    ".ifb"
+  ],
+  "description": "iCalendar format (RFC 5545) — open standard for calendar data exchange. Text-based, uses CRLF line endings. Every file starts with 'BEGIN:VCALENDAR' and ends with 'END:VCALENDAR'. Component types: VCALENDAR (root), VEVENT (calendar event), VTODO (task), VJOURNAL (journal entry), VFREEBUSY (availability info), VTIMEZONE (timezone rules), VALARM (alarm/reminder). Key properties: DTSTART, DTEND, SUMMARY, DESCRIPTION, LOCATION, RRULE (recurrence rule), ATTENDEE (with CUTYPE, ROLE, PARTSTAT), ORGANIZER, UID (globally unique identifier), SEQUENCE (revision counter), STATUS, CLASS, CATEGORIES. Date formats: 19981102T183000Z (UTC), 19981102T183000 (floating/local), 19981102 (date-only). RRULE examples: FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=10. Used by Google Calendar, Apple Calendar, Outlook, Thunderbird, Exchange.",
+  "category": "Documents",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "RFC 5545 — Internet Calendaring and Scheduling Core Object Specification (iCalendar), September 2009",
+      "RFC 5546 — iCalendar Transport-Independent Interoperability Protocol (iTIP)",
+      "RFC 7986 — New Properties for iCalendar, October 2016"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc5545",
+      "https://en.wikipedia.org/wiki/ICalendar",
+      "https://icalendar.org/",
+      "https://www.kanzaki.com/docs/ical/"
+    ]
+  },
+  "detection": {
+    "signature": "424547494E3A5643414C454E444152",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 3.5, "max": 5.5 },
+    "validation": {
+      "minFileSize": 50,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "icalMagic": "",
+    "nextByte": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "iCalendar Root Component Marker",
+      "offset": 0,
+      "length": 15,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "iCalendar root component opening marker: ASCII 'BEGIN:VCALENDAR' (15 bytes: 42 45 47 49 4E 3A 56 43 41 4C 45 4E 44 41 52). Every valid iCalendar file must start with this exact string followed by CRLF. The VCALENDAR component wraps all calendar data including version, product ID, and all contained events or tasks.",
+      "storeAs": "icalMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "BEGIN:VCALENDAR" }
+    },
+    {
+      "type": "field",
+      "name": "Line Terminator (CR+LF)",
+      "offset": 15,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "First byte of the CRLF line ending after the BEGIN:VCALENDAR marker. RFC 5545 mandates CRLF (0x0D 0x0A) as the only valid line terminator. A value of 0x0D (CR) indicates standards-compliant line endings. A value of 0x0A (LF only) indicates a Unix-style file that technically violates RFC 5545 but is widely tolerated by calendar clients.",
+      "storeAs": "nextByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "13": "0x0D CR — RFC 5545 compliant CRLF line ending follows",
+        "10": "0x0A LF — Unix-style line ending (non-compliant but commonly accepted)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Root Component",
+      "variable": "icalMagic",
+      "description": "iCalendar root component identifier — must be 'BEGIN:VCALENDAR'"
+    },
+    {
+      "type": "metadata",
+      "name": "Line Ending Style",
+      "variable": "nextByte",
+      "description": "Line ending after magic: 0x0D=CRLF (RFC 5545 compliant), 0x0A=LF-only (non-standard)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "iCalendar must start with BEGIN:VCALENDAR",
+      "expression": "icalMagic == 'BEGIN:VCALENDAR'",
+      "severity": "error",
+      "message": "iCalendar file must begin with 'BEGIN:VCALENDAR' — not a valid .ics file"
+    },
+    {
+      "name": "Line ending should be CRLF or LF",
+      "expression": "nextByte == 13 || nextByte == 10",
+      "severity": "warning",
+      "message": "Line ending after BEGIN:VCALENDAR should be CR (0x0D, CRLF follows) or LF (0x0A) — unexpected byte indicates encoding issue"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "BEGIN:VCALENDAR", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "icalMagic",
+    "primaryField": "icalMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Calendar Root",
+        "icon": "\uE71B",
+        "fields": ["icalMagic", "nextByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "iCalendar header (JSON)",
+      "format": "json",
+      "fields": ["icalMagic", "nextByte"]
+    },
+    {
+      "name": "iCalendar info (text)",
+      "format": "text",
+      "fields": ["icalMagic"]
+    }
+  ],
+  "forensic": {
+    "category": "document",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Missing VCALENDAR root",
+        "condition": "icalMagic != 'BEGIN:VCALENDAR'",
+        "severity": "error",
+        "description": "File does not begin with BEGIN:VCALENDAR. Not a valid iCalendar file, or the file has been truncated or mis-encoded."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "iCalendar structure: line-folded key:value properties. BEGIN:VCALENDAR wraps everything. VERSION:2.0 and PRODID are mandatory calendar properties. Events use BEGIN:VEVENT...END:VEVENT. UID is globally unique per event. RRULE syntax: FREQ=DAILY/WEEKLY/MONTHLY/YEARLY + optional BYDAY, BYMONTH, COUNT, UNTIL. DTSTART and DTEND specify event time window. Long property values can be folded with CRLF+SPACE continuation.",
+    "suggestedInspections": [
+      "Verify file starts with exact string 'BEGIN:VCALENDAR' at offset 0",
+      "Find 'VERSION:2.0' (or '1.0') property line — required for all iCalendar files",
+      "Find 'PRODID:' property — identifies the calendar application that created the file",
+      "Count BEGIN:VEVENT occurrences to determine number of calendar events",
+      "Search for RRULE properties to find recurring events and their recurrence patterns"
+    ]
+  },
+  "software": [
+    "Google Calendar",
+    "Apple Calendar (macOS/iOS)",
+    "Microsoft Outlook",
+    "Mozilla Thunderbird (Lightning/Calendar)",
+    "Microsoft Exchange Server",
+    "Nextcloud Calendar",
+    "Calendly"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".ics", ".ical", ".ifb"],
+    "relatedFormats": ["VCARD"],
+    "containerVariant": ".ifb = iCalendar Free/Busy data only (VFREEBUSY components)"
+  },
+  "MimeTypes": [
+    "text/calendar"
+  ],
+  "UseCases": [
+    "Calendar event sharing between applications (Google, Apple, Outlook)",
+    "Meeting invitation delivery via email (iTIP/iMIP protocol)",
+    "Calendar subscription feeds (webcal:// URL scheme)",
+    "Event import/export between calendar applications"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentType": "Text-based calendar interchange format",
+    "EncodingStandard": "RFC 5545",
+    "TextEncoding": "UTF-8 (RFC 6868 updates parameter encoding)",
+    "LineEndings": "CRLF (mandatory per RFC 5545)",
+    "LineFolding": "Long lines folded at 75 octets with CRLF+SPACE continuation",
+    "VersionString": "VERSION:2.0"
+  }
+}

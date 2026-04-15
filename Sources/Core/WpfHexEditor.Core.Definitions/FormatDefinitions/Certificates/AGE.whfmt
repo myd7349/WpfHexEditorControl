@@ -1,0 +1,225 @@
+{
+  "diffMode": "binary",
+  "formatName": "Age Encryption",
+  "version": "1.0",
+  "extensions": [
+    ".age"
+  ],
+  "description": "Age (Actually Good Encryption) file encryption format (Filippo Valsorda, 2019, open-sourced 2021). Text header: first line is 'age-encryption.org/v1' (21 ASCII bytes + LF). Header lines follow: one or more recipient stanzas starting with '-> ' (arrow), then the header MAC line '---' followed by space and Base64-encoded MAC tag. Stanza types: '-> X25519 <base64-public-key>' for public key recipients (ECDH with X25519), '-> scrypt <base64-salt> <log2-cost>' for passphrase recipients (scrypt KDF). After header terminator '--- <mac-base64>' + LF: encrypted binary payload using ChaCha20-Poly1305. File key (16 bytes) is wrapped per-recipient using X25519 ECDH + HKDF-SHA256 + ChaCha20-Poly1305. Payload: chunked in 64 KB + 1 byte tag chunks. Modern, auditable, simple alternative to GnuPG. Spec at age-encryption.org.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Age encryption specification v1 — age-encryption.org/v1",
+      "Age Go reference implementation — github.com/FiloSottile/age",
+      "Age encryption paper — words.filippo.io/dispatches/age-design/"
+    ],
+    "WebLinks": [
+      "https://age-encryption.org/",
+      "https://github.com/FiloSottile/age",
+      "https://en.wikipedia.org/wiki/Age_(encryption)",
+      "https://words.filippo.io/dispatches/age-design/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "6167652D656E6372797074696F6E2E6F72672F7631", "offset": 0, "label": "age-encryption.org/v1 — Age format version header (21 ASCII bytes)", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 5.5, "max": 8.0 },
+    "validation": {
+      "minFileSize": 22,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "ageMagic": "",
+    "nextByte": 0,
+    "recipientType": "",
+    "recipientPublicKey": "",
+    "stanzaCount": 0,
+    "encryptionType": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Age Format Version String",
+      "offset": 0,
+      "length": 21,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "21-byte ASCII string 'age-encryption.org/v1' identifying the Age encryption format version 1. This is a human-readable version string (not a binary magic) — designed to be recognizable in text editors and terminals. The string is fixed and case-sensitive. Future format versions would use 'age-encryption.org/v2' etc. Followed by LF (0x0A) byte making the full first line 22 bytes.",
+      "storeAs": "ageMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "First Line Terminator",
+      "offset": 21,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Line terminator byte after the version string. Must be 0x0A (LF) for standard Age format. Age specification requires Unix LF line endings in the header — CRLF (0x0D 0x0A) is not valid in Age headers per the spec. This is the end of the first header line; recipient stanza lines begin at offset 22.",
+      "storeAs": "nextByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "10": "0x0A — LF (valid, required by Age spec)",
+        "13": "0x0D — CR (invalid — Age requires LF not CRLF)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Recipient Type",
+      "variable": "recipientType",
+      "description": "Type of first recipient stanza: 'X25519' (public key encryption) or 'scrypt' (passphrase encryption)"
+    },
+    {
+      "type": "metadata",
+      "name": "Recipient Public Key",
+      "variable": "recipientPublicKey",
+      "description": "Base64-encoded ephemeral X25519 public key from the first recipient stanza (for X25519 recipients)"
+    },
+    {
+      "type": "metadata",
+      "name": "Stanza Count",
+      "variable": "stanzaCount",
+      "description": "Number of recipient stanzas in the Age header — one per recipient who can decrypt the file"
+    },
+    {
+      "type": "metadata",
+      "name": "Encryption Type",
+      "variable": "encryptionType",
+      "description": "Encryption method: 'X25519' (ECDH key agreement) or 'scrypt' (passphrase-based key derivation)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid Age version string",
+      "expression": "ageMagic == 'age-encryption.org/v1'",
+      "severity": "error",
+      "message": "File does not begin with 'age-encryption.org/v1' — not a valid Age encrypted file"
+    },
+    {
+      "name": "LF line terminator",
+      "expression": "nextByte == 10",
+      "severity": "warning",
+      "message": "Age header should use LF (0x0A) line endings — CRLF is not valid per Age specification"
+    },
+    {
+      "name": "Header terminates with triple-dash",
+      "expression": "true",
+      "severity": "info",
+      "message": "Verify header ends with '--- <base64-mac>' line followed by LF before binary payload begins"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Age Version Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Recipient Stanza", "offset": 22, "icon": "\uE8A5", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "encryptionType",
+    "primaryField": "stanzaCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Age Format Identity",
+        "icon": "\uE71B",
+        "fields": ["ageMagic", "nextByte"]
+      },
+      {
+        "title": "Recipient Information",
+        "icon": "\uE946",
+        "fields": ["encryptionType", "recipientType", "recipientPublicKey", "stanzaCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Age Header (JSON)",
+      "format": "json",
+      "fields": ["ageMagic", "encryptionType", "recipientType", "stanzaCount"]
+    },
+    {
+      "name": "Age Header summary",
+      "format": "text",
+      "fields": ["ageMagic", "encryptionType", "recipientPublicKey", "stanzaCount"]
+    }
+  ],
+  "forensic": {
+    "category": "encrypted",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Passphrase-encrypted file",
+        "condition": "recipientType == 'scrypt'",
+        "severity": "info",
+        "description": "File is passphrase-encrypted with scrypt KDF — cannot be decrypted without the passphrase. scrypt parameters in the stanza determine brute-force resistance."
+      },
+      {
+        "name": "Multiple recipients",
+        "condition": "stanzaCount > 1",
+        "severity": "info",
+        "description": "File is encrypted for multiple recipients — each stanza contains a wrapped file key for one X25519 public key or one scrypt passphrase"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Age format header structure: 'age-encryption.org/v1\\n' + one or more stanzas + '--- <mac>\\n' + binary payload. X25519 stanza: '-> X25519 <ephemeral-pub-base64>\\n<wrapped-key-base64>\\n'. Scrypt stanza: '-> scrypt <salt-base64> <log2-work>\\n<wrapped-key-base64>\\n'. Header MAC: HMAC-SHA256 of all header lines up to and not including '---'. Payload: STREAM[ChaCha20-Poly1305] with 64 KB chunks, each authenticated. File key: 16 random bytes, wrapped per-recipient. X25519 wrapping: HKDF-SHA256 of shared_secret + X25519(ephemeral, recipient) as key for ChaCha20-Poly1305 wrapping. Decrypt with: age --decrypt -i key.txt file.age or age --decrypt -p file.age (passphrase).",
+    "suggestedInspections": [
+      "Verify ASCII header at offset 0: 'age-encryption.org/v1' (21 bytes) + LF (0x0A)",
+      "Parse recipient stanzas: lines starting with '-> ' identify encryption method (X25519 or scrypt)",
+      "Count recipient stanzas to determine how many keys can decrypt the file",
+      "Locate the '---' line (header MAC) — binary payload starts immediately after",
+      "For X25519 recipients: read ephemeral public key to identify encryption parameters",
+      "For scrypt recipients: read log2-work parameter — higher values mean stronger passphrase protection"
+    ]
+  },
+  "software": [
+    "age (Go reference CLI: age --encrypt, age --decrypt)",
+    "rage (Rust implementation: github.com/str4d/rage)",
+    "pyage (Python: pip install age)",
+    "age.nvim (Neovim plugin for transparent editing of Age-encrypted files)",
+    "passage (password manager using age)"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [".age"],
+    "relatedFormats": ["PEM", "JKS", "P12"],
+    "note": "Age is a modern file encryption tool similar in purpose to GnuPG but with a simpler, auditable design. Age encrypts files; it does not sign them (use minisign or signify for signatures). Age public keys look like 'age1...' (Bech32 encoded X25519). Age is not related to PGP/GPG and does not use the OpenPGP format."
+  },
+  "MimeTypes": [
+    "application/x-age",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "File encryption for backup and secrets storage",
+    "Encrypted dotfiles and configuration management",
+    "Password manager storage backend (passage)",
+    "Secure file transfer with public key recipients",
+    "CI/CD secrets encryption (sops with age backend)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "HeaderEncoding": "ASCII text with LF line endings",
+    "RecipientTypes": "X25519 (ECDH) and scrypt (passphrase KDF)",
+    "SymmetricCipher": "ChaCha20-Poly1305 (STREAM construction, 64 KB chunks)",
+    "KeyAgreement": "X25519 ECDH + HKDF-SHA256 for file key wrapping",
+    "PassphraseKDF": "scrypt (memory-hard, configurable cost factor)",
+    "SupportsMultipleRecipients": true,
+    "SupportsStreaming": true
+  }
+}

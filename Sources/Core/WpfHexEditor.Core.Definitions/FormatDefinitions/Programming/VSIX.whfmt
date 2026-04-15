@@ -1,0 +1,239 @@
+{
+  "diffMode": "binary",
+  "formatName": "Visual Studio Extension",
+  "version": "1.0",
+  "extensions": [
+    ".vsix"
+  ],
+  "description": "VSIX (Visual Studio Extension) package. ZIP-based (PK magic 50 4B 03 04) with specific internal structure: [Content_Types].xml (OOXML content type manifest listing all file MIME types), extension.vsixmanifest (XML metadata: extension ID, version, display name, description, author, dependencies, and assets list), and asset files (DLL assemblies, MEF component files, images, PKGDEF configuration, theme files). Visual Studio reads the manifest to install and manage extensions via the VSIX installer. Extension ID format: Publisher.ExtensionName. VSIX is also used for VS Code extensions (though VS Code uses a JSON-based manifest). The .vsix format is fully compatible with standard ZIP tools.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "VSIX package anatomy — learn.microsoft.com/en-us/visualstudio/extensibility/anatomy-of-a-vsix-package",
+      "vsixmanifest schema — schemas.microsoft.com/developer/vsx-schema/2011/1.2/vsixmanifest",
+      "VS Marketplace publish guide — learn.microsoft.com/en-us/visualstudio/extensibility/walkthrough-publishing-a-visual-studio-extension"
+    ],
+    "WebLinks": [
+      "https://learn.microsoft.com/en-us/visualstudio/extensibility/anatomy-of-a-vsix-package",
+      "https://marketplace.visualstudio.com/",
+      "https://github.com/microsoft/vscode-vsce",
+      "https://en.wikipedia.org/wiki/Visual_Studio#Extensibility"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "PK ZIP header — VSIX extension ZIP container", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 4.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "VSIX shares PK ZIP magic with many formats. The internal extension.vsixmanifest and [Content_Types].xml files are the definitive identifiers."
+    }
+  },
+  "variables": {
+    "pkMagic": "",
+    "zipVersion": 0,
+    "compressionMethod": 0,
+    "fileNameLength": 0,
+    "extensionId": "",
+    "extensionVersion": "",
+    "vsVersionRange": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "ZIP Local File Header Signature",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ZIP local file header signature 0x504B0304 identifying this as a ZIP-format container. VSIX packages are valid ZIP archives and can be opened with any ZIP tool (7-Zip, WinZip, etc.) or renamed to .zip for inspection. The ZIP internal structure must contain [Content_Types].xml at the root and extension.vsixmanifest as the manifest entry. Visual Studio Extension Installer (vsixinstaller.exe) validates both the ZIP structure and the manifest XML schema before installation.",
+      "storeAs": "pkMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ZIP Version Needed",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint16 little-endian minimum ZIP specification version needed to extract the archive. VSIX packages typically require version 20 (basic DEFLATE). Version 45 indicates ZIP64 for large extensions. The lower byte is version * 10, the upper byte encodes the originating OS (0=MS-DOS, 3=Unix, 10=Windows NTFS).",
+      "storeAs": "zipVersion",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint16 little-endian compression method for the first ZIP entry. VSIX packages typically DEFLATE (8) most content including XML manifests and DLL assemblies. Bitmap resources and pre-compressed assets may use Stored (0). The [Content_Types].xml entry is usually the first entry in the ZIP directory.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "8": "DEFLATE compressed"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Entry File Name Length",
+      "offset": 26,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint16 little-endian byte length of the file name for the first ZIP entry. The first entry in a VSIX is typically '[Content_Types].xml' (20 bytes) — a standard OOXML content type manifest also found in DOCX/XLSX/PPTX/APPX packages.",
+      "storeAs": "fileNameLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Extension ID",
+      "variable": "extensionId",
+      "description": "Visual Studio extension identifier from vsixmanifest in format 'Publisher.ExtensionName' (e.g. 'Microsoft.VisualStudioCode')"
+    },
+    {
+      "type": "metadata",
+      "name": "Extension Version",
+      "variable": "extensionVersion",
+      "description": "Semantic version string of the extension from vsixmanifest Identity Version attribute (e.g. '3.0.1')"
+    },
+    {
+      "type": "metadata",
+      "name": "VS Version Range",
+      "variable": "vsVersionRange",
+      "description": "Visual Studio version compatibility range from vsixmanifest InstallationTarget (e.g. '[16.0,18.0)' for VS 2019-2022)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid PK ZIP magic",
+      "expression": "pkMagic == 1347093252",
+      "severity": "error",
+      "message": "File does not begin with PK ZIP signature — not a valid VSIX package"
+    },
+    {
+      "name": "Known compression method",
+      "expression": "compressionMethod == 0 || compressionMethod == 8",
+      "severity": "warning",
+      "message": "Unexpected first-entry compression method in VSIX — expected Stored (0) or DEFLATE (8)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ZIP Signature", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ZIP Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Compression", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "extensionId",
+    "primaryField": "extensionVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ZIP Container",
+        "icon": "\uE71B",
+        "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+      },
+      {
+        "title": "Extension Metadata",
+        "icon": "\uE946",
+        "fields": ["extensionId", "extensionVersion", "vsVersionRange"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "VSIX Header (JSON)",
+      "format": "json",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "extensionId", "extensionVersion", "vsVersionRange"]
+    },
+    {
+      "name": "VSIX ZIP Header (C struct)",
+      "format": "c-struct",
+      "structName": "VSIX_ZIP_HEADER",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+    }
+  ],
+  "forensic": {
+    "category": "executable",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Contains DLL assemblies",
+        "condition": "true",
+        "severity": "info",
+        "description": "VSIX packages contain managed DLL assemblies that are loaded into Visual Studio's process. Untrusted VSIX files can execute arbitrary code within the IDE process."
+      },
+      {
+        "name": "Missing digital signature",
+        "condition": "true",
+        "severity": "warning",
+        "description": "VSIX packages from unofficial sources may lack code signing. Always verify publisher identity via Visual Studio Marketplace before installing unsigned extensions."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "VSIX is a ZIP archive with required internal structure: [Content_Types].xml (OOXML manifest mapping file extensions to MIME types), extension.vsixmanifest (XML with Identity, Metadata, Installation, Dependencies, Assets sections). The vsixmanifest InstallationTarget specifies compatible VS versions. Assets section lists all included files with Type (e.g. Microsoft.VisualStudio.MefComponent, Microsoft.VisualStudio.Assembly) and Path attributes. PKGDEF files configure VS registry keys. Inspect with: unzip -l extension.vsix or rename to .zip. Security: VSIX DLLs run in VS process; marketplace vetting exists but does not guarantee safety.",
+    "suggestedInspections": [
+      "List ZIP contents to verify presence of [Content_Types].xml and extension.vsixmanifest",
+      "Extract and parse extension.vsixmanifest to read extension ID, version, and VS version targets",
+      "Check Assets section in vsixmanifest to enumerate all installed DLL files",
+      "Verify digital signature if present (Microsoft.VisualStudio.Vsix.SignTool)",
+      "Inspect PKGDEF files for registry modifications made during installation"
+    ]
+  },
+  "software": [
+    "Visual Studio (vsixinstaller.exe — install/uninstall VSIX)",
+    "Visual Studio Extension SDK (MSBuild VSIX project template)",
+    "VS Marketplace (official distribution platform)",
+    "vsce (VS Code Extension CLI — also produces .vsix)",
+    "7-Zip, WinZip (manual inspection)"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".vsix"],
+    "relatedFormats": ["ZIP", "APPX", "MSI"],
+    "note": "VSIX for Visual Studio extensions and VSIX for VS Code extensions share the same file extension but use different manifest schemas. VS VSIX uses vsixmanifest XML; VS Code VSIX uses package.json. Both are valid ZIP files."
+  },
+  "MimeTypes": [
+    "application/vsix",
+    "application/zip"
+  ],
+  "UseCases": [
+    "Visual Studio extension distribution and installation",
+    "VS Code extension packaging and marketplace publishing",
+    "Custom IDE tool integration and productivity extension delivery",
+    "Automated extension deployment in enterprise CI/CD pipelines"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Container": "ZIP archive (PK 0x504B0304) with OOXML-style content type manifest",
+    "ManifestFormat": "XML (extension.vsixmanifest) with namespace schemas.microsoft.com/developer/vsx-schema/2011",
+    "Components": "[Content_Types].xml, extension.vsixmanifest, DLL assemblies, PKGDEF, resources",
+    "SupportsStreaming": false,
+    "SecurityModel": "VS validates manifest XML schema; DLL code runs in IDE process"
+  }
+}

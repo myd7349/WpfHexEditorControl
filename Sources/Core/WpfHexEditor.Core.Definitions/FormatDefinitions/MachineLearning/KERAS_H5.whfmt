@@ -1,0 +1,288 @@
+{
+  "diffMode": "binary",
+  "formatName": "Keras/HDF5 Model",
+  "version": "1.0",
+  "extensions": [
+    ".h5",
+    ".hdf5",
+    ".keras"
+  ],
+  "description": "HDF5 (Hierarchical Data Format 5) file used to store Keras model weights and architecture. Magic: 89 48 44 46 0D 0A 1A 0A (8 bytes). Superblock follows: version (1B), free_space_version (1B), root_group_symbol_table_version (1B), offset_size (1B: 4 or 8 bytes), length_size (1B: 4 or 8 bytes), leaf_node_k (2B), internal_node_k (2B), file_consistency_flags (4B), base_address (8B). Keras models store: model_config (JSON string attribute), training_config, layer weights as float32/float16 datasets. Groups: /model_weights/, /optimizer_weights/. TF2/Keras 3 uses .keras format (ZIP) or SavedModel directory. HDF5 supports chunked storage, compression (gzip/lzf), and attributes.",
+  "category": "MachineLearning",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": [
+    {
+      "specifications": [
+        "HDF5 File Format Specification Version 3.0 — docs.hdfgroup.org/hdf5/v1_14/group___f_a_p_l.html",
+        "Keras model saving guide — keras.io/guides/serialization_and_saving",
+        "HDF5 superblock format — docs.hdfgroup.org/hdf5/develop/group___d_a_p_l.html"
+      ],
+      "WebLinks": [
+        "https://www.hdfgroup.org/solutions/hdf5/",
+        "https://keras.io/guides/serialization_and_saving/",
+        "https://docs.hdfgroup.org/hdf5/v1_14/",
+        "https://en.wikipedia.org/wiki/Hierarchical_Data_Format"
+      ]
+    }
+  ],
+  "detection": {
+    "signatures": [
+      { "value": "894844460D0A1A0A", "offset": 0, "label": "HDF5 signature — Keras/HDF5 model file", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 5.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 512,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "hdf5Magic": "",
+    "superblockVersion": 0,
+    "freespaceVersion": 0,
+    "rootGroupVersion": 0,
+    "offsetSize": 0,
+    "lengthSize": 0,
+    "modelConfigJson": "",
+    "kerasVersion": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "HDF5 Format Signature",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "8-byte HDF5 format signature: 0x89 0x48 0x44 0x46 0x0D 0x0A 0x1A 0x0A. Breakdown: 0x89=non-ASCII byte (detects 7-bit ASCII transport corruption), 'HDF' (ASCII 48 44 46), 0x0D 0x0A (Windows CRLF — detects text-mode newline conversion), 0x1A (CTRL+Z, stops TYPE command on MS-DOS), 0x0A (Unix LF — detects Unix/Windows newline conversion). This signature pattern is shared with PNG (89 50 4E 47) in its design philosophy.",
+      "storeAs": "hdf5Magic",
+      "valueType": "bytes"
+    },
+    {
+      "type": "field",
+      "name": "Superblock Version",
+      "offset": 8,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "1-byte HDF5 superblock version number. Version 0 and 1: original superblock format with symbol table entries, compatible with HDF5 1.0-1.6. Version 2: redesigned superblock with B-tree v2 and checksum (HDF5 1.8+). Version 3: adds superblock extension for file-creation property list storage and swmr (Single Writer Multiple Reader) support (HDF5 1.10+). Keras models created with h5py typically use superblock version 0 or 2.",
+      "storeAs": "superblockVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "HDF5 superblock v0 (HDF5 1.0-1.6)",
+        "1": "HDF5 superblock v1 (symbol table variant)",
+        "2": "HDF5 superblock v2 (B-tree v2 + checksum, HDF5 1.8+)",
+        "3": "HDF5 superblock v3 (SWMR support, HDF5 1.10+)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Free Space Version",
+      "offset": 9,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "1-byte free space management version. Must be 0 in all current HDF5 implementations. Non-zero value indicates a future or corrupted file. Free space is managed by the Free Space Manager in superblock v2+ (uses a different mechanism — this field is absent in v2/v3).",
+      "storeAs": "freespaceVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Root Group Symbol Table Version",
+      "offset": 10,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "1-byte root group symbol table version. Must be 0 in all current HDF5 implementations. The symbol table entry describes the root group that is the entry point for all HDF5 group and dataset objects in the file hierarchy.",
+      "storeAs": "rootGroupVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Size of Offsets",
+      "offset": 13,
+      "length": 1,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "1-byte size in bytes of file address offsets. Must be 4 (32-bit file space, max 4GB) or 8 (64-bit file space, max 16 exabytes). Modern HDF5 files and all large Keras model files use 8-byte offsets. This field determines the byte width of all address fields throughout the file.",
+      "storeAs": "offsetSize",
+      "valueType": "uint8",
+      "valueMap": {
+        "4": "32-bit offsets (max file size 4 GB)",
+        "8": "64-bit offsets (max file size 16 EB)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Size of Lengths",
+      "offset": 14,
+      "length": 1,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "1-byte size in bytes of length fields. Must be 4 (32-bit, max dataset size 4 GB) or 8 (64-bit). Keras weight files storing large float32 tensors require 8-byte lengths for models with billions of parameters. Controls the width of all size/length fields including dataset storage sizes.",
+      "storeAs": "lengthSize",
+      "valueType": "uint8",
+      "valueMap": {
+        "4": "32-bit lengths (max dataset 4 GB)",
+        "8": "64-bit lengths (max dataset 16 EB)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "Model Config JSON",
+      "variable": "modelConfigJson",
+      "description": "Keras model_config JSON attribute from the root group — encodes the full model architecture as a serialized Python dict"
+    },
+    {
+      "type": "metadata",
+      "name": "Keras Version",
+      "variable": "kerasVersion",
+      "description": "Keras version string from the keras_version HDF5 attribute (e.g. '2.12.0' or '3.0.0')"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid HDF5 magic",
+      "expression": "hdf5Magic[0] == 0x89 && hdf5Magic[1] == 0x48 && hdf5Magic[2] == 0x44 && hdf5Magic[3] == 0x46",
+      "severity": "error",
+      "message": "File does not begin with HDF5 signature 89 48 44 46 0D 0A 1A 0A — not a valid HDF5/Keras model"
+    },
+    {
+      "name": "Known superblock version",
+      "expression": "superblockVersion >= 0 && superblockVersion <= 3",
+      "severity": "error",
+      "message": "HDF5 superblock version must be 0, 1, 2, or 3 — unknown version indicates future or corrupted file"
+    },
+    {
+      "name": "Valid offset size",
+      "expression": "offsetSize == 4 || offsetSize == 8",
+      "severity": "error",
+      "message": "HDF5 offset size must be 4 (32-bit) or 8 (64-bit) — non-standard value indicates file corruption"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "HDF5 Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Superblock Version", "offset": 8, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Offset/Length Sizes", "offset": 13, "icon": "\uE9D9", "color": "#FFA07A" }
+    ]
+  },
+  "inspector": {
+    "badge": "kerasVersion",
+    "primaryField": "superblockVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "HDF5 Identity",
+        "icon": "\uE71B",
+        "fields": ["hdf5Magic", "superblockVersion"]
+      },
+      {
+        "title": "File Structure",
+        "icon": "\uE9D9",
+        "fields": ["offsetSize", "lengthSize", "freespaceVersion", "rootGroupVersion"]
+      },
+      {
+        "title": "Keras Metadata",
+        "icon": "\uE946",
+        "fields": ["kerasVersion", "modelConfigJson"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "HDF5 Superblock (JSON)",
+      "format": "json",
+      "fields": ["hdf5Magic", "superblockVersion", "offsetSize", "lengthSize", "kerasVersion"]
+    },
+    {
+      "name": "HDF5 Superblock (C struct)",
+      "format": "c-struct",
+      "structName": "HDF5_SUPERBLOCK",
+      "fields": ["hdf5Magic", "superblockVersion", "freespaceVersion", "rootGroupVersion", "offsetSize", "lengthSize"]
+    },
+    {
+      "name": "Python HDF5 magic check",
+      "format": "python-bytes",
+      "fields": ["hdf5Magic", "superblockVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "machine-learning",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid free space version",
+        "condition": "freespaceVersion != 0",
+        "severity": "warning",
+        "description": "Free space version must be 0 — non-zero value indicates file corruption or non-standard HDF5 writer"
+      },
+      {
+        "name": "Non-standard offset size",
+        "condition": "offsetSize != 4 && offsetSize != 8",
+        "severity": "error",
+        "description": "HDF5 offset size must be exactly 4 or 8 bytes — any other value indicates a corrupted or forged file"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "HDF5 is a hierarchical filesystem-in-a-file format. Keras stores: /model_config (JSON string attribute with full model architecture), /model_weights/ (group tree where each layer stores its weight arrays as datasets), /optimizer_weights/ (optional optimizer state for training resumption). Use h5py to inspect: h5py.File('model.h5','r').attrs.keys() shows top-level attributes. Keras version in attrs['keras_version']. Model JSON in attrs['model_config']. Weight datasets are float32 or float16 arrays named by layer path (e.g. /model_weights/dense/dense/kernel:0). The .keras extension in Keras 3.x uses a ZIP container instead of HDF5 for portability.",
+    "knownVulnerabilities": [
+      "CVE-2021-46143: HDF5 library buffer overflow in H5T__bit_copy — affects older h5py versions",
+      "Keras model_config JSON deserialization may execute arbitrary code via custom_objects parameter in tf.keras.models.model_from_config"
+    ],
+    "suggestedInspections": [
+      "Verify 8-byte HDF5 magic at offset 0: 89 48 44 46 0D 0A 1A 0A",
+      "Check superblock version at offset 8 — versions 0-3 are valid",
+      "Inspect offset_size (offset 13) and length_size (offset 14) — must be 4 or 8",
+      "Use h5py to list attributes: model_config, keras_version, backend, training_config",
+      "Enumerate /model_weights/ group to map layer names and weight tensor shapes",
+      "Check for /optimizer_weights/ — presence indicates training checkpoint, not final export"
+    ]
+  },
+  "software": [
+    "TensorFlow/Keras (model.save('model.h5'))",
+    "h5py (Python HDF5 library)",
+    "HDF5 tools: h5dump, h5ls, h5diff",
+    "Netron (visual model inspector)",
+    "HDFView (Java HDF5 GUI browser)"
+  ],
+  "formatRelationships": {
+    "category": "MachineLearning",
+    "extensions": [".h5", ".hdf5", ".keras"],
+    "relatedFormats": ["GGUF", "TORCHSCRIPT", "MLMODEL"],
+    "note": "HDF5 (.h5/.hdf5) is the legacy Keras format (Keras 1.x-2.x). Keras 3.x uses .keras (ZIP container) or SavedModel (directory). HDF5 is also used in science (NetCDF4 is HDF5), engineering simulation, and genome data (FAST5 nanopore sequencing uses HDF5)."
+  },
+  "MimeTypes": [
+    "application/x-hdf5",
+    "application/x-hdf"
+  ],
+  "UseCases": [
+    "Keras/TensorFlow model weight persistence and transfer learning",
+    "Training checkpoint saving with optimizer state",
+    "Scientific data storage (climate, genome, physics simulation)",
+    "Cross-language model sharing (Python, R, Julia via HDF5 libraries)",
+    "Model versioning and experiment tracking"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Container": "HDF5 hierarchical file format with group/dataset/attribute model",
+    "WeightFormat": "float32 or float16 datasets under /model_weights/",
+    "MetadataStorage": "HDF5 file-level attributes (model_config, keras_version, backend)",
+    "CompressionSupport": "gzip, lzf, szip per-dataset compression",
+    "MaxFileSize": "18.4 exabytes (64-bit offset mode)",
+    "SupportsStreaming": false
+  }
+}

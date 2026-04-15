@@ -1,0 +1,118 @@
+{
+  "formatName": "Digital Picture Exchange",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "DPX (Digital Picture Exchange) cinema/VFX image format (.dpx) — SMPTE 268M standard for digital intermediate (DI) workflows supporting 10-bit log (Cineon), 12-bit, and 16-bit precision with rich production metadata.",
+  "extensions": [ ".dpx" ],
+  "category": "Images",
+  "diffMode": "binary",
+  "signatures": [
+    { "value": "53445058", "offset": 0, "label": "'SDPX' — DPX big-endian (cinema standard)",  "weight": 1.0, "strength": "Strong" },
+    { "value": "58504453", "offset": 0, "label": "'XPDS' — DPX little-endian",                   "weight": 0.9, "strength": "Strong" }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0,   "size": 4,   "name": "magic",            "type": "ascii",    "description": "'SDPX' (big-endian) or 'XPDS' (little-endian)", "storeAs": "dpxMagic" },
+      { "offset": 4,   "size": 4,   "name": "image_offset",     "type": "uint32",   "description": "Byte offset to start of image data" },
+      { "offset": 8,   "size": 8,   "name": "vers",             "type": "ascii",    "description": "DPX spec version: 'V1.0    ' or 'V2.0    '",      "storeAs": "dpxVersion" },
+      { "offset": 16,  "size": 4,   "name": "file_size",        "type": "uint32",   "description": "Total file size in bytes" },
+      { "offset": 20,  "size": 4,   "name": "ditto_key",        "type": "uint32",   "description": "0 = new frame; 1 = same as previous frame" },
+      { "offset": 24,  "size": 4,   "name": "generic_hdr_size", "type": "uint32",   "description": "Generic header size = 768 bytes" },
+      { "offset": 28,  "size": 4,   "name": "industry_hdr_size","type": "uint32",   "description": "Industry-specific header size = 384 bytes" },
+      { "offset": 32,  "size": 4,   "name": "user_hdr_size",    "type": "uint32",   "description": "User-defined header size" },
+      { "offset": 36,  "size": 100, "name": "image_filename",   "type": "ascii",    "description": "Source image filename (null-terminated)" },
+      { "offset": 136, "size": 24,  "name": "creation_datetime","type": "ascii",    "description": "Creation datetime: 'YYYY:MM:DD:HH:MM:SSLT'" },
+      { "offset": 160, "size": 100, "name": "creator",          "type": "ascii",    "description": "Creating software or application name" },
+      { "offset": 260, "size": 200, "name": "project",          "type": "ascii",    "description": "Project name" },
+      { "offset": 460, "size": 200, "name": "copyright",        "type": "ascii",    "description": "Copyright notice" },
+      { "offset": 768, "size": 2,   "name": "orientation",      "type": "uint16",   "description": "0 = left-to-right, top-to-bottom" },
+      { "offset": 770, "size": 2,   "name": "num_elements",     "type": "uint16",   "description": "Number of image elements (usually 1)" },
+      { "offset": 772, "size": 4,   "name": "pixels_per_line",  "type": "uint32",   "description": "Image width in pixels" },
+      { "offset": 776, "size": 4,   "name": "lines_per_element","type": "uint32",   "description": "Image height in lines" }
+    ]
+  },
+  "inspector": {
+    "displayFields": [ "dpxMagic", "dpxVersion", "pixels_per_line", "lines_per_element", "creator", "image_filename" ],
+    "valueMaps": {
+      "dpxMagic": {
+        "SDPX": "Big-endian DPX (cinema standard — most common)",
+        "XPDS": "Little-endian DPX"
+      },
+      "dpxVersion": {
+        "V1.0    ": "DPX v1.0 (SMPTE 268M-1994)",
+        "V2.0    ": "DPX v2.0 (SMPTE 268M-2003)"
+      }
+    },
+    "tooltips": {
+      "dpxMagic":           "SDPX = standard big-endian cinema DPX; XPDS = little-endian variant",
+      "image_offset":       "Typical value: 8192 bytes (0x2000) for standard DPX files",
+      "creation_datetime":  "Format: YYYY:MM:DD:HH:MM:SS:LT — colons separate all fields",
+      "generic_hdr_size":   "Must be 768; combined with 384-byte industry header = 1152-byte header block"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "dpxMagic",        "operator": "inSet", "value": ["SDPX","XPDS"], "description": "Magic must be 'SDPX' or 'XPDS'" },
+    { "id": "A2", "field": "image_offset",    "operator": "lt",    "value": "file_size",     "description": "Image data offset must be within file bounds" },
+    { "id": "A3", "field": "pixels_per_line", "operator": "gte",   "value": 1,              "description": "Image width must be positive" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0,   "label": "Magic SDPX/XPDS",     "color": "#E74C3C" },
+      { "offset": 8,   "label": "DPX Version",          "color": "#F39C12" },
+      { "offset": 36,  "label": "Filename",             "color": "#3498DB" },
+      { "offset": 136, "label": "Creation Date/Time",   "color": "#27AE60" },
+      { "offset": 160, "label": "Creator Software",     "color": "#9B59B6" },
+      { "offset": 260, "label": "Project Name",         "color": "#1ABC9C" },
+      { "offset": 768, "label": "Image Information Hdr","color": "#E67E22" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "DPX Production Metadata",
+      "fields": [ "dpxMagic", "dpxVersion", "pixels_per_line", "lines_per_element", "creator", "image_filename", "creation_datetime", "project", "copyright" ],
+      "format": "text"
+    },
+    {
+      "name": "DPX Technical JSON",
+      "fields": [ "dpxMagic", "dpxVersion", "image_offset", "file_size", "generic_hdr_size", "pixels_per_line", "lines_per_element", "num_elements" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "DPX is a per-frame format: each frame in a sequence is a separate .dpx file, typically named with a zero-padded frame number (e.g. shot_001.0042.dpx).",
+    "10-bit log encoding (Cineon-compatible) is the traditional cinema standard; DPX v2.0 also supports 12-bit linear and 16-bit float for VFX pipelines.",
+    "The 768-byte generic header is followed by a 384-byte SMPTE motion picture header at offset 768 (industry header), then optional user header.",
+    "The ditto_key field (offset 20) value 1 means the metadata is identical to the previous frame — used in image sequences to avoid redundant header reads.",
+    "DPX supports SMPTE 259M timecode (LTC/VITC), film edge code (keycode), and frame position metadata in the SMPTE motion picture header block.",
+    "Big-endian (SDPX) is the cinema standard; little-endian (XPDS) is used on some Windows-based DI systems — both are equally valid per the spec."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "DPX files contain only uncompressed or lightly coded image data and production metadata; no executable content.",
+      "Rich metadata (filename, creator, project, copyright, timecode) is valuable for provenance tracking in legal or insurance contexts.",
+      "Individual DPX frames in a sequence can be independently verified; missing frames or frame number gaps indicate data loss."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "Cineon", "relationship": "predecessor", "note": "DPX is based on and backward-compatible with the Kodak Cineon format." },
+    { "format": "EXR",    "relationship": "contemporary", "note": "OpenEXR is the dominant HDR alternative for VFX (float data, multi-layer)." }
+  ],
+  "software": [
+    { "name": "DaVinci Resolve", "role": "Primary DPX grading and export tool" },
+    { "name": "Nuke (Foundry)",  "role": "VFX compositing with DPX I/O" },
+    { "name": "ffmpeg",          "role": "DPX decode and encode (command line)" },
+    { "name": "ImageMagick",     "role": "DPX batch conversion" },
+    { "name": "Baselight",       "role": "Film colour grading with DPX support" }
+  ],
+  "useCases": [
+    "Digital intermediate (DI) film post-production workflow",
+    "VFX shot delivery and exchange between vendors",
+    "Archive master for feature film content",
+    "Frame sequence analysis for broadcast or streaming mastering"
+  ],
+  "technicalDetails": "SMPTE 268M (v1.0 1994, v2.0 2003). Cinema/VFX uncompressed image exchange. 10-bit log (Cineon density encoding) or 12/16-bit linear. 768-byte generic file header + 384-byte SMPTE motion picture header. Supports SMPTE timecode, film keycode, aspect ratio, transfer characteristics, and colorimetry metadata. Big-endian is the cinema standard. One file per frame; sequences use zero-padded numeric filenames. Used in virtually all high-end film and VFX pipelines worldwide.",
+  "completenessScore": 86
+}

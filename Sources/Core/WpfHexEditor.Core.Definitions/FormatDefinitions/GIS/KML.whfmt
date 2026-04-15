@@ -1,0 +1,189 @@
+{
+  "diffMode": "text",
+  "formatName": "Keyhole Markup Language (KML)",
+  "version": "1.0",
+  "extensions": [".kml", ".kmz"],
+  "description": "KML (Keyhole Markup Language) — OGC standard XML format for geospatial visualization (originally Keyhole Inc., acquired by Google 2004, OGC standard 2008). Root element: <kml xmlns='http://www.opengis.net/kml/2.2'> or 'http://earth.google.com/kml/2.1'. Key elements: <Placemark> (named geographic feature with <name>, <description>, <Point>, <LineString>, <Polygon>, <coordinates>), <Folder>, <Document>, <NetworkLink> (loads remote KML), <GroundOverlay> (image overlay), <ScreenOverlay>, <StyleMap>, <Style> (color/icon/line styles), <LookAt> (camera view). Coordinates: longitude,latitude,altitude triples (note: longitude first, then latitude). KMZ: ZIP archive containing doc.kml + resource files. Used by Google Earth, Google Maps import, QGIS, ArcGIS, NASA WorldWind.",
+  "category": "GIS",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "OGC KML 2.3 Standard (OGC 07-147r3)",
+      "KML 2.2 Reference — Google Developers",
+      "RFC 5870 — A Uniform Resource Identifier for Geographic Locations"
+    ],
+    "WebLinks": [
+      "https://developers.google.com/kml/documentation/",
+      "https://www.ogc.org/standard/kml/",
+      "https://en.wikipedia.org/wiki/Keyhole_Markup_Language"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "3C6B6D6C",
+        "offset": 0,
+        "label": "<kml — KML root element at offset 0",
+        "weight": 0.8
+      },
+      {
+        "value": "3C3F786D6C",
+        "offset": 0,
+        "label": "<?xml — KML with XML declaration (common)",
+        "weight": 0.4
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.5, "max": 5.5 },
+    "validation": {
+      "minFileSize": 5,
+      "maxSignatureOffset": 0,
+      "note": "KML is XML and may begin with '<?xml' declaration or directly with '<kml'. KMZ is a ZIP file (magic 50 4B 03 04) containing doc.kml. For KMZ, use the ZIP format detector and then inspect internal files."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "xmlOrTag": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the KML file at offset 0 (1 byte, uint8). Expected value 0x3C ('<') for all KML files, since KML is an XML format. The file may begin with '<kml' (if no XML declaration) or '<?xml' (with XML declaration) or the UTF-8 BOM (EF BB BF) followed by '<'. If the file starts with 0x3C, it is potentially XML-based. KMZ files start with 0x50 0x4B (ZIP magic) and must be decompressed first.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "XML/KML Tag Start",
+      "offset": 0,
+      "length": 5,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 5 bytes of the KML file (ASCII). Common patterns: '<kml ' or '<kml>' for KML without XML declaration; '<?xml' for KML with XML processing instruction. KML namespace 'http://www.opengis.net/kml/2.2' (OGC KML 2.2) or 'http://www.opengis.net/kml/2.3' (OGC KML 2.3) or 'http://earth.google.com/kml/2.1' (Google Earth legacy). Presence of <kml xmlns=...> confirms KML regardless of the specific namespace URI.",
+      "storeAs": "xmlOrTag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "0x3C '<' confirms XML/KML text format"
+    },
+    {
+      "type": "metadata",
+      "name": "XML/KML Start",
+      "variable": "xmlOrTag",
+      "description": "'<kml>' or '<?xml' — KML file start"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "KML starts with XML marker",
+      "expression": "firstByte == 0x3C",
+      "severity": "warning",
+      "message": "KML file should start with '<' (0x3C) — may be binary KMZ or corrupted"
+    },
+    {
+      "name": "XML or KML tag present",
+      "expression": "xmlOrTag starts with '<?xml' or xmlOrTag starts with '<kml'",
+      "severity": "info",
+      "message": "Expected KML to start with '<?xml' or '<kml' element"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "KML Root", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "xmlOrTag",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "KML Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "xmlOrTag"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "KML Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "xmlOrTag"]
+    },
+    {
+      "name": "KML Start (Text)",
+      "format": "text",
+      "fields": ["xmlOrTag"]
+    }
+  ],
+  "forensic": {
+    "category": "geospatial",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "<NetworkLink> elements load remote resources and may exfiltrate viewer location",
+      "KML files shared publicly may expose precise location data of sensitive sites"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "KML structure: <kml> root with optional Document/Folder hierarchy. <Placemark> = named feature with geometry (Point/LineString/Polygon) and properties (<name>, <description> HTML). Coordinates: comma-separated lon,lat,alt triples separated by spaces for multi-point geometries. Style: <Style id='...'> with <IconStyle>/<LineStyle>/<PolyStyle>/<LabelStyle>. <NetworkLink> enables dynamic data loading. <GroundOverlay> overlays images on terrain. <TimeStamp>/<TimeSpan> for temporal data. KMZ = ZIP with doc.kml at root + images/ folder. Large datasets use Regions and NetworkLinks for LOD (Level of Detail) loading.",
+    "suggestedInspections": [
+      "Byte 0: '<' (0x3C) confirms XML/text format (not KMZ which is ZIP)",
+      "First 10 bytes: look for '<kml xmlns' or '<?xml ver' — confirms KML format",
+      "Scan for '<Placemark>' elements — each contains named geographic feature",
+      "Check for '<NetworkLink>' — may load remote data dynamically from external servers"
+    ]
+  },
+  "software": [
+    "Google Earth Pro (primary KML application)",
+    "Google Maps (KML import)",
+    "QGIS (KML/KMZ read via GDAL)",
+    "ArcGIS (KML import/export)",
+    "NASA WorldWind",
+    "OpenLayers (JavaScript web map library)"
+  ],
+  "formatRelationships": {
+    "category": "GIS",
+    "extensions": [".kml", ".kmz"],
+    "relatedFormats": ["GEOJSON", "SHP", "GPKG", "GEOTIFF"],
+    "note": "KML is optimized for visualization (styles, camera, overlays) while GeoJSON is more suitable for data interchange. KMZ is simply a ZIP archive. GeoJSON is preferred for web APIs (RFC 7946). TopoJSON reduces file size using shared arc topology. CZML is the Cesium JS equivalent for 3D time-dynamic visualization."
+  },
+  "MimeTypes": [
+    "application/vnd.google-earth.kml+xml",
+    "application/vnd.google-earth.kmz"
+  ],
+  "UseCases": [
+    "Google Earth visualization of geographic data",
+    "GPS track export and sharing from devices",
+    "Emergency management incident mapping",
+    "Real estate and urban planning visualizations",
+    "Scientific data visualization in Google Earth Engine"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "XML text (KML) or ZIP archive containing doc.kml (KMZ)",
+    "Magic": "'<kml' or '<?xml' — no binary magic; KMZ uses ZIP magic 50 4B 03 04",
+    "Standard": "OGC KML 2.3 Standard (OGC 07-147r3)",
+    "Endianness": "N/A (XML text)",
+    "Coordinates": "Longitude, latitude, altitude order (note: lon first — opposite of common lat/lon convention)"
+  }
+}

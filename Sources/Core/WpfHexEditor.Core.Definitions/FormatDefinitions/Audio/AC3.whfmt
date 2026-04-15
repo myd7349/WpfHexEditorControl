@@ -1,536 +1,212 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "Dolby Digital AC-3",
-  "version": "3.22",
-  "extensions": [
-    ".ac3",
-    ".eac3"
-  ],
-  "description": "Dolby Digital (AC-3) audio bitstream - standard surround sound codec for DVD, Blu-ray, HDTV (ATSC A/52). Each sync frame consists of a sync word, CRC1, sample rate/frame size info, bit stream information (BSI), audio blocks, and CRC2. The BSI header encodes version, mode, channel layout, dialogue normalization, and dynamic range control parameters.",
+  "formatName": "Dolby AC-3 Audio",
+  "version": "1.0",
+  "extensions": [".ac3", ".a52"],
+  "description": "Dolby AC-3 (Audio Coding 3) is a lossy audio compression format developed by Dolby Laboratories. It is widely used in DVD-Video, Blu-ray, digital broadcast television, and streaming services. Each AC-3 bitstream is organized into synchronization frames starting with the 16-bit big-endian syncword 0x0B77. The bitstream ID (bsid) field identifies the variant: value 8 indicates standard AC-3, value 11 indicates E-AC-3 (Dolby Digital Plus). Sample rates are encoded in the upper 2 bits of the combined fscod/frmsizecod byte.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "audio-viewer",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "ATSC A/52:2018 - Digital Audio Compression (AC-3, E-AC-3)",
-      "ETSI TS 102 366 - Digital Audio Compression",
-      "Dolby Digital / Dolby Digital Plus Specification"
+      "ATSC A/52: Digital Audio Compression Standard (AC-3, E-AC-3)",
+      "ETSI TS 102 366: Digital Audio Compression (AC-3, Enhanced AC-3) Standard"
     ],
     "WebLinks": [
-      "https://www.atsc.org/atsc-documents/a522012-digital-audio-compression-ac-3-e-ac-3-standard-12172012/",
-      "https://en.wikipedia.org/wiki/Dolby_Digital",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000209.shtml",
-      "https://wiki.videolan.org/AC3/",
-      "https://wiki.multimedia.cx/index.php/AC-3"
+      "https://www.atsc.org/atsc-documents/a52-digital-audio-compression-standard-ac-3-e-ac-3/",
+      "https://en.wikipedia.org/wiki/Dolby_Digital"
     ]
   },
   "detection": {
-    "signature": "0B77",
-    "offset": 0,
-    "required": true,
+    "signatures": [
+      {
+        "value": "0B77",
+        "offset": 0,
+        "label": "AC-3 sync word 0x0B77",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "First",
+    "MinimumScore": 0.9,
+    "required": ["AC-3 sync word 0x0B77"],
+    "Strength": "Strong",
+    "EntropyHint": {
+      "min": 5.5,
+      "max": 8.0,
+      "comment": "Compressed audio exhibits high entropy"
+    },
     "validation": {
-      "minFileSize": 8,
-      "maxSignatureOffset": 1024
+      "notes": "Verify syncword == 0x0B77, bsid <= 16, and fscod in range 0-2"
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "ac3SyncWord": 0,
-    "crc1": 0,
-    "fscod_frmsizecod": 0,
+    "syncWord": "0x0000",
+    "crc1": "0x0000",
     "fscod": 0,
     "frmsizecod": 0,
-    "bsid_bsmod": 0,
-    "bsid": 0,
-    "bsmod": 0,
-    "acmod_flags": 0,
-    "acmod": 0,
-    "cmixlev": 0,
-    "surmixlev": 0,
-    "dsurmod": 0,
-    "lfeon": 0,
-    "dialnorm_compre": 0,
-    "dialnorm": 0,
-    "compre": 0,
-    "langcod_audprodi": 0,
-    "langcod": 0,
-    "audprodie": 0,
-    "mixlevel_roomtyp": 0,
-    "mixlevel": 0,
-    "roomtyp": 0,
-    "copyrightb": 0,
-    "origbs": 0,
-    "timecod1e": 0,
-    "sampleRate": 0,
-    "bitrate": 0,
-    "channels": 0,
-    "frameSize": 0,
-    "frameSizeBytes": 0,
-    "samplesPerSecond": 0,
-    "estimatedDuration": 0,
-    "formattedSize": ""
-  },
-  "functions": {
-    "formatFileSize(var:frameSizeBytes)": "Format AC-3 frame size as human-readable string with units",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate total samples per second across all channels",
-    "validateFieldRange(bsid, 0, 16)": "Validate bit stream ID (0-8=AC-3, 16=E-AC-3)",
-    "validateFieldRange(fscod, 0, 2)": "Validate sample rate code (0=48kHz, 1=44.1kHz, 2=32kHz)",
-    "validateFieldRange(acmod, 0, 7)": "Validate audio coding mode (channel layout 0-7)"
+    "bsid": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "AC-3 Sync Word",
+      "name": "syncword",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "Synchronization word 0x0B77 - marks the start of each AC-3 sync frame. Decoders scan for this pattern to find frame boundaries.",
-      "storeAs": "ac3SyncWord",
-      "valueType": "uint16",
-      "endianness": "big",
-      "validation": {
-        "expectedValue": "0B77"
-      }
+      "opacity": 0.85,
+      "description": "AC-3 synchronization word — always 0x0B77 in big-endian; identifies the start of each AC-3 audio frame in the bitstream",
+      "storeAs": "syncWord",
+      "valueType": "uint16BE"
     },
     {
       "type": "field",
-      "name": "CRC1 - Error Check",
+      "name": "crc1",
       "offset": 2,
       "length": 2,
-      "color": "#FF6B9D",
-      "opacity": 0.3,
-      "valueType": "uint16",
-      "endianness": "big",
+      "color": "#4ECDC4",
+      "opacity": 0.75,
+      "description": "CRC-16 checksum covering the first 5/8 of the AC-3 frame payload; used by decoders for error detection and frame validation",
       "storeAs": "crc1",
-      "description": "CRC-16 error detection code covering the first 5/8ths of the sync frame. Uses the generator polynomial x^16 + x^15 + x^2 + 1. Allows partial frame validation before full decode."
+      "valueType": "uint16BE"
     },
     {
       "type": "field",
-      "name": "Sample Rate + Frame Size Code",
+      "name": "fscod_frmsizecod",
       "offset": 4,
       "length": 1,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "fscod_frmsizecod",
-      "description": "Packed byte: fscod (bits 7-6) selects the audio sample rate, frmsizecod (bits 5-0) determines the frame size and nominal bitrate. Together they define the audio timing and data rate.",
-      "validationRules": {
-        "minValue": 0,
-        "maxValue": 191
-      },
-      "bitfields": [
-        {
-          "name": "Sample Rate Code (fscod)",
-          "bits": "7-6",
-          "storeAs": "fscod",
-          "description": "Audio sample rate selector. Determines the base sample rate for all audio in this frame.",
-          "valueMap": {
-            "0": "48 kHz",
-            "1": "44.1 kHz",
-            "2": "32 kHz",
-            "3": "Reserved (invalid)"
-          }
-        },
-        {
-          "name": "Frame Size Code (frmsizecod)",
-          "bits": "5-0",
-          "storeAs": "frmsizecod",
-          "description": "Determines frame size in 16-bit words and nominal bitrate. Even values 0-36 select bitrates from 32 to 640 kbps; odd values select the same bitrate but a larger frame for 44.1 kHz compensation.",
-          "valueMap": {
-            "0": "32 kbps",
-            "2": "40 kbps",
-            "4": "48 kbps",
-            "6": "56 kbps",
-            "8": "64 kbps",
-            "10": "80 kbps",
-            "12": "96 kbps",
-            "14": "112 kbps",
-            "16": "128 kbps",
-            "18": "160 kbps",
-            "20": "192 kbps",
-            "22": "224 kbps",
-            "24": "256 kbps",
-            "26": "320 kbps",
-            "28": "384 kbps",
-            "30": "448 kbps",
-            "32": "512 kbps",
-            "34": "576 kbps",
-            "36": "640 kbps"
-          }
-        }
-      ]
+      "color": "#95E1D3",
+      "opacity": 0.75,
+      "description": "Packed byte: upper 2 bits encode sample rate code (fscod: 0=48kHz, 1=44.1kHz, 2=32kHz); lower 6 bits encode frame size code (frmsizecod) used to look up frame byte length",
+      "storeAs": "fscod",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Bit Stream ID + Mode (BSI byte 1)",
+      "name": "bsid",
       "offset": 5,
       "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "bsid_bsmod",
-      "description": "First byte of Bit Stream Information: bsid (bits 7-3) identifies the AC-3 standard version, bsmod (bits 2-0) defines the type of audio service (main, commentary, etc.).",
-      "bitfields": [
-        {
-          "name": "Bit Stream ID (bsid)",
-          "bits": "7-3",
-          "storeAs": "bsid",
-          "description": "Bit stream version identifier. Values 0-8 indicate standard AC-3, value 16 indicates Enhanced AC-3 (E-AC-3 / Dolby Digital Plus). Values 9-10 are alternate AC-3 syntax.",
-          "valueMap": {
-            "6": "AC-3 (alternate syntax)",
-            "8": "AC-3 (standard, most common)",
-            "9": "AC-3 (alternate, reduced)",
-            "10": "AC-3 (alternate, further reduced)",
-            "16": "E-AC-3 (Dolby Digital Plus)"
-          }
-        },
-        {
-          "name": "Bit Stream Mode (bsmod)",
-          "bits": "2-0",
-          "storeAs": "bsmod",
-          "description": "Describes the type of audio service conveyed in this bit stream. Combined with acmod, it determines the full service type.",
-          "valueMap": {
-            "0": "Main Audio: Complete Main (CM)",
-            "1": "Main Audio: Music & Effects (ME)",
-            "2": "Associated: Visually Impaired (VI)",
-            "3": "Associated: Hearing Impaired (HI)",
-            "4": "Associated: Dialogue (D)",
-            "5": "Associated: Commentary (C)",
-            "6": "Associated: Emergency (E)",
-            "7": "Associated: Voice Over (VO) / Karaoke"
-          }
-        }
-      ]
-    },
-    {
-      "type": "field",
-      "name": "Audio Coding Mode + Flags (BSI byte 2)",
-      "offset": 6,
-      "length": 1,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "acmod_flags",
-      "description": "acmod (bits 7-5) defines the channel layout. Remaining bits are context-dependent: cmixlev if center channel exists, surmixlev if surround channels exist, dsurmod for dual-mono, lfeon for LFE subwoofer.",
-      "bitfields": [
-        {
-          "name": "Audio Coding Mode (acmod)",
-          "bits": "7-5",
-          "storeAs": "acmod",
-          "description": "Channel configuration. Determines number and arrangement of full-bandwidth audio channels. Affects which subsequent fields are present in the BSI.",
-          "valueMap": {
-            "0": "1+1 (Ch1 + Ch2 Dual Mono)",
-            "1": "1/0 (C - Center only, Mono)",
-            "2": "2/0 (L + R - Stereo)",
-            "3": "3/0 (L + C + R)",
-            "4": "2/1 (L + R + Surround)",
-            "5": "3/1 (L + C + R + Surround)",
-            "6": "2/2 (L + R + SL + SR - Quad)",
-            "7": "3/2 (L + C + R + SL + SR = 5.0)"
-          }
-        },
-        {
-          "name": "Center Mix Level (cmixlev)",
-          "bits": "4-3",
-          "storeAs": "cmixlev",
-          "description": "Center channel downmix level. Present only when acmod indicates a center channel exists (acmod = 3, 5, 7).",
-          "valueMap": {
-            "0": "-3.0 dB",
-            "1": "-4.5 dB",
-            "2": "-6.0 dB",
-            "3": "Reserved"
-          }
-        },
-        {
-          "name": "Surround Mix Level / Dolby Surround Mode",
-          "bits": "2-1",
-          "storeAs": "surmixlev",
-          "description": "Surround downmix level when surround channels exist, or Dolby Surround mode when acmod=0 (dual mono).",
-          "valueMap": {
-            "0": "-3.0 dB / Not Dolby Surround",
-            "1": "-6.0 dB / Dolby Surround encoded",
-            "2": "0 dB / Reserved",
-            "3": "Reserved"
-          }
-        },
-        {
-          "name": "LFE Channel On (lfeon)",
-          "bits": "0",
-          "storeAs": "lfeon",
-          "description": "Low Frequency Effects channel presence. When enabled, adds the .1 subwoofer channel (e.g. 5.0 becomes 5.1).",
-          "valueMap": {
-            "0": "LFE off",
-            "1": "LFE on (.1 subwoofer)"
-          }
-        }
-      ]
-    },
-    {
-      "type": "field",
-      "name": "Dialogue Normalization + Compression (BSI byte 3)",
-      "offset": 7,
-      "length": 1,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "dialnorm_compre",
-      "description": "dialnorm (bits 7-3) indicates the average dialogue level below digital 100% to enable consistent playback volume. compre (bit 2) signals presence of heavy dynamic range compression gain word.",
-      "bitfields": [
-        {
-          "name": "Dialogue Normalization (dialnorm)",
-          "bits": "7-3",
-          "storeAs": "dialnorm",
-          "description": "Average dialogue level in dB below digital 100%. Value of 0 is interpreted as -31 dB. Used by decoders to normalize playback volume across programs.",
-          "valueMap": {
-            "0": "-31 dB (treated as -31)",
-            "1": "-1 dB",
-            "15": "-15 dB",
-            "31": "-31 dB (quietest)"
-          }
-        },
-        {
-          "name": "Compression Gain Exists (compre)",
-          "bits": "2",
-          "storeAs": "compre",
-          "description": "If set, a heavy compression gain word follows for dynamic range control in portable or noisy environments.",
-          "valueMap": {
-            "0": "No compression gain word",
-            "1": "Compression gain word present"
-          }
-        }
-      ]
-    },
-    {
-      "type": "field",
-      "name": "Language Code + Audio Production Info",
-      "offset": 8,
-      "length": 1,
-      "color": "#DDA0DD",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "langcod_audprodi",
-      "description": "langcod (bits 7-0 when langcode flag set) identifies the language of the audio service using a code per ATSC A/52 Table 5.7. audprodie indicates whether audio production information follows.",
-      "bitfields": [
-        {
-          "name": "Language Code (langcod)",
-          "bits": "7-1",
-          "storeAs": "langcod",
-          "description": "Language code value when language code exists flag is set. Code maps to language per ATSC A/52 standard."
-        },
-        {
-          "name": "Audio Production Info Exists (audprodie)",
-          "bits": "0",
-          "storeAs": "audprodie",
-          "description": "Indicates whether mixing level and room type fields follow.",
-          "valueMap": {
-            "0": "No audio production info",
-            "1": "Audio production info present"
-          }
-        }
-      ]
-    },
-    {
-      "type": "field",
-      "name": "Mix Level + Room Type",
-      "offset": 9,
-      "length": 1,
-      "color": "#87CEEB",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "mixlevel_roomtyp",
-      "description": "Audio production information: mixlevel (bits 7-3) indicates the peak mixing level in dB SPL, roomtyp (bits 2-1) describes the type of mixing room. Present only when audprodie flag is set.",
-      "bitfields": [
-        {
-          "name": "Mix Level (mixlevel)",
-          "bits": "7-3",
-          "storeAs": "mixlevel",
-          "description": "Peak mixing level used during final audio mixing session. Value in dB SPL = 80 + mixlevel. Range: 80-111 dB SPL."
-        },
-        {
-          "name": "Room Type (roomtyp)",
-          "bits": "2-1",
-          "storeAs": "roomtyp",
-          "description": "Type of room used for the final mixing session.",
-          "valueMap": {
-            "0": "Not indicated",
-            "1": "Large room, X curve monitor",
-            "2": "Small room, flat monitor",
-            "3": "Reserved"
-          }
-        }
-      ]
-    },
-    {
-      "type": "field",
-      "name": "Copyright + Original + Timecode Flags",
-      "offset": 10,
-      "length": 1,
-      "color": "#96CEB4",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "copyrightb",
-      "description": "Copyright and original bitstream indicators, plus flags for optional time code fields. These are part of the BSI additional information section.",
-      "bitfields": [
-        {
-          "name": "Copyright Bit (copyrightb)",
-          "bits": "7",
-          "storeAs": "copyrightb",
-          "description": "Indicates copyright status of the encoded audio.",
-          "valueMap": {
-            "0": "Not copyrighted",
-            "1": "Copyrighted"
-          }
-        },
-        {
-          "name": "Original Bit Stream (origbs)",
-          "bits": "6",
-          "storeAs": "origbs",
-          "description": "Indicates whether this is the original bitstream or a copy.",
-          "valueMap": {
-            "0": "Copy",
-            "1": "Original"
-          }
-        },
-        {
-          "name": "Time Code 1 Exists (timecod1e)",
-          "bits": "5",
-          "storeAs": "timecod1e",
-          "description": "If set, a 14-bit time code (timecod1) follows for the first half of the sync frame.",
-          "valueMap": {
-            "0": "No time code 1",
-            "1": "Time code 1 present"
-          }
-        }
-      ]
-    },
-    {
-      "type": "field",
-      "name": "Additional BSI / Reserved",
-      "offset": 11,
-      "length": 1,
-      "color": "#FFEAA7",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "additionalbsi",
-      "description": "Additional Bit Stream Information or reserved extension data. May contain addbsie flag and additional BSI payload for future extensions of the standard."
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Estimated Frame Size",
-      "expression": "frmsizecod >= 0 && fscod >= 0 ? (frmsizecod / 2) * 32 + 32 : 0",
-      "storeAs": "frameSizeBytes",
-      "description": "Approximate frame size in bytes computed from frame size code. Actual frame size varies by sample rate: at 48 kHz each bitrate code maps to a fixed word count; at 44.1 kHz an alternating padding scheme is used."
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Estimated Duration",
-      "expression": "bitrate > 0 ? (fileSize * 8 / (bitrate * 1000)) : 0",
-      "storeAs": "estimatedDuration",
-      "description": "Estimated total playback duration in seconds calculated from file size divided by bitrate. Each AC-3 frame represents 256 new audio samples per channel (1536 total per 6-block frame)."
-    },
-    {
-      "type": "conditional",
-      "name": "AC-3 vs E-AC-3 Version Check",
-      "condition": "bsid <= 8",
-      "trueLabel": "Standard AC-3 (Dolby Digital) - bsid 0-8",
-      "falseLabel": "Enhanced AC-3 (Dolby Digital Plus) - bsid 16 or alternate syntax",
-      "description": "Determines whether the bitstream uses standard AC-3 syntax (bsid 0-8) or Enhanced AC-3 syntax (bsid 16). E-AC-3 supports higher bitrates (up to 6.144 Mbps) and more channels (up to 7.1)."
-    },
-    {
-      "type": "conditional",
-      "name": "LFE Subwoofer Check",
-      "condition": "lfeon == 1",
-      "trueLabel": "LFE channel present - includes .1 subwoofer (e.g. 5.1, 7.1)",
-      "falseLabel": "No LFE channel - full-bandwidth channels only",
-      "description": "Checks whether the Low Frequency Effects (subwoofer) channel is active. The LFE channel is band-limited to 120 Hz and encoded at 1/10th the sample rate."
-    },
-    {
-      "type": "metadata",
-      "name": "Sample Rate",
-      "variable": "sampleRate",
-      "description": "Audio sample rate in Hz derived from fscod (48000, 44100, or 32000 Hz)"
-    },
-    {
-      "type": "metadata",
-      "name": "Bitrate (kbps)",
-      "variable": "bitrate",
-      "description": "Nominal bitrate in kilobits per second derived from frmsizecod (32-640 kbps for AC-3)"
-    },
-    {
-      "type": "metadata",
-      "name": "Channel Layout",
-      "variable": "channels",
-      "description": "Number and arrangement of audio channels derived from acmod + lfeon (e.g. 5.1 surround)"
-    },
-    {
-      "type": "metadata",
-      "name": "Bit Stream Version",
-      "variable": "bsid",
-      "description": "Bit stream identification version (8=standard AC-3, 16=E-AC-3 Dolby Digital Plus)"
-    },
-    {
-      "type": "metadata",
-      "name": "LFE Present",
-      "variable": "lfeon",
-      "description": "Whether the Low Frequency Effects (.1 subwoofer) channel is present in this stream"
-    },
-    {
-      "type": "metadata",
-      "name": "Frame Size",
-      "variable": "formattedSize",
-      "description": "Formatted frame size derived from frmsizecod and fscod, displayed with appropriate units"
+      "opacity": 0.75,
+      "description": "Bitstream identification value — must be <= 16 per ATSC A/52; value 8 indicates AC-3, value 11 indicates E-AC-3 (Dolby Digital Plus) encoding variant",
+      "storeAs": "bsid",
+      "valueType": "uint8"
     }
   ],
-  "QualityMetrics": {
-    "CompletenessScore": 88,
-    "DocumentationLevel": "comprehensive",
-    "BlocksDefined": 20,
-    "ValidationRules": 5,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": true,
-    "AutoRefined": false
+  "assertions": [
+    {
+      "field": "syncWord",
+      "op": "eq",
+      "value": "0x0B77",
+      "message": "AC-3 syncword must be 0x0B77"
+    },
+    {
+      "field": "bsid",
+      "op": "lte",
+      "value": 16,
+      "message": "bsid must be <= 16 per ATSC A/52 specification"
+    },
+    {
+      "field": "fscod",
+      "op": "range",
+      "min": 0,
+      "max": 3,
+      "message": "fscod (upper 2 bits) must be in range 0-3"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Frame Sync", "offset": 0, "length": 2, "color": "#FF6B6B" },
+      { "name": "Frame CRC", "offset": 2, "length": 2, "color": "#4ECDC4" },
+      { "name": "Sample Rate / Frame Size", "offset": 4, "length": 1, "color": "#95E1D3" },
+      { "name": "Bitstream ID", "offset": 5, "length": 1, "color": "#FFE66D" }
+    ]
   },
-  "MimeTypes": [
-    "audio/ac3",
-    "audio/eac3"
-  ],
-  "Software": [
-    "VLC",
-    "FFmpeg",
-    "Audacity",
-    "Foobar2000",
-    "MediaInfo"
-  ],
-  "UseCases": [
-    "Surround sound playback",
-    "DVD / Blu-ray audio",
-    "HDTV broadcast (ATSC)",
-    "Audio transcoding"
-  ],
-  "TechnicalDetails": {
-    "AudioFormat": true,
-    "primary_extension": ".ac3",
-    "defined_fields": 20,
-    "max_channels": "5.1 (AC-3) / 7.1 (E-AC-3)",
-    "sample_rates": "48000, 44100, 32000 Hz",
-    "max_bitrate": "640 kbps (AC-3) / 6144 kbps (E-AC-3)",
-    "Endianness": "big-endian",
-    "FrameSamples": 1536,
-    "SyncWordSize": 2,
-    "CRCPolynomial": "x^16 + x^15 + x^2 + 1"
+  "inspector": {
+    "badge": "AC3",
+    "primaryField": "bsid",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Sync and CRC",
+        "fields": ["syncWord", "crc1"]
+      },
+      {
+        "name": "Audio Parameters",
+        "fields": ["fscod", "frmsizecod", "bsid"]
+      }
+    ]
   },
+  "exportTemplates": [
+    {
+      "name": "AC-3 Frame Summary",
+      "format": "text",
+      "template": "Sync: {syncWord} | CRC: {crc1} | BSID: {bsid} | FSCOD: {fscod}"
+    },
+    {
+      "name": "AC-3 JSON Report",
+      "format": "json",
+      "template": "{ \"syncWord\": \"{syncWord}\", \"bsid\": {bsid}, \"fscod\": {fscod} }"
+    }
+  ],
   "forensic": {
-    "category": "audio",
+    "category": "Audio",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "bsid > 16 indicates malformed or non-standard bitstream",
+      "fscod == 3 (reserved value) may indicate corrupted or crafted file",
+      "Missing 0x0B77 sync in any expected frame position indicates bitstream damage"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Dolby Digital (AC-3) audio bitstream - standard surround sound codec for DVD, Blu-ray, HDTV (ATSC A/52). Eac...",
+    "analysisContext": "AC-3 is a frame-based lossy audio codec standardized by ATSC. Each frame starts at a fixed 0x0B77 syncword. The bsid distinguishes AC-3 (value 8) from E-AC-3 (value 11). Frame boundaries are evenly spaced and predictable, making corruption detection straightforward.",
     "suggestedInspections": [
-      "Validate Dolby Digital AC-3 header: sample rate, channels, bit depth, codec ID",
-      "Check frame/block alignment and data chunk boundaries",
-      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+      "Verify syncword 0x0B77 appears at every expected frame boundary",
+      "Check bsid to distinguish AC-3 from E-AC-3 (Dolby Digital Plus) variant",
+      "Decode fscod upper 2 bits to determine sample rate (48/44.1/32 kHz)",
+      "Validate CRC-1 field against frame payload for transmission error detection",
+      "Scan for frame size consistency using frmsizecod lookup table per ATSC A/52",
+      "Detect truncated files by checking final frame completeness against declared size"
     ]
+  },
+  "software": [
+    "FFmpeg",
+    "VLC Media Player",
+    "Dolby Encoding Engine",
+    "Adobe Premiere Pro",
+    "AC3Filter",
+    "Audacity (via plugin)"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".ac3", ".a52"],
+    "relatedFormats": ["EAC3", "DTS", "AAC", "MP3", "TrueHD"],
+    "note": "AC-3 is the base Dolby Digital format; E-AC-3 (bsid=11) is a backward-compatible extension with higher channel counts and bitrates"
+  },
+  "MimeTypes": ["audio/ac3", "audio/x-ac3", "audio/vnd.dolby.dd-raw"],
+  "UseCases": [
+    "DVD-Video surround sound audio tracks",
+    "Blu-ray audio encoding (mandatory codec)",
+    "Digital broadcast television (ATSC standard)",
+    "Streaming media audio tracks",
+    "Home theater system audio delivery"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "frameSize": "variable (128 to 3840 bytes depending on frmsizecod and fscod)",
+    "sampleRates": ["48000 Hz (fscod=0)", "44100 Hz (fscod=1)", "32000 Hz (fscod=2)"],
+    "maxBitrate": "640 kbps",
+    "maxChannels": "5.1",
+    "bsidVariants": {
+      "8": "Standard AC-3 (Dolby Digital)",
+      "11": "E-AC-3 (Dolby Digital Plus)"
+    }
   }
 }

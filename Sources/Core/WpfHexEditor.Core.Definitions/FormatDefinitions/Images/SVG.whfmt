@@ -1,309 +1,193 @@
-﻿{
-  "diffMode": "binary",
-  "formatName": "SVG Vector Image",
-  "version": "2.02",
-  "extensions": [
-    ".svg",
-    ".svgz"
-  ],
-  "description": "Scalable Vector Graphics (SVG) is an XML-based vector image format for two-dimensional graphics defined by the W3C. SVG files are text-based and may begin with an optional UTF-8 BOM (EF BB BF), followed by an XML declaration (<?xml version=\"1.0\"...) and then the <svg> root element with namespace and viewport attributes. SVGZ files are gzip-compressed SVG. Since SVG is text-based, header parsing examines the BOM, XML declaration bytes, and opening SVG tag.",
+{
+  "diffMode": "text",
+  "formatName": "Scalable Vector Graphics (SVG)",
+  "version": "1.0",
+  "extensions": [".svg", ".svgz"],
+  "description": "SVG (Scalable Vector Graphics) — W3C XML-based 2D vector image format (1999, SVG 2.0 current). Starts with XML declaration '<?xml' or directly with '<svg'. Root element: <svg xmlns='http://www.w3.org/2000/svg' width='...' height='...' viewBox='...'>. Elements: <path d='M10,10 L90,90'> (Bezier curves, arcs), <circle>, <rect>, <ellipse>, <line>, <polyline>, <polygon>, <text> (with <tspan>), <image> (embedded raster), <g> (group), <defs> (reusable definitions), <use> (instance/clone), <symbol>, <marker>, <pattern>, <linearGradient>, <radialGradient>, <clipPath>, <mask>, <filter> (blur/shadow/compositing), <animate>, <animateTransform>, <animateMotion>, <set>. Embedded JavaScript: <script>. Embedded CSS: <style>. SVGZ: gzip-compressed SVG (magic 1F 8B). Security risk: SVG can contain JavaScript and external resource references — XSS risk when served as image/svg+xml and rendered by browsers. Inline SVG in HTML does not have the same sandboxing as <img src='.svg'>.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "image-viewer",
+  "preferredEditor": "text-editor",
   "references": {
     "specifications": [
-      "W3C SVG 2 Specification",
-      "W3C SVG 1.1 (Second Edition) Recommendation",
-      "W3C Scalable Vector Graphics Recommendation",
-      "W3C XML 1.0 (Fifth Edition)"
+      "SVG 2.0 — W3C Candidate Recommendation (2018)",
+      "SVG 1.1 Second Edition — W3C Recommendation (2011)",
+      "CSS Shapes Module Level 1 — interaction with SVG"
     ],
     "WebLinks": [
       "https://www.w3.org/TR/SVG2/",
-      "https://www.w3.org/Graphics/SVG/About.html",
       "https://developer.mozilla.org/en-US/docs/Web/SVG",
       "https://en.wikipedia.org/wiki/SVG"
     ]
   },
   "detection": {
-    "signature": "3C73766720",
-    "offset": 0,
-    "required": false,
-    "alternateSignatures": [
+    "signatures": [
       {
-        "signature": "3C3F786D6C",
+        "value": "3C737667",
         "offset": 0,
-        "description": "XML declaration start (<?xml) — SVG files commonly begin with an XML declaration before the <svg> tag"
+        "label": "<svg — SVG root element at offset 0",
+        "weight": 0.9
       },
       {
-        "signature": "EFBBBF3C3F786D6C",
+        "value": "3C3F786D6C",
         "offset": 0,
-        "description": "UTF-8 BOM followed by XML declaration"
-      },
-      {
-        "signature": "EFBBBF3C73766720",
-        "offset": 0,
-        "description": "UTF-8 BOM followed directly by <svg> tag"
+        "label": "<?xml — SVG with XML declaration prefix",
+        "weight": 0.4
       }
     ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 3.5, "max": 5.5 },
     "validation": {
       "minFileSize": 5,
-      "maxSignatureOffset": 1024
+      "maxSignatureOffset": 0,
+      "note": "SVG is XML text. May begin with '<?xml' (XML declaration) or directly with '<svg'. SVGZ files are gzip-compressed (magic 1F 8B). UTF-8 BOM (EF BB BF) may precede '<'. Inline SVG does not have the file-level '<svg' directly at offset 0."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "bomBytes": "",
-    "hasBOM": false,
-    "bomEncoding": "",
-    "xmlDeclStart": "",
-    "xmlDeclSpace": "",
-    "xmlVersionAttr": "",
-    "xmlEncodingRegion": "",
-    "xmlDeclClose": "",
-    "svgTagOpen": "",
-    "svgNamespaceRegion": "",
-    "svgAttributeRegion": "",
-    "detectedEncoding": "",
-    "lineCount": 0,
-    "lineEnding": "",
-    "fileSize": 0,
-    "isCompressed": false,
-    "formattedSize": ""
-  },
-  "functions": {
-    "detectBOM(0)": "Detect Byte Order Mark at the beginning of the file to determine encoding (UTF-8 EF BB BF, UTF-16 LE FF FE, UTF-16 BE FE FF)",
-    "countLines()": "Count the total number of lines in the SVG text file",
-    "detectLineEnding()": "Detect the line ending style used in the file (CRLF, LF, or CR)",
-    "formatFileSize()": "Format the file size as a human-readable string with appropriate unit suffix"
+    "firstByte": 0,
+    "svgTag": ""
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Byte Order Mark (BOM)",
+      "name": "First Byte",
       "offset": 0,
-      "length": 3,
-      "color": "#E8D5B7",
-      "opacity": 0.3,
-      "description": "Optional UTF-8 Byte Order Mark (EF BB BF). When present, these 3 bytes precede all other content and indicate UTF-8 encoding. Not all SVG files include a BOM; its presence shifts all subsequent offsets by 3 bytes. UTF-16 BOMs (FF FE or FE FF, 2 bytes) are also possible but rare for SVG.",
-      "storeAs": "bomBytes",
-      "valueType": "hex",
-      "valueMap": {
-        "EFBBBF": "UTF-8 BOM",
-        "FFFE": "UTF-16 Little-Endian BOM",
-        "FEFF": "UTF-16 Big-Endian BOM"
-      }
-    },
-    {
-      "type": "signature",
-      "name": "XML Declaration Opening",
-      "offset": 0,
-      "length": 5,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "The opening '<?xml' sequence (hex 3C 3F 78 6D 6C) that begins the XML declaration processing instruction. Most well-formed SVG files include this declaration before the <svg> element. Offset may be 0 or 3 (if BOM is present).",
-      "storeAs": "xmlDeclStart",
-      "valueType": "ascii",
-      "validation": {
-        "expectedValue": "<?xml"
-      }
-    },
-    {
-      "type": "field",
-      "name": "XML Declaration Separator",
-      "offset": 5,
       "length": 1,
-      "color": "#C0C0C0",
-      "opacity": 0.2,
-      "description": "Mandatory whitespace character (0x20 space) separating '<?xml' from the version attribute. Per XML specification, at least one whitespace character is required here.",
-      "storeAs": "xmlDeclSpace",
-      "valueType": "ascii",
-      "validation": {
-        "expectedValue": " "
-      }
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the SVG file at offset 0 (1 byte, uint8). Expected value 0x3C ('<') for standard SVG files — the opening angle bracket for either '<svg' or '<?xml'. SVGZ (compressed SVG) starts with 0x1F 0x8B (gzip magic) and must be decompressed before parsing as XML. UTF-8 BOM (0xEF 0xBB 0xBF) may precede the '<' in BOM-marked files. Non-'<' first bytes indicate either SVGZ, BOM, or non-SVG content.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "XML Version Attribute",
-      "offset": 6,
-      "length": 14,
+      "name": "SVG/XML Tag",
+      "offset": 0,
+      "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "The version attribute of the XML declaration, typically 'version=\"1.0\"' (14 bytes). XML version 1.0 is used by virtually all SVG files. Version 1.1 exists but is extremely rare in practice.",
-      "storeAs": "xmlVersionAttr",
-      "valueType": "ascii"
-    },
-    {
-      "type": "field",
-      "name": "XML Encoding Region",
-      "offset": 20,
-      "length": 20,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Region containing the optional encoding attribute, typically ' encoding=\"UTF-8\"'. Captures the encoding declaration that specifies the character encoding used in the document. UTF-8 is the most common encoding for SVG files.",
-      "storeAs": "xmlEncodingRegion",
-      "valueType": "ascii"
-    },
-    {
-      "type": "field",
-      "name": "XML Declaration Close",
-      "offset": 36,
-      "length": 2,
-      "color": "#FFE66D",
-      "opacity": 0.3,
-      "description": "The closing '?>' sequence of the XML declaration processing instruction. This marks the end of the XML declaration and the beginning of the document content (typically whitespace followed by the <svg> element).",
-      "storeAs": "xmlDeclClose",
-      "valueType": "ascii",
-      "validation": {
-        "expectedValue": "?>"
-      }
-    },
-    {
-      "type": "field",
-      "name": "SVG Root Tag Opening",
-      "offset": 39,
-      "length": 5,
-      "color": "#FF6B9D",
       "opacity": 0.35,
-      "description": "The opening '<svg ' sequence (hex 3C 73 76 67 20) of the SVG root element. The space after 'svg' is required before attributes. Offset varies depending on XML declaration length and line ending style; 39 assumes a typical '<?xml version=\"1.0\"?>\\n<svg ' structure.",
-      "storeAs": "svgTagOpen",
+      "description": "First 4 bytes of the SVG file (ASCII). Valid patterns: '<svg' (0x3C 0x73 0x76 0x67) = SVG without XML declaration; '<?xm' (0x3C 0x3F 0x78 0x6D) = XML declaration prefix '<?xml version=...'>'; '<!--' = SVG with XML comment before root; 0x1F 0x8B = SVGZ (gzip magic). Most modern SVG generators omit the XML declaration. The SVG root element must have xmlns='http://www.w3.org/2000/svg' namespace declaration.",
+      "storeAs": "svgTag",
       "valueType": "ascii"
     },
     {
-      "type": "field",
-      "name": "SVG Namespace Region",
-      "offset": 44,
-      "length": 36,
-      "color": "#FFA07A",
-      "opacity": 0.3,
-      "description": "Region expected to contain the SVG namespace declaration 'xmlns=\"http://www.w3.org/2000/svg\"'. This mandatory attribute identifies the document as SVG and enables correct namespace resolution by parsers and renderers.",
-      "storeAs": "svgNamespaceRegion",
-      "valueType": "ascii"
-    },
-    {
-      "type": "field",
-      "name": "SVG Viewport Attributes Region",
-      "offset": 80,
-      "length": 40,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
-      "description": "Region containing SVG viewport attributes such as viewBox, width, and height. These attributes define the coordinate system and dimensions of the SVG canvas. Actual content and offsets vary per file.",
-      "storeAs": "svgAttributeRegion",
-      "valueType": "ascii"
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "BOM Detection Result",
-      "expression": "bomBytes == 'EFBBBF' || bomBytes == 'FFFE' || bomBytes == 'FEFF'",
-      "storeAs": "hasBOM",
-      "description": "Determines whether a Byte Order Mark is present at the start of the file. A BOM indicates encoding and shifts all subsequent content offsets."
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Encoding Detection",
-      "expression": "bomBytes == 'EFBBBF' ? 'UTF-8' : (bomBytes == 'FFFE' ? 'UTF-16 LE' : (bomBytes == 'FEFF' ? 'UTF-16 BE' : 'UTF-8 (assumed)'))",
-      "storeAs": "detectedEncoding",
-      "description": "Determines the document encoding from the BOM bytes. If no BOM is present, UTF-8 is assumed as it is the default for XML documents."
-    },
-    {
-      "type": "conditional",
-      "name": "BOM Presence Check",
-      "condition": "hasBOM == true",
-      "trueLabel": "This SVG file contains a Byte Order Mark (BOM) — all content offsets are shifted accordingly",
-      "falseLabel": "No BOM detected — file content starts directly with XML declaration or <svg> tag",
-      "description": "Checks whether a BOM is present, which affects the byte offsets of all subsequent content in the file."
-    },
-    {
-      "type": "conditional",
-      "name": "Compressed SVG Detection",
-      "condition": "isCompressed == true",
-      "trueLabel": "This is a compressed SVGZ file (gzip-compressed SVG)",
-      "falseLabel": "This is a plain-text SVG file (uncompressed)",
-      "description": "Checks whether the SVG file is gzip-compressed (SVGZ). Compressed SVG files begin with the gzip magic number (1F 8B) instead of XML/SVG text content."
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "0x3C '<' for SVG/XML text; 0x1F for SVGZ (gzip)"
     },
     {
       "type": "metadata",
-      "name": "Detected Encoding",
-      "variable": "detectedEncoding",
-      "description": "Character encoding detected from BOM or assumed as UTF-8 (the XML default)"
-    },
-    {
-      "type": "metadata",
-      "name": "Has BOM",
-      "variable": "hasBOM",
-      "description": "Whether a Byte Order Mark is present at the beginning of the file"
-    },
-    {
-      "type": "metadata",
-      "name": "Line Count",
-      "variable": "lineCount",
-      "description": "Total number of lines in the SVG text file"
-    },
-    {
-      "type": "metadata",
-      "name": "Line Ending Style",
-      "variable": "lineEnding",
-      "description": "Line ending convention used: CRLF (Windows), LF (Unix/macOS), or CR (classic Mac)"
-    },
-    {
-      "type": "metadata",
-      "name": "File Size",
-      "variable": "formattedSize",
-      "description": "Human-readable formatted file size"
-    },
-    {
-      "type": "metadata",
-      "name": "Is Compressed (SVGZ)",
-      "variable": "isCompressed",
-      "description": "Whether this is a gzip-compressed SVGZ file"
+      "name": "SVG/XML Tag",
+      "variable": "svgTag",
+      "description": "'<svg' or '<?xm' — SVG file start identifier"
     }
   ],
-  "MimeTypes": [
-    "image/svg+xml"
+  "assertions": [
+    {
+      "name": "SVG starts with XML tag",
+      "expression": "firstByte == 0x3C",
+      "severity": "warning",
+      "message": "SVG file should start with '<' (0x3C) — may be SVGZ (gzip) or corrupted"
+    },
+    {
+      "name": "SVG or XML tag present",
+      "expression": "svgTag == '<svg' or svgTag == '<?xm'",
+      "severity": "info",
+      "message": "Expected SVG to start with '<svg' or '<?xml' — check for BOM or XML comment"
+    }
   ],
-  "Software": [
-    "Inkscape",
-    "Adobe Illustrator",
-    "Web browsers (Chrome, Firefox, Edge, Safari)",
-    "Figma and Sketch"
+  "navigation": {
+    "bookmarks": [
+      { "name": "SVG Root", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "svgTag",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "SVG Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "svgTag"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SVG Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "svgTag"]
+    },
+    {
+      "name": "SVG Header (Text)",
+      "format": "text",
+      "fields": ["svgTag"]
+    }
+  ],
+  "forensic": {
+    "category": "web-content",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      "<script> elements in SVG may contain malicious JavaScript — XSS vector when served as image/svg+xml",
+      "<use xlink:href='http://...'/> or <image href='http://...'/> loads external resources — SSRF risk",
+      "<foreignObject> allows embedding HTML within SVG — potential XSS escalation",
+      "SVG served as image/svg+xml with JavaScript executes in browser security context",
+      "SVGZ gzip compression may hide malicious content from naive text scanners"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "SVG = XML with SVG namespace. Root <svg> attributes: xmlns (required), width/height (px/mm/etc or 100%), viewBox='minX minY width height', preserveAspectRatio. Path data: M(moveto) L(lineto) C(cubic bezier) Q(quadratic) A(arc) Z(close) — absolute uppercase, relative lowercase. Text: <text x y font-family font-size fill>. Gradients: <linearGradient id>/<radialGradient id> in <defs>, referenced via fill='url(#id)'. Filters: <filter id><feGaussianBlur/><feColorMatrix/></filter>. Security: scan for <script>, javascript: URLs in href/onclick, <use> with external href, data: URIs in image src, <animate> with malformed values. SVGZ: gzip magic 1F 8B at offset 0 — need gzip decompression before XML parse.",
+    "suggestedInspections": [
+      "Bytes 0-3: '<svg' or '<?xm' confirms SVG text format; 0x1F 0x8B = SVGZ gzip",
+      "Scan for '<script' or 'javascript:' — XSS risk if SVG served as image/svg+xml",
+      "Check xmlns attribute on <svg> — should be 'http://www.w3.org/2000/svg'",
+      "Look for <image>, <use xlink:href>, or <feImage> pointing to external URLs"
+    ]
+  },
+  "software": [
+    "Adobe Illustrator (primary SVG authoring tool)",
+    "Inkscape (open-source SVG editor)",
+    "Figma (exports SVG from designs)",
+    "Sketch (macOS SVG export)",
+    "All modern web browsers (native SVG rendering)",
+    "SVGO (SVG optimizer CLI)",
+    "librsvg (GNOME SVG rendering library)"
+  ],
+  "formatRelationships": {
+    "category": "Images",
+    "extensions": [".svg", ".svgz"],
+    "relatedFormats": ["PDF", "EPS"],
+    "note": "SVG is the dominant vector graphics format for the web. PDF/EPS are used for print. AI (Adobe Illustrator) is SVG-based internally. SVGZ is gzip-compressed SVG — same content, smaller file size, but must be served with Content-Encoding: gzip. Lottie/BodyMovin uses JSON-encoded animation as an alternative for complex animations. CSS can style and animate SVG elements directly."
+  },
+  "MimeTypes": [
+    "image/svg+xml",
+    "image/svg+xml-compressed"
   ],
   "UseCases": [
-    "Scalable vector graphics and illustrations",
-    "Logos and brand identity assets",
-    "Icons and UI elements",
-    "Interactive web graphics and data visualizations"
+    "Web icons and logos (scalable at any resolution without pixelation)",
+    "Data visualization charts (D3.js, Chart.js SVG output)",
+    "UI illustrations and animations (CSS/SMIL animation)",
+    "Print-ready diagrams and technical drawings",
+    "Favicon and app icon source for multi-resolution generation"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 88,
-    "DocumentationLevel": "comprehensive",
-    "BlocksDefined": 19,
-    "ValidationRules": 3,
-    "LastUpdated": "2026-02-24",
-    "PriorityFormat": true,
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "TextFormat": true,
-    "XMLBased": true,
-    "Encoding": "UTF-8 (most common), UTF-16",
-    "W3CStandard": true,
-    "CompressedVariant": "SVGZ (gzip-compressed SVG)",
-    "SupportsAnimation": true,
-    "SupportsInteractivity": true,
-    "SupportsScripting": true,
-    "ResolutionIndependent": true,
-    "CSSStylable": true
-  },
-  "forensic": {
-    "category": "image",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "Scalable Vector Graphics (SVG) is an XML-based vector image format for two-dimensional graphics defined by t...",
-    "suggestedInspections": [
-      "Validate SVG Vector Image signature, image dimensions, and color model",
-      "Check pixel data offset, compression type, and scanline alignment",
-      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
-    ]
+    "Format": "XML text (SVG) or gzip-compressed XML (SVGZ)",
+    "Magic": "No binary magic for SVG — '<svg' or '<?xml'; SVGZ uses gzip magic 1F 8B",
+    "Standard": "SVG 2.0 — W3C Candidate Recommendation (2018) / SVG 1.1 Second Edition (2011)",
+    "Endianness": "N/A (XML text)",
+    "Security": "XSS risk when served as image/svg+xml in browser — embedded JavaScript executes"
   }
 }

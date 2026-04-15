@@ -179,6 +179,19 @@ public sealed class AppSettings
     /// <summary>Document Structure panel preferences (max depth, etc.).</summary>
     public DocumentStructureSettings DocumentStructure { get; set; } = new();
 
+    // -- Structure Editor ---------------------------------------------------------
+
+    /// <summary>
+    /// Format definition editor (.whfmt) preferences.
+    /// Serialised as "structureEditor": { … } in settings.json.
+    /// </summary>
+    public StructureEditorSettings StructureEditor { get; set; } = new();
+
+    /// <summary>
+    /// Whfmt Format Explorer/Manager preferences (tool window + catalog document).
+    /// </summary>
+    public WhfmtExplorerSettings WhfmtExplorer { get; set; } = new();
+
     // -- Lazy Plugin Persistence --------------------------------------------------
 
     /// <summary>
@@ -1366,4 +1379,74 @@ public sealed class DocumentStructureSettings
     /// Default = 0 (unlimited).
     /// </summary>
     public int MaxDepthIndex { get; set; } = 0;
+}
+
+
+// ─── Structure Editor ─────────────────────────────────────────────────────────
+
+/// <summary>Format definition editor (.whfmt) preferences.</summary>
+public sealed class StructureEditorSettings
+{
+    /// <summary>Show the live JSON code-preview pane when a .whfmt file is first opened. Default: true.</summary>
+    public bool CodePreviewVisibleByDefault { get; set; } = true;
+
+    /// <summary>Initial dock position of the code-preview pane. One of: "Right", "Left", "Top", "Bottom". Default: "Right".</summary>
+    public string CodePreviewDock { get; set; } = "Right";
+
+    /// <summary>Debounce delay in ms before the code-preview refreshes after a content change. Default: 400.</summary>
+    public int CodePreviewDebounceMs { get; set; } = 400;
+
+    /// <summary>Debounce delay in ms before validation runs after a content change. Default: 500.</summary>
+    public int ValidationDebounceMs { get; set; } = 500;
+
+    /// <summary>When true, validation runs automatically after each content change. Default: true.</summary>
+    public bool AutoValidation { get; set; } = true;
+
+    /// <summary>Default color applied to newly created blocks (#RRGGBB). Default: "#4C9BE8".</summary>
+    public string DefaultBlockColor { get; set; } = "#4C9BE8";
+
+    /// <summary>Default background opacity for block color chips (0.0–1.0). Default: 0.3.</summary>
+    public double DefaultBlockOpacity { get; set; } = 0.3;
+
+    /// <summary>Default byte order applied to new field blocks. One of: "little", "big". Default: "little".</summary>
+    public string DefaultEndianness { get; set; } = "little";
+
+    /// <summary>When true, the patch version number is auto-incremented on every save. Default: true.</summary>
+    public bool AutoIncrementVersion { get; set; } = true;
+
+    /// <summary>When true, the "lastUpdated" quality metric is auto-filled with today's date on save. Default: true.</summary>
+    public bool AutoFillLastUpdated { get; set; } = true;
+
+    /// <summary>Maximum file size in bytes that the Test Panel will load into memory. Default: 10 485 760 (10 MB).</summary>
+    public long TestPanelMaxBytes { get; set; } = 10 * 1024 * 1024;
+}
+
+public sealed class WhfmtExplorerSettings
+{
+    /// <summary>Show built-in (embedded) format definitions in the browser. Default: true.</summary>
+    public bool ShowBuiltInFormats { get; set; } = true;
+
+    /// <summary>Show user-supplied (adhoc) format definitions in the browser. Default: true.</summary>
+    public bool ShowUserFormats { get; set; } = true;
+
+    /// <summary>Default view mode for the browser panel. One of: "Tree", "Flat". Default: "Tree".</summary>
+    public string DefaultViewMode { get; set; } = "Tree";
+
+    /// <summary>Show quality score badges on format items. Default: true.</summary>
+    public bool ShowQualityScores { get; set; } = true;
+
+    /// <summary>Hide formats whose quality score is below this threshold (0 = show all). Default: 0.</summary>
+    public int QualityScoreThreshold { get; set; } = 0;
+
+    /// <summary>Watch the user format folder for changes and hot-reload new or modified .whfmt files. Default: false.</summary>
+    public bool EnableHotReload { get; set; } = false;
+
+    /// <summary>Show formats that failed to load (displayed with error badge). Default: true.</summary>
+    public bool ShowLoadFailures { get; set; } = true;
+
+    /// <summary>Additional folders to scan for user .whfmt files beyond the default AppData location.</summary>
+    public List<string> AdditionalSearchPaths { get; set; } = [];
+
+    /// <summary>File names (without path) to exclude from the catalog even if found on disk.</summary>
+    public List<string> ExcludedFileNames { get; set; } = [];
 }

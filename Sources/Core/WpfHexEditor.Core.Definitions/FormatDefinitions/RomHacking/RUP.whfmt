@@ -1,0 +1,200 @@
+{
+  "diffMode": "binary",
+  "formatName": "RUP ROM Update Patch",
+  "version": "1.0",
+  "extensions": [".rup"],
+  "description": "RUP (ROM Update Patch) — a binary patch format used by some retro game ROM patching tools as an alternative or extension to IPS with 4-byte offsets. The most common RUP variant uses the 8-byte magic 'RUPPATCH' (0x52 0x55 0x50 0x50 0x41 0x54 0x43 0x48) at offset 0. The header continues with source_size (4B LE, expected size of source file), target_size (4B LE, expected size of patched output file), total 16 bytes of header. Records follow: offset (4B LE, position in target file), size (2B LE, number of data bytes), data (size bytes). End of patch is indicated by offset field 0xFFFFFFFF (4B). This 4-byte offset scheme supports target files up to 4 GB compared to IPS's 16 MB limit. Some RUP-compatible tools also accept IPS-style 'PATCH' magic for backward compatibility. RUP is less commonly used than IPS, BPS, or UPS but appears in specific retro patching tool ecosystems.",
+  "category": "RomHacking",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RUP (ROM Update Patch) Format Documentation",
+      "Extended IPS Patch Format with 4-byte Offsets"
+    ],
+    "WebLinks": [
+      "https://www.romhacking.net/",
+      "http://justsolve.archiveteam.org/wiki/Patch_formats",
+      "https://en.wikipedia.org/wiki/ROM_hacking",
+      "https://sneslab.net/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5255505041544348",
+        "offset": 0,
+        "label": "'RUPPATCH' (8 ASCII bytes) — RUP ROM Update Patch magic identifier",
+        "weight": 0.8
+      },
+      {
+        "value": "5041544348",
+        "offset": 0,
+        "label": "'PATCH' (5 ASCII bytes) — IPS-compatible RUP variant using IPS-style magic",
+        "weight": 0.4
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.4,
+    "required": false,
+    "Strength": "Medium",
+    "validation": {
+      "minFileSize": 16,
+      "maxSignatureOffset": 0,
+      "note": "Standard RUP files start with 'RUPPATCH' (8 bytes). Some variants use 'PATCH' (IPS magic) with 4-byte offsets instead of 3-byte. Detection is supplemented by file extension .rup."
+    }
+  },
+  "variables": {
+    "rupMagic": "",
+    "sourceSize": 0,
+    "targetSize": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "RUP Magic",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "8-byte ASCII magic 'RUPPATCH' at offset 0 identifying a RUP (ROM Update Patch) format file. This magic is used by tools in the RUP ecosystem to distinguish RUP files from IPS patches. The 8-byte length gives more entropy than IPS's 5-byte 'PATCH' magic, reducing false-positive detection risk.",
+      "storeAs": "rupMagic"
+    },
+    {
+      "type": "field",
+      "name": "Source Size",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "little",
+      "description": "Expected byte size of the source (original unpatched) file, stored as uint32 LE at offset 8. Patching tools use this value to validate that the correct source ROM is loaded before applying records. A value of 0 indicates no source size validation.",
+      "storeAs": "sourceSize"
+    },
+    {
+      "type": "field",
+      "name": "Target Size",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "little",
+      "description": "Expected byte size of the output (patched) file, stored as uint32 LE at offset 12. Patching tools pre-allocate the output buffer to this size before applying patch records. Supports files up to 4 GB (uint32 max value).",
+      "storeAs": "targetSize"
+    },
+    {
+      "type": "metadata",
+      "name": "RUP Magic",
+      "variable": "rupMagic",
+      "description": "'RUPPATCH' or 'PATCH' identifier"
+    },
+    {
+      "type": "metadata",
+      "name": "Source Size",
+      "variable": "sourceSize",
+      "description": "Expected source file size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Target Size",
+      "variable": "targetSize",
+      "description": "Expected output file size in bytes"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "RUP magic starts with RUP or PATCH",
+      "expression": "rupMagic == 'RUPPATCH'",
+      "severity": "warning",
+      "message": "Standard RUP files should begin with 'RUPPATCH' (8 bytes)"
+    },
+    {
+      "name": "Source and target sizes positive",
+      "expression": "sourceSize >= 0 && targetSize >= 0",
+      "severity": "warning",
+      "message": "RUP source_size and target_size should be non-negative"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "RUP Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "First Patch Record", "offset": 16, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "rupMagic",
+    "primaryField": "sourceSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "RUP Patch Header",
+        "icon": "\uE71B",
+        "fields": ["rupMagic", "sourceSize", "targetSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "RUP Patch Header (JSON)",
+      "format": "json",
+      "fields": ["rupMagic", "sourceSize", "targetSize"]
+    },
+    {
+      "name": "RUP Patch Summary (CSV)",
+      "format": "csv",
+      "fields": ["rupMagic", "sourceSize", "targetSize"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "RUP format: 'RUPPATCH'(8B) + source_size(4B LE) + target_size(4B LE) = 16-byte header. Records: offset(4B LE) + size(2B LE) + data(size bytes). End marker: offset=0xFFFFFFFF. 4-byte offsets support files up to 4 GB vs IPS 3-byte limit of 16 MB.",
+    "suggestedInspections": [
+      "Read bytes 0-7 as ASCII: 'RUPPATCH' = standard RUP, 'PATCH' = IPS-compatible RUP variant",
+      "Read source_size at bytes 8-11 (uint32 LE) for source ROM validation",
+      "Read target_size at bytes 12-15 (uint32 LE) for output file pre-allocation",
+      "Scan patch records at offset 16: each record is offset(4B LE) + size(2B LE) + data; end when offset=0xFFFFFFFF"
+    ]
+  },
+  "software": [
+    "RUP Patcher (specific RUP-format patching tools)",
+    "Lunar IPS (may support RUP variants)",
+    "Custom RUP tools in the retro hacking community",
+    "ROMhacking.net utilities section"
+  ],
+  "formatRelationships": {
+    "category": "RomHacking",
+    "extensions": [".rup"],
+    "relatedFormats": ["IPS", "UPS"],
+    "note": "RUP extends IPS by using 4-byte (LE) offsets instead of 3-byte (BE), enabling patching of files larger than 16 MB. It also adds source_size and target_size fields for basic validation. Less common than IPS, UPS, or BPS."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Patching ROM files larger than 16 MB that exceed IPS's 3-byte offset limit",
+    "ROM hacking patches for 32-bit era games with large disc image files",
+    "Legacy patch distribution in communities using RUP-specific tools",
+    "Alternative to IPS where source size validation is needed"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 6,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Magic": "'RUPPATCH' (8 bytes) or 'PATCH' (5 bytes, IPS-compatible variant) at offset 0",
+    "HeaderSize": "16 bytes (8B magic + 4B sourceSize + 4B targetSize)",
+    "RecordOffsetSize": "4 bytes LE (vs IPS 3 bytes BE) — supports up to 4 GB",
+    "EndMarker": "Record offset 0xFFFFFFFF",
+    "SourceValidation": "source_size field (no CRC, unlike UPS)"
+  }
+}

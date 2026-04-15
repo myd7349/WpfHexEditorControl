@@ -1,0 +1,222 @@
+{
+  "diffMode": "binary",
+  "formatName": "GeoPackage (GPKG)",
+  "version": "1.0",
+  "extensions": [".gpkg"],
+  "description": "GeoPackage (GPKG) — OGC standard (OGC 12-128r15) open format for geospatial data based on SQLite3. SQLite3 magic: 'SQLite format 3' (53 51 4C 69 74 65 20 66 6F 72 6D 61 74 20 33 00, 16 bytes). GeoPackage application_id at SQLite offset 68 (PRAGMA application_id): 0x47504B47 (ASCII 'GPKG'). Contains: gpkg_contents table (layer descriptions, last_change, bounding box, srs_id), gpkg_geometry_columns (geometry types per layer), gpkg_spatial_ref_sys (EPSG CRS definitions), gpkg_tile_matrix_set (raster tiles). Geometry: Well-Known Binary (WKB) with GPKG envelope header. Supports: vector features, raster tile pyramids, extensions (metadata, elevation, 3D). Single-file GIS database replacement for Shapefile.",
+  "category": "GIS",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "OGC GeoPackage Encoding Standard 1.3 (OGC 12-128r18)",
+      "SQLite File Format Specification",
+      "OGC GeoPackage Extensions"
+    ],
+    "WebLinks": [
+      "https://www.geopackage.org/",
+      "https://www.ogc.org/standard/geopackage/",
+      "https://en.wikipedia.org/wiki/GeoPackage"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "53514C6974652066 6F726D617420330",
+        "offset": 0,
+        "label": "SQLite format 3 — GeoPackage SQLite3 magic at offset 0",
+        "weight": 0.8
+      },
+      {
+        "value": "47504B47",
+        "offset": 68,
+        "label": "GPKG — GeoPackage application_id at SQLite offset 68",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 100,
+      "maxSignatureOffset": 68,
+      "note": "GPKG shares SQLite3 magic with all SQLite databases. The distinguishing field is application_id at offset 68 = 0x47504B47 ('GPKG'). Without application_id check, any SQLite file would match. Regular SQLite has application_id = 0."
+    }
+  },
+  "variables": {
+    "sqliteMagic": "",
+    "pageSize": 0,
+    "applicationId": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "SQLite3 Magic",
+      "offset": 0,
+      "length": 16,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "SQLite3 file format magic string 'SQLite format 3' at offset 0 (16 bytes including null terminator). This is the primary identification string for all SQLite databases — bytes 0-15 are always exactly this string. GeoPackage is built on SQLite3, so it shares this magic. The SQLite header is 100 bytes total and contains page size, format version, file change counter, and other database metadata.",
+      "storeAs": "sqliteMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Page Size",
+      "offset": 16,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "SQLite database page size at offset 16 (2 bytes, big-endian uint16). Must be a power of 2 between 512 and 32768 inclusive. Special value 1 means page size = 65536. Default for GeoPackage: 4096 bytes (4 KB). The page size determines I/O granularity and affects performance for spatial queries. Larger pages reduce overhead for large geometries. GeoPackage Encoding Standard recommends 4096.",
+      "storeAs": "pageSize",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Application ID",
+      "offset": 68,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "SQLite application_id field at offset 68 (4 bytes, big-endian uint32). For GeoPackage: must be 0x47504B47 (1196444743 decimal), ASCII 'GPKG'. This is the definitive way to distinguish a GeoPackage from a generic SQLite database or other SQLite-based formats (SpatiaLite uses 0x7A315052, RasterLite2 uses 0x4C504600). Set via SQLite PRAGMA application_id = 1196444743.",
+      "storeAs": "applicationId",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "1196444743": "GPKG (0x47504B47) — OGC GeoPackage",
+        "0": "Generic SQLite (not a GeoPackage)",
+        "2054882386": "SpatiaLite (0x7A315052)",
+        "1314409984": "RasterLite2 (0x4C504600)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "SQLite Magic",
+      "variable": "sqliteMagic",
+      "description": "'SQLite format 3' — confirms SQLite3 database"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "pageSize",
+      "description": "Database page size in bytes — must be power of 2"
+    },
+    {
+      "type": "metadata",
+      "name": "Application ID",
+      "variable": "applicationId",
+      "description": "0x47504B47 ('GPKG') confirms OGC GeoPackage"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "SQLite magic valid",
+      "expression": "sqliteMagic == 'SQLite format 3'",
+      "severity": "error",
+      "message": "GeoPackage must start with 'SQLite format 3' — not a valid SQLite3/GPKG file"
+    },
+    {
+      "name": "Application ID is GPKG",
+      "expression": "applicationId == 1196444743",
+      "severity": "error",
+      "message": "Application ID at offset 68 is not 0x47504B47 ('GPKG') — not an OGC GeoPackage"
+    },
+    {
+      "name": "Page size valid",
+      "expression": "pageSize >= 512",
+      "severity": "warning",
+      "message": "SQLite page size should be at least 512 bytes"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "SQLite Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Application ID (GPKG)", "offset": 68, "icon": "\uE8A5", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "applicationId",
+    "primaryField": "sqliteMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GeoPackage Header",
+        "icon": "\uE71B",
+        "fields": ["sqliteMagic", "pageSize", "applicationId"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GPKG Header (JSON)",
+      "format": "json",
+      "fields": ["sqliteMagic", "pageSize", "applicationId"]
+    },
+    {
+      "name": "GPKG Info (Text)",
+      "format": "text",
+      "fields": ["sqliteMagic", "applicationId"]
+    }
+  ],
+  "forensic": {
+    "category": "geospatial",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Classified or sensitive geographic data may be embedded in vector layers",
+      "SQLite WAL (write-ahead log) file may contain undeleted sensitive features"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GeoPackage is a single-file SQLite3 database. Key tables: gpkg_contents (layer name, data_type='features'/'tiles', last_change, min_x/y/max_x/y, srs_id), gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m), gpkg_spatial_ref_sys (srs_id, organization='EPSG', organization_coordsys_id, definition WKT). Feature tables: geometry column (BLOB with GPKG header: magic GP 2B + version 1B + flags 1B + srs_id 4B + optional envelope + WKB) + attribute columns. Tile tables: zoom_level, tile_column, tile_row, tile_data (PNG or JPEG BLOB).",
+    "suggestedInspections": [
+      "Bytes 0-15: 'SQLite format 3' magic — confirms SQLite3 base format",
+      "Bytes 16-17 (uint16 BE): page size — GeoPackage default is 4096 bytes",
+      "Bytes 68-71 (uint32 BE): application_id — must be 0x47504B47 ('GPKG') for OGC GeoPackage",
+      "SQLite page 1 contains master table listing all GPKG tables (SELECT name FROM sqlite_master)"
+    ]
+  },
+  "software": [
+    "QGIS (native GPKG support)",
+    "ArcGIS Pro (read/write GPKG)",
+    "GDAL (ogr2ogr GPKG driver)",
+    "Geopandas (via fiona GPKG driver)",
+    "SQLite browser (generic SQLite inspection)",
+    "GeoTools (Java GIS library)"
+  ],
+  "formatRelationships": {
+    "category": "GIS",
+    "extensions": [".gpkg"],
+    "relatedFormats": ["SHP", "GEOJSON", "GEOTIFF", "KML"],
+    "note": "GeoPackage is the OGC-recommended modern replacement for ESRI Shapefile. Unlike Shapefile (multi-file), GPKG is a single file containing both geometry and attributes. GPKG also supports raster tiles (alternative to MBTiles). SpatiaLite is a competing SQLite-based format but lacks OGC standardization."
+  },
+  "MimeTypes": [
+    "application/geopackage+sqlite3",
+    "application/x-sqlite3"
+  ],
+  "UseCases": [
+    "Mobile GIS field data collection (no network required)",
+    "OpenStreetMap extract distribution (alternative to PBF for vector tiles)",
+    "National mapping agency open data distribution",
+    "Interoperable vector/raster data exchange in a single file",
+    "NATO STANAG 2595 (GeoPackage for military data exchange)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "SQLite3 database with GPKG-specific tables, application_id=0x47504B47",
+    "Magic": "'SQLite format 3' at offset 0 + application_id 0x47504B47 at offset 68",
+    "Standard": "OGC GeoPackage Encoding Standard 1.3 (OGC 12-128r18)",
+    "Endianness": "SQLite header big-endian; page content encoding depends on SQLite settings",
+    "Geometry": "Well-Known Binary (WKB) with GPKG envelope header in BLOB columns"
+  }
+}

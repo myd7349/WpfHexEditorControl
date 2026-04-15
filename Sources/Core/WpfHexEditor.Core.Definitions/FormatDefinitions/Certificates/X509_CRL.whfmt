@@ -1,0 +1,216 @@
+{
+  "diffMode": "binary",
+  "formatName": "X.509 Certificate Revocation List",
+  "version": "1.0",
+  "extensions": [ ".crl" ],
+  "description": "X.509 Certificate Revocation List (CRL) in DER or PEM encoding (RFC 5280). DER-encoded ASN.1 SEQUENCE starting with 30 82 (2-byte length > 127 bytes). Structure: SEQUENCE { tbsCertList SEQUENCE { version INTEGER OPTIONAL (v2=1), signature AlgorithmIdentifier, issuer Name (Distinguished Name), thisUpdate Time, nextUpdate Time OPTIONAL, revokedCertificates OPTIONAL SEQUENCE OF { userCertificate INTEGER (serial number) + revocationDate Time + crlEntryExtensions OPTIONAL }, crlExtensions [0] EXPLICIT OPTIONAL (v2 only: CRL Number, Delta CRL Indicator, Issuing Distribution Point) }, signatureAlgorithm AlgorithmIdentifier, signatureValue BIT STRING }. PEM encoding: '-----BEGIN X509 CRL-----' + base64 + '-----END X509 CRL-----'. Delta CRLs reference the full CRL via DeltaCRLIndicator extension. Used in TLS/HTTPS certificate chain validation, code signing, and PKI infrastructure. CRL Distribution Points (CDP) extension in X.509 certificates points to CRL download URLs.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 5280 — Internet X.509 PKI Certificate and CRL Profile",
+      "ITU-T X.509 — Information technology - Open Systems Interconnection",
+      "RFC 6960 — Online Certificate Status Protocol (OCSP) — alternative to CRL"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc5280",
+      "https://www.openssl.org/docs/man3.0/man1/openssl-crl.html",
+      "https://learn.microsoft.com/en-us/windows/win32/seccrypto/certificate-revocation-lists"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3082", "offset": 0, "label": "30 82 — DER SEQUENCE with 2-byte length (typical CRL outer container)", "weight": 0.7 },
+      { "value": "2D2D2D2D2D424547494E20583530392043524C", "offset": 0, "label": "-----BEGIN X509 CRL — PEM-encoded X.509 CRL", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": false,
+    "Strength": "Medium",
+    "validation": {
+      "minFileSize": 4,
+      "maxSignatureOffset": 0,
+      "note": "DER 30 82 is shared with other X.509 structures (certificates, PKCS#7). Extension .crl is the primary discriminator for DER. PEM header is unambiguous."
+    }
+  },
+  "variables": {
+    "asnTag": 0,
+    "asnLenByte": 0,
+    "asnLen": 0,
+    "tbsSeqTag": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "ASN.1 Outer SEQUENCE Tag",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "description": "ASN.1 SEQUENCE tag byte. Must be 0x30 (SEQUENCE/SEQUENCE OF universal tag). This is the outermost ASN.1 container wrapping the entire CRL structure. DER encoding requires definite-length encoding.",
+      "storeAs": "asnTag",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "ASN.1 Length Indicator",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "ASN.1 length encoding indicator byte. 0x82 means the actual length follows in the next 2 bytes (big-endian). Values: 0x00-0x7F = short form (direct length), 0x81 = 1 follow byte, 0x82 = 2 follow bytes, 0x83 = 3 follow bytes. Most CRLs use 0x82.",
+      "storeAs": "asnLenByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "CRL Total Length",
+      "offset": 2,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Total length of the CRL content in bytes following this 4-byte header (big-endian). The full CRL DER file size is this value plus 4 (2B tag+len-indicator + 2B length). Large CRLs from busy CAs can be several megabytes.",
+      "storeAs": "asnLen",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "tbsCertList SEQUENCE Tag",
+      "offset": 4,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "ASN.1 SEQUENCE tag (0x30) beginning the tbsCertList (To-Be-Signed Certificate List) structure. Contains the actual revocation data: version, issuer, validity dates, revoked certificate list, and v2 extensions.",
+      "storeAs": "tbsSeqTag",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "DER Structure",
+      "variable": "asnTag",
+      "description": "CRL DER layout: SEQUENCE(outer) { SEQUENCE(tbsCertList) { version + signature_alg + issuer + thisUpdate + nextUpdate + revokedCerts[] + extensions } + signatureAlgorithm + signatureValue(BIT STRING) }."
+    },
+    {
+      "type": "metadata",
+      "name": "PEM Note",
+      "variable": "asnLenByte",
+      "description": "PEM CRL starts with '-----BEGIN X509 CRL-----'. Convert to DER with: openssl crl -in file.crl -inform PEM -outform DER -out file.der. Inspect with: openssl crl -in file.crl -text -noout."
+    },
+    {
+      "type": "metadata",
+      "name": "Revocation Data",
+      "variable": "asnLen",
+      "description": "Each revoked certificate entry: userCertificate INTEGER (serial number) + revocationDate Time + optional extensions (reason code: keyCompromise, cACompromise, affiliationChanged, superseded, cessationOfOperation, certificateHold)."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Outer SEQUENCE tag",
+      "expression": "asnTag == 48",
+      "severity": "error",
+      "message": "CRL DER must start with ASN.1 SEQUENCE tag 0x30 (48 decimal). File does not appear to be a valid DER-encoded CRL."
+    },
+    {
+      "name": "Length indicator is 0x82",
+      "expression": "asnLenByte == 130",
+      "severity": "warning",
+      "message": "Expected 2-byte length indicator 0x82. CRL may use different length encoding (0x81 for small CRLs, 0x83 for very large ones)."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ASN.1 SEQUENCE", "offset": 0, "color": "#FF4444" },
+      { "name": "CRL Length", "offset": 2, "color": "#44AAFF" },
+      { "name": "tbsCertList", "offset": 4, "color": "#44FF88" }
+    ]
+  },
+  "inspector": {
+    "badge": "CRL",
+    "primaryField": "asnLen",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "DER ASN.1 Header",
+        "icon": "",
+        "fields": [ "asnTag", "asnLenByte", "asnLen", "tbsSeqTag" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "CRL Header (JSON)",
+      "format": "json",
+      "fields": [ "asnTag", "asnLenByte", "asnLen", "tbsSeqTag" ]
+    },
+    {
+      "name": "CRL Summary (Text)",
+      "format": "text",
+      "fields": [ "asnTag", "asnLen" ]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "low",
+    "notes": "CRL files list revoked certificate serial numbers. Stale CRLs (past nextUpdate date) may allow revoked certificates to be treated as valid. Delta CRLs require the base CRL for complete revocation checking. OCSP (RFC 6960) is the modern alternative to CRL checking for real-time revocation status.",
+    "suspiciousPatterns": [
+      "CRL with nextUpdate in the past indicates stale revocation data — certificates may be incorrectly trusted",
+      "Very large CRLs (multi-MB) may indicate a CA with frequent revocations or poor key management",
+      "Delta CRLs without a corresponding base CRL cannot be used for complete revocation checking"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "CRL DER structure: 30(SEQUENCE) 82(2B-len) LLLL(len) { 30(SEQUENCE tbsCertList) LL { [02 01 01](version v2=INTEGER 1) + 30(AlgorithmIdentifier sig_alg) + 30(issuer Name) + 17/18(thisUpdate) + 17/18(nextUpdate) + 30(revokedCerts) { 30(entry) { 02(serial INTEGER) + 17(revocationDate) + [30(crlEntryExtensions)] }... } + A0(crlExtensions) } + 30(signatureAlgorithm) + 03(signatureValue BIT STRING) }. Time encoding: 17=UTCTime (YYMMDDHHMMSSZ), 18=GeneralizedTime (YYYYMMDDHHMMSSZ).",
+    "suggestedInspections": [
+      "Verify outer SEQUENCE tag 0x30 at offset 0 and 2-byte length indicator 0x82 at offset 1",
+      "Parse tbsCertList to extract issuer DN and verify it matches expected CA",
+      "Read thisUpdate and nextUpdate fields to check CRL freshness — expired CRLs are security risks",
+      "Count entries in revokedCertificates SEQUENCE to determine CRL size and CA revocation activity",
+      "Check for CRL Number extension (OID 2.5.29.20) to track CRL sequence and detect missing updates",
+      "Look for Delta CRL Indicator (OID 2.5.29.27) to identify delta CRLs that reference a base CRL"
+    ]
+  },
+  "software": [
+    "OpenSSL — openssl crl -text -noout to parse and display CRL contents",
+    "certutil (Windows) — certutil -dump file.crl",
+    "Java keytool — JDK certificate management tool",
+    "Wireshark — decodes CRL downloads in TLS handshake captures",
+    "Bouncy Castle — Java/C# PKI library for CRL processing"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [ ".crl" ],
+    "relatedFormats": [ "DER", "PEM", "PKCS7", "PKCS12", "X509_CRL" ],
+    "note": "CRLs are part of the X.509 PKI standard (RFC 5280). They are an alternative to OCSP (RFC 6960) for certificate revocation checking. PKCS#7 (p7b) can bundle CRLs alongside certificates. CRL Distribution Points (CDP) extension in certificates provides download URLs."
+  },
+  "MimeTypes": [
+    "application/pkix-crl",
+    "application/x-pkcs7-crl",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "TLS/HTTPS certificate revocation checking in PKI",
+    "Code signing certificate validation",
+    "S/MIME email certificate revocation",
+    "Smart card and client certificate validation",
+    "Enterprise CA (Active Directory Certificate Services) revocation management"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "DER-encoded ASN.1 (binary) or PEM (base64)",
+    "DERMagic": "30 82 at offset 0 (SEQUENCE with 2-byte length)",
+    "PEMHeader": "-----BEGIN X509 CRL-----",
+    "ASN1Standard": "ITU-T X.680/X.690 DER encoding rules",
+    "Inspect": "openssl crl -in file.crl -text -noout",
+    "Alternative": "OCSP (RFC 6960) provides real-time per-certificate revocation status"
+  }
+}

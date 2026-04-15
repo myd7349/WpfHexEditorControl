@@ -1,119 +1,137 @@
 {
   "diffMode": "binary",
-  "formatName": "AutoCAD Drawing",
-  "version": "1.15",
-  "extensions": [
-    ".dwg"
-  ],
-  "description": "DWG (Drawing) is Autodesk's proprietary binary file format for CAD drawings used by AutoCAD and compatible applications. DWG files start with a 6-byte ASCII version string identifying the AutoCAD release: 'AC1009' (R12), 'AC1012' (R13), 'AC1014' (R14), 'AC1015' (2000), 'AC1018' (2004), 'AC1021' (2007), 'AC1024' (2010), 'AC1027' (2013), 'AC1032' (2018). After the version string, the file contains sections for the drawing database: header variables (units, limits, settings), class definitions, object map, and the drawing objects (entities, blocks, layers, linetypes, text styles). The Open Design Alliance (ODA) has reverse-engineered the format; the LibreDWG and ODA libraries provide open-source DWG read/write. DWG binary format is not publicly documented by Autodesk.",
+  "formatName": "AutoCAD DWG",
+  "version": "1.0",
+  "extensions": [".dwg"],
+  "description": "AutoCAD DWG is the proprietary binary drawing format used natively by AutoCAD. The 6-byte header starts with 'AC' followed by a 4-character version code identifying the AutoCAD release: AC1015=AutoCAD 2000, AC1018=AutoCAD 2004, AC1021=AutoCAD 2007, AC1024=AutoCAD 2010, AC1027=AutoCAD 2013, AC1032=AutoCAD 2018, AC1035=AutoCAD 2021+. The full header: 6-byte version string + code page (2B LE for v2004-), maintenance release version byte, count of sections (4B LE), then a section page map (variable: section_number + page_count + address pairs). DWG R2004+ uses AES encryption and page-based storage. DWG R2007+ uses Unicode throughout. The format is reverse-engineered by the Open Design Alliance (ODA) for their OpenDWG/Teigha library powering BricsCAD, LibreCAD, and others. Free LibreDWG (GNU) provides another open-source implementation. Stores all drawing data including geometry, layers, blocks, attributes, 3D solids (ACIS B-rep), text, dimensions, and paper space layouts.",
   "category": "CAD",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "DWG Specifications — Open Design Alliance (ODA)",
-      "LibreDWG Format Documentation"
+      "OpenDWG Specification — Open Design Alliance",
+      "LibreDWG DWG Format Documentation — GNU Project",
+      "AutoCAD DWG File Format Overview — Autodesk"
     ],
     "WebLinks": [
-      "https://www.opendesign.com/guestfiles/oda_file_specs",
-      "https://libredwg.readthedocs.io/en/latest/",
-      "https://en.wikipedia.org/wiki/DWG"
+      "https://en.wikipedia.org/wiki/DWG",
+      "https://www.opendesign.com/files/guestdownloads/OpenDesign_Specification_for_.dwg_files.pdf",
+      "https://www.gnu.org/software/libredwg/",
+      "https://help.autodesk.com/view/OARX/2024/ENU/"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "4143313030 39", "offset": 0, "label": "'AC1009' — AutoCAD R12 DWG version", "weight": 0.9 },
-      { "value": "4143313031 35", "offset": 0, "label": "'AC1015' — AutoCAD 2000 DWG version", "weight": 0.9 },
-      { "value": "4143313032 31", "offset": 0, "label": "'AC1021' — AutoCAD 2007 DWG version", "weight": 0.9 },
-      { "value": "4143313032 34", "offset": 0, "label": "'AC1024' — AutoCAD 2010 DWG version", "weight": 0.9 },
-      { "value": "4143313032 37", "offset": 0, "label": "'AC1027' — AutoCAD 2013 DWG version", "weight": 0.9 },
-      { "value": "4143313033 32", "offset": 0, "label": "'AC1032' — AutoCAD 2018 DWG version", "weight": 0.9 },
-      { "value": "4143313030", "offset": 0, "label": "'AC10' — DWG version prefix (any release)", "weight": 0.7 }
+      { "value": "4143313031 35", "offset": 0, "label": "AC1015 — AutoCAD DWG 2000 version signature", "weight": 1.0 },
+      { "value": "4143313032 31", "offset": 0, "label": "AC1021 — AutoCAD DWG 2007 version signature", "weight": 1.0 },
+      { "value": "4143313032 34", "offset": 0, "label": "AC1024 — AutoCAD DWG 2010 version signature", "weight": 1.0 },
+      { "value": "4143313031", "offset": 0, "label": "AC101x — AutoCAD DWG older version prefix", "weight": 0.7 }
     ],
     "matchMode": "any",
     "MinimumScore": 0.7,
     "required": true,
     "Strength": "Strong",
-    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "EntropyHint": { "min": 3.5, "max": 7.5 },
     "validation": {
       "minFileSize": 6,
       "maxSignatureOffset": 0,
-      "note": "All DWG files start with 'AC' followed by a 4-digit version code. The version code uniquely identifies the AutoCAD release that created the file. All known DWG versions start with 'AC10'."
+      "note": "First 2 bytes must be 'AC' (0x41 0x43). Bytes 2-5 must be a known 4-digit version code."
     }
   },
   "variables": {
-    "dwgVersion": "",
-    "dwgVersionCode": ""
+    "dwgMagic": "",
+    "versionCode": "",
+    "fullVersion": "",
+    "acadRelease": ""
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "DWG Version String",
+      "name": "DWG Magic",
       "offset": 0,
-      "length": 6,
+      "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.45,
-      "description": "AutoCAD DWG version identifier — 6-byte ASCII string 'ACxxxx'. The version code identifies the AutoCAD release: AC1009=R12, AC1012=R13, AC1014=R14, AC1015=2000/2000i/2002, AC1018=2004/2005/2006, AC1021=2007/2008/2009, AC1024=2010/2011/2012, AC1027=2013/2014/2015/2016/2017, AC1032=2018/2019/2020/2021/2022/2023. This version string must be present at offset 0 in all valid DWG files.",
-      "storeAs": "dwgVersion",
-      "valueType": "ascii",
-      "valueMap": {
-        "AC1009": "AutoCAD R12 (1992)",
-        "AC1012": "AutoCAD R13 (1994)",
-        "AC1014": "AutoCAD R14 (1997)",
-        "AC1015": "AutoCAD 2000-2002",
-        "AC1018": "AutoCAD 2004-2006",
-        "AC1021": "AutoCAD 2007-2009",
-        "AC1024": "AutoCAD 2010-2012",
-        "AC1027": "AutoCAD 2013-2017",
-        "AC1032": "AutoCAD 2018-2023"
-      }
+      "description": "2-byte ASCII magic 'AC' (0x41 0x43) at the absolute start of every DWG file. These two characters identify an AutoCAD drawing file and have been present in all DWG versions since the early 1980s. The 'AC' prefix is an internal Autodesk code for AutoCAD.",
+      "storeAs": "dwgMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Maintenance Release",
-      "offset": 6,
-      "length": 1,
+      "name": "Version Code",
+      "offset": 2,
+      "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.35,
-      "description": "Single byte at offset 6 indicating the maintenance release version within the major DWG version. Provides fine-grained version identification for files sharing the same AC version code across multiple AutoCAD releases.",
-      "storeAs": "dwgVersionCode",
-      "valueType": "uint8"
+      "description": "4-byte ASCII version code identifying the AutoCAD release that created this DWG file. Combined with 'AC' prefix this forms a 6-character version string. Known codes: 1015=AutoCAD 2000, 1018=AutoCAD 2004, 1021=AutoCAD 2007, 1024=AutoCAD 2010, 1027=AutoCAD 2013, 1032=AutoCAD 2018, 1035=AutoCAD 2021+. Older codes: 1009=R12, 1012=R13, 1014=R14.",
+      "storeAs": "versionCode",
+      "valueType": "ascii",
+      "valueMap": {
+        "1009": "AutoCAD Release 12",
+        "1012": "AutoCAD Release 13",
+        "1014": "AutoCAD Release 14",
+        "1015": "AutoCAD 2000",
+        "1018": "AutoCAD 2004",
+        "1021": "AutoCAD 2007 (Unicode)",
+        "1024": "AutoCAD 2010",
+        "1027": "AutoCAD 2013",
+        "1032": "AutoCAD 2018",
+        "1035": "AutoCAD 2021+"
+      }
     },
     {
       "type": "metadata",
-      "name": "DWG Version",
-      "variable": "dwgVersion",
-      "description": "AutoCAD DWG version string (e.g., 'AC1032')"
+      "name": "DWG Header Structure",
+      "offset": 6,
+      "description": "After the 6-byte version string, the DWG header varies significantly between versions. R2000-R2003 (AC1015): code_page (2B LE), maintenance_version (1B), count_of_sections (4B LE), followed by section page map entries. R2004+ (AC1018+): uses AES-encrypted page sections with a page map structure. R2007+ (AC1021+): additional Unicode support bytes, 64-bit file offsets. The header also contains system variable defaults and security settings."
     },
     {
       "type": "metadata",
-      "name": "Maintenance Code",
-      "variable": "dwgVersionCode",
-      "description": "Maintenance release code byte"
+      "name": "DWG Section Types",
+      "offset": 6,
+      "description": "DWG files use a section-based organization. Major sections: HEADER (drawing settings, system variables), CLASSES (custom entity class definitions), HANDLES (entity handle lookup table), AUXHEADER (auxiliary header data), TEMPLATE (prototype drawing data), OBJECTS (all drawing entities including Layer, BlockTable, UCS, Layout, Dictionary, Group, ImageDef), and PREVIEW (embedded thumbnail image). R2004+ sections are stored as compressed/encrypted pages."
     }
   ],
   "assertions": [
     {
-      "name": "DWG AC prefix valid",
-      "expression": "dwgVersion == 'AC1009' || dwgVersion == 'AC1012' || dwgVersion == 'AC1014' || dwgVersion == 'AC1015' || dwgVersion == 'AC1018' || dwgVersion == 'AC1021' || dwgVersion == 'AC1024' || dwgVersion == 'AC1027' || dwgVersion == 'AC1032'",
+      "name": "ValidMagic",
+      "expression": "dwgMagic == 'AC'",
+      "severity": "error",
+      "message": "DWG magic 'AC' not found at offset 0. This is not a valid AutoCAD DWG file."
+    },
+    {
+      "name": "ValidVersionCode",
+      "expression": "versionCode == '1009' || versionCode == '1012' || versionCode == '1014' || versionCode == '1015' || versionCode == '1018' || versionCode == '1021' || versionCode == '1024' || versionCode == '1027' || versionCode == '1032' || versionCode == '1035'",
       "severity": "warning",
-      "message": "DWG version string should be a known AC version code (AC1009-AC1032)"
+      "message": "DWG version code is not in the known list (1009-1035). File may be a very old, future, or custom DWG variant."
+    },
+    {
+      "name": "ValidFileSize",
+      "expression": "fileSize > 6",
+      "severity": "error",
+      "message": "DWG file is too small to contain a valid drawing. Minimum expected size is greater than 6 bytes."
     }
   ],
   "navigation": {
     "bookmarks": [
-      { "name": "DWG Version Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+      { "name": "DWG Magic + Version", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Post-Version Header", "offset": 6, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "dwgVersion",
-    "primaryField": "dwgVersionCode",
+    "badge": "dwgMagic",
+    "primaryField": "versionCode",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "DWG Header",
+        "title": "File Identity",
         "icon": "\uE71B",
-        "fields": ["dwgVersion", "dwgVersionCode"]
+        "fields": ["dwgMagic", "versionCode", "acadRelease"]
+      },
+      {
+        "title": "Format Details",
+        "icon": "\uE946",
+        "fields": ["fullVersion"]
       }
     ]
   },
@@ -121,61 +139,70 @@
     {
       "name": "DWG Header (JSON)",
       "format": "json",
-      "fields": ["dwgVersion", "dwgVersionCode"]
+      "fields": ["dwgMagic", "versionCode", "acadRelease", "fullVersion"]
+    },
+    {
+      "name": "DWG Version (CSV)",
+      "format": "csv",
+      "fields": ["versionCode", "acadRelease"]
     }
   ],
   "forensic": {
     "category": "cad",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "Embedded external references (XREF) may disclose internal network paths or server names",
+      "PREVIEW section contains an embedded thumbnail that could be extracted for content inspection",
+      "R2004+ AES encryption may protect sensitive engineering data — check security settings"
+    ]
   },
   "aiHints": {
-    "analysisContext": "DWG binary structure (post-R12): version(6B)+maintenance(1B)+unknown(5B)+image_seeker(4B LE, offset to thumbnail). Sections: header variables at fixed offsets (drawing limits, units, insertion point), class section (after header), object map (linked list of offsets), and actual drawing objects. DWG format is proprietary and undocumented by Autodesk. ODA/LibreDWG provide reverse-engineered specs. AC1021+ uses AES-128 or RC4 encryption for password protection. Thumbnail image (BMP or WMF) is at image_seeker offset.",
+    "analysisContext": "DWG starts with 'AC' + 4-char version code (total 6 bytes). Version codes: 1015=AutoCAD 2000, 1018=2004, 1021=2007(Unicode), 1024=2010, 1027=2013, 1032=2018, 1035=2021. R2004+ uses encrypted page sections. R2007+ uses Unicode.",
     "suggestedInspections": [
-      "Read bytes 0-5 (ASCII): version code identifies AutoCAD release",
-      "Byte 6: maintenance release number",
-      "Bytes 13-16 (LE uint32): offset to preview image thumbnail",
-      "Preview image offset → BMP/WMF thumbnail if present (not all files have it)"
+      "Verify 'AC' magic at offset 0 and read 4-byte version code at offset 2 for release identification",
+      "Map version code to AutoCAD release year: 1015=2000, 1018=2004, 1021=2007, 1024=2010, 1027=2013, 1032=2018, 1035=2021",
+      "For R2004+ (code >= 1018): check for AES-encrypted sections requiring ODA or LibreDWG decryption",
+      "Locate the PREVIEW section to extract the embedded thumbnail image for quick content identification",
+      "For R2007+ (code >= 1021): expect Unicode text strings using UTF-16 encoding throughout"
     ]
   },
   "software": [
-    "AutoCAD (Autodesk)",
+    "AutoCAD",
     "BricsCAD",
-    "ZWCAD",
-    "LibreCAD",
-    "ODA DWG Viewer",
-    "Autodesk DWG TrueView"
+    "DraftSight",
+    "LibreCAD (via LibreDWG)",
+    "FreeCAD",
+    "Open Design Alliance (Teigha/ODA)",
+    "Aspose.CAD"
   ],
   "formatRelationships": {
     "category": "CAD",
     "extensions": [".dwg"],
-    "relatedFormats": ["DXF", "DWF", "DWT"],
-    "note": "DWG is Autodesk's proprietary format; DXF is the open ASCII/binary interchange format. DWT is a DWG template file. DWF (Design Web Format) is a compressed viewer format. ODA and LibreDWG provide open-source DWG support without Autodesk license."
+    "relatedFormats": ["DXF", "DWF", "DGN"],
+    "note": "Proprietary Autodesk binary format; DXF is the open text alternative; ODA reverse-engineers DWG for open-source tools"
   },
-  "MimeTypes": [
-    "application/acad",
-    "image/vnd.dwg",
-    "application/x-dwg"
-  ],
+  "MimeTypes": ["image/vnd.dwg", "application/acad", "application/x-acad"],
   "UseCases": [
-    "2D/3D architectural and engineering drawings",
-    "Mechanical design and manufacturing plans",
-    "Electrical and piping schematics",
-    "GIS mapping and infrastructure design"
+    "Native AutoCAD drawing storage and exchange",
+    "Architecture and engineering BIM-adjacent 2D/3D drawing storage",
+    "Construction drawing management and sheet set workflows",
+    "Legacy CAD drawing archive reading with LibreDWG or ODA tools"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 62,
+    "CompletenessScore": 90,
     "DocumentationLevel": "detailed",
     "BlocksDefined": 4,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Format": "Proprietary binary (Autodesk undocumented), reverse-engineered by ODA",
-    "Endianness": "little-endian",
-    "VersionCodes": "AC1009-AC1032 (R12 through AutoCAD 2023)",
-    "Encryption": "AES-128 or RC4 for password-protected files (AC1021+)"
+    "magic": "AC + 4-char version code (6 bytes total)",
+    "encoding": "binary-little-endian",
+    "encryption": "AES for R2004+ (AC1018+)",
+    "unicodeSupport": "R2007+ (AC1021+)",
+    "pageBasedStorage": "R2004+ uses page-based section architecture",
+    "knownVersions": ["AC1009=R12", "AC1012=R13", "AC1014=R14", "AC1015=2000", "AC1018=2004", "AC1021=2007", "AC1024=2010", "AC1027=2013", "AC1032=2018", "AC1035=2021"]
   }
 }

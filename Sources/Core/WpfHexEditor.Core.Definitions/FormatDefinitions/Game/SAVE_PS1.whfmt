@@ -1,0 +1,195 @@
+{
+  "diffMode": "binary",
+  "formatName": "PlayStation 1 Memory Card",
+  "version": "1.0",
+  "extensions": [ ".mcr", ".mcd", ".mc", ".vmp" ],
+  "description": "PlayStation 1 memory card image. Total size: 128KB (131072 bytes). The first frame (128 bytes) is the header: 'MC' magic (2B) followed by 125 reserved bytes and a final XOR checksum byte. The next 15 frames (128 bytes each) are directory frames describing each save slot: frame_type (1B), file_size (4B LE), next_frame pointer (2B LE), filename (21B ASCII, format 'BASCUS-XXXXX'), padding (96B), XOR checksum (1B). Each save occupies 8KB of data in subsequent blocks. Used by all PS1 consoles and compatible third-party accessories.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://problemkaputt.de/psx-spx.htm#memorycardsfileformat",
+    "https://www.psdevwiki.com/ps3/PS1_Savedata"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "4D43",
+        "offset": 0,
+        "label": "MC — PlayStation 1 memory card image magic at offset 0",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "Strength": "Strong"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "mcMagic",
+      "offset": 0,
+      "size": 2,
+      "type": "ascii",
+      "description": "Memory card magic — 2-byte ASCII string at offset 0; value is always 'MC' (0x4D 0x43) in a valid PlayStation 1 memory card image; this is the primary identification signature",
+      "storeAs": "mcMagic"
+    },
+    {
+      "name": "reserved",
+      "offset": 2,
+      "size": 125,
+      "type": "bytes",
+      "description": "Reserved header bytes — 125 bytes at offset 2 reserved in the first frame of the memory card; should be all zeros in a standard card but some third-party cards may populate these bytes"
+    },
+    {
+      "name": "xorChecksum",
+      "offset": 127,
+      "size": 1,
+      "type": "uint8",
+      "description": "Header XOR checksum — 1-byte value at offset 127 (last byte of the first frame); computed as the XOR of all preceding bytes in the 128-byte header frame; used to verify header integrity",
+      "storeAs": "xorChecksum"
+    },
+    {
+      "name": "dir1Type",
+      "offset": 128,
+      "size": 1,
+      "type": "uint8",
+      "description": "First directory frame type — 1-byte value at offset 128 (start of first directory frame) indicating the status of save slot 1; 0x51=first block of a multi-block file, 0x52=middle block, 0x53=last block, 0xA0=deleted first block, 0xFF=free slot",
+      "storeAs": "dir1Type",
+      "valueMap": {
+        "81":  "0x51 First block of file",
+        "82":  "0x52 Middle block of file",
+        "83":  "0x53 Last block of file",
+        "160": "0xA0 Deleted first block",
+        "161": "0xA1 Deleted middle block",
+        "162": "0xA2 Deleted last block",
+        "255": "0xFF Free block"
+      }
+    },
+    {
+      "name": "dir1FileSize",
+      "offset": 132,
+      "size": 4,
+      "type": "uint32",
+      "endian": "LE",
+      "description": "First directory frame file size — 4-byte little-endian unsigned integer at offset 132 indicating the total file size in bytes for the save game occupying slot 1; must be a multiple of 8192 (8KB) for valid saves",
+      "storeAs": "fileSize"
+    },
+    {
+      "name": "dir1NextFrame",
+      "offset": 136,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "description": "Next frame pointer — 2-byte little-endian unsigned integer at offset 136 pointing to the next directory frame for multi-block saves; 0xFFFF indicates this is the last or only block of the save file"
+    },
+    {
+      "name": "dir1Filename",
+      "offset": 138,
+      "size": 21,
+      "type": "ascii",
+      "description": "Save filename — 21-byte ASCII string at offset 138 containing the save identifier in the format 'BASCUS-XXXXXYYYYY' where BASCUS is the region prefix, XXXXX is the product code, and YYYYY is the save slot identifier within the game",
+      "storeAs": "filename"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MagicValid",
+      "expression": "mcMagic == 'MC'",
+      "severity": "error",
+      "message": "Magic bytes at offset 0 must be 'MC' (0x4D 0x43); file does not appear to be a valid PlayStation 1 memory card image"
+    },
+    {
+      "name": "FileSizeMultipleOf8K",
+      "expression": "fileSize == 0 || (fileSize % 8192) == 0",
+      "severity": "warning",
+      "message": "Save file size in directory frame 1 should be a multiple of 8192 bytes (8KB blocks); non-aligned size indicates a corrupt or non-standard save entry"
+    },
+    {
+      "name": "Dir1TypeValid",
+      "expression": "dir1Type == 0x51 || dir1Type == 0x52 || dir1Type == 0x53 || dir1Type == 0xA0 || dir1Type == 0xA1 || dir1Type == 0xA2 || dir1Type == 0xFF",
+      "severity": "warning",
+      "message": "Directory frame 1 type byte should be one of the recognized values: 0x51 (first), 0x52 (middle), 0x53 (last), 0xA0-0xA2 (deleted), or 0xFF (free)"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "Header Frame", "offset": 0, "size": 128, "description": "Frame 0: memory card header with MC magic and XOR checksum" },
+      { "name": "Directory Frame 1", "offset": 128, "size": 128, "description": "Frame 1: first directory entry describing save slot 1" },
+      { "name": "Directory Frame 2", "offset": 256, "size": 128, "description": "Frame 2: second directory entry describing save slot 2" },
+      { "name": "Save Data Start", "offset": 8192, "size": 122880, "description": "Frames 64+: raw 8KB save data blocks for each slot" }
+    ]
+  },
+  "inspector": {
+    "badge": "PS1",
+    "primaryField": "filename",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Card Header",
+        "fields": [ "mcMagic", "xorChecksum" ]
+      },
+      {
+        "name": "Slot 1",
+        "fields": [ "dir1Type", "fileSize", "filename" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Memory Card Summary",
+      "format": "text",
+      "template": "PlayStation 1 Memory Card\nMagic: {mcMagic}\nSlot 1 File: {filename}\nSlot 1 Size: {fileSize} bytes\nSlot 1 Type: {dir1Type}\nHeader XOR: 0x{xorChecksum:X2}"
+    },
+    {
+      "name": "Directory Entry CSV",
+      "format": "csv",
+      "template": "Field,Value\nMagic,{mcMagic}\nSlot1Filename,{filename}\nSlot1FileSize,{fileSize}\nSlot1Type,{dir1Type}\nXorChecksum,{xorChecksum}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "medium",
+    "notes": "PlayStation 1 memory card image. Contains personal save game data that may reveal gameplay history and player progression. Save filenames use region-coded product identifiers. Deleted saves (0xA0-0xA2 frame types) may be recoverable if data blocks are not overwritten."
+  },
+  "aiHints": {
+    "analysisContext": "PS1 memory cards store up to 15 saves across 128KB. The header frame at offset 0 has the MC magic. Directory frames 1-15 (offsets 128-2047) describe each save slot. Actual save data starts at offset 8192. Each frame is 128 bytes. The XOR checksum covers all bytes in a frame. Deleted saves can sometimes be recovered.",
+    "suggestedInspections": [
+      "Verify 'MC' magic at offset 0 (bytes 0x4D 0x43)",
+      "Read all 15 directory frames (offsets 128-2047) to enumerate all save slots",
+      "Check dir1Type byte at offset 128 for slot 1 status (0xFF = free, 0x51 = used)",
+      "Read filename at offset 138 for the game product code and save identifier",
+      "Look for deleted saves (frame type 0xA0-0xA2) for potential data recovery",
+      "Validate XOR checksum byte at offset 127 against computed XOR of header frame"
+    ]
+  },
+  "software": [
+    { "name": "MemcardRex", "url": "https://github.com/ShendoXT/memcardrex", "role": "memory card manager" },
+    { "name": "PCSX2", "url": "https://pcsx2.net/", "role": "emulator" },
+    { "name": "DuckStation", "url": "https://www.duckstation.org/", "role": "emulator" }
+  ],
+  "formatRelationships": [
+    { "format": "SAVE_PS2_MC", "relation": "successor — PlayStation 2 memory cards use a more complex filesystem-based format" }
+  ],
+  "MimeTypes": [ "application/x-ps1-memory-card" ],
+  "UseCases": [
+    "PlayStation 1 save game backup and restoration",
+    "Memory card analysis and forensics",
+    "Save game editing and research",
+    "Recovery of deleted save game slots"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "totalSize": 131072,
+    "frameSize": 128,
+    "maxSlots": 15,
+    "saveBlockSize": 8192,
+    "headerMagic": "4D43",
+    "endianness": "little-endian",
+    "notes": "Memory card organized into 1024 frames of 128 bytes each. Frames 0=header, 1-15=directory, 16-63=unused, 64-1023=save data. Each save uses 64 frames (8KB). Frame type 0xFF indicates a free slot."
+  }
+}

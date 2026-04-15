@@ -1,0 +1,221 @@
+{
+  "diffMode": "binary",
+  "formatName": "GeoTIFF Raster",
+  "version": "1.0",
+  "extensions": [".tif", ".tiff", ".geotiff"],
+  "description": "GeoTIFF — TIFF with embedded georeferencing metadata (OGC standard 07-057r7, ISO 19101). TIFF magic: 49 49 2A 00 (little-endian) or 4D 4D 00 2A (big-endian). GeoTIFF-specific TIFF tags: 34735 (0x87AF) = GeoKeyDirectoryTag (key directory uint16 array), 34736 (0x87B0) = GeoDoubleParamsTag (float64 parameters), 34737 (0x87B1) = GeoAsciiParamsTag (ASCII CRS parameters), 33922 (0x8482) = ModelTiepointTag (image-to-world tiepoint pairs), 33550 (0x830E) = ModelPixelScaleTag (pixel size in world units), 34264 = ModelTransformationTag (full 4x4 affine matrix). GeoKeys: GTModelTypeGeoKey (1=projected, 2=geographic, 3=geocentric), GeographicTypeGeoKey (EPSG code), ProjectedCSTypeGeoKey (EPSG projected CRS). Used for remote sensing, satellite imagery, DEMs.",
+  "category": "GIS",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "OGC GeoTIFF Standard 1.1 (OGC 19-008r4)",
+      "TIFF 6.0 Specification — Adobe (1992)",
+      "GeoTIFF Revision 1.0 — Ritter and Ruth (1995)"
+    ],
+    "WebLinks": [
+      "https://www.ogc.org/standard/geotiff/",
+      "https://gdal.org/drivers/raster/gtiff.html",
+      "https://en.wikipedia.org/wiki/GeoTIFF"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "49492A00",
+        "offset": 0,
+        "label": "II*\\x00 — TIFF little-endian (Intel byte order)",
+        "weight": 0.8
+      },
+      {
+        "value": "4D4D002A",
+        "offset": 0,
+        "label": "MM\\x00* — TIFF big-endian (Motorola byte order)",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.8 },
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "GeoTIFF shares TIFF magic. Presence of GeoTIFF tags (34735, 33922, 33550) in the IFD confirms georeferencing. Plain TIFF without geo tags is still a valid raster but lacks spatial reference."
+    }
+  },
+  "variables": {
+    "tiffByteOrder": "",
+    "tiffMagicNum": 0,
+    "ifdOffset": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "TIFF Byte Order",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "TIFF byte order mark at offset 0 (2 ASCII bytes). 'II' (49 49) = Intel byte order (little-endian). 'MM' (4D 4D) = Motorola byte order (big-endian). All multi-byte TIFF values (uint16, uint32, float, double) in the IFD and data use this byte order consistently throughout the entire file. Most GeoTIFF files are little-endian ('II') because they are created on x86/x64 systems. BigTIFF (for files > 4 GB) adds extended offset support.",
+      "storeAs": "tiffByteOrder",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "TIFF Magic Number",
+      "offset": 2,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "TIFF magic number at offset 2 (2 bytes, byte order as defined by bytes 0-1). Value 42 (0x002A) = standard TIFF 6.0. Value 43 (0x002B) = BigTIFF (64-bit IFD offsets for files > 4 GB). For GeoTIFF standard (not BigTIFF), this must be 42. BigTIFF GeoTIFF files are common in Cloud Optimized GeoTIFF (COG) for very large satellite imagery tiles (> 4 GB). The same tag IDs (34735, 33922, 33550) are used in both TIFF 6.0 and BigTIFF.",
+      "storeAs": "tiffMagicNum",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "42": "TIFF 6.0 standard",
+        "43": "BigTIFF (64-bit offsets)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "IFD0 Offset",
+      "offset": 4,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Offset of the first Image File Directory (IFD0) at offset 4 (4 bytes, uint32 in file's byte order). Points to the beginning of the IFD that contains all TIFF tag entries for the first image. For stripped TIFF, IFD offset is typically 8 (immediately after the 8-byte header). For tiled GeoTIFF (common in COG), the offset may be larger. The IFD consists of: num_entries(2B) + entries(12B each) + next_ifd_offset(4B, 0=last IFD).",
+      "storeAs": "ifdOffset",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Order",
+      "variable": "tiffByteOrder",
+      "description": "'II'=little-endian (Intel), 'MM'=big-endian (Motorola)"
+    },
+    {
+      "type": "metadata",
+      "name": "TIFF Magic",
+      "variable": "tiffMagicNum",
+      "description": "42=TIFF, 43=BigTIFF"
+    },
+    {
+      "type": "metadata",
+      "name": "IFD0 Offset",
+      "variable": "ifdOffset",
+      "description": "Byte offset of first Image File Directory"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Byte order valid",
+      "expression": "tiffByteOrder == 'II' or tiffByteOrder == 'MM'",
+      "severity": "error",
+      "message": "TIFF byte order must be 'II' (little-endian) or 'MM' (big-endian)"
+    },
+    {
+      "name": "TIFF magic valid",
+      "expression": "tiffMagicNum == 42 or tiffMagicNum == 43",
+      "severity": "error",
+      "message": "TIFF magic number must be 42 (TIFF 6.0) or 43 (BigTIFF)"
+    },
+    {
+      "name": "IFD offset valid",
+      "expression": "ifdOffset >= 8",
+      "severity": "error",
+      "message": "TIFF IFD0 offset must be >= 8 (after the 8-byte TIFF header)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "TIFF Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "IFD0 (computed from offset)", "offset": 8, "icon": "\uE8A5", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "tiffMagicNum",
+    "primaryField": "tiffByteOrder",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GeoTIFF Header",
+        "icon": "\uE71B",
+        "fields": ["tiffByteOrder", "tiffMagicNum", "ifdOffset"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GeoTIFF Header (JSON)",
+      "format": "json",
+      "fields": ["tiffByteOrder", "tiffMagicNum", "ifdOffset"]
+    },
+    {
+      "name": "GeoTIFF Info (Text)",
+      "format": "text",
+      "fields": ["tiffByteOrder", "tiffMagicNum", "ifdOffset"]
+    }
+  ],
+  "forensic": {
+    "category": "geospatial",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Satellite imagery with sub-meter resolution may reveal sensitive facility details",
+      "GPS EXIF tags in TIFF may contain precise capture location"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GeoTIFF = TIFF 6.0 (magic II*\\x00 or MM\\x00*) with GeoTIFF-specific tags in IFD. IFD entry: tag(2B) + type(2B: 1=byte,2=ascii,3=uint16,4=uint32,5=rational,12=float64) + count(4B) + value_or_offset(4B). Key GeoTIFF tags: 33550 (ModelPixelScaleTag, 3 float64: x,y,z scale), 33922 (ModelTiepointTag, n*6 float64: i,j,k,x,y,z pairs), 34735 (GeoKeyDirectoryTag, uint16 array: header[4] + key entries), 34736 (GeoDoubleParamsTag, float64 array), 34737 (GeoAsciiParamsTag, ASCII). GeoKey structure: KeyDirectoryVersion(1) + KeyRevision(1) + MinorRevision(0) + NumberOfKeys + n*(KeyID + TIFFTagLocation + Count + ValueOffset). Cloud Optimized GeoTIFF (COG) has overviews and tiled structure with ghost metadata at offset 0.",
+    "suggestedInspections": [
+      "Bytes 0-1: 'II' or 'MM' — byte order for all subsequent multi-byte reads",
+      "Bytes 2-3 (uint16): 42=TIFF, 43=BigTIFF — determines IFD offset field size",
+      "Bytes 4-7 (uint32 LE for II): IFD0 offset — jump to IFD to enumerate tags",
+      "In IFD: scan for tag 34735 (0x87AF) = GeoKeyDirectoryTag to confirm GeoTIFF"
+    ]
+  },
+  "software": [
+    "GDAL (gdalinfo, gdal_translate, gdalwarp)",
+    "QGIS (native GeoTIFF support)",
+    "ArcGIS (primary raster format)",
+    "ENVI (remote sensing software)",
+    "rasterio (Python geospatial raster library)",
+    "GRASS GIS",
+    "ERDAS IMAGINE"
+  ],
+  "formatRelationships": {
+    "category": "GIS",
+    "extensions": [".tif", ".tiff", ".geotiff"],
+    "relatedFormats": ["SHP", "GPKG", "NETCDF", "HDF4"],
+    "note": "GeoTIFF is the de-facto standard for gridded raster geospatial data. Cloud Optimized GeoTIFF (COG) adds internal tiling and overviews for HTTP range-request access without downloading the full file. JPEG2000 (ECW, MrSID) are alternatives for compressed large imagery. NetCDF is preferred for scientific model output with multiple variables."
+  },
+  "MimeTypes": [
+    "image/tiff",
+    "image/geotiff"
+  ],
+  "UseCases": [
+    "Satellite and aerial imagery (Landsat, Sentinel-2, WorldView, NAIP)",
+    "Digital Elevation Models (DEMs) — SRTM, ASTER, Copernicus DEM",
+    "Land use / land cover classification rasters",
+    "Remote sensing band stacks and indices (NDVI, EVI)",
+    "Scanned topographic map georeferencing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "TIFF 6.0 with GeoTIFF extension tags embedded in IFD",
+    "Magic": "49 49 2A 00 (LE) or 4D 4D 00 2A (BE) at offset 0",
+    "Standard": "OGC GeoTIFF Standard 1.1 (OGC 19-008r4) / ISO 19101",
+    "Endianness": "As declared by bytes 0-1: 'II'=little-endian, 'MM'=big-endian",
+    "Extension": "GeoTIFF tags 33550, 33922, 34735 embed CRS and transform in TIFF IFD"
+  }
+}

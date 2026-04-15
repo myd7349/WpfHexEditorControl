@@ -1,0 +1,240 @@
+{
+  "diffMode": "binary",
+  "formatName": "Binary Alignment Map (BAM)",
+  "version": "1.0",
+  "extensions": [
+    ".bam"
+  ],
+  "description": "BAM (Binary Alignment Map) — BGZF-compressed binary format for storing DNA sequence read alignments (SAM/BAM specification, htslib). The file is a sequence of BGZF blocks. Each BGZF block is a valid gzip block with extra fields: gzip magic (1F 8B), method=8, flags must have bit 2 set (FEXTRA), and the extra field must contain a 'BC' subfield with the block size. After decompressing all BGZF blocks, the BAM data begins with: magic 'BAM(0x01)' (42 41 4D 01, 4 bytes), l_text(4B LE: SAM header text length), text(l_text bytes: SAM format header), n_ref(4B LE: number of reference sequences), followed by reference_sequence entries (l_name + name + l_ref), and then alignment records. Each alignment record: block_size(4B LE) + refID(4B LE) + pos(4B LE) + ... Outer BGZF magic at offset 0 is 1F 8B.",
+  "category": "Science",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": [
+    "SAM/BAM Format Specification — samtools.github.io/hts-specs/SAMv1.pdf",
+    "htslib source — github.com/samtools/htslib",
+    "BGZF Format — SAM specification Appendix"
+  ],
+  "references": {
+    "specifications": [
+      "SAM/BAM Format Specification — samtools.github.io/hts-specs/SAMv1.pdf",
+      "htslib source code — github.com/samtools/htslib",
+      "BGZF (Blocked GNU Zip Format) — SAM specification Appendix"
+    ],
+    "WebLinks": [
+      "https://samtools.github.io/hts-specs/SAMv1.pdf",
+      "https://www.htslib.org/",
+      "https://github.com/samtools/htslib",
+      "https://en.wikipedia.org/wiki/Binary_Alignment_Map"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "1F8B0804", "offset": 0, "label": "BGZF gzip block — BAM outer BGZF compression layer with FEXTRA flag", "weight": 0.7 },
+      { "value": "1F8B", "offset": 0, "label": "gzip magic — potential BAM BGZF outer wrapper", "weight": 0.5 }
+    ],
+    "required": true,
+    "Strength": "Medium",
+    "MinimumScore": 0.5,
+    "EntropyHint": { "min": 6.5, "max": 8.0 },
+    "validation": {
+      "minFileSize": 28
+    }
+  },
+  "variables": {
+    "bgzfMagic": 0,
+    "gzipMethod": 0,
+    "gzipFlags": 0,
+    "bgzfExtraLen": 0,
+    "bgzfBlockSize": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "BGZF/gzip Magic",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Standard gzip magic number: 1F 8B. Every BGZF block (and thus every BAM file) starts with these two bytes as per the gzip format specification (RFC 1952). BAM uses BGZF (Blocked GNU Zip Format), a variant of gzip with deterministic block sizes and extra fields enabling random access.",
+      "storeAs": "bgzfMagic",
+      "valueType": "uint16",
+      "endianness": "big",
+      "validation": { "expectedValue": "0x1F8B" }
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 2,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Gzip compression method byte (1-byte uint8). Must be 8 (deflate) for all valid gzip and BGZF blocks. Any other value indicates a corrupt or non-standard file. BAM uses deflate compression within each BGZF block.",
+      "storeAs": "gzipMethod",
+      "valueType": "uint8",
+      "valueMap": {
+        "8": "Deflate compression (required for BGZF/BAM)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Gzip Flags",
+      "offset": 3,
+      "length": 1,
+      "color": "#FFEAA7",
+      "opacity": 0.35,
+      "description": "Gzip flags byte (1-byte uint8). For BGZF blocks, bit 2 (FEXTRA = 0x04) must be set to indicate the presence of extra fields. The BGZF extra field contains a 'BC' subfield with the compressed block size. Other flag bits (FNAME, FCOMMENT, FHCRC) should be zero in well-formed BGZF.",
+      "storeAs": "gzipFlags",
+      "valueType": "uint8",
+      "bitfields": [
+        { "bit": 2, "name": "FEXTRA", "description": "Extra fields present — required for BGZF; must be 1 for valid BAM" }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "BGZF Extra Field Length",
+      "offset": 10,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Length of the gzip extra field in bytes (2-byte little-endian uint16). For BGZF blocks this is always 6: 2-byte subfield ID ('BC') + 2-byte subfield length (2) + 2-byte BSIZE value. The BSIZE value in the extra field gives the total compressed BGZF block size minus 1.",
+      "storeAs": "bgzfExtraLen",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Gzip Method",
+      "variable": "gzipMethod",
+      "description": "Compression method: must be 8 (deflate) for valid BGZF/BAM"
+    },
+    {
+      "type": "metadata",
+      "name": "Gzip Flags",
+      "variable": "gzipFlags",
+      "description": "Gzip header flags: bit 2 (FEXTRA=0x04) must be set for BGZF"
+    },
+    {
+      "type": "metadata",
+      "name": "Extra Field Length",
+      "variable": "bgzfExtraLen",
+      "description": "BGZF extra field length — typically 6 for standard BGZF blocks"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Gzip magic must be 1F 8B",
+      "expression": "bgzfMagic == 0x1F8B",
+      "severity": "error",
+      "message": "BAM file must start with gzip magic 1F 8B (BGZF outer wrapper) — not a valid BAM file"
+    },
+    {
+      "name": "Compression method must be deflate (8)",
+      "expression": "gzipMethod == 8",
+      "severity": "error",
+      "message": "BGZF compression method must be 8 (deflate) — other values indicate a malformed BAM file"
+    },
+    {
+      "name": "FEXTRA flag must be set",
+      "expression": "(gzipFlags & 4) != 0",
+      "severity": "error",
+      "message": "BGZF gzip flags must have FEXTRA bit set (flags & 0x04 != 0) — missing FEXTRA means this is plain gzip, not BGZF/BAM"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "BGZF Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Gzip Flags", "offset": 3, "icon": "\uE8A5", "color": "#FFEAA7" },
+      { "name": "Extra Field", "offset": 10, "icon": "\uE9D9", "color": "#95E1D3" }
+    ]
+  },
+  "inspector": {
+    "badge": "gzipMethod",
+    "primaryField": "bgzfMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "BGZF Header",
+        "icon": "\uE71B",
+        "fields": ["bgzfMagic", "gzipMethod", "gzipFlags", "bgzfExtraLen"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "BGZF Header (JSON)",
+      "format": "json",
+      "fields": ["bgzfMagic", "gzipMethod", "gzipFlags", "bgzfExtraLen"]
+    },
+    {
+      "name": "bgzf_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "bgzf_header",
+      "fields": ["bgzfMagic", "gzipMethod", "gzipFlags", "bgzfExtraLen"]
+    }
+  ],
+  "forensic": {
+    "category": "science",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Missing FEXTRA flag in gzip header",
+        "condition": "(gzipFlags & 4) == 0",
+        "severity": "warning",
+        "description": "Gzip FEXTRA bit not set. This is plain gzip, not BGZF. BAM files require BGZF — this file may be a SAM file compressed with standard gzip, which cannot be randomly accessed."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "BAM = BGZF-wrapped binary data. BGZF block: ID1=0x1F, ID2=0x8B, CM=8, FLG has FEXTRA(bit2) set, MTIME(4B), XFL(1B), OS(1B), XLEN(2B LE), extra_field (BGZF: SI1='B'(0x42), SI2='C'(0x43), SLEN=2, BSIZE=compressed_block_size-1), deflate_data, CRC32(4B LE), ISIZE(4B LE=uncompressed size, max 65536). After decompressing all BGZF blocks: BAM magic 42 41 4D 01 + SAM header text + reference list + alignment records.",
+    "suggestedInspections": [
+      "Verify first 2 bytes are 1F 8B (gzip magic)",
+      "Check byte at offset 2 is 0x08 (deflate method)",
+      "Verify byte at offset 3 has bit 2 set (FEXTRA flag = 0x04)",
+      "Read XLEN at offset 10 (2B LE) — should be 6 for standard BGZF",
+      "Decompress first BGZF block and verify inner BAM magic: 42 41 4D 01 ('BAM(0x01)')"
+    ]
+  },
+  "software": [
+    "samtools",
+    "htslib",
+    "Picard Tools (Broad Institute)",
+    "GATK (Genome Analysis Toolkit)",
+    "BWA (Burrows-Wheeler Aligner)",
+    "STAR aligner",
+    "IGV (Integrative Genomics Viewer)"
+  ],
+  "formatRelationships": {
+    "category": "Science",
+    "extensions": [".bam"],
+    "relatedFormats": ["VCF_GENOMICS", "GZIP"],
+    "containerVariant": "SAM = text equivalent; CRAM = reference-compressed equivalent; BAI = BAM index (.bai)"
+  },
+  "MimeTypes": [
+    "application/x-bam",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "DNA sequencing read alignment storage (NGS workflows)",
+    "Variant calling pipeline input (GATK, DeepVariant)",
+    "RNA-seq alignment storage (STAR, HISAT2 output)",
+    "Bioinformatics pipeline intermediate and final output"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FileType": "BGZF-compressed binary alignment format",
+    "OuterFormat": "BGZF (Blocked GNU Zip Format — gzip variant)",
+    "InnerMagic": "42 41 4D 01 ('BAM' + version byte 0x01)",
+    "MaxBGZFBlockSize": 65536,
+    "RandomAccess": "Requires .bai (BAM index) for coordinate-sorted access",
+    "SortOrders": ["coordinate", "queryname", "unsorted"],
+    "Endianness": "little-endian for all multi-byte integers"
+  }
+}

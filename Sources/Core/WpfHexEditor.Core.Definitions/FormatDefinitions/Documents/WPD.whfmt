@@ -1,0 +1,294 @@
+{
+  "diffMode": "binary",
+  "formatName": "WordPerfect Document",
+  "version": "1.0",
+  "extensions": [
+    ".wpd",
+    ".wp",
+    ".wp5",
+    ".wp6",
+    ".wp7"
+  ],
+  "description": "WordPerfect document format — binary word processor format created by Corel (originally WordPerfect Corporation). Magic: FF 57 50 43 (0xFF + ASCII 'WPC') at offset 0. Followed by: offset_to_file_id(4B LE uint32), file_type(1B: 1=document, 2=macro, 3=help, 4=write-protect), major_version(1B: 1=WP3.x, 2=WP4.x, 3=WP5.x, 4=WP6.x, 7=WP7.x, 8=WP8.x), minor_version(1B), encrypt_flag(1B: 0=unencrypted, 255=encrypted). Documents contain embedded formatting codes (variable-length binary codes) interleaved with text characters. Still widely used in legal profession (US federal courts accepted WPD). Multinational or PC-8 character sets. The 'WPC' identifier means 'WordPerfect Corporation'.",
+  "category": "Documents",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "WordPerfect File Format Reference — Corel Corporation Technical Documentation",
+      "WordPerfect For Windows Binary File Format — SDK documentation",
+      "libwpd library source code — github.com/ojwb/libwpd"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/WordPerfect",
+      "https://sourceforge.net/projects/libwpd/",
+      "https://fileformats.archiveteam.org/wiki/WordPerfect",
+      "https://www.corel.com/en/products/wordperfect/"
+    ]
+  },
+  "detection": {
+    "signature": "FF575043",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 3.5, "max": 7.0 },
+    "validation": {
+      "minFileSize": 12,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "wpdMagic": 0,
+    "offsetToFileId": 0,
+    "fileType": 0,
+    "majorVersion": 0,
+    "minorVersion": 0,
+    "encryptFlag": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "WordPerfect Magic (WPC Header)",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "WordPerfect magic: 0xFF followed by ASCII 'WPC' (bytes FF 57 50 43). The leading 0xFF is a non-printable byte deliberately chosen to prevent plain-text editors from misidentifying the file. 'WPC' stands for WordPerfect Corporation. This 4-byte signature is consistent across all WordPerfect versions 3.x through 8.x.",
+      "storeAs": "wpdMagic",
+      "valueType": "uint32",
+      "endianness": "big",
+      "validation": { "expectedValue": "0xFF575043" }
+    },
+    {
+      "type": "field",
+      "name": "Offset to File ID Area",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Byte offset from the beginning of the file to the File Identification area (4-byte little-endian uint32). The File ID area contains the full version and product information for the creating application. For typical WPD files this value points to the area just after the prefix record header.",
+      "storeAs": "offsetToFileId",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "File Type",
+      "offset": 8,
+      "length": 1,
+      "color": "#FFEAA7",
+      "opacity": 0.40,
+      "description": "WordPerfect file type code (1-byte uint8). Identifies the product and purpose of the file within the WordPerfect family. Type 1 is the most common: a standard editable document. Other types include macros (2), online help files (3), and write-protected document templates (4).",
+      "storeAs": "fileType",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "WordPerfect document — editable word processing file",
+        "2": "WordPerfect macro file",
+        "3": "WordPerfect help file",
+        "4": "Write-protected document or template"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 9,
+      "length": 1,
+      "color": "#FF8C69",
+      "opacity": 0.40,
+      "description": "WordPerfect major version number (1-byte uint8). Determines the format generation: WP 3.x, 4.x, 5.x (WP5.1 was most popular DOS version), 6.x (first Windows version), 7.x, 8.x. Each major version introduced new formatting codes, macro language changes, and document structure refinements.",
+      "storeAs": "majorVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "WordPerfect 3.x (DOS)",
+        "2": "WordPerfect 4.x (DOS)",
+        "3": "WordPerfect 5.x (DOS — WP5.1 peak popularity)",
+        "4": "WordPerfect 6.x (first Windows version)",
+        "7": "WordPerfect 7.x (Windows 95)",
+        "8": "WordPerfect 8.x (Windows 98/NT)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 10,
+      "length": 1,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "WordPerfect minor version number (1-byte uint8). Sub-revision within the major version. For example, WP 5.1 has major_version=3, minor_version=1. Used to distinguish between patch releases and sub-versions of the same major release.",
+      "storeAs": "minorVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Encryption Flag",
+      "offset": 11,
+      "length": 1,
+      "color": "#87CEEB",
+      "opacity": 0.40,
+      "description": "Document encryption flag (1-byte uint8). Value 0 means the document is unencrypted and can be opened directly. Value 255 (0xFF) means the document is encrypted with a password. WordPerfect used a proprietary XOR-based password scheme that is considered weak by modern standards.",
+      "storeAs": "encryptFlag",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Unencrypted — document can be opened without a password",
+        "255": "Encrypted — document requires password to access content"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "File Type",
+      "variable": "fileType",
+      "description": "WordPerfect file type: 1=document, 2=macro, 3=help, 4=write-protect"
+    },
+    {
+      "type": "metadata",
+      "name": "Major Version",
+      "variable": "majorVersion",
+      "description": "WordPerfect major version (1=WP3, 2=WP4, 3=WP5, 4=WP6, 7=WP7, 8=WP8)"
+    },
+    {
+      "type": "metadata",
+      "name": "Minor Version",
+      "variable": "minorVersion",
+      "description": "WordPerfect minor version sub-revision number"
+    },
+    {
+      "type": "metadata",
+      "name": "Encryption Status",
+      "variable": "encryptFlag",
+      "description": "Document encryption flag: 0=unencrypted, 255=password-protected"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "WPC magic must be FF 57 50 43",
+      "expression": "wpdMagic == 0xFF575043",
+      "severity": "error",
+      "message": "WordPerfect magic at offset 0 must be 0xFF followed by 'WPC' — not a valid WordPerfect document"
+    },
+    {
+      "name": "File type must be in known range",
+      "expression": "fileType >= 1 && fileType <= 4",
+      "severity": "warning",
+      "message": "WordPerfect file type should be 1 (document), 2 (macro), 3 (help), or 4 (write-protect)"
+    },
+    {
+      "name": "Major version must be known",
+      "expression": "majorVersion >= 1 && majorVersion <= 8",
+      "severity": "warning",
+      "message": "WordPerfect major version should be 1-8 (WP 3.x through WP 8.x)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "WPC Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "File Type + Version", "offset": 8, "icon": "\uE8A5", "color": "#FFEAA7" },
+      { "name": "Encryption Flag", "offset": 11, "icon": "\uE72E", "color": "#87CEEB" }
+    ]
+  },
+  "inspector": {
+    "badge": "majorVersion",
+    "primaryField": "fileType",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["wpdMagic", "fileType", "offsetToFileId"]
+      },
+      {
+        "title": "Version",
+        "icon": "\uE8A5",
+        "fields": ["majorVersion", "minorVersion"]
+      },
+      {
+        "title": "Security",
+        "icon": "\uE72E",
+        "fields": ["encryptFlag"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "WPD Header (JSON)",
+      "format": "json",
+      "fields": ["wpdMagic", "offsetToFileId", "fileType", "majorVersion", "minorVersion", "encryptFlag"]
+    },
+    {
+      "name": "wpd_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "wpd_header",
+      "fields": ["wpdMagic", "offsetToFileId", "fileType", "majorVersion", "minorVersion", "encryptFlag"]
+    }
+  ],
+  "forensic": {
+    "category": "document",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Document is password-encrypted",
+        "condition": "encryptFlag == 255",
+        "severity": "warning",
+        "description": "WordPerfect document is encrypted with a password. The XOR-based WP encryption is weak; tools like wpdpasswd or libwpd can often recover content."
+      },
+      {
+        "name": "Unusual file type code",
+        "condition": "fileType > 4",
+        "severity": "warning",
+        "description": "Unknown WordPerfect file type code. May indicate a newer undocumented variant or file header corruption."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "WordPerfect WPC format header: FF 57 50 43 (magic) + 4B LE offset_to_file_id + 1B file_type + 1B major_version + 1B minor_version + 1B encrypt_flag. Document body uses variable-length formatting codes embedded with text. WP5 codes: single-byte (0x00-0x1F for simple codes) or extended codes (0x80+ with length-delimited parameters). Text is in PC-8 or multinational character set.",
+    "suggestedInspections": [
+      "Verify bytes 0-3 are FF 57 50 43 (magic = 0xFF + 'WPC')",
+      "Read file_type at offset 8 — value 1 is standard document",
+      "Read major_version at offset 9 to identify WP generation (3=WP5, 4=WP6)",
+      "Check encrypt_flag at offset 11 — 0xFF means password-protected",
+      "Navigate to offset_to_file_id (offset 4, LE uint32) to find full product identification"
+    ]
+  },
+  "software": [
+    "WordPerfect for DOS (versions 3.x-5.1)",
+    "WordPerfect for Windows 6.x-X9",
+    "Corel WordPerfect Office",
+    "LibreOffice Writer (WPD import via libwpd)",
+    "libwpd (open-source WPD parser)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".wpd", ".wp", ".wp5", ".wp6", ".wp7"],
+    "relatedFormats": ["DOCX", "RTF", "ODT"],
+    "containerVariant": "WPT = WordPerfect Template (same header, different file_type)"
+  },
+  "MimeTypes": [
+    "application/vnd.wordperfect",
+    "application/wordperfect",
+    "application/x-wpwin"
+  ],
+  "UseCases": [
+    "Legal document processing (US federal and state courts)",
+    "Legacy document archiving and conversion",
+    "Digital forensics — recovering content from old wordprocessor files",
+    "Government and legal industry document exchange"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentType": "Binary word processor format",
+    "MagicSize": "4 bytes (0xFF + 'WPC')",
+    "Endianness": "little-endian for multi-byte integers",
+    "EncryptionType": "Proprietary XOR-based (weak by modern standards)",
+    "CharacterSets": ["PC-8", "Multinational"],
+    "FormattingModel": "Embedded binary codes interleaved with character data",
+    "VersionRange": "WP 3.x through WP 8.x (1983-2000)"
+  }
+}

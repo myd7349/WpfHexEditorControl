@@ -1,0 +1,244 @@
+{
+  "diffMode": "binary",
+  "formatName": "Java KeyStore (JKS)",
+  "version": "1.0",
+  "extensions": [
+    ".jks",
+    ".keystore",
+    ".ks"
+  ],
+  "description": "Java KeyStore (JKS) binary format — Sun/Oracle proprietary keystore format for Java applications. Magic: FE ED FE ED (4 bytes, big-endian) at offset 0. Header: magic(4B BE) + version(4B BE: 2=JKS standard, 3=PKCS12-migrated) + entry_count(4B BE). Each entry: tag(4B BE: 1=private key entry, 2=trusted certificate entry) + alias_length(2B BE) + alias(UTF-16BE) + creation_date(8B MillisTimestamp). Private key entry: encrypted_key_length(4B) + encrypted_private_key(DER, encrypted with password-based Sun proprietary algorithm using SHA-1 rounds). Certificate entry: type_length(2B) + type_string + cert_length(4B) + X.509 DER certificate. JKS uses a proprietary key encryption algorithm (xoring with MD5 rounds of password bytes). JKS is deprecated since Java 9 — migrate to PKCS12 (.p12). Stores integrity MAC (SHA-1 of all entries with password) at the very end of the file.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Java KeyStore API — docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/KeyStore.html",
+      "JKS format analysis — github.com/doublereedkurt/pyjks/blob/master/jks/jks.py",
+      "Java Security Guide — docs.oracle.com/en/java/javase/17/security/java-pki-programmers-guide.html"
+    ],
+    "WebLinks": [
+      "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/KeyStore.html",
+      "https://github.com/doublereedkurt/pyjks",
+      "https://en.wikipedia.org/wiki/Java_KeyStore",
+      "https://learn.microsoft.com/en-us/azure/key-vault/certificates/certificate-scenarios"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "FEEDFEED", "offset": 0, "label": "FEEDFEED — Java KeyStore (JKS) magic number", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 5.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 12,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "jksMagic": "",
+    "jksVersion": 0,
+    "entryCount": 0,
+    "firstEntryTag": 0,
+    "firstEntryAliasLength": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "JKS Magic Number",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte big-endian magic number 0xFEEDFEED identifying a Java KeyStore file. This distinctive magic is recognizable and memorable ('FEED FEED'). The magic is stored in big-endian byte order matching Java's DataInputStream conventions. JCEKS (Java Cryptography Extension KeyStore) shares the same magic 0xCECECECE (different). BKS (Bouncy Castle KeyStore) uses 0x00000001. This magic uniquely identifies the Sun/Oracle JKS format.",
+      "storeAs": "jksMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "JKS Format Version",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint32 big-endian version number of the JKS format. Version 2: standard JKS format for Java 8 and earlier. Version 3: PKCS12-migrated JKS format (Java 9+ default migration path when converting a JKS to PKCS12). Version 1 is not defined in standard JKS. The Java keytool -importkeystore command migrates JKS v2 to PKCS12.",
+      "storeAs": "jksVersion",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "2": "JKS v2 — standard Sun/Oracle JKS (Java 1.1 - 8)",
+        "3": "JKS v3 — PKCS12-migrated JKS (Java 9+)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Entry Count",
+      "offset": 8,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint32 big-endian count of entries in the keystore. Each entry is either a private key entry (tag=1, contains encrypted private key + certificate chain) or a trusted certificate entry (tag=2, contains a single X.509 certificate). An empty keystore has entry_count = 0. The entry data follows immediately after this field, with each entry prefixed by its 4-byte tag.",
+      "storeAs": "entryCount",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "First Entry Tag",
+      "offset": 12,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint32 big-endian tag of the first keystore entry (only present if entryCount > 0). Tag 1 = private key entry (PrivateKeyEntry: contains encrypted PKCS#8 private key + X.509 certificate chain). Tag 2 = trusted certificate entry (TrustedCertificateEntry: contains a single X.509 DER certificate). No other tag values are defined in standard JKS format.",
+      "storeAs": "firstEntryTag",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "1": "Private Key Entry (PrivateKeyEntry — encrypted key + cert chain)",
+        "2": "Trusted Certificate Entry (TrustedCertificateEntry — cert only)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "First Entry Alias Length",
+      "variable": "firstEntryAliasLength",
+      "description": "uint16 BE length of the alias string for the first entry — alias is stored as UTF-16BE after the tag"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid JKS magic",
+      "expression": "jksMagic == 4277009389",
+      "severity": "error",
+      "message": "File does not begin with JKS magic 0xFEEDFEED — not a valid Java KeyStore file"
+    },
+    {
+      "name": "Known JKS version",
+      "expression": "jksVersion == 2 || jksVersion == 3",
+      "severity": "error",
+      "message": "JKS version must be 2 (standard JKS) or 3 (PKCS12-migrated) — unknown version indicates corrupt or unsupported format"
+    },
+    {
+      "name": "Valid first entry tag",
+      "expression": "entryCount == 0 || firstEntryTag == 1 || firstEntryTag == 2",
+      "severity": "warning",
+      "message": "JKS first entry tag must be 1 (private key) or 2 (trusted certificate) — unexpected tag value"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "JKS Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "JKS Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Entry Count", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" },
+      { "name": "First Entry", "offset": 12, "icon": "\uE946", "color": "#C7CEEA" }
+    ]
+  },
+  "inspector": {
+    "badge": "jksVersion",
+    "primaryField": "entryCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "KeyStore Header",
+        "icon": "\uE71B",
+        "fields": ["jksMagic", "jksVersion", "entryCount"]
+      },
+      {
+        "title": "First Entry",
+        "icon": "\uE946",
+        "fields": ["firstEntryTag", "firstEntryAliasLength"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "JKS Header (JSON)",
+      "format": "json",
+      "fields": ["jksMagic", "jksVersion", "entryCount", "firstEntryTag"]
+    },
+    {
+      "name": "JKS Header (C struct)",
+      "format": "c-struct",
+      "structName": "JKS_HEADER",
+      "fields": ["jksMagic", "jksVersion", "entryCount"]
+    },
+    {
+      "name": "Python JKS magic check",
+      "format": "python-bytes",
+      "fields": ["jksMagic", "jksVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Contains private keys",
+        "condition": "firstEntryTag == 1",
+        "severity": "critical",
+        "description": "JKS file contains private key material (tag=1 entry). JKS uses a proprietary weak key protection algorithm (SHA-1 based) — considered insecure. Migrate to PKCS12 (.p12) with AES-256 protection."
+      },
+      {
+        "name": "Deprecated format",
+        "condition": "jksVersion == 2",
+        "severity": "warning",
+        "description": "JKS v2 is deprecated since Java 9. Uses proprietary SHA-1-based key encryption weaker than PKCS12 AES-256. Migrate with: keytool -importkeystore -srckeystore keystore.jks -destkeystore keystore.p12 -deststoretype PKCS12"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "JKS binary structure: magic(4B BE: 0xFEEDFEED) + version(4B BE: 2 or 3) + entry_count(4B BE) + entries + SHA-1 MAC(20B). Each entry: tag(4B BE) + alias_length(2B BE) + alias(UTF-16BE) + creation_date(8B BE millis since epoch) + entry data. Private key entry data: encrypted_private_key_len(4B) + encrypted_pk_bytes (Sun proprietary JSSE encryption: each byte XORed with MD5 of password|seed) + cert_chain_count(4B) + certs[]. Certificate entry data: cert_type_len(2B) + cert_type_string + cert_len(4B) + cert_DER_bytes. File ends with SHA-1 HMAC of all entry bytes using password. Inspect with: keytool -list -v -keystore file.jks -storetype JKS. Python: pip install pyjks.",
+    "suggestedInspections": [
+      "Verify magic at offset 0: FE ED FE ED — big-endian Java KeyStore magic",
+      "Read version (offset 4, uint32 BE): 2=standard JKS, 3=PKCS12-migrated",
+      "Read entry_count (offset 8, uint32 BE) — number of entries in the keystore",
+      "Check first entry tag (offset 12, uint32 BE): 1=private key (HIGH RISK), 2=certificate",
+      "Use keytool -list -v -keystore file.jks to enumerate aliases and certificate details",
+      "Consider migrating to PKCS12: keytool -importkeystore -deststoretype PKCS12"
+    ]
+  },
+  "software": [
+    "Java keytool (keytool -list -v -keystore file.jks)",
+    "OpenSSL (via PKCS12 conversion)",
+    "Apache Tomcat, Jetty, Spring Boot (HTTPS configuration)",
+    "pyjks (Python, pip install pyjks)",
+    "KeyStore Explorer (Java GUI keystore manager)"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [".jks", ".keystore", ".ks"],
+    "relatedFormats": ["P12", "PEM", "DER"],
+    "note": "JKS is the legacy Java keystore format deprecated in Java 9 in favor of PKCS12 (.p12/.pfx). JCEKS (magic 0xCECECECE) is the stronger variant. BKS (Bouncy Castle KeyStore) is used on Android. All three can be managed with keytool but use different encryption algorithms."
+  },
+  "MimeTypes": [
+    "application/x-java-keystore",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Java web server TLS certificate and private key storage (Tomcat, Jetty)",
+    "Java application client certificate authentication",
+    "Legacy Java EE application server keystore management",
+    "Android development keystore for APK signing (though Android uses .jks for debug)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Endianness": "big-endian (Java DataInputStream convention)",
+    "KeyEncryption": "Proprietary Sun JSSE: XOR with MD5 rounds of password (WEAK — deprecated)",
+    "IntegrityMAC": "SHA-1 of all entry bytes with password (20B at end of file)",
+    "DeprecatedSince": "Java 9 (2017) — use PKCS12 (.p12) instead",
+    "MigrationCommand": "keytool -importkeystore -srckeystore file.jks -destkeystore file.p12 -deststoretype PKCS12",
+    "SupportsStreaming": false
+  }
+}

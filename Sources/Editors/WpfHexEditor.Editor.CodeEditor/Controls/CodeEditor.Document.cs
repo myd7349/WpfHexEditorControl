@@ -379,7 +379,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             bool lineCountChanged = e.ChangeType is TextChangeType.NewLine
                                                  or TextChangeType.DeleteLine;
             if (lineCountChanged)
+            {
                 _linePositionsDirty = true; // OPT-D: new/deleted lines shift subsequent Y positions
+                // Sync VE immediately so CalculateVisibleRange() uses the correct line count
+                // in the same render frame that InsertNewLine/DeleteLine triggers.
+                if (_virtualizationEngine != null)
+                    _virtualizationEngine.TotalLines = _document.Lines.Count;
+            }
 
             // Propagate change to shared buffer (IBufferAwareEditor).
             if (_buffer is not null && !_suppressBufferSync)

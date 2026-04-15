@@ -1,0 +1,181 @@
+{
+  "diffMode": "binary",
+  "formatName": "UPS ROM Patch",
+  "version": "1.0",
+  "extensions": [".ups"],
+  "description": "UPS (Universal Patching System) — a modern ROM patch format designed by Near (byuu) to overcome IPS limitations. Magic: 'UPS1' = 0x55 0x50 0x53 0x31 (4 bytes) at offset 0. Structure after magic: source_size (variable-length integer), target_size (variable-length integer), patch_data (series of XOR hunk records), source_CRC32 (4 bytes LE), target_CRC32 (4 bytes LE), patch_CRC32 (4 bytes LE). Variable-length integer encoding: each byte has bits 0-6 as data and bit 7 as continuation flag (0=last byte). XOR hunks: each hunk is preceded by a count of unmodified bytes to skip (varint), then one or more non-zero XOR bytes terminated by a 0x00 byte (the 0x00 indicates end of diff data, not a literal zero). source_CRC32 and target_CRC32 allow patchers to validate the correct source ROM and verify the output. patch_CRC32 covers all bytes of the file except the last 4 bytes (the patch_CRC32 itself). Supports ROMs of any size with no 16 MB address limitation.",
+  "category": "RomHacking",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "UPS Patch Format Specification by Near (byuu)",
+      "UPS Variable-Length Integer Encoding Description",
+      "byuu.net UPS Format Documentation"
+    ],
+    "WebLinks": [
+      "https://www.romhacking.net/utilities/519/",
+      "https://byuu.net/",
+      "https://en.wikipedia.org/wiki/Patch_(computing)#ROM_patching",
+      "https://github.com/btimofeev/UniPatcher"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "55505331",
+        "offset": 0,
+        "label": "'UPS1' (0x55 0x50 0x53 0x31) — Universal Patching System magic identifier",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 16,
+      "maxSignatureOffset": 0,
+      "note": "All UPS files start with 'UPS1' (4 bytes). Minimum valid UPS = 4B magic + 1B source_size varint + 1B target_size varint + 3x4B CRC32 = 18 bytes."
+    }
+  },
+  "variables": {
+    "upsMagic": "",
+    "firstVarint": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "UPS Magic",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "4-byte ASCII magic 'UPS1' (0x55 0x50 0x53 0x31) at offset 0 identifying a Universal Patching System patch file. Designed by Near (byuu) as a modern replacement for IPS, UPS adds CRC32 source and target validation so the patcher can confirm the correct base ROM is used and the output is uncorrupted.",
+      "storeAs": "upsMagic"
+    },
+    {
+      "type": "field",
+      "name": "Source Size Varint",
+      "offset": 4,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "First byte of the source_size variable-length integer at offset 4. Encoding: bits 0-6 are data bits; bit 7=0 means this is the last byte, bit 7=1 means more bytes follow. The decoded source_size is the byte length of the original (unpatched) ROM file.",
+      "storeAs": "firstVarint"
+    },
+    {
+      "type": "metadata",
+      "name": "UPS Magic",
+      "variable": "upsMagic",
+      "description": "'UPS1' — UPS patch identifier"
+    },
+    {
+      "type": "metadata",
+      "name": "Source Size Varint Byte",
+      "variable": "firstVarint",
+      "description": "First byte of source_size varint (bit 7=continuation)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "UPS magic valid",
+      "expression": "upsMagic == 'UPS1'",
+      "severity": "error",
+      "message": "UPS patch file must begin with ASCII 'UPS1' (0x55 0x50 0x53 0x31)"
+    },
+    {
+      "name": "Minimum UPS size",
+      "expression": "fileSize >= 16",
+      "severity": "error",
+      "message": "UPS file must be at least 16 bytes (magic + varints + 3 CRC32 fields)"
+    },
+    {
+      "name": "File ends with 12 CRC32 bytes",
+      "expression": "fileSize >= 16",
+      "severity": "warning",
+      "message": "UPS file must end with 12 bytes: source_CRC32 (4B LE) + target_CRC32 (4B LE) + patch_CRC32 (4B LE)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "UPS Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Source Size Varint", "offset": 4, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "upsMagic",
+    "primaryField": "firstVarint",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "UPS Patch Header",
+        "icon": "\uE71B",
+        "fields": ["upsMagic", "firstVarint"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "UPS Patch Header (JSON)",
+      "format": "json",
+      "fields": ["upsMagic", "firstVarint"]
+    },
+    {
+      "name": "UPS Patch Summary (CSV)",
+      "format": "csv",
+      "fields": ["upsMagic", "firstVarint"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "UPS format: 'UPS1'(4B) + source_size(varint) + target_size(varint) + XOR_hunks(variable) + source_CRC32(4B LE) + target_CRC32(4B LE) + patch_CRC32(4B LE). Varint: bit 7=continuation, bits 0-6=data. XOR hunks: skip_count(varint) + xor_bytes(until 0x00). patch_CRC32 covers all except last 4 bytes.",
+    "suggestedInspections": [
+      "Bytes 0-3: must be 'UPS1' (0x55 0x50 0x53 0x31)",
+      "Starting at byte 4: decode source_size varint (bit 7=continue, bits 0-6=data)",
+      "Last 12 bytes: source_CRC32 (4B LE) + target_CRC32 (4B LE) + patch_CRC32 (4B LE)",
+      "Verify patch_CRC32 by computing CRC32 over all bytes except the last 4"
+    ]
+  },
+  "software": [
+    "UniPatcher (Android — supports UPS, IPS, BPS)",
+    "Floating IPS / flips (cross-platform, supports UPS and BPS)",
+    "MultiPatch (macOS ROM patch utility)",
+    "RubyUPS / pyUPS (command-line UPS tools)"
+  ],
+  "formatRelationships": {
+    "category": "RomHacking",
+    "extensions": [".ups"],
+    "relatedFormats": ["IPS", "PATCH_BPS"],
+    "note": "UPS was designed by Near (byuu) to replace IPS with: CRC32 source/target validation, unlimited ROM size support, sequential XOR diff encoding. BPS (Beat Patching System) is a further improvement with faster application and better compression."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Distributing ROM patches for ROMs larger than 16 MB (exceeding IPS limit)",
+    "Fan translation patches requiring verified source/target ROM integrity",
+    "ROM hacks where source ROM must be validated before patching",
+    "Modern replacement for IPS patches on emulators supporting UPS"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Magic": "'UPS1' ASCII (4 bytes) at offset 0",
+    "VarintEncoding": "Bit 7=continuation, bits 0-6=data per byte",
+    "XORHunks": "skip_count(varint) + xor_bytes + 0x00 terminator",
+    "CRC32Trail": "source_CRC32 + target_CRC32 + patch_CRC32 (12 bytes LE at file end)",
+    "MaxROMSize": "Unlimited (unlike IPS 16 MB limit)"
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "diffMode": "text",
+  "formatName": "Dockerfile",
+  "version": "1.0",
+  "extensions": [ ".dockerfile" ],
+  "description": "Dockerfile — build instructions for Docker/OCI container images (Moby/BuildKit specification). Text format, one instruction per logical line (continued with backslash \\). Instructions (case-insensitive, uppercase convention): FROM base_image[:tag][@digest] [AS name] — MUST be first non-comment instruction (except ARG before FROM); RUN shell_command — executes during build; COPY [--chown=user:group] src dest — copies files from build context; ADD src dest — COPY + URL download + tar auto-extraction; ENV KEY=VALUE — sets environment variables (persists to container); ARG NAME[=default] — build-time variable (not persisted); EXPOSE port[/protocol] — documents exposed ports; CMD [\"executable\",\"arg\"] — default command, overridden by docker run args; ENTRYPOINT [\"executable\"] — fixed command prefix; WORKDIR /path — sets working directory; USER user[:group] — switches user; VOLUME [\"/data\"] — creates mount point; LABEL key=value — metadata; HEALTHCHECK CMD; SHELL [\"/bin/sh\",\"-c\"]. Multi-stage builds: multiple FROM instructions with AS aliases and COPY --from=stage. Parser directives: # syntax=docker/dockerfile:1, # escape=\\. Comments: # to EOL. Used by Docker, Podman, Buildah, Kaniko, BuildKit.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Dockerfile reference — docs.docker.com",
+      "BuildKit Dockerfile syntax extensions",
+      "OCI Image Specification — github.com/opencontainers/image-spec"
+    ],
+    "WebLinks": [
+      "https://docs.docker.com/reference/dockerfile/",
+      "https://docs.docker.com/build/buildkit/",
+      "https://github.com/moby/moby"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "46524F4D20", "offset": 0, "label": "FROM  — Dockerfile FROM instruction at file start (uppercase, followed by space)", "weight": 0.9 },
+      { "value": "23", "offset": 0, "label": "# — Dockerfile comment or parser directive at file start", "weight": 0.2 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 1,
+      "maxSignatureOffset": 512,
+      "note": "Dockerfile typically starts with FROM or a comment. 'FROM ' (5 bytes including space) at offset 0 is a strong indicator. Files named 'Dockerfile' (no extension) are most common but .dockerfile extension is also used."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "fromKeyword": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte of the Dockerfile. 0x46='F' (FROM instruction), 0x23='#' (comment or parser directive), 0x41='A' (ARG before FROM in multi-stage). FROM instruction must be the first non-comment, non-ARG instruction in the file.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Instruction",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 4 bytes of the Dockerfile as ASCII. Expected: 'FROM' (standard start), '# sy' (parser directive # syntax=), '# es' (escape directive), 'ARG ' (ARG before FROM in multi-stage builds with build arguments for FROM image selection).",
+      "storeAs": "fromKeyword",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Multi-Stage Build",
+      "variable": "fromKeyword",
+      "description": "Multi-stage Dockerfile: multiple FROM instructions with AS aliases (FROM golang:1.21 AS builder). Later stages: COPY --from=builder /app/binary /app/binary. Final stage uses minimal base image for smaller, more secure production image."
+    },
+    {
+      "type": "metadata",
+      "name": "Security Note",
+      "variable": "firstByte",
+      "description": "Dockerfiles may embed secrets via ENV (exposed in image layers), ARG (build-time only, still visible in image history), or COPY of secret files (all layers are permanent). Use --secret (BuildKit) for runtime-only secrets. Never use ENV for passwords or API keys."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Starts with FROM or comment",
+      "expression": "firstByte == 70 || firstByte == 35 || firstByte == 65",
+      "severity": "warning",
+      "message": "Dockerfile should start with FROM instruction, # comment, or ARG. Other starts may indicate parser directives or formatting issues."
+    },
+    {
+      "name": "File has content",
+      "expression": "firstByte > 0",
+      "severity": "error",
+      "message": "Dockerfile is empty."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "FROM Instruction", "offset": 0, "color": "#FF4444" }
+    ]
+  },
+  "inspector": {
+    "badge": "Docker",
+    "primaryField": "fromKeyword",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Dockerfile Header",
+        "icon": "",
+        "fields": [ "firstByte", "fromKeyword" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Dockerfile Summary (Text)",
+      "format": "text",
+      "fields": [ "fromKeyword", "firstByte" ]
+    },
+    {
+      "name": "Dockerfile Metadata (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "fromKeyword" ]
+    }
+  ],
+  "forensic": {
+    "category": "configuration",
+    "riskLevel": "medium",
+    "notes": "Dockerfiles may reveal infrastructure details, secret injection patterns, and security misconfigurations. ENV instructions permanently embed values in all image layers (visible via docker history). Privileged USER root without subsequent USER instruction leaves container running as root. Base image selection reveals the OS and potential CVE exposure. COPY of .env or config files with credentials creates permanent secrets in image layers.",
+    "suspiciousPatterns": [
+      "ENV instructions with PASSWORD, TOKEN, KEY, SECRET — permanently embedded in image layers",
+      "USER root or no USER instruction — container runs as root, escalation risk",
+      "ADD with URLs — downloads content at build time, may be modified by MITM or URL takeover",
+      "COPY .env or COPY *.key — may embed secret files permanently into the image layer",
+      "RUN curl | bash or RUN wget | sh — arbitrary remote code execution at build time"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Dockerfile instructions order matters: FROM (base image) first, then ARG/ENV, WORKDIR, RUN (each creates a new layer), COPY/ADD (invalidates layer cache), EXPOSE (documentation only), CMD/ENTRYPOINT (runtime). Multi-stage: FROM image AS stage1, FROM image2, COPY --from=stage1. BuildKit secrets: RUN --mount=type=secret,id=mysecret. Each RUN, COPY, ADD creates an immutable image layer. All layers are stored and visible in docker history.",
+    "suggestedInspections": [
+      "Check FROM instruction for base image tag specificity: 'latest' is non-deterministic, use pinned digests for production",
+      "Scan all ENV instructions for credential-like values: passwords, API keys, tokens, secrets",
+      "Look for USER instruction — absence means container runs as root (security risk)",
+      "Identify layers that COPY sensitive files (*.key, .env, *.pem, id_rsa) into the image",
+      "Check for RUN instructions with curl/wget piped to shell — remote code execution risk at build time",
+      "Assess number of RUN layers — many separate RUN instructions create large images; chain with && for efficiency"
+    ]
+  },
+  "software": [
+    "Docker / Docker Desktop — primary container build and runtime",
+    "Podman — Docker-compatible OCI runtime without daemon",
+    "Buildah — Dockerfile-compatible OCI image builder",
+    "Kaniko — Dockerfile build in Kubernetes without Docker daemon",
+    "Hadolint — Dockerfile linter for best practice validation"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [ ".dockerfile" ],
+    "relatedFormats": [ "YAML", "ENV_FILE", "NGINX_CONF" ],
+    "note": "Dockerfiles are typically named 'Dockerfile' without extension. Docker Compose (docker-compose.yml) references Dockerfiles in build: context. OCI Image Specification defines the standard container image format. Podman and Buildah are rootless alternatives that read the same Dockerfile format."
+  },
+  "MimeTypes": [
+    "text/x-dockerfile",
+    "text/plain",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Application containerization for microservices and cloud deployment",
+    "Multi-stage builds for minimal production images",
+    "CI/CD pipeline container build steps",
+    "Development environment standardization",
+    "OCI image creation for Kubernetes deployment"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "UTF-8 text, one instruction per logical line, backslash line continuation",
+    "InstructionCase": "Case-insensitive, uppercase convention",
+    "Comments": "# to end of line (full-line only by convention)",
+    "ParserDirectives": "# syntax= and # escape= must appear before any other instruction",
+    "Layers": "Each RUN, COPY, ADD instruction creates a new image layer",
+    "MultiStage": "Multiple FROM instructions; COPY --from=stage for artifact promotion"
+  }
+}

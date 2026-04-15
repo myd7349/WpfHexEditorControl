@@ -1,0 +1,220 @@
+{
+  "diffMode": "binary",
+  "formatName": "TI-99/4A ROM",
+  "version": "1.0",
+  "extensions": [".bin", ".rom", ".rpk"],
+  "description": "Texas Instruments TI-99/4A cartridge ROM image (Texas Instruments, 1979). The cartridge header begins at offset 0 with a 2-byte big-endian tag: 0xAA01 identifies a standard ROM-only module; 0xAA02 identifies a mixed ROM and GROM module. The header continues: size (2B BE: number of 8 KB pages), start_address (2B BE: initial execution address or 0x0000), menu_entry (2B BE: pointer to program list in module), auto_start_address (2B BE: address to auto-execute on module insert). The TMS9900 is a 16-bit RISC-like CPU running at 3 MHz with a unique workspace-register model. Cartridge ROM occupies address 0x6000-0x7FFF (8 KB window); larger ROMs use bank switching via memory mapper chips. GROM (Graphics ROM) provides an additional 8 KB at 0x9800-0x9BFF (addressed via I/O ports). Notable games: TI Invaders, Parsec, Alpiner.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "TI-99/4A Cartridge Module Standard",
+      "TMS9900 Microprocessor Data Manual",
+      "TI-99/4A System ROM Disassembly"
+    ],
+    "WebLinks": [
+      "https://www.ninerpedia.org/wiki/Cartridge_module",
+      "https://en.wikipedia.org/wiki/TI-99/4A",
+      "https://www.ti99iuc.it/",
+      "https://js99er.net/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "AA01",
+        "offset": 0,
+        "label": "0xAA01 — TI-99/4A standard ROM-only module header tag (big-endian)",
+        "weight": 1.0
+      },
+      {
+        "value": "AA02",
+        "offset": 0,
+        "label": "0xAA02 — TI-99/4A mixed ROM and GROM module header tag (big-endian)",
+        "weight": 0.9
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 8,
+      "maxSignatureOffset": 0,
+      "note": "Valid TI-99/4A ROM modules must start with 0xAA01 (ROM-only) or 0xAA02 (ROM+GROM). Size is typically 8 KB or 16 KB."
+    }
+  },
+  "variables": {
+    "tiTag": 0,
+    "tiSize": 0,
+    "startAddress": 0,
+    "menuEntry": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Module Tag",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "uint16",
+      "description": "2-byte big-endian module tag at offset 0. 0xAA01 = standard ROM-only module (CPU ROM in 8 KB window at 0x6000). 0xAA02 = combined module with both CPU ROM and GROM (Graphics ROM at 0x9800 I/O port). This tag is validated by the TI-99/4A console ROM during module-scan at startup to identify and register the cartridge.",
+      "storeAs": "tiTag"
+    },
+    {
+      "type": "field",
+      "name": "Module Size",
+      "offset": 2,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "big",
+      "description": "Number of 8 KB pages in the ROM module (big-endian uint16 at offset 2). A value of 1 means 8 KB, value 2 means 16 KB. Used by the console to determine the size of the cartridge program area.",
+      "storeAs": "tiSize"
+    },
+    {
+      "type": "field",
+      "name": "Start Address",
+      "offset": 4,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "big",
+      "description": "16-bit big-endian initial execution address at offset 4. The TI console's master title screen jumps here when the module is selected. Valid range for cartridge code: 0x6000-0x7FFF (8 KB cartridge ROM window). Value 0x0000 is valid if no executable entry point exists.",
+      "storeAs": "startAddress"
+    },
+    {
+      "type": "field",
+      "name": "Menu Entry",
+      "offset": 6,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "big",
+      "description": "16-bit BE pointer at offset 6 to the list of programs in this module for display on the TI-99/4A title screen menu. Format: count(1B) followed by program_descriptor records each containing a program name and execution address.",
+      "storeAs": "menuEntry"
+    },
+    {
+      "type": "metadata",
+      "name": "Module Tag",
+      "variable": "tiTag",
+      "description": "0xAA01=ROM-only, 0xAA02=ROM+GROM"
+    },
+    {
+      "type": "metadata",
+      "name": "Module Size",
+      "variable": "tiSize",
+      "description": "Number of 8 KB ROM pages"
+    },
+    {
+      "type": "metadata",
+      "name": "Start Address",
+      "variable": "startAddress",
+      "description": "Initial execution address (BE)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Module tag valid",
+      "expression": "tiTag == 43521 || tiTag == 43522",
+      "severity": "error",
+      "message": "TI-99/4A ROM must start with module tag 0xAA01 (43521) or 0xAA02 (43522)"
+    },
+    {
+      "name": "Module size valid",
+      "expression": "tiSize > 0",
+      "severity": "error",
+      "message": "TI-99/4A module size must be greater than 0"
+    },
+    {
+      "name": "Start address in ROM range",
+      "expression": "startAddress == 0 || (startAddress >= 24576 && startAddress <= 32767)",
+      "severity": "warning",
+      "message": "Start address should be 0 or in the cartridge ROM range (0x6000-0x7FFF)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Module Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ROM Code", "offset": 8, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "tiTag",
+    "primaryField": "startAddress",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "TI-99/4A Module Header",
+        "icon": "\uE71B",
+        "fields": ["tiTag", "tiSize", "startAddress", "menuEntry"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "TI-99/4A ROM Header (JSON)",
+      "format": "json",
+      "fields": ["tiTag", "tiSize", "startAddress", "menuEntry"]
+    },
+    {
+      "name": "TI-99/4A ROM Header (CSV)",
+      "format": "csv",
+      "fields": ["tiTag", "tiSize", "startAddress"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "TI-99/4A ROM module: tag(2B BE) + size(2B BE, 8KB pages) + startAddr(2B BE) + menuEntry(2B BE). Tags: 0xAA01=ROM-only, 0xAA02=ROM+GROM. Cartridge ROM at 0x6000-0x7FFF. GROM at 0x9800 I/O. TMS9900 16-bit CPU with workspace-register model (R0-R15 in RAM). 256 bytes scratchpad RAM at 0x8300-0x83FF.",
+    "suggestedInspections": [
+      "Read bytes 0-1 as uint16 BE: 0xAA01 = ROM-only module, 0xAA02 = ROM+GROM module",
+      "Read size at bytes 2-3 (uint16 BE): multiply by 8192 to get total ROM size in bytes",
+      "Read start address at bytes 4-5 (uint16 BE): valid range 0x6000-0x7FFF for cartridge code",
+      "Identify TMS9900 opcodes at start address: LI (0x0200), MOV (0xC000), BL (0x0680) are common entry patterns"
+    ]
+  },
+  "software": [
+    "Classic99 (Windows TI-99/4A emulator)",
+    "JS99er (browser-based TI-99/4A emulator)",
+    "MAME (TI-99/4A driver)",
+    "MESS (predecessor to MAME)"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".bin", ".rom", ".rpk"],
+    "relatedFormats": ["ROM_COLECO"],
+    "note": "TI-99/4A uses the unique TMS9900 16-bit CPU. GROM (Graphics ROM) is addressed via I/O ports at 0x9800 rather than memory-mapped. RPK is a MAME cartridge package format for TI-99/4A."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of TI-99/4A cartridge games and applications",
+    "Preservation of 1979-1984 Texas Instruments software library",
+    "ROM hacking and disassembly of TMS9900-based software",
+    "Research into early 16-bit home computer architecture"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "Texas Instruments TI-99/4A",
+    "CPU": "TMS9900 16-bit at 3 MHz",
+    "ROMWindow": "0x6000-0x7FFF (8 KB cartridge slot)",
+    "GROM": "8 KB Graphics ROM via I/O port 0x9800",
+    "ScratchpadRAM": "256 bytes at 0x8300-0x83FF"
+  }
+}

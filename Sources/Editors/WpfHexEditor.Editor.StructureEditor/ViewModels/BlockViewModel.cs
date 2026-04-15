@@ -25,7 +25,7 @@ internal sealed class BlockViewModel : ViewModelBase
     // Common
     private string _blockType   = "field";
     private string _name        = "";
-    private string _color       = "#4ECDC4";
+    private string _color       = StructureEditorConstants.DefaultBlockColor;
     private double _opacity     = 0.3;
     private string _description = "";
     private bool   _hidden;
@@ -72,6 +72,9 @@ internal sealed class BlockViewModel : ViewModelBase
     // pointer
     private string _targetVar = "";
     private string _label     = "";
+
+    /// <summary>Transient nesting depth, set by QualityMetricsViewModel.Refresh(). Not persisted.</summary>
+    internal int Depth { get; set; }
 
     // ── Collections ──────────────────────────────────────────────────────────
 
@@ -198,7 +201,7 @@ internal sealed class BlockViewModel : ViewModelBase
     {
         BlockType   = b.Type        ?? "field";
         Name        = b.Name        ?? "";
-        Color       = b.Color       ?? "#4ECDC4";
+        Color       = b.Color       ?? StructureEditorConstants.DefaultBlockColor;
         Opacity     = b.Opacity;
         Description = b.Description ?? "";
         Hidden      = b.Hidden ?? false;
@@ -316,6 +319,27 @@ internal sealed class BlockViewModel : ViewModelBase
         return b;
     }
 
+    // ── Filter ────────────────────────────────────────────────────────────────
+
+    /// <summary>True if this block or any descendant matches <paramref name="text"/>.</summary>
+    internal bool MatchesFilter(string text) =>
+        DisplayName.Contains(text, StringComparison.OrdinalIgnoreCase) ||
+        Description.Contains(text, StringComparison.OrdinalIgnoreCase) ||
+        Children.Any(c => c.MatchesFilter(text));
+
+    // ── Variable cross-reference ──────────────────────────────────────────────
+
+    /// <summary>Yields every variable name this block references.</summary>
+    internal IEnumerable<string> GetReferencedVariables()
+    {
+        if (!string.IsNullOrEmpty(StoreAs))         yield return StoreAs;
+        if (!string.IsNullOrEmpty(MappedValueStoreAs)) yield return MappedValueStoreAs;
+        if (!string.IsNullOrEmpty(OffsetFrom))      yield return OffsetFrom;
+        if (!string.IsNullOrEmpty(TargetVar))       yield return TargetVar;
+        if (!string.IsNullOrEmpty(ActionVariable))  yield return ActionVariable;
+        if (!string.IsNullOrEmpty(IndexVar))        yield return IndexVar;
+    }
+
     // ── Raw JSON for "{ } Raw" popup ─────────────────────────────────────────
 
     internal string ToRawJson()
@@ -366,7 +390,7 @@ internal sealed class BlockViewModel : ViewModelBase
 
     private void AddColorCycle()
     {
-        var item = new StringItemViewModel("#4ECDC4");
+        var item = new StringItemViewModel(StructureEditorConstants.DefaultBlockColor);
         WireListItem(item, ColorCycle);
         ColorCycle.Add(item);
         RaiseChanged();

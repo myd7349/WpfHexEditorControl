@@ -1,0 +1,261 @@
+{
+  "diffMode": "binary",
+  "formatName": "Neo Geo AES/MVS ROM",
+  "version": "1.0",
+  "extensions": [".neo", ".ng"],
+  "description": "SNK Neo Geo AES (home console) and MVS (arcade) ROM image in the NeoBuilder .neo container format. The 64-byte header begins with 'NEO' (3 bytes ASCII) followed by format version byte 0x01. Subsequent fields: prg_size (4B LE, PRG data size in bytes), spr_size (4B LE, sprite graphics size), smp_size (4B LE, ADPCM sound samples size), mac (1B, reserved), padding to 64 bytes. Payload sections: PRG data (Motorola 68000 CPU code), SPR data (sprite graphics in z80-shuffled layout), SMP data (YM2610 ADPCM samples), and a 1-byte sound program indicator. The Neo Geo uses a Motorola 68000 main CPU at 12 MHz with a Z80 sound CPU and YM2610 FM+ADPCM synthesis chip. Notable titles: Metal Slug series, King of Fighters, Samurai Shodown. MAME uses separate P/M/S/V/C ROM files rather than the unified .neo container.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "NeoBuilder .neo ROM Container Format",
+      "SNK Neo Geo Hardware Architecture Reference",
+      "YM2610 FM Sound Chip Datasheet"
+    ],
+    "WebLinks": [
+      "https://wiki.neogeodev.org/index.php?title=ROM_mapping",
+      "https://en.wikipedia.org/wiki/Neo_Geo_(system)",
+      "https://www.arcade-history.com/?page=hardware&id=58",
+      "https://neodev.org/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "4E454F01",
+        "offset": 0,
+        "label": "'NEO' + 0x01 — Neo Geo .neo ROM container header magic and version",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 64,
+      "maxSignatureOffset": 0,
+      "note": "All valid .neo ROM files begin with exactly 4E 45 4F 01 ('NEO' + version 1). Files without this magic are not .neo containers (may be raw MAME ROM sets)."
+    }
+  },
+  "variables": {
+    "neoMagic": "",
+    "neoVersion": 0,
+    "prgSize": 0,
+    "sprSize": 0,
+    "smpSize": 0,
+    "mac": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "NEO Magic",
+      "offset": 0,
+      "length": 3,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "3-byte ASCII magic 'NEO' (0x4E 0x45 0x4F) at offset 0 identifying a NeoBuilder .neo ROM container. This magic was introduced by the NeoBuilder utility to create a single-file ROM image combining all Neo Geo ROM sections (PRG, SPR, SMP) that MAME distributes as separate files.",
+      "storeAs": "neoMagic"
+    },
+    {
+      "type": "field",
+      "name": "NEO Version",
+      "offset": 3,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "Container format version byte at offset 3. Value 0x01 indicates NeoBuilder version 1 format. This byte immediately follows the 'NEO' ASCII magic and together the 4 bytes form the complete file signature 4E 45 4F 01.",
+      "storeAs": "neoVersion"
+    },
+    {
+      "type": "field",
+      "name": "PRG Data Size",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "little",
+      "description": "Size of the PRG section (68000 CPU program ROM data) in bytes, stored as a 32-bit little-endian integer at offset 4. The PRG data immediately follows the 64-byte header. Typical sizes: 512 KB to 4 MB depending on the game.",
+      "storeAs": "prgSize"
+    },
+    {
+      "type": "field",
+      "name": "SPR Data Size",
+      "offset": 8,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "little",
+      "description": "Size of the SPR section (sprite graphics ROM in z80-shuffled tile layout) in bytes, stored as uint32 LE at offset 8. Sprite data contains 16x16 pixel tiles encoded in a planar 4-bit-per-pixel format. SPR section follows PRG data.",
+      "storeAs": "sprSize"
+    },
+    {
+      "type": "field",
+      "name": "SMP Data Size",
+      "offset": 12,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "valueType": "uint32",
+      "endianness": "little",
+      "description": "Size of the SMP section (ADPCM sound sample ROM) in bytes, stored as uint32 LE at offset 12. Contains YM2610 ADPCM-A and ADPCM-B sample data. SMP section follows SPR data in the .neo file layout.",
+      "storeAs": "smpSize"
+    },
+    {
+      "type": "field",
+      "name": "MAC / Reserved",
+      "offset": 16,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "description": "Reserved MAC byte at offset 16. Not used in standard NeoBuilder format version 1. Defined as 0x00 in all known .neo files.",
+      "storeAs": "mac"
+    },
+    {
+      "type": "field",
+      "name": "Header Padding",
+      "offset": 17,
+      "length": 47,
+      "color": "#E0E0E0",
+      "opacity": 0.2,
+      "valueType": "bytes",
+      "hidden": true,
+      "description": "47 reserved padding bytes filling the 64-byte header to the 64-byte boundary. All bytes should be 0x00."
+    },
+    {
+      "type": "metadata",
+      "name": "NEO Magic",
+      "variable": "neoMagic",
+      "description": "ASCII identifier 'NEO'"
+    },
+    {
+      "type": "metadata",
+      "name": "PRG Size",
+      "variable": "prgSize",
+      "description": "68000 program ROM size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "SPR Size",
+      "variable": "sprSize",
+      "description": "Sprite graphics ROM size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "SMP Size",
+      "variable": "smpSize",
+      "description": "ADPCM sound sample ROM size in bytes"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "NEO magic valid",
+      "expression": "neoMagic == 'NEO'",
+      "severity": "error",
+      "message": "Neo Geo .neo ROM must begin with ASCII 'NEO' (0x4E 0x45 0x4F)"
+    },
+    {
+      "name": "NEO version is 1",
+      "expression": "neoVersion == 1",
+      "severity": "error",
+      "message": "NeoBuilder container version must be 1 (0x01)"
+    },
+    {
+      "name": "PRG data present",
+      "expression": "prgSize > 0",
+      "severity": "error",
+      "message": "PRG data size must be greater than 0 — .neo ROM cannot have empty program data"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "NEO Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "PRG Data Start", "offset": 64, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "neoMagic",
+    "primaryField": "prgSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "NEO Container Header",
+        "icon": "\uE71B",
+        "fields": ["neoMagic", "neoVersion", "mac"]
+      },
+      {
+        "title": "ROM Section Sizes",
+        "icon": "\uE71B",
+        "fields": ["prgSize", "sprSize", "smpSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Neo Geo ROM Header (JSON)",
+      "format": "json",
+      "fields": ["neoMagic", "neoVersion", "prgSize", "sprSize", "smpSize"]
+    },
+    {
+      "name": "Neo Geo ROM Summary (CSV)",
+      "format": "csv",
+      "fields": ["neoVersion", "prgSize", "sprSize", "smpSize"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Neo Geo .neo container: 64-byte header = 'NEO'(3B) + version(1B=0x01) + prg_size(4B LE) + spr_size(4B LE) + smp_size(4B LE) + mac(1B) + padding(47B). Payload at offset 64: PRG (68000 code) then SPR (sprites) then SMP (ADPCM samples). MAME alternative uses separate P/M/S/V/C ROM files.",
+    "suggestedInspections": [
+      "Validate magic 4E 45 4F 01 at offset 0 — must equal 'NEO' + version 1",
+      "Read prg_size at offset 4 (uint32 LE) to locate PRG data section at offset 64",
+      "Confirm spr_size and smp_size are non-negative and sum with prg_size to match total file length minus 64",
+      "Check for MAC byte at offset 16 — expected 0x00 for standard NeoBuilder v1 files"
+    ]
+  },
+  "software": [
+    "MAME (arcade emulator, uses split ROM sets)",
+    "NeoBuilder (ROM conversion utility)",
+    "FinalBurn Neo (Neo Geo emulator)",
+    "RetroArch with FinalBurn Neo core"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".neo", ".ng"],
+    "relatedFormats": ["ROM_PSX", "ROM_SAT"],
+    "note": "The .neo container wraps MAME-style split ROM sets (P/M/S/V/C ROM files) into a single file. Games: Metal Slug 1-X, King of Fighters '94-2003, Samurai Shodown 1-5."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of Neo Geo AES home cartridge games",
+    "Arcade MVS board ROM preservation",
+    "ROM hacking of 68000-based Neo Geo titles",
+    "Single-file ROM archiving replacing split MAME ROM sets"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "SNK Neo Geo AES / MVS",
+    "CPU_Main": "Motorola 68000 at 12 MHz",
+    "CPU_Sound": "Zilog Z80 at 4 MHz",
+    "Sound": "YM2610 FM + ADPCM-A + ADPCM-B",
+    "ContainerVersion": 1,
+    "HeaderSize": "64 bytes"
+  }
+}

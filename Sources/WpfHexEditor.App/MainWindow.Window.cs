@@ -43,6 +43,13 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// ApplicationCommands.Save has a default CanExecute that returns false when a
+    /// non-text control (e.g. HexEditor) holds focus. Always allow so Ctrl+S fires
+    /// regardless of the active editor type.
+    /// </summary>
+    private void OnCanSave(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = true;
+
     // ── Close All But This ───────────────────────────────────────────────────
 
     internal void OnCloseAllButThis(object sender, RoutedEventArgs e)

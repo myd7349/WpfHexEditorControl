@@ -1,0 +1,186 @@
+{
+  "diffMode": "text",
+  "formatName": "COLLADA 3D Asset",
+  "version": "1.0",
+  "extensions": [".dae", ".zae"],
+  "description": "COLLADA (Collaborative Design Activity) is an XML-based open standard 3D interchange format maintained by the Khronos Group and standardized as ISO/PAS 17506. Files start with '<?xml' XML declaration or directly with '<COLLADA' as the root element. The COLLADA namespace is 'http://www.collada.org/2005/11/COLLADASchema'. Root element attributes: version='1.4.1' or '1.5.0'. Key sections within the root: <asset> (author, created, modified, unit, up_axis), <library_geometries> (mesh data with <vertices>, <normals>, <texcoords>, and <triangles>/<polylist> index arrays), <library_materials> (material bindings), <library_effects> (shader parameters including diffuse, specular, shininess, transparency), <library_images> (texture file references), <library_controllers> (skin deformers, morph targets), <library_animations> (keyframe data), <library_visual_scenes> and <scene> (scene hierarchy). ZAE is a ZIP-compressed COLLADA with the .dae inside. Used by Blender, Maya, 3ds Max, SketchUp. Largely superseded by glTF 2.0 for web delivery but remains in production pipelines.",
+  "category": "3D",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "COLLADA Schema 1.5.0 Specification — Khronos Group",
+      "ISO/PAS 17506:2012 COLLADA Digital Asset Schema Release 1.5.0",
+      "COLLADA 1.4.1 Specification — Sony Computer Entertainment"
+    ],
+    "WebLinks": [
+      "https://www.khronos.org/collada/",
+      "https://en.wikipedia.org/wiki/COLLADA",
+      "https://github.com/KhronosGroup/COLLADA-Schemas",
+      "https://docs.fileformat.com/3d/dae/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3C434F4C4C414441", "offset": 0, "label": "<COLLADA — COLLADA XML root element directly at file start", "weight": 0.9 },
+      { "value": "3C3F786D6C", "offset": 0, "label": "<?xml — XML declaration (COLLADA may start with XML prolog)", "weight": 0.4 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.4,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 1.5, "max": 6.0 },
+    "validation": {
+      "minFileSize": 50,
+      "maxSignatureOffset": 0,
+      "note": "File starts with '<COLLADA' or '<?xml'. COLLADA namespace or root element must be present in the first 512 bytes."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "xmlOrTag": "",
+    "colladaVersion": "",
+    "upAxis": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the COLLADA file. Must be 0x3C (ASCII '<') since COLLADA is always XML-based text. The file either begins directly with '<COLLADA' as the root element or with '<?xml' as an XML processing instruction/prolog before the root element.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "XML or Tag Start",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 8 bytes identifying the XML start. If the file begins directly with the root element, this will be '<COLLADA' (0x3C 0x43 0x4F 0x4C 0x4C 0x41 0x44 0x41). If an XML declaration is present, this will be '<?xml ve' (starting with '<?xml'). Both forms are valid COLLADA files.",
+      "storeAs": "xmlOrTag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "COLLADA Root Element",
+      "offset": 0,
+      "description": "The COLLADA root element declares the format version and namespace. Version attribute is '1.4.1' (most common, supported by all tools) or '1.5.0' (newer, with physics and kinematics extensions). Namespace xmlns='http://www.collada.org/2005/11/COLLADASchema'. The <asset> child element records authoring metadata including coordinate system up_axis ('X_UP', 'Y_UP', 'Z_UP') and unit definition."
+    },
+    {
+      "type": "metadata",
+      "name": "Library Structure",
+      "offset": 0,
+      "description": "COLLADA content is organized in library elements: <library_geometries> holds mesh data with <source> float arrays and <accessor> schemas; <library_materials> binds effects to geometries; <library_effects> contains <profile_COMMON> shader parameters; <library_images> lists external texture files or embedded base64 data; <library_controllers> for skinning and morphing; <library_animations> for keyframe channels; <library_visual_scenes> defines the scene DAG. The <scene> element at the end references the active visual scene."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ValidFirstByte",
+      "expression": "firstByte == 60",
+      "severity": "error",
+      "message": "First byte must be 0x3C '<'. COLLADA is an XML-based format that must begin with an XML tag or declaration."
+    },
+    {
+      "name": "ValidXmlStart",
+      "expression": "xmlOrTag.startsWith('<COLLADA') || xmlOrTag.startsWith('<?xml')",
+      "severity": "warning",
+      "message": "File does not start with '<COLLADA' or '<?xml'. COLLADA format not confirmed from initial bytes alone."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Root Element", "offset": 0, "icon": "\uE8B7", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "xmlOrTag",
+    "primaryField": "colladaVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "xmlOrTag", "colladaVersion"]
+      },
+      {
+        "title": "Scene Properties",
+        "icon": "\uE946",
+        "fields": ["upAxis"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "COLLADA Info (JSON)",
+      "format": "json",
+      "fields": ["xmlOrTag", "colladaVersion", "upAxis"]
+    },
+    {
+      "name": "COLLADA Summary (CSV)",
+      "format": "csv",
+      "fields": ["colladaVersion", "upAxis"]
+    }
+  ],
+  "forensic": {
+    "category": "3d",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "External file references in <library_images> or <include> elements may point to network resources",
+      "XXE (XML External Entity) injection via DOCTYPE declaration in malformed COLLADA files"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "COLLADA is XML-based and starts with '<COLLADA' or '<?xml'. Root element has a version attribute ('1.4.1' or '1.5.0') and the Khronos COLLADA namespace. Content organized as library elements for geometries, materials, effects, images, animations, and visual scenes.",
+    "suggestedInspections": [
+      "Confirm '<COLLADA' root element and version attribute (1.4.1 or 1.5.0) for format validation",
+      "Check xmlns attribute for 'http://www.collada.org/2005/11/COLLADASchema' namespace confirmation",
+      "Examine <asset> element for coordinate system up_axis and unit definition",
+      "Enumerate <library_geometries> to count mesh objects and identify coordinate data source arrays",
+      "Check <library_images> for external texture paths vs embedded base64 image data"
+    ]
+  },
+  "software": [
+    "Autodesk Maya",
+    "Autodesk 3ds Max",
+    "Blender",
+    "SketchUp",
+    "Cinema 4D",
+    "Assimp library",
+    "OpenCOLLADA"
+  ],
+  "formatRelationships": {
+    "category": "3D",
+    "extensions": [".dae", ".zae"],
+    "relatedFormats": ["GLB", "FBX", "USD", "STL"],
+    "note": "Open Khronos XML 3D standard; largely superseded by glTF 2.0 for web delivery; ZAE is ZIP-compressed DAE"
+  },
+  "MimeTypes": ["model/vnd.collada+xml", "application/xml"],
+  "UseCases": [
+    "3D asset interchange between DCC tools (Maya to Blender)",
+    "Scientific visualization and simulation data export",
+    "OpenGL ES and mobile 3D content (historical WebGL use)",
+    "Digital preservation of 3D cultural heritage assets"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "encoding": "XML-UTF-8-text",
+    "versions": ["1.4.1", "1.5.0"],
+    "namespace": "http://www.collada.org/2005/11/COLLADASchema",
+    "compressedVariant": "ZAE (ZIP-compressed DAE with manifest.xml)",
+    "coordinateSystems": ["X_UP", "Y_UP", "Z_UP"]
+  }
+}

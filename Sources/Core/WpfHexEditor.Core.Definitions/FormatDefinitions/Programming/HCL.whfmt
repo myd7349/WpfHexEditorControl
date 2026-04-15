@@ -1,0 +1,180 @@
+{
+  "diffMode": "text",
+  "formatName": "HashiCorp Configuration Language (HCL/Terraform)",
+  "version": "1.0",
+  "extensions": [ ".tf", ".hcl", ".tfvars" ],
+  "description": "HCL (HashiCorp Configuration Language) — declarative configuration language for HashiCorp tools. HCL native syntax: block_type \"label1\" \"label2\" { attribute = expression }. Core block types: terraform { required_providers, required_version }, provider \"aws\" {}, resource \"aws_instance\" \"web\" {}, data \"aws_ami\" \"latest\" {}, variable \"name\" {}, output \"ip\" {}, module \"vpc\" {}, locals {}. Expressions: string interpolation \"${var.region}\", heredoc <<EOT...EOT, functions (file(), jsondecode(), base64encode(), cidrsubnet()), conditional expr ? val : val, for expressions [for s in var.list : upper(s)]. Variable types: string, number, bool, list(), map(), set(), object(), tuple(), any. .tfvars: variable override files (HCL or JSON). Terraform state: .tfstate (JSON). HCL2 uses zclconf/go-cty type system (Terraform 0.12+). Also used by Packer (build{}), Vault (policy {}), Consul (service {}), Nomad (job {}).",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "HCL2 Language Specification — github.com/hashicorp/hcl",
+      "Terraform Language Documentation — developer.hashicorp.com",
+      "go-cty type system — github.com/zclconf/go-cty"
+    ],
+    "WebLinks": [
+      "https://github.com/hashicorp/hcl",
+      "https://developer.hashicorp.com/terraform/language",
+      "https://developer.hashicorp.com/terraform/language/syntax/configuration"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "7265736F75726365", "offset": 0, "label": "resource — Terraform resource block at file start", "weight": 0.5 },
+      { "value": "74657272616 6 6F726D", "offset": 0, "label": "terraform — Terraform configuration block at file start", "weight": 0.6 },
+      { "value": "70726F7669646572", "offset": 0, "label": "provider — Terraform provider block at file start", "weight": 0.5 },
+      { "value": "23", "offset": 0, "label": "# — HCL comment line at file start", "weight": 0.2 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 1,
+      "maxSignatureOffset": 512,
+      "note": "HCL has no binary magic. Detection relies on text content and .tf/.hcl/.tfvars extension. Block type keywords at file start are the best heuristic."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "firstWord": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte of the HCL/Terraform configuration file. Common: 0x23=# (comment), 0x74=t (terraform/terraform block), 0x72=r (resource), 0x70=p (provider), 0x76=v (variable), 0x6C=l (locals), 0x6D=m (module). Helps identify the leading block type.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Word",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 8 ASCII characters of the HCL file. Expected values: 'resource' (resource block), 'provider' (provider block), 'terrafor' (terraform{} block), 'variable' (variable declaration), 'module {' (module call), 'locals {' (local values), '# Terraf' (file comment).",
+      "storeAs": "firstWord",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Block Structure",
+      "variable": "firstWord",
+      "description": "HCL block syntax: block_type [labels...] { body }. Labels are quoted strings for resource and data blocks: resource \"type\" \"name\" { }. Attributes: name = expression. Nested blocks have no = sign: lifecycle { prevent_destroy = true }."
+    },
+    {
+      "type": "metadata",
+      "name": "Security Note",
+      "variable": "firstByte",
+      "description": "HCL files may contain infrastructure credentials: provider blocks with access_key/secret_key, backend configs with storage credentials, data source credentials. Use environment variables or HashiCorp Vault for secrets, not plaintext in .tf files."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File has content",
+      "expression": "firstByte > 0",
+      "severity": "warning",
+      "message": "HCL/Terraform configuration file is empty."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "HCL",
+    "primaryField": "firstWord",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "",
+        "fields": [ "firstByte", "firstWord" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "HCL Summary (Text)",
+      "format": "text",
+      "fields": [ "firstWord" ]
+    },
+    {
+      "name": "HCL Metadata (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "firstWord" ]
+    }
+  ],
+  "forensic": {
+    "category": "configuration",
+    "riskLevel": "high",
+    "notes": "Terraform HCL files define cloud infrastructure and may contain plaintext credentials in provider blocks (AWS access_key/secret_key, Azure client_secret, GCP credentials), backend configuration with storage access tokens, or SSH private keys for provisioners. .tfstate files are even more sensitive — they contain deployed resource details including output values. Never commit .tfstate or .tfvars with secrets.",
+    "suspiciousPatterns": [
+      "Provider blocks with access_key, secret_key, client_secret, or password as plaintext attributes",
+      "Backend configuration with storage_account_key, access_token, or credentials in .tf files",
+      "Provisioner blocks with SSH private_key or password for remote-exec commands",
+      "Data source credentials for external providers or VCS tokens for module sources"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "HCL2 block syntax: block_type [\"label\" ...] { attribute = value / nested_block { } }. Attribute expressions: string literals (\"...\"), number, bool, null, template (\"${expr}\"), function calls (cidrsubnet(), file(), base64encode()), references (var.name, local.name, resource_type.resource_name.attribute, data.type.name.attr), conditional (cond ? a : b), for ([for x in list : x if cond]), splat (aws_instance.example[*].id).",
+    "suggestedInspections": [
+      "Scan provider blocks for hardcoded credentials: access_key, secret_key, client_secret, subscription_id",
+      "Check backend configurations for storage credentials — these should use environment variables",
+      "Look for sensitive output values that may expose secrets in terraform output",
+      "Identify required_version constraints to understand minimum Terraform version compatibility",
+      "Review variable declarations for sensitive = true marking — sensitive variables are redacted in logs",
+      "Check for remote-exec provisioners using plaintext passwords or embedded private keys"
+    ]
+  },
+  "software": [
+    "Terraform — primary HCL infrastructure-as-code tool",
+    "OpenTofu — open-source Terraform fork (CNCF)",
+    "Packer — image building with HCL configuration",
+    "HashiCorp Vault — secrets management with HCL policies",
+    "tflint — Terraform linter for HCL validation"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [ ".tf", ".hcl", ".tfvars" ],
+    "relatedFormats": [ "YAML", "TOML", "DOCKERFILE", "ENV_FILE" ],
+    "note": "HCL can also be expressed as JSON (all .tf files accept HCL or JSON syntax). YAML is preferred in Kubernetes ecosystems. Pulumi uses TypeScript/Python/Go instead of HCL. CloudFormation uses YAML/JSON. CDK uses programming languages that generate CloudFormation."
+  },
+  "MimeTypes": [
+    "application/x-hcl",
+    "text/x-hcl",
+    "text/plain"
+  ],
+  "UseCases": [
+    "Terraform cloud infrastructure provisioning (AWS, Azure, GCP)",
+    "HashiCorp Vault policy and secrets engine configuration",
+    "Packer machine image build configuration",
+    "Nomad job and cluster configuration",
+    "Consul service mesh configuration and ACL policies"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "UTF-8 text, HCL2 native syntax or JSON equivalent",
+    "Comments": "# or // (single-line), /* */ (block comments)",
+    "BlockSyntax": "block_type [labels] { attributes and nested blocks }",
+    "ExpressionLanguage": "HCL expression language with functions, references, conditionals, for expressions",
+    "TypeSystem": "go-cty: string, number, bool, list(), map(), set(), object(), tuple()",
+    "StateFile": ".tfstate — JSON format, highly sensitive, contains all resource attributes"
+  }
+}

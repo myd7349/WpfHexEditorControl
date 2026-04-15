@@ -25,7 +25,7 @@
                     <Setter Property="MinWidth"          Value="110"/>
                     <Setter Property="Foreground"        Value="{DynamicResource TE_LineNumberForeground}"/>
                 </Style>
-                <Style x:Key="Fld" TargetType="TextBox">
+                <Style x:Key="Fld" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="FontSize"        Value="11"/>
                     <Setter Property="Padding"         Value="4,2"/>
                     <Setter Property="BorderThickness" Value="1"/>
@@ -33,10 +33,17 @@
                     <Setter Property="Background"      Value="{DynamicResource TE_Background}"/>
                     <Setter Property="Foreground"      Value="{DynamicResource TE_Foreground}"/>
                 </Style>
+                <Style x:Key="Combo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                    <Setter Property="FontSize"   Value="11"/>
+                    <Setter Property="Padding"    Value="4,2"/>
+                    <Setter Property="Margin"     Value="0,2,0,2"/>
+                    <Setter Property="Background" Value="{DynamicResource TE_Background}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
+                </Style>
             </StackPanel.Resources>
 
-            <!-- ── Legacy Signature ─────────────────────────────────── -->
-            <TextBlock Text="Legacy Signature" Style="{StaticResource SH}"/>
+            <!-- ── Signature ────────────────────────────────────────── -->
+            <TextBlock Text="Signature" Style="{StaticResource SH}"/>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -53,14 +60,16 @@
                 <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource Fld}"
                            FontFamily="Consolas"
                            Text="{Binding Signature, UpdateSourceTrigger=PropertyChanged}"
+                           PreviewTextInput="OnHexOnly"
                            ToolTip="Hex bytes without spaces, e.g. 89504E47 for PNG"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Offset"     Style="{StaticResource Lbl}"/>
                 <TextBox   Grid.Row="1" Grid.Column="1" Style="{StaticResource Fld}"
+                           PreviewTextInput="OnNumericOnly"
                            Text="{Binding Offset, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Strength"   Style="{StaticResource Lbl}"/>
-                <ComboBox  Grid.Row="2" Grid.Column="1" Margin="0,2" FontSize="11"
+                <ComboBox  Grid.Row="2" Grid.Column="1" Style="{StaticResource Combo}"
                            ItemsSource="{Binding StrengthOptions}"
                            SelectedItem="{Binding Strength}"/>
 
@@ -78,7 +87,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Match Mode" Style="{StaticResource Lbl}"/>
-                <ComboBox  Grid.Column="1" Margin="0,2" FontSize="11"
+                <ComboBox  Grid.Column="1" Style="{StaticResource Combo}"
                            ItemsSource="{Binding MatchModeOptions}"
                            SelectedItem="{Binding MatchMode}"/>
             </Grid>
@@ -101,9 +110,11 @@
                                 <TextBox Grid.Column="0" Style="{StaticResource Fld}" Margin="0,0,4,0"
                                          FontFamily="Consolas"
                                          Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                         PreviewTextInput="OnHexOnly"
                                          ToolTip="Hex value"/>
                                 <TextBox Grid.Column="1" Style="{StaticResource Fld}" Margin="0,0,4,0"
                                          Text="{Binding Offset, UpdateSourceTrigger=PropertyChanged}"
+                                         PreviewTextInput="OnNumericOnly"
                                          ToolTip="Offset"/>
                                 <TextBox Grid.Column="2" Style="{StaticResource Fld}" Margin="0,0,4,0"
                                          Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
@@ -112,23 +123,16 @@
                                          Value="{Binding Weight}"
                                          VerticalAlignment="Center" Margin="0,0,4,0"
                                          ToolTip="{Binding Weight, StringFormat='Weight: {0}'}"/>
-                                <Button  Grid.Column="4" Content="✕" FontSize="10" Padding="2"
-                                         Command="{Binding RemoveCommand}"
-                                         Background="Transparent"
-                                         Foreground="{DynamicResource TE_LineNumberForeground}"
-                                         BorderThickness="0"/>
+                                <Button  Grid.Column="4" Command="{Binding RemoveCommand}"
+                                         Style="{DynamicResource PM_RemoveButtonStyle}"/>
                             </Grid>
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <Button Content="＋ Add Signature" FontSize="11" Padding="6,2" Margin="0,4,0,0"
-                    HorizontalAlignment="Left"
-                    x:Name="AddSigBtn" Click="OnAddSignature"
-                    Background="Transparent"
-                    Foreground="{DynamicResource ET_AccentBrush}"
-                    BorderThickness="0"/>
+            <Button Content="＋ Add Signature" x:Name="AddSigBtn" Click="OnAddSignature"
+                    Style="{DynamicResource PM_LinkButtonStyle}" Padding="6,2"/>
 
             <!-- ── Entropy Hint ─────────────────────────────────────── -->
             <TextBlock Text="Entropy Hint" Style="{StaticResource SH}"/>
@@ -183,21 +187,14 @@
                                      Width="300" Style="{StaticResource Fld}"
                                      FontFamily="Consolas" Margin="0,0,4,0"
                                      ToolTip="Regex pattern"/>
-                            <Button Content="✕" FontSize="10" Padding="4,1"
-                                    Command="{Binding RemoveCommand}"
-                                    Background="Transparent"
-                                    Foreground="{DynamicResource TE_LineNumberForeground}"
-                                    BorderThickness="0"/>
+                            <Button Command="{Binding RemoveCommand}"
+                                    Style="{DynamicResource PM_RemoveButtonStyle}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Content="＋ Add Pattern" FontSize="11" Padding="6,2" Margin="0,4,0,12"
-                    HorizontalAlignment="Left"
-                    x:Name="AddPatternBtn" Click="OnAddPattern"
-                    Background="Transparent"
-                    Foreground="{DynamicResource ET_AccentBrush}"
-                    BorderThickness="0"/>
+            <Button Content="＋ Add Pattern" x:Name="AddPatternBtn" Click="OnAddPattern"
+                    Style="{DynamicResource PM_LinkButtonStyle}" Padding="6,2" Margin="0,4,0,12"/>
 
         </StackPanel>
     </ScrollViewer>

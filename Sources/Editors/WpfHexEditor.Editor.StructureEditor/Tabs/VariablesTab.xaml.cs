@@ -15,15 +15,5 @@ public sealed partial class VariablesTab : UserControl
 
     private VariablesViewModel? VM => DataContext as VariablesViewModel;
 
-    protected override void OnInitialized(EventArgs e)
-    {
-        base.OnInitialized(e);
-        DataContextChanged += (_, _) =>
-        {
-            if (DataContext is VariablesViewModel vm)
-                VarsGrid.ItemsSource = vm.Items;
-        };
-    }
-
     private void OnAddVariable(object sender, System.Windows.RoutedEventArgs e) => VM?.AddItem();
 }

@@ -1,0 +1,178 @@
+{
+  "diffMode": "text",
+  "formatName": "SSH Known Hosts",
+  "version": "1.0",
+  "extensions": [ ".known_hosts" ],
+  "description": "SSH known_hosts file (OpenSSH). Each line: hostname_or_ip key_type base64_pubkey [comment]. Key types: ssh-rsa, ssh-dss, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521, ssh-ed25519, sk-ssh-ed25519, sk-ecdsa-sha2-nistp256. Hashed entries start with |1| (HMAC-SHA1 host hashing enabled by ssh-keyscan -H). Comment lines start with #. Negated entries start with ! (hosts to explicitly reject). Wildcards in hostnames supported (*, ?). Comma-separated multiple hostnames for same key. Critical for SSH TOFU (Trust On First Use) security model: tampering enables MITM attacks. Located at ~/.ssh/known_hosts (per-user) or /etc/ssh/ssh_known_hosts (system-wide). Certificate authorities listed with @cert-authority marker.",
+  "category": "Network",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "OpenSSH — sshd_config(5) and ssh(1) man pages",
+      "RFC 4253 — SSH Transport Layer Protocol",
+      "RFC 4716 — SSH Public Key File Format"
+    ],
+    "WebLinks": [
+      "https://www.openssh.com/",
+      "https://man.openbsd.org/ssh_known_hosts",
+      "https://www.ssh.com/academy/ssh/known-hosts-file"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "7373682D", "offset": 0, "label": "ssh- — SSH known_hosts key type prefix (ssh-rsa, ssh-ed25519, ssh-dss)", "weight": 0.6 },
+      { "value": "7C317C", "offset": 0, "label": "|1| — hashed SSH known_hosts entry (HMAC-SHA1 hostname hashing)", "weight": 0.8 },
+      { "value": "23", "offset": 0, "label": "# — SSH known_hosts comment line", "weight": 0.2 },
+      { "value": "406365 72742D617574686F72697479", "offset": 0, "label": "@cert-authority — SSH CA marker in known_hosts", "weight": 0.9 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 1,
+      "maxSignatureOffset": 1024,
+      "note": "No strong binary magic. Detection relies on text content patterns. Multiple signatures used to increase confidence."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "firstChars": "",
+    "entryType": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.3,
+      "description": "First byte of the file. Distinguishes entry types: 0x23=#(comment), 0x7C=|(hashed entry), 0x40=@(marker), 0x21=!(negation), or hostname/IP start (letter/digit/bracket).",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Characters",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 4 ASCII characters of the file. Used to detect: ssh- (direct key entry), |1| (hashed entry), @cer (@cert-authority), # (comment). Helps identify the dominant entry type in the file.",
+      "storeAs": "firstChars",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Type Detection",
+      "variable": "entryType",
+      "description": "Detected entry type: direct hostname entry, hashed entry (|1|...), certificate authority (@cert-authority), comment (#), or negated entry (!)."
+    },
+    {
+      "type": "metadata",
+      "name": "Security Note",
+      "variable": "firstByte",
+      "description": "Unauthorized modification of known_hosts enables SSH man-in-the-middle attacks. Hashed entries (|1|) protect hostname privacy but can be brute-forced for known IP ranges."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File is not empty",
+      "expression": "firstByte > 0",
+      "severity": "warning",
+      "message": "SSH known_hosts file appears to be empty — no host keys are trusted."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "SSH",
+    "primaryField": "firstChars",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "",
+        "fields": [ "firstByte", "firstChars", "entryType" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Known Hosts Summary (Text)",
+      "format": "text",
+      "fields": [ "firstChars", "entryType" ]
+    },
+    {
+      "name": "Known Hosts Analysis (JSON)",
+      "format": "json",
+      "fields": [ "firstByte", "firstChars", "entryType" ]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "medium",
+    "notes": "SSH known_hosts files are security-critical. Modification enables MITM attacks. Hashed entries (|1|) protect hostname privacy but can be brute-forced for known IP address spaces. Presence of unexpected entries may indicate compromised client or attacker-controlled keys. @cert-authority entries grant broad SSH trust to entire certificate authorities.",
+    "suspiciousPatterns": [
+      "Entries with wildcards (* or ?) grant SSH trust to multiple hosts simultaneously",
+      "@cert-authority entries grant trust to all hosts certified by that CA",
+      "Duplicate keys for different hostnames may indicate key reuse or misconfiguration",
+      "Hashed entries make auditing difficult — unhashed files are more auditable"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "SSH known_hosts format: each line is 'hostname key_type base64_key [comment]'. Hostname may be comma-separated list, may use wildcards, or may be hashed as |1|<base64_salt>|<base64_hash>. Key types: ssh-rsa, ssh-ed25519, ecdsa-sha2-nistp256/384/521. Hashed: HMAC-SHA1(salt, hostname). @cert-authority prefix marks CA keys. @revoked prefix marks revoked keys. Lines starting with # are comments.",
+    "suggestedInspections": [
+      "Scan for @cert-authority lines which grant broad trust to SSH certificate authorities",
+      "Identify hashed entries (|1|) and assess whether hostname privacy is required for this file",
+      "Look for wildcard hostnames (* or ?) that may grant unintended trust to multiple hosts",
+      "Check for duplicate host fingerprints — same key for different hostnames indicates key reuse",
+      "Verify key types — ssh-rsa keys should be RSA 2048+ bits; prefer ecdsa-sha2-nistp256 or ssh-ed25519",
+      "Compare modification timestamp against expected change windows for tampering detection"
+    ]
+  },
+  "software": [
+    "OpenSSH — ssh, ssh-keygen, ssh-keyscan commands",
+    "PuTTY — uses different registry-based known hosts format on Windows",
+    "Ansible — uses known_hosts for managed node verification",
+    "Git — SSH known_hosts used for GitHub/GitLab host verification",
+    "WinSCP — imports OpenSSH known_hosts for SFTP connections"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [ ".known_hosts" ],
+    "relatedFormats": [ "SSH_PRIVATE_KEY", "PEM", "PGP_ASCII" ],
+    "note": "Related to SSH authorized_keys (server-side), SSH private key files, and PEM X.509 certificates. PuTTY uses a different Windows registry format (ppk files) rather than known_hosts."
+  },
+  "MimeTypes": [
+    "text/plain",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "SSH host key verification to prevent MITM attacks",
+    "Automated SSH connection without interactive host verification prompts",
+    "Security audit of trusted SSH hosts in an organization",
+    "Forensic investigation of SSH connections from a workstation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Plain text, UTF-8, one entry per line",
+    "EntryFormat": "hostname key_type base64_publickey [comment]",
+    "HashedFormat": "|1|base64_salt|base64_hmac_sha1",
+    "Locations": "~/.ssh/known_hosts (user), /etc/ssh/ssh_known_hosts (system)",
+    "KeyTypes": "ssh-rsa, ssh-dss, ecdsa-sha2-nistp256/384/521, ssh-ed25519, sk-ssh-ed25519"
+  }
+}

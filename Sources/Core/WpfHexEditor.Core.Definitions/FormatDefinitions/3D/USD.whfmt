@@ -1,128 +1,147 @@
 {
   "diffMode": "binary",
-  "formatName": "Universal Scene Description",
-  "version": "1.14",
-  "extensions": [
-    ".usd"
-  ],
-  "description": "Universal Scene Description (USD) is a high-performance 3D scene format developed by Pixar Animation Studios and open-sourced via the USD framework. A .usd file can be either USDA (ASCII text) or USDC (binary crate) format — the USD layer defers to file content to determine the actual encoding. ASCII USD files begin with '#usda 1.0' while binary USD files begin with 'PXR-USDC'. USD supports hierarchical scene graphs, time-sampled data, composition arcs (references, payloads, inherits), layering, and non-destructive overrides, making it ideal for large-scale film and game production pipelines.",
+  "formatName": "Universal Scene Description (USD/USDC)",
+  "version": "1.0",
+  "extensions": [".usd", ".usdc", ".usda", ".usdz"],
+  "description": "USD (Universal Scene Description) is a scene description framework and file format developed by Pixar and now co-developed with Apple. Binary USDC files begin with the 8-byte ASCII magic 'PXR-USDC' (50 58 52 2D 55 53 44 43). Following the magic: version bytes (uint8 major, uint8 minor, uint8 patch) and a bootstrap header pointing to section tables. USDC binary is a 'crate file' format with a table of contents (TOC) listing all sections. ASCII USDA files start with '#usda 1.0' text. USDZ is a ZIP container (PK magic 50 4B) with an uncompressed .usdc or .usda as the first entry, plus textures and other assets. USD supports: hierarchical scene composition via layers (stronger/weaker), references, payloads (deferred loading), variants, purpose attributes (default/render/proxy/guide), physics schemas (UsdPhysics), skeletal animation (UsdSkel), material networks (UsdShade). Widely used by Pixar RenderMan, Blender, Houdini, Maya, Apple AR Quick Look (iOS 12+), and Apple Vision Pro.",
   "category": "3D",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "Pixar USD File Format Specification",
-      "USD Glossary and Concepts"
+      "USD File Format Specification — Pixar Animation Studios",
+      "USD Crate Binary Format Documentation — OpenUSD",
+      "USDZ Package Format Specification — Apple/Pixar"
     ],
     "WebLinks": [
-      "https://openusd.org/release/usdfaq.html",
+      "https://openusd.org/release/spec_usdfileformats.html",
       "https://en.wikipedia.org/wiki/Universal_Scene_Description",
-      "https://graphics.pixar.com/usd/docs/index.html"
+      "https://developer.apple.com/augmented-reality/quick-look/",
+      "https://github.com/PixarAnimationStudios/OpenUSD"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "23757364", "offset": 0, "label": "'#usd' ASCII prefix (USDA variant)", "weight": 0.8 },
-      { "value": "5058522D55534443", "offset": 0, "label": "'PXR-USDC' binary magic (USDC variant)", "weight": 1.0 }
+      { "value": "5058522D55534443", "offset": 0, "label": "PXR-USDC — Universal Scene Description binary crate magic (8 bytes)", "weight": 1.0 },
+      { "value": "2375736461203100", "offset": 0, "label": "#usda 1 — USD ASCII format text header", "weight": 0.9 }
     ],
     "matchMode": "any",
-    "MinimumScore": 0.7,
-    "required": false,
-    "Strength": "Medium",
-    "EntropyHint": { "min": 3.0, "max": 7.0 },
+    "MinimumScore": 0.8,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 2.5, "max": 7.5 },
     "validation": {
-      "minFileSize": 10,
+      "minFileSize": 12,
       "maxSignatureOffset": 0,
-      "note": ".usd may be either ASCII (starts with '#usda 1.0') or binary (starts with 'PXR-USDC'). Both variants are valid USD files."
+      "note": "Binary USDC: 'PXR-USDC' at offset 0. ASCII USDA: '#usda 1.0' at offset 0. USDZ: ZIP PK magic 50 4B."
     }
   },
   "variables": {
-    "usdHeader": "",
-    "headerLine": "",
-    "variantType": "",
-    "crateVersion": ""
+    "usdMagic": "",
+    "usdVersionMajor": 0,
+    "usdVersionMinor": 0,
+    "usdVersionPatch": 0,
+    "usdFormatType": ""
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "USD Header Signature",
+      "name": "USD Magic",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.45,
-      "description": "First 8 bytes identifying the USD variant. ASCII USD files begin with '#usda 1.' while binary USDC files begin with 'PXR-USDC'. Both are valid .usd files; the first byte distinguishes ASCII ('#'=0x23) from binary ('P'=0x50).",
-      "storeAs": "usdHeader",
+      "description": "8-byte ASCII magic string 'PXR-USDC' (0x50 0x58 0x52 0x2D 0x55 0x53 0x44 0x43) at the absolute start of every binary USDC crate file. 'PXR' is the Pixar identifier, 'USDC' identifies the binary crate format as distinct from ASCII USDA.",
+      "storeAs": "usdMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "First Header Line",
-      "offset": 0,
-      "length": 32,
+      "name": "Version Major",
+      "offset": 8,
+      "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.35,
-      "description": "First 32 bytes of the USD file. For ASCII USD this is typically '#usda 1.0\\n' followed by metadata. For binary USDC this contains the 8-byte magic 'PXR-USDC' followed by a 1-byte version and format fields.",
-      "storeAs": "headerLine",
-      "valueType": "ascii"
+      "description": "Major version byte of the USDC crate file format. Currently 0 for all released OpenUSD versions. A non-zero major version would indicate a backward-incompatible format change.",
+      "storeAs": "usdVersionMajor",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Variant Type Region",
-      "offset": 32,
-      "length": 32,
+      "name": "Version Minor",
+      "offset": 9,
+      "length": 1,
       "color": "#95E1D3",
       "opacity": 0.35,
-      "description": "Region following the header signature that contains either the USD file schema version and metadata declarations (ASCII) or the USDC crate file version bytes and TOC pointer (binary). Helps confirm the encoding type.",
-      "storeAs": "variantType",
-      "valueType": "ascii"
+      "description": "Minor version byte of the USDC crate file format, indicating feature additions within the same major version. Readers should tolerate files with minor versions up to and including their supported minor version.",
+      "storeAs": "usdVersionMinor",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Schema/Layer Data",
-      "offset": 64,
-      "length": 64,
-      "color": "#FFE66D",
+      "name": "Version Patch",
+      "offset": 10,
+      "length": 1,
+      "color": "#C3A6FF",
       "opacity": 0.35,
-      "description": "Region containing the USD layer preamble data. For ASCII, this may include 'upAxis', 'metersPerUnit', or the opening of the default prim block. For binary USDC, this region is part of the structured crate data.",
-      "storeAs": "crateVersion",
-      "valueType": "ascii"
+      "description": "Patch version byte of the USDC crate file format, indicating bug-fix releases. Patch version changes should not affect file format compatibility for readers or writers.",
+      "storeAs": "usdVersionPatch",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "Crate Bootstrap Header",
+      "offset": 11,
+      "description": "After the 8-byte magic and 3 version bytes, the USDC crate bootstrap header provides file structure information: TOC (Table of Contents) offset and size, and section metadata. The TOC lists all sections in the file including: tokens section (interned string table), strings section, fields section, fieldsets section, paths section, specs section, and optional index sections for efficient random access."
+    },
+    {
+      "type": "metadata",
+      "name": "USD Layer Composition",
+      "offset": 0,
+      "description": "USDC stores a USD layer which may reference other layers. Composition arcs: sublayers (ordered stack), references (namespace-prefix inheritance), payloads (deferred sublayers), inherits (namespace inheritance for prototypes), specializes (override template inheritance), and variants (switchable alternative representations). Each arc operates in strength order: local opinions > references > inherits > specializes > sublayers."
     }
   ],
   "assertions": [
     {
-      "name": "ValidUsdHeader",
-      "expression": "usdHeader == '#usda 1.' || usdHeader == 'PXR-USDC'",
-      "severity": "warning",
-      "message": "USD file header does not match known ASCII ('#usda 1.0') or binary ('PXR-USDC') signatures. The file may use a non-standard USD variant or be corrupt."
+      "name": "ValidMagic",
+      "expression": "usdMagic == 'PXR-USDC'",
+      "severity": "error",
+      "message": "USDC magic 'PXR-USDC' not found at offset 0. This is not a valid binary USD crate file."
     },
     {
-      "name": "FileNotEmpty",
-      "expression": "fileSize > 16",
+      "name": "ValidMajorVersion",
+      "expression": "usdVersionMajor == 0",
       "severity": "warning",
-      "message": "USD file is very small. A valid USD file should contain at least a layer header and one prim definition."
+      "message": "USDC major version is not 0. File may use an unsupported future format version that requires a newer USD runtime."
+    },
+    {
+      "name": "ValidMinorVersion",
+      "expression": "usdVersionMinor >= 0 && usdVersionMinor <= 12",
+      "severity": "warning",
+      "message": "USDC minor version is outside expected range 0-12. File may require a newer or older USD reader."
     }
   ],
   "navigation": {
     "bookmarks": [
-      { "name": "USD Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
-      { "name": "Layer Metadata", "offset": 32, "icon": "\uE946", "color": "#95E1D3" },
-      { "name": "Scene Data", "offset": 64, "icon": "\uE8B7", "color": "#FFE66D" }
+      { "name": "USD Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Version Bytes", "offset": 8, "icon": "\uE946", "color": "#4ECDC4" },
+      { "name": "Bootstrap Header", "offset": 11, "icon": "\uE8B7", "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "usdHeader",
-    "primaryField": "headerLine",
+    "badge": "usdMagic",
+    "primaryField": "usdVersionMajor",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "File Header",
+        "title": "File Identity",
         "icon": "\uE71B",
-        "fields": ["usdHeader", "headerLine"]
+        "fields": ["usdMagic", "usdFormatType"]
       },
       {
-        "title": "Layer Data",
-        "icon": "\uE8B7",
-        "fields": ["variantType", "crateVersion"]
+        "title": "Version",
+        "icon": "\uE946",
+        "fields": ["usdVersionMajor", "usdVersionMinor", "usdVersionPatch"]
       }
     ]
   },
@@ -130,59 +149,68 @@
     {
       "name": "USD Header (JSON)",
       "format": "json",
-      "fields": ["usdHeader", "headerLine", "variantType"]
+      "fields": ["usdMagic", "usdVersionMajor", "usdVersionMinor", "usdVersionPatch"]
+    },
+    {
+      "name": "USD Version (CSV)",
+      "format": "csv",
+      "fields": ["usdMagic", "usdVersionMajor", "usdVersionMinor", "usdVersionPatch"]
     }
   ],
-  "software": [
-    "Pixar USD Tools (usdview, usdcat)",
-    "Autodesk Maya",
-    "Houdini",
-    "Blender",
-    "Unreal Engine",
-    "Apple Reality Composer Pro"
-  ],
-  "formatRelationships": {
-    "category": "3D",
-    "extensions": [".usd"],
-    "relatedFormats": ["USDA", "USDC", "USDZ", "GLB"],
-    "note": ".usd is a polymorphic format that can be either ASCII (USDA) or binary (USDC) — actual type determined by file content"
-  },
-  "MimeTypes": [
-    "model/vnd.usd",
-    "application/octet-stream"
-  ],
-  "UseCases": [
-    "Film and VFX scene description",
-    "Game engine scene composition",
-    "AR/VR asset delivery (USDZ)",
-    "Non-destructive scene layering"
-  ],
-  "QualityMetrics": {
-    "CompletenessScore": 56,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 4,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
-    "PriorityFormat": false,
-    "AutoRefined": false
-  },
-  "TechnicalDetails": {
-    "variants": ["USDA (ASCII)", "USDC (Binary)"],
-    "layered": true,
-    "compositionArcs": ["references", "payloads", "inherits", "specializes"],
-    "developed_by": "Pixar Animation Studios"
-  },
   "forensic": {
     "category": "3d",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "USDZ ZIP container may contain multiple files; inspect all entries, not just the primary USD asset",
+      "External file references in payload arcs may trigger network access when opened in USD runtime"
+    ]
   },
   "aiHints": {
-    "analysisContext": "Pixar USD polymorphic 3D scene format. A .usd file is either ASCII ('#usda 1.0' header) or binary ('PXR-USDC' header). Supports composition arcs, time-sampled data, and non-destructive layering for large production pipelines.",
+    "analysisContext": "USD has three file forms: USDC binary crate (magic 'PXR-USDC' + 3 version bytes), USDA ASCII (starts '#usda 1.0'), USDZ ZIP container (PK magic). USDC uses a crate format with a TOC pointing to sections (tokens, strings, fields, paths, specs).",
     "suggestedInspections": [
-      "Determine variant by first bytes: '#usda' = ASCII text, 'PXR-USDC' = binary crate",
-      "For ASCII USD, parse layer metadata (upAxis, metersPerUnit) and enumerate prim definitions",
-      "For binary USDC, read the crate version byte after the 8-byte magic to determine parsing strategy"
+      "Identify format: 'PXR-USDC' = binary crate, '#usda 1.0' = ASCII text, PK magic = USDZ ZIP",
+      "For USDC: read version bytes at offsets 8-10 to determine crate format version",
+      "Parse crate bootstrap header to locate the TOC and enumerate all sections",
+      "For USDZ: list ZIP entries and identify the primary .usdc or .usda root layer",
+      "Check for payload arcs referencing external files that may require deferred loading at runtime"
     ]
+  },
+  "software": [
+    "Pixar RenderMan",
+    "Blender (via USD exporter)",
+    "Houdini (SideFX)",
+    "Autodesk Maya",
+    "Apple AR Quick Look (iOS 12+, macOS Catalina+)",
+    "Apple Vision Pro",
+    "NVIDIA Omniverse"
+  ],
+  "formatRelationships": {
+    "category": "3D",
+    "extensions": [".usd", ".usdc", ".usda", ".usdz"],
+    "relatedFormats": ["GLB", "FBX", "COLLADA"],
+    "note": "USDZ is the Apple AR delivery format; USDC binary crate is preferred for production pipelines over verbose USDA"
+  },
+  "MimeTypes": ["model/vnd.usdz+zip", "application/octet-stream"],
+  "UseCases": [
+    "Feature film 3D scene assembly and lighting in Pixar/DreamWorks pipelines",
+    "Apple AR Quick Look product and furniture visualization (iOS/iPadOS)",
+    "Apple Vision Pro immersive experience scene delivery",
+    "NVIDIA Omniverse collaborative 3D simulation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "binaryMagic": "PXR-USDC (8 bytes)",
+    "asciiMagic": "#usda 1.0",
+    "usdzContainer": "ZIP (uncompressed first entry must be .usdc or .usda)",
+    "compositionArcs": ["sublayers", "references", "payloads", "inherits", "specializes", "variants"],
+    "versionBytes": "major.minor.patch at offsets 8, 9, 10"
   }
 }

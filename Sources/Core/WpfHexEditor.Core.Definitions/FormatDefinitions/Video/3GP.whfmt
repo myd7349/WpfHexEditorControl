@@ -1,236 +1,225 @@
 {
   "diffMode": "binary",
-  "formatName": "3GPP Multimedia",
-  "version": "1.13",
-  "extensions": [
-    ".3gp",
-    ".3g2",
-    ".3gpp"
-  ],
-  "description": "3GP and 3G2 are multimedia container formats defined by 3GPP (Third Generation Partnership Project) for mobile device video recording and streaming. Both are profiles of the ISO Base Media File Format (ISO/IEC 14496-12). The file begins with an 'ftyp' (File Type) box: box size (4 bytes, big-endian), box type 'ftyp' (4 bytes), major brand (4 bytes), minor version (4 bytes), and compatible brands (variable). .3gp major brand is '3gp4'-'3gp7'; .3g2 major brand is '3g2a'-'3g2c'. Both support H.263, H.264, and MPEG-4 video; AMR-NB, AMR-WB, and AAC audio. 3GP is optimized for 3G cellular network streaming; 3G2 is the CDMA2000 variant used by Sprint/Verizon in North America. Both are used for mobile phone video recordings.",
+  "formatName": "3GPP Mobile Video",
+  "version": "1.0",
+  "extensions": [".3gp", ".3g2", ".3gpp"],
+  "description": "3GPP (Third Generation Partnership Project) mobile video format is based on the ISO Base Media File Format (ISO BMFF), sharing structural elements with MPEG-4/MP4. Files begin with a variable-size ftyp (file type) box: a uint32BE size at offset 0, the ASCII 'ftyp' box type at offset 4, and a 4-byte major brand at offset 8. 3GP brands include '3gp4', '3gp5', '3gp6' (H.263 or H.264 video), while 3G2 brands include '3g2a', '3g2b', '3g2c' (used by CDMA carriers). The minor version field at offset 12 further identifies the specification version. 3GPP is the primary video format for mobile phones and smartphones.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "3GPP TS 26.244 — 3GP file format (Release 17)",
-      "3GPP2 C.S0050-A — 3G2 file format",
-      "ISO/IEC 14496-12 — ISO Base Media File Format"
+      "3GPP TS 26.244: Transparent end-to-end Packet-switched Streaming Service (PSS); 3GPP file format (3GP)",
+      "3GPP2 C.S0050-B: 3GPP2 File Formats for Multimedia Services"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/3GP_and_3G2",
-      "https://www.3gpp.org/technologies/keywords-acronyms/98-3gpp-file-format",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000176.shtml"
+      "https://www.3gpp.org/",
+      "https://en.wikipedia.org/wiki/3GP_and_3G2"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "66747970", "offset": 4, "label": "'ftyp' box type — ISOBMFF container", "weight": 0.6 },
-      { "value": "3367703400000000", "offset": 8, "label": "'3gp4' major brand", "weight": 1.0 },
-      { "value": "3367703500000000", "offset": 8, "label": "'3gp5' major brand", "weight": 1.0 },
-      { "value": "3367703600000000", "offset": 8, "label": "'3gp6' major brand", "weight": 1.0 },
-      { "value": "3367703700000000", "offset": 8, "label": "'3gp7' major brand", "weight": 1.0 },
-      { "value": "33673261", "offset": 8, "label": "'3g2a' major brand (CDMA2000)", "weight": 1.0 }
+      {
+        "value": "33677034",
+        "offset": 8,
+        "label": "3gp4 brand — 3GPP release 4 video format",
+        "weight": 0.9
+      },
+      {
+        "value": "33677035",
+        "offset": 8,
+        "label": "3gp5 brand — 3GPP release 5 video format",
+        "weight": 0.9
+      },
+      {
+        "value": "33677036",
+        "offset": 8,
+        "label": "3gp6 brand — 3GPP release 6 video format",
+        "weight": 0.9
+      }
     ],
-    "matchMode": "any",
-    "MinimumScore": 0.6,
-    "required": true,
+    "matchMode": "Any",
+    "MinimumScore": 0.7,
+    "required": [],
     "Strength": "Strong",
-    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "EntropyHint": {
+      "min": 4.5,
+      "max": 8.0,
+      "comment": "Mobile video compressed with H.263/H.264 exhibits high entropy"
+    },
     "validation": {
-      "minFileSize": 20,
-      "note": "3GP/3G2 files use the ISOBMFF container. 'ftyp' box must be at offset 4. Major brand at offset 8 identifies 3GP version ('3gp4'-'3gp7') or 3G2 variant ('3g2a'-'3g2c')."
+      "notes": "boxType at offset 4 must be 'ftyp'; major brand at offset 8 must match 3GPP brand pattern"
     }
   },
   "variables": {
-    "ftypBoxSize": 0,
-    "ftypBoxType": "",
+    "boxSize": 0,
+    "boxType": "",
     "majorBrand": "",
     "minorVersion": 0
   },
   "blocks": [
     {
       "type": "field",
-      "name": "ftyp Box Size",
+      "name": "boxSize",
       "offset": 0,
       "length": 4,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "Size in bytes of the 'ftyp' (File Type) box including this size field (big-endian uint32). Minimum valid size is 20 bytes: 4 (size) + 4 ('ftyp') + 4 (major brand) + 4 (minor version) + any compatible brands (0 or more × 4 bytes each).",
-      "storeAs": "ftypBoxSize",
-      "valueType": "uint32",
-      "endianness": "big"
+      "opacity": 0.75,
+      "description": "ISOBMFF box size field (big-endian uint32) — total size of the ftyp box in bytes including the 8-byte header; the ftyp box is typically 20-28 bytes in 3GP files",
+      "storeAs": "boxSize",
+      "valueType": "uint32BE"
     },
     {
-      "type": "signature",
-      "name": "ftyp Box Type",
+      "type": "field",
+      "name": "boxType",
       "offset": 4,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "ISOBMFF box type identifier 'ftyp' (0x66747970). The File Type box is mandatory as the first box in all ISOBMFF-derived formats (MP4, MOV, 3GP, M4A, HEIC, etc.). Its presence at offset 4 (after the 4-byte size) is the defining characteristic of the ISOBMFF container family.",
-      "storeAs": "ftypBoxType",
+      "opacity": 0.85,
+      "description": "ISOBMFF box type identifier (4 ASCII chars) — must be 'ftyp' (0x66747970) for the file type declaration box; this is mandatory as the first box in any ISO Base Media File Format compliant file",
+      "storeAs": "boxType",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Major Brand",
+      "name": "majorBrand",
       "offset": 8,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.35,
-      "description": "4-byte ASCII brand string identifying the specific ISOBMFF profile. 3GP brands: '3gp4' (3GPP Release 4), '3gp5' (R5), '3gp6' (R6), '3gp7' (R7). 3G2 brands: '3g2a' (CDMA2000), '3g2b', '3g2c'. This field is the definitive 3GP vs 3G2 discriminator.",
+      "opacity": 0.75,
+      "description": "ISOBMFF major brand (4 ASCII chars) — primary format identifier; 3GPP brands: '3gp4','3gp5','3gp6'; 3G2 brands: '3g2a','3g2b','3g2c'; determines supported codec set and specification version",
       "storeAs": "majorBrand",
-      "valueType": "ascii",
-      "valueMap": {
-        "3gp4": "3GP Release 4 — 3GPP TS 26.244 R4",
-        "3gp5": "3GP Release 5 — 3GPP TS 26.244 R5",
-        "3gp6": "3GP Release 6 — 3GPP TS 26.244 R6 (common mobile recording)",
-        "3gp7": "3GP Release 7 — 3GPP TS 26.244 R7",
-        "3g2a": "3G2 variant a — 3GPP2/CDMA2000 (Sprint/Verizon)",
-        "3g2b": "3G2 variant b",
-        "3g2c": "3G2 variant c"
-      }
+      "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Minor Version",
+      "name": "minorVersion",
       "offset": 12,
       "length": 4,
       "color": "#FFE66D",
-      "opacity": 0.25,
-      "description": "Informational minor version of the major brand specification (big-endian uint32). Often 0x00000000 or a date-encoded version (e.g., 0x20040000 = year 2004). Not used for format detection.",
+      "opacity": 0.75,
+      "description": "ISOBMFF minor version (big-endian uint32) — sub-version of the major brand specification; provides additional version context beyond the major brand for decoder compatibility selection",
       "storeAs": "minorVersion",
-      "valueType": "uint32",
-      "endianness": "big"
-    },
-    {
-      "type": "metadata",
-      "name": "Major Brand",
-      "variable": "majorBrand",
-      "description": "3GP/3G2 brand: '3gp4'-'3gp7' = 3GP, '3g2a'-'3g2c' = 3G2"
-    },
-    {
-      "type": "metadata",
-      "name": "ftyp Box Size",
-      "variable": "ftypBoxSize",
-      "description": "Size of the ftyp box (minimum 20 bytes)"
+      "valueType": "uint32BE"
     }
   ],
   "assertions": [
     {
-      "name": "ftyp box type valid",
-      "expression": "ftypBoxType == 'ftyp'",
-      "severity": "error",
-      "message": "Box type at offset 4 must be 'ftyp' (0x66747970) — not a valid ISOBMFF/3GP file"
+      "field": "boxType",
+      "op": "eq",
+      "value": "ftyp",
+      "message": "First box type must be 'ftyp' for ISOBMFF/3GP files"
     },
     {
-      "name": "Major brand is 3GP or 3G2",
-      "expression": "majorBrand == '3gp4' || majorBrand == '3gp5' || majorBrand == '3gp6' || majorBrand == '3gp7' || majorBrand == '3g2a' || majorBrand == '3g2b' || majorBrand == '3g2c'",
-      "severity": "info",
-      "message": "Major brand is not a known 3GP or 3G2 brand — may be another ISOBMFF derivative (MP4, MOV, M4A)"
+      "field": "majorBrand",
+      "op": "in",
+      "value": ["3gp4", "3gp5", "3gp6", "3g2a", "3g2b", "3g2c"],
+      "message": "Major brand must be a valid 3GPP or 3G2 brand identifier"
+    },
+    {
+      "field": "boxSize",
+      "op": "range",
+      "min": 16,
+      "max": 65536,
+      "message": "ftyp box size must be in reasonable range (16-65536 bytes)"
     }
   ],
-  "versionDetection": {
-    "field": "majorBrand",
-    "versions": {
-      "3gp4": "3GP Release 4",
-      "3gp5": "3GP Release 5",
-      "3gp6": "3GP Release 6 (most common)",
-      "3gp7": "3GP Release 7",
-      "3g2a": "3G2/CDMA2000 variant a",
-      "3g2b": "3G2/CDMA2000 variant b",
-      "3g2c": "3G2/CDMA2000 variant c"
-    }
-  },
   "navigation": {
     "bookmarks": [
-      {
-        "name": "ftyp Box",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      },
-      {
-        "name": "Major Brand",
-        "offset": 8,
-        "icon": "\uE8A5",
-        "color": "#95E1D3"
-      }
+      { "name": "ftyp Box Size", "offset": 0, "length": 4, "color": "#4ECDC4" },
+      { "name": "ftyp Box Type", "offset": 4, "length": 4, "color": "#FF6B6B" },
+      { "name": "Major Brand", "offset": 8, "length": 4, "color": "#95E1D3" },
+      { "name": "Minor Version", "offset": 12, "length": 4, "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "majorBrand",
-    "primaryField": "ftypBoxSize",
+    "badge": "3GP",
+    "primaryField": "majorBrand",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "ftyp Box",
-        "icon": "\uE71B",
-        "fields": ["ftypBoxSize", "ftypBoxType", "majorBrand", "minorVersion"]
+        "name": "File Type Box",
+        "fields": ["boxSize", "boxType"]
+      },
+      {
+        "name": "Brand Identity",
+        "fields": ["majorBrand", "minorVersion"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "3GP ftyp Box (JSON)",
+      "name": "3GP Header Summary",
+      "format": "text",
+      "template": "Box: {boxType} | Brand: {majorBrand} | Version: {minorVersion} | Size: {boxSize}"
+    },
+    {
+      "name": "3GP JSON Report",
       "format": "json",
-      "fields": ["ftypBoxSize", "ftypBoxType", "majorBrand", "minorVersion"]
+      "template": "{ \"boxType\": \"{boxType}\", \"majorBrand\": \"{majorBrand}\", \"minorVersion\": {minorVersion} }"
     }
   ],
   "forensic": {
-    "category": "video",
+    "category": "Video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "Invalid or unknown major brand at offset 8 may indicate file spoofing or corruption",
+      "boxSize of 0 or 1 at offset 0 indicates extended size encoding requiring further parsing",
+      "Presence of udta/cprt metadata box may reveal device or application of origin"
+    ]
   },
   "aiHints": {
-    "analysisContext": "3GP/3G2 = ISOBMFF profile. ftyp box: size(4B BE) + 'ftyp'(4B) + majorBrand(4B) + minorVersion(4B BE) + compatibleBrands(4B × N). 3GP brands: '3gp4'-'3gp7'. 3G2: '3g2a'-'3g2c'. After ftyp: moov box (metadata) and mdat box (media data). Video codecs: 'h263' (H.263), 'avc1' (H.264/AVC), 'mp4v' (MPEG-4). Audio codecs: 'samr' (AMR-NB), 'sawb' (AMR-WB), 'mp4a' (AAC). Structure identical to MP4/MOV (ISOBMFF) — only the brand distinguishes 3GP.",
+    "analysisContext": "3GP is an ISO BMFF derivative used for mobile video. The ftyp box at offset 0 declares the format and version. Subsequent boxes (moov, mdat) contain movie metadata and media data. moov/trak/mdia/minf/stbl contains codec information. H.263 is used in early 3GP; H.264 in 3gp5/3gp6.",
     "suggestedInspections": [
-      "Verify 'ftyp' at offset 4",
-      "Read major brand at offset 8: '3gp4'-'3gp7' (3GP) or '3g2a'-'3g2c' (3G2)",
-      "Parse moov > trak > mdia > hdlr for track type ('vide'=video, 'soun'=audio)",
-      "Look for AMR-NB ('samr') and AMR-WB ('sawb') audio codecs — signature for mobile recording"
+      "Read major brand at offset 8 to determine 3GPP release (4/5/6) or 3G2 variant",
+      "Parse ftyp compatible brands list (follows minor version) for additional format hints",
+      "Locate moov box after ftyp to begin parsing movie container metadata",
+      "Find trak/mdia/hdlr box to identify media type ('vide' or 'soun')",
+      "Decode SampleEntry type in stsd: 's263' for H.263, 'avc1' for H.264",
+      "Check udta box for device metadata: manufacturer, model, recording date"
     ]
   },
   "software": [
-    "Mobile devices (Android, iOS — recording and playback)",
-    "VLC media player",
-    "FFmpeg (3gp/3g2 muxer)",
+    "FFmpeg",
+    "VLC Media Player",
+    "Android MediaRecorder",
+    "iOS AVFoundation",
     "HandBrake",
-    "Apple QuickTime Player"
+    "MediaInfo"
   ],
   "formatRelationships": {
     "category": "Video",
     "extensions": [".3gp", ".3g2", ".3gpp"],
-    "relatedFormats": ["MP4", "MOV", "M4V"],
-    "note": "3GP and 3G2 are ISOBMFF profiles. 3GP is defined by 3GPP for GSM/UMTS devices; 3G2 is the 3GPP2/CDMA2000 variant. Both are structurally identical to MP4/MOV — the major brand is the only formal distinguisher. Modern smartphones still record in 3GP-compatible MP4 with H.264+AAC."
+    "relatedFormats": ["MP4", "M4V", "MOV", "AMR", "AAC"],
+    "note": "3GP and 3G2 are ISO BMFF derivatives; 3G2 is used by CDMA carriers (Verizon, Sprint) while 3GP is used by GSM carriers; both share MP4 structural compatibility"
   },
-  "MimeTypes": [
-    "video/3gpp",
-    "video/3gpp2",
-    "audio/3gpp"
-  ],
+  "MimeTypes": ["video/3gpp", "video/3gpp2", "audio/3gpp"],
   "UseCases": [
-    "Mobile phone video recording (3G era)",
-    "MMS video messaging",
-    "Streaming over 3G cellular networks",
-    "Legacy feature phone video content"
+    "Mobile phone video recording and MMS messaging",
+    "3G network video streaming",
+    "Smartphone camera video format",
+    "Mobile video sharing applications",
+    "Carrier-delivered multimedia messages (MMS)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 90,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 6,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "VideoFormat": true,
-    "ContainerFormat": "ISO Base Media File Format (ISOBMFF) profile",
-    "Endianness": "big-endian (all box sizes and multi-byte values)",
-    "VideoCodecs": "H.263, H.264/AVC, MPEG-4 Part 2",
-    "AudioCodecs": "AMR-NB, AMR-WB, AAC, MP3",
-    "MaxResolution": "Up to 1920×1080 in modern profiles; typically 176×144 to 640×480 in 3G era"
+    "containerBase": "ISO Base Media File Format (ISO 14496-12)",
+    "brands": {
+      "3gp4": "3GPP Release 4 (H.263, AMR-NB)",
+      "3gp5": "3GPP Release 5 (H.264, AMR-WB)",
+      "3gp6": "3GPP Release 6 (H.264, AMR-WB+)",
+      "3g2a": "3GPP2 A (CDMA carriers)",
+      "3g2b": "3GPP2 B",
+      "3g2c": "3GPP2 C"
+    },
+    "ftypBoxOffset": 0
   }
 }

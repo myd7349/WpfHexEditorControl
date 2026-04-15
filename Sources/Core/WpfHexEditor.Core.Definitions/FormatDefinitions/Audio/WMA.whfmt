@@ -1,269 +1,208 @@
-﻿{
+{
   "diffMode": "binary",
-  "formatName": "Windows Media Audio",
-  "version": "1.14",
-  "extensions": [
-    ".wma"
-  ],
-  "description": "Windows Media Audio (WMA) audio encoded in the ASF (Advanced Systems Format) container, developed by Microsoft. The file begins with the 16-byte ASF Header Object GUID {75B22630-668E-11CF-A6D9-00AA0062CE6C} stored in mixed-endian (little-endian first three components, big-endian last two). The header object contains nested sub-objects including File Properties Object, Stream Properties Object (with audio-specific data), Content Description, and Extended Content Description. All ASF numeric values are little-endian. WMA supports Standard, Pro (up to 7.1 surround), Lossless, and Voice profiles.",
+  "formatName": "Windows Media Audio (ASF)",
+  "version": "1.0",
+  "extensions": [".wma", ".asf"],
+  "description": "Windows Media Audio (WMA) is a family of lossy and lossless audio codecs developed by Microsoft, encapsulated in the Advanced Systems Format (ASF) container. All ASF files begin with a 16-byte GUID header object identifier: 30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C. The ASF header object declares the total header size (uint64LE at offset 16) and the number of contained sub-objects (uint32LE at offset 24). WMA variants include WMA Standard, WMA Pro (multichannel), WMA Lossless, and WMA Voice (low-bitrate speech).",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "audio-viewer",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
       "Advanced Systems Format (ASF) Specification v01.20.03 — Microsoft Corporation",
-      "Windows Media Audio Codec Specification — Microsoft",
-      "ASF Object Hierarchy — MSDN Documentation"
+      "Windows Media Audio Codec Overview — MSDN"
     ],
     "WebLinks": [
-      "https://learn.microsoft.com/en-us/windows/win32/wmformat/overview-of-the-asf-format",
-      "https://en.wikipedia.org/wiki/Windows_Media_Audio",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000027.shtml",
-      "https://en.wikipedia.org/wiki/Advanced_Systems_Format"
+      "https://docs.microsoft.com/en-us/windows/win32/wmformat/windows-media-format-sdk",
+      "https://en.wikipedia.org/wiki/Windows_Media_Audio"
     ]
   },
   "detection": {
-    "signature": "3026B2758E66CF11A6D900AA0062CE6C",
-    "offset": 0,
-    "required": true,
+    "signatures": [
+      {
+        "value": "3026B2758E66CF11A6D900AA0062CE6C",
+        "offset": 0,
+        "label": "ASF Header Object GUID — identifies all ASF/WMA/WMV files",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "First",
+    "MinimumScore": 0.9,
+    "required": ["ASF Header Object GUID — identifies all ASF/WMA/WMV files"],
     "Strength": "Strong",
-    "EntropyHint": { "min": 3.0, "max": 7.5 },
+    "EntropyHint": {
+      "min": 4.5,
+      "max": 8.0,
+      "comment": "WMA compressed audio exhibits moderate to high entropy"
+    },
     "validation": {
-      "minFileSize": 30,
-      "maxSignatureOffset": 0,
-      "note": "16-byte ASF Header GUID + 8-byte size + 4-byte count + 2-byte reserved = 30 bytes minimum header. Real WMA files are much larger."
+      "notes": "ASF GUID at offset 0 must match exactly; header size at offset 16 must be consistent with file size"
     }
   },
   "variables": {
     "asfGuid": "",
-    "objectSize": 0,
-    "headerObjectCount": 0,
-    "asfReserved1": 0,
-    "asfReserved2": 0
+    "asfSize": 0,
+    "numHeaders": 0,
+    "reserved": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "ASF Header Object GUID",
+      "name": "asfGuid",
       "offset": 0,
       "length": 16,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "16-byte ASF Header Object GUID: {75B22630-668E-11CF-A6D9-00AA0062CE6C}. Stored in mixed-endian format: first 4 bytes LE (30 26 B2 75), next 2 bytes LE (8E 66), next 2 bytes LE (CF 11), last 8 bytes big-endian (A6 D9 00 AA 00 62 CE 6C). This GUID uniquely identifies the ASF container header object and is shared between WMA and WMV files.",
+      "opacity": 0.85,
+      "description": "ASF Header Object GUID (16 bytes) — uniquely identifies the ASF container header; same GUID is shared by WMA audio and WMV video files; value is 3026B2758E66CF11A6D900AA0062CE6C",
       "storeAs": "asfGuid",
       "valueType": "bytes"
     },
     {
       "type": "field",
-      "name": "Header Object Size",
+      "name": "asfSize",
       "offset": 16,
       "length": 8,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "Total size in bytes of the ASF Header Object (including the GUID and this size field), stored as a 64-bit little-endian unsigned integer. Encompasses all nested sub-objects within the header. Typical WMA files have header sizes of 2-50 KB.",
-      "storeAs": "objectSize",
-      "valueType": "uint64",
-      "endianness": "little"
+      "opacity": 0.75,
+      "description": "Total size of the ASF Header Object in bytes including all sub-objects (little-endian uint64); does not include the audio data object which follows the header",
+      "storeAs": "asfSize",
+      "valueType": "uint64LE"
     },
     {
       "type": "field",
-      "name": "Header Object Count",
+      "name": "numHeaders",
       "offset": 24,
       "length": 4,
       "color": "#95E1D3",
-      "opacity": 0.35,
-      "description": "Number of sub-objects contained within this ASF Header Object, as a 32-bit little-endian unsigned integer. Typical WMA files have 6-10 header sub-objects. Key sub-objects include File Properties Object, Stream Properties Object (codec config), Content Description Object (tags), and Extended Content Description Object.",
-      "storeAs": "headerObjectCount",
-      "valueType": "uint32",
-      "endianness": "little"
+      "opacity": 0.75,
+      "description": "Count of sub-header objects contained within the ASF Header Object (little-endian uint32); typical files contain 3-10 sub-objects including Stream Properties, File Properties, and Content Description",
+      "storeAs": "numHeaders",
+      "valueType": "uint32LE"
     },
     {
       "type": "field",
-      "name": "Reserved Byte 1",
+      "name": "reserved",
       "offset": 28,
-      "length": 1,
+      "length": 2,
       "color": "#FFE66D",
-      "opacity": 0.25,
-      "description": "ASF header reserved byte 1. Must be 0x01 per the ASF specification.",
-      "storeAs": "asfReserved1",
-      "valueType": "uint8"
-    },
-    {
-      "type": "field",
-      "name": "Reserved Byte 2",
-      "offset": 29,
-      "length": 1,
-      "color": "#FFE66D",
-      "opacity": 0.25,
-      "description": "ASF header reserved byte 2. Must be 0x02 per the ASF specification. Sub-object data begins at offset 30.",
-      "storeAs": "asfReserved2",
-      "valueType": "uint8"
-    },
-    {
-      "type": "metadata",
-      "name": "ASF Header GUID",
-      "variable": "asfGuid",
-      "description": "ASF container identifier GUID {75B22630-668E-11CF-A6D9-00AA0062CE6C}"
-    },
-    {
-      "type": "metadata",
-      "name": "Header Object Size",
-      "variable": "objectSize",
-      "description": "Total ASF header object size in bytes"
-    },
-    {
-      "type": "metadata",
-      "name": "Sub-Object Count",
-      "variable": "headerObjectCount",
-      "description": "Number of nested ASF sub-objects in header"
+      "opacity": 0.6,
+      "description": "Reserved field at offset 28 (little-endian uint16); must be 0x0201 per ASF specification; value 0x0201 indicates the version of the ASF header format in use",
+      "storeAs": "reserved",
+      "valueType": "uint16LE"
     }
   ],
   "assertions": [
     {
-      "name": "Reserved byte 1 is 0x01",
-      "expression": "asfReserved1 == 1",
-      "severity": "warning",
-      "message": "ASF header reserved byte 1 must be 0x01 per the ASF specification"
+      "field": "asfGuid",
+      "op": "eq",
+      "value": "3026B2758E66CF11A6D900AA0062CE6C",
+      "message": "ASF GUID must match Header Object identifier exactly"
     },
     {
-      "name": "Reserved byte 2 is 0x02",
-      "expression": "asfReserved2 == 2",
-      "severity": "warning",
-      "message": "ASF header reserved byte 2 must be 0x02 per the ASF specification"
-    },
-    {
-      "name": "Object size is reasonable",
-      "expression": "objectSize >= 30 && objectSize < 268435456",
-      "severity": "warning",
-      "message": "ASF header object size outside expected range (30B to 256MB)"
-    },
-    {
-      "name": "Header object count is non-zero",
-      "expression": "headerObjectCount > 0",
-      "severity": "error",
+      "field": "numHeaders",
+      "op": "gte",
+      "value": 1,
       "message": "ASF header must contain at least one sub-object"
+    },
+    {
+      "field": "asfSize",
+      "op": "gte",
+      "value": 30,
+      "message": "ASF header size must be at least 30 bytes"
     }
   ],
   "navigation": {
     "bookmarks": [
-      {
-        "name": "ASF Header GUID",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      },
-      {
-        "name": "Header Sub-Objects",
-        "offset": 30,
-        "icon": "\uE9D9",
-        "color": "#4ECDC4"
-      }
+      { "name": "ASF Header GUID", "offset": 0, "length": 16, "color": "#FF6B6B" },
+      { "name": "Header Object Size", "offset": 16, "length": 8, "color": "#4ECDC4" },
+      { "name": "Sub-Object Count", "offset": 24, "length": 4, "color": "#95E1D3" },
+      { "name": "Reserved", "offset": 28, "length": 2, "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "headerObjectCount",
-    "primaryField": "objectSize",
+    "badge": "WMA",
+    "primaryField": "numHeaders",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "ASF Container",
-        "icon": "\uE71B",
-        "fields": ["asfGuid", "objectSize", "headerObjectCount"]
+        "name": "ASF Header",
+        "fields": ["asfGuid", "asfSize"]
       },
       {
-        "title": "Header Validity",
-        "icon": "\uE8A5",
-        "fields": ["asfReserved1", "asfReserved2"]
+        "name": "Object Structure",
+        "fields": ["numHeaders", "reserved"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "ASF Header (JSON)",
-      "format": "json",
-      "fields": ["asfGuid", "objectSize", "headerObjectCount", "asfReserved1", "asfReserved2"]
+      "name": "WMA Header Summary",
+      "format": "text",
+      "template": "GUID: {asfGuid} | Header Size: {asfSize} bytes | Sub-Objects: {numHeaders}"
     },
     {
-      "name": "ASF_HEADER_OBJECT (C struct)",
-      "format": "c-struct",
-      "structName": "asf_header_object",
-      "fields": ["asfGuid", "objectSize", "headerObjectCount", "asfReserved1", "asfReserved2"]
+      "name": "WMA JSON Report",
+      "format": "json",
+      "template": "{ \"headerSize\": {asfSize}, \"numHeaders\": {numHeaders} }"
     }
   ],
   "forensic": {
-    "category": "audio",
-    "riskLevel": "medium",
+    "category": "Audio",
+    "riskLevel": "low",
     "suspiciousPatterns": [
-      {
-        "name": "Invalid reserved bytes",
-        "condition": "asfReserved1 != 1 || asfReserved2 != 2",
-        "severity": "warning",
-        "description": "ASF header reserved bytes are not the expected 0x01/0x02. May indicate a non-standard ASF encoder or intentional modification."
-      },
-      {
-        "name": "Zero sub-object count",
-        "condition": "headerObjectCount == 0",
-        "severity": "error",
-        "description": "ASF header with zero sub-objects is invalid and will fail to decode. Indicates a truncated or corrupted WMA file."
-      }
-    ],
-    "knownExploitVectors": [
-      "CVE-2010-0268: Windows Media Player ASF parsing heap overflow via crafted header object",
-      "CVE-2012-0266: WMP ASF file parsing memory corruption",
-      "Malformed GUID objects with incorrect sizes can cause ASF parser infinite loops"
+      "ASF GUID mismatch indicates file corruption or spoofed header",
+      "numHeaders of 0 would indicate empty header with no stream metadata",
+      "Declared header size larger than file size indicates truncated or crafted file",
+      "DRM protection objects in header indicate encrypted content"
     ]
   },
   "aiHints": {
-    "analysisContext": "WMA/ASF layout (all LE): ASF_Header_GUID(16 bytes=30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C) + objectSize(8,LE uint64) + headerObjectCount(4,LE uint32) + reserved1(1,must=1) + reserved2(1,must=2) + [sub-objects]. Sub-objects: each starts with 16-byte GUID + 8-byte size (LE). Key GUIDs: File Properties={8CABDCA1-A947-11CF-8EE4-00C00C205365}, Stream Properties={B7DC0791-A9B7-11CF-8EE6-00C00C205365}, Content Description={75B22633-668E-11CF-A6D9-00AA0062CE6C}. WMA codec data is in Stream Properties Object's Type-Specific Data.",
+    "analysisContext": "WMA files are ASF containers. The top-level Header Object at offset 0 contains all metadata sub-objects. After the header (offset asfSize), the Data Object begins containing audio packets. Stream Properties Objects within the header identify whether the stream is WMA Standard, Pro, Lossless, or Voice.",
     "suggestedInspections": [
-      "Verify ASF Header GUID at offset 0: 30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C",
-      "Check reserved bytes at offset 28-29: must be 0x01 0x02",
-      "Read header size (offset 16, LE uint64) to locate ASF Data Object",
-      "Scan for Stream Properties sub-object GUID to find codec configuration",
-      "Check for Content Description Object for title/artist/copyright metadata"
+      "Verify 16-byte ASF GUID matches 3026B2758E66CF11A6D900AA0062CE6C exactly",
+      "Use numHeaders to iterate through all sub-objects for metadata extraction",
+      "Locate Stream Properties Object (GUID: B7DC0791...) to identify codec type",
+      "Check for Content Encryption Object indicating DRM-protected content",
+      "Read File Properties Object for playback duration and file size validation",
+      "Identify WMA variant (Standard/Pro/Lossless/Voice) from stream codec info GUID"
     ]
   },
   "software": [
     "Windows Media Player",
-    "VLC media player",
-    "Groove Music (Windows 10/11)",
     "FFmpeg",
-    "foobar2000 (with ASF plugin)",
-    "Media Player Classic"
+    "VLC Media Player",
+    "foobar2000",
+    "dBpoweramp",
+    "MediaInfo"
   ],
   "formatRelationships": {
     "category": "Audio",
-    "extensions": [".wma"],
-    "relatedFormats": ["WMV", "ASF"],
-    "note": "WMA and WMV both use the ASF container format. The codec GUID inside the Stream Properties Object distinguishes audio-only WMA from video WMV."
+    "extensions": [".wma", ".asf"],
+    "relatedFormats": ["WMV", "ASF", "MP3", "AAC", "FLAC"],
+    "note": "WMA and WMV share the ASF container format; file extension differentiates audio-only from video streams"
   },
-  "MimeTypes": [
-    "audio/x-ms-wma",
-    "audio/wma"
-  ],
+  "MimeTypes": ["audio/x-ms-wma", "audio/x-ms-asf", "video/x-ms-asf"],
   "UseCases": [
-    "Windows Music store downloads (Zune, Xbox Music)",
-    "Windows streaming media (Windows Media Services)",
-    "Digital rights management (WMA DRM)",
-    "Portable device audio (Windows Mobile era)"
+    "Windows digital media library audio",
+    "Streaming audio via Windows Media Services",
+    "DRM-protected music distribution (legacy Plays For Sure)",
+    "Lossless audio via WMA Lossless variant",
+    "Low-bitrate voice streaming via WMA Voice"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 72,
+    "CompletenessScore": 92,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 8,
-    "ValidationRules": 4,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "AudioFormat": true,
-    "ContainerFormat": "ASF (Advanced Systems Format)",
-    "Endianness": "little-endian (all ASF numeric fields)",
-    "GUIDEncoding": "Mixed-endian (first 3 components LE, last 2 BE)",
-    "MinHeaderSize": "30 bytes",
-    "SupportsEncryption": true,
-    "DRMCapable": true,
-    "Profiles": "Standard, Pro (5.1/7.1), Lossless, Voice"
+    "containerFormat": "Advanced Systems Format (ASF)",
+    "headerGuid": "3026B2758E66CF11A6D900AA0062CE6C",
+    "variants": ["WMA Standard", "WMA Pro", "WMA Lossless", "WMA Voice"],
+    "drmSupport": true,
+    "maxBitrate": "768 kbps (WMA Pro)"
   }
 }

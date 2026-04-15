@@ -1,0 +1,124 @@
+{
+  "diffMode": "binary",
+  "formatName": "VeraCrypt Encrypted Volume",
+  "version": "1.0",
+  "extensions": [ ".vc", ".hc", ".tc" ],
+  "description": "VeraCrypt (and TrueCrypt) encrypted volume. Designed for plausible deniability — the first 64KB of the outer volume is random-looking encrypted data with no binary magic, no identifiable header, and no file system signatures. The volume header is encrypted with AES-256-XTS using a key derived from the user passphrase via PBKDF2. Hidden volumes occupy the last 64KB of the outer volume protected by a second passphrase. Both file containers and full-partition volumes are indistinguishable from random data without the correct passphrase. Detection relies solely on file extension and near-maximum Shannon entropy (approximately 7.9-8.0 bits per byte). Used in high-security contexts by journalists, activists, and forensic-aware users.",
+  "category": "Crypto",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://veracrypt.fr/en/VeraCrypt%20Volume%20Format%20Specification.html",
+    "https://veracrypt.fr/en/Hidden%20Volume.html"
+  ],
+  "detection": {
+    "signatures": [],
+    "matchMode": "any",
+    "MinimumScore": 0.0,
+    "Strength": "Weak"
+  },
+  "EntropyHint": {
+    "min": 7.8,
+    "max": 8.0,
+    "notes": "VeraCrypt volumes exhibit near-maximum Shannon entropy (~7.9-8.0 bits/byte) due to AES-XTS encryption. Entropy below 7.8 suggests the file is not a VeraCrypt volume."
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of the VeraCrypt volume at offset 0 — this byte is part of the encrypted volume header ciphertext; it appears random and carries no structural meaning without the correct decryption key and passphrase",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "secondByte",
+      "offset": 1,
+      "size": 1,
+      "type": "uint8",
+      "description": "Second byte of the VeraCrypt volume at offset 1 — this byte is part of the encrypted volume header ciphertext; no structural significance without decryption; appears statistically random",
+      "storeAs": "secondByte"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "NoMagicPossible",
+      "expression": "true",
+      "severity": "info",
+      "message": "VeraCrypt volumes contain no identifiable magic or plaintext header — all bytes are ciphertext. Detection relies on file extension and near-maximum entropy (~7.9-8.0 bits/byte). Use 'veracrypt --list' to confirm mounted volumes."
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "Encrypted Header Area", "offset": 0, "size": 65536, "description": "First 64KB — contains the encrypted outer volume header; appears as random data without passphrase" },
+      { "name": "Encrypted Data", "offset": 65536, "size": -1, "description": "Main encrypted payload data; all bytes are AES-XTS ciphertext indistinguishable from random" }
+    ]
+  },
+  "inspector": {
+    "badge": "VC",
+    "primaryField": "firstByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Volume Start",
+        "fields": [ "firstByte", "secondByte" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Volume Summary",
+      "format": "text",
+      "template": "VeraCrypt Encrypted Volume\nFirst Byte: 0x{firstByte:X2}\nNote: All content is AES-256-XTS ciphertext\nDetection: Extension-based only (.vc, .hc, .tc)\nEntropy: Near-maximum (~7.9-8.0 bits/byte expected)\nHidden volume: Possible in last 64KB with separate passphrase"
+    },
+    {
+      "name": "Minimal CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nSecondByte,{secondByte}\nNote,Extension-only detection — no plaintext header available"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "high",
+    "notes": "VeraCrypt full-disk encryption volume designed for plausible deniability and anti-forensics. No plaintext header, no magic bytes, no file system signatures visible. Contains potentially a hidden volume in the last 64KB. Cannot be decrypted without the passphrase. Presence of a .vc/.hc file may be relevant evidence in a forensic investigation even without decryption. Entropy analysis can confirm or exclude this format."
+  },
+  "aiHints": {
+    "analysisContext": "VeraCrypt volumes are specifically engineered to be undetectable without the passphrase. The entire file is ciphertext. The only analysis possible without decryption is: file size (typically a multiple of 512 bytes), Shannon entropy calculation (should be near 8.0), extension matching, and checking whether the file size matches known VeraCrypt container sizes. A hidden volume occupies the last 65536 bytes and is protected by a separate second passphrase.",
+    "suggestedInspections": [
+      "Calculate Shannon entropy of the first 65536 bytes — expect 7.9-8.0 bits/byte for valid VeraCrypt",
+      "Verify file size is a multiple of 512 bytes as required by the VeraCrypt format",
+      "Check extension: .vc (VeraCrypt), .hc (VeraCrypt alternate), .tc (TrueCrypt legacy)",
+      "Note that last 65536 bytes may contain a hidden volume if present",
+      "Entropy below 7.8 bits/byte suggests this is not a VeraCrypt volume",
+      "Compare file size against known VeraCrypt container size presets for context"
+    ]
+  },
+  "software": [
+    { "name": "VeraCrypt", "url": "https://www.veracrypt.fr/", "role": "volume manager" },
+    { "name": "TrueCrypt", "url": "https://truecrypt.sourceforge.net/", "role": "predecessor volume manager" }
+  ],
+  "formatRelationships": [
+    { "format": "LUKS", "relation": "alternative — LUKS stores plaintext metadata in the header; VeraCrypt encrypts everything including the header for plausible deniability" }
+  ],
+  "MimeTypes": [ "application/x-veracrypt" ],
+  "UseCases": [
+    "High-security file container encryption with plausible deniability",
+    "Full-disk and full-partition encryption",
+    "Anti-forensic data protection for journalists and activists",
+    "Secure archival of sensitive data"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "encryption": "AES-256-XTS (outer), optionally Twofish or Serpent",
+    "keyDerivation": "PBKDF2-HMAC-SHA-512 (default) or Whirlpool",
+    "headerOffset": 0,
+    "hiddenVolumeHeaderOffset": "volumeSize - 131072",
+    "endianness": "big-endian (internal header when decrypted)",
+    "notes": "Volume format is backward compatible with TrueCrypt volumes (.tc extension). No plaintext bytes exist in the file. The header (when decrypted) contains the master key, volume size, and sector size. VeraCrypt uses higher PBKDF2 iteration counts than TrueCrypt for improved brute-force resistance."
+  }
+}

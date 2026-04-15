@@ -1,0 +1,286 @@
+{
+  "diffMode": "binary",
+  "formatName": "NIfTI Neuroimaging",
+  "version": "1.0",
+  "extensions": [".nii", ".nii.gz", ".hdr", ".img"],
+  "description": "NIfTI (Neuroimaging Informatics Technology Initiative) format for MRI, fMRI, and DTI brain imaging data. NIfTI-1: 348-byte header with magic 'ni1\\x00' (6E 69 31 00) or 'n+1\\x00' (6E 2B 31 00) at offset 344. 'ni1' = paired .hdr/.img files; 'n+1' = single .nii file. NIfTI-2: 540-byte header with magic 'ni2\\x00' or 'n+2\\x00' at offset 4. Header: dim[8](int16 array: dim[0]=ndim, dim[1..7]=sizes), datatype(int16: 2=uint8, 4=int16, 8=int32, 16=float32, 64=float64, 128=RGB24, 256=int8, 512=uint16), pixdim[8](float32 voxel sizes in mm), vox_offset(float32 data start), qform_code and sform_code for spatial orientation (quaternion/sform parameters).",
+  "category": "Medical",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": [
+    "NIfTI-1 Data Format Specification — Robert Cox (AFNI), 2004",
+    "NIfTI-2 Data Format Specification — 2011",
+    "FSL User Guide — FMRIB Analysis Group, Oxford"
+  ],
+  "WebLinks": [
+    "https://nifti.nimh.nih.gov/",
+    "https://en.wikipedia.org/wiki/NIfTI",
+    "https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "6E693100",
+        "offset": 344,
+        "label": "ni1\\x00 — NIfTI-1 .hdr/.img pair magic at offset 344",
+        "weight": 1.0
+      },
+      {
+        "value": "6E2B3100",
+        "offset": 344,
+        "label": "n+1\\x00 — NIfTI-1 single .nii file magic at offset 344",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 348,
+      "maxSignatureOffset": 344,
+      "note": "NIfTI-1 magic is at offset 344 (end of 348-byte header). sizeof_hdr at offset 0 must be 348 (NIfTI-1) or 540 (NIfTI-2). NIfTI-2 magic is at offset 4."
+    }
+  },
+  "variables": {
+    "hdrSize": 0,
+    "ndim": 0,
+    "dim1": 0,
+    "dim2": 0,
+    "dim3": 0,
+    "datatype": 0,
+    "niftiMagic": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Header Size",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "NIfTI header size at offset 0 (4 bytes, int32 little-endian). Must be 348 for NIfTI-1 or 540 for NIfTI-2. This field is critical for format version detection. The value 348 (0x5C01 in LE) was inherited from Analyze 7.5 and identifies NIfTI-1 files. NIfTI-2 uses 540 to accommodate 64-bit dim/pixdim arrays and other enlarged fields. Analyze 7.5 also uses 348 but lacks the NIfTI magic at offset 344.",
+      "storeAs": "hdrSize",
+      "valueType": "int32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Dimensions",
+      "offset": 40,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "dim[0] — number of data array dimensions at offset 40 (2 bytes, int16 little-endian). Valid values for neuroimaging: 3 (3D anatomical volume: x,y,z), 4 (4D fMRI time series: x,y,z,t), 5 (5D data: x,y,z,t,e.g. complex), 6 (6D diffusion tensor: x,y,z,t,u,v), 7 (7D maximum). Values 1-7 are valid. dim[1..ndim] follow at offsets 42, 44, 46, 48, 50, 52, 54 (2 bytes each int16 LE).",
+      "storeAs": "ndim",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "X Dimension Size",
+      "offset": 42,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "dim[1] — size of x-axis (left-right dimension) at offset 42 (2 bytes, int16 little-endian). For a standard structural MRI, this is the number of voxels in the left-right direction (typically 256 for 1mm isotropic acquisition of a human brain). Combined with dim[2] (anterior-posterior) and dim[3] (inferior-superior), this defines the 3D volume dimensions.",
+      "storeAs": "dim1",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Y Dimension Size",
+      "offset": 44,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "dim[2] — size of y-axis (anterior-posterior dimension) at offset 44 (2 bytes, int16 little-endian). For standard whole-brain MRI acquisitions, this is typically 256 for 1mm isotropic or 64-128 for fMRI volumes. The actual physical size in millimeters is dim[2] * pixdim[2] (stored as float32 at offset 84).",
+      "storeAs": "dim2",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Z Dimension Size",
+      "offset": 46,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.35,
+      "description": "dim[3] — size of z-axis (inferior-superior dimension) at offset 46 (2 bytes, int16 little-endian). For whole-brain MRI: typically 256 for 1mm isotropic or 32-64 slices for fMRI. The slice acquisition direction and orientation relative to scanner coordinates is encoded in the qform/sform fields. Multiplied by pixdim[3] gives the volume height in millimeters.",
+      "storeAs": "dim3",
+      "valueType": "int16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Data Type",
+      "offset": 70,
+      "length": 2,
+      "color": "#FFB347",
+      "opacity": 0.35,
+      "description": "datatype field at offset 70 (2 bytes, int16 little-endian). Specifies the data type for each voxel value. Standard values: 2=DT_UINT8 (unsigned 8-bit), 4=DT_INT16 (signed 16-bit, common for MRI), 8=DT_INT32 (signed 32-bit), 16=DT_FLOAT32 (IEEE 754 single, common for preprocessed fMRI), 64=DT_FLOAT64 (double), 128=DT_RGB24 (3-byte RGB), 256=DT_INT8 (signed 8-bit), 512=DT_UINT16, 1024=DT_INT64.",
+      "storeAs": "datatype",
+      "valueType": "int16",
+      "endianness": "little",
+      "valueMap": {
+        "2": "uint8 (DT_UINT8)",
+        "4": "int16 (DT_INT16)",
+        "8": "int32 (DT_INT32)",
+        "16": "float32 (DT_FLOAT32)",
+        "64": "float64 (DT_FLOAT64)",
+        "128": "RGB24 (DT_RGB24)",
+        "256": "int8 (DT_INT8)",
+        "512": "uint16 (DT_UINT16)"
+      }
+    },
+    {
+      "type": "signature",
+      "name": "NIfTI Magic",
+      "offset": 344,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "NIfTI-1 magic bytes at offset 344 (4 bytes). Four valid values: 'ni1\\x00' (6E 69 31 00) = .hdr/.img paired files (image data in separate .img file, vox_offset ignored), 'n+1\\x00' (6E 2B 31 00) = single .nii file (image data appended after header, vox_offset >= 352). The '+' in 'n+1' means data is concatenated in the single file. NIfTI-2 uses 'ni2\\x00' or 'n+2\\x00' at offset 4 of its 540-byte header.",
+      "storeAs": "niftiMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Size",
+      "variable": "hdrSize",
+      "description": "348=NIfTI-1, 540=NIfTI-2"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "ndim",
+      "description": "Number of data dimensions (3-7)"
+    },
+    {
+      "type": "metadata",
+      "name": "Volume Size",
+      "variable": "dim1",
+      "description": "X dimension size in voxels"
+    },
+    {
+      "type": "metadata",
+      "name": "NIfTI Magic",
+      "variable": "niftiMagic",
+      "description": "ni1/n+1 paired or single file magic"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Header size valid",
+      "expression": "hdrSize == 348",
+      "severity": "error",
+      "message": "NIfTI-1 header sizeof_hdr must be 348 — not a valid NIfTI-1 file"
+    },
+    {
+      "name": "NIfTI magic valid",
+      "expression": "niftiMagic starts with 'ni' or niftiMagic starts with 'n+'",
+      "severity": "error",
+      "message": "NIfTI magic must be 'ni1', 'n+1', 'ni2', or 'n+2' at offset 344"
+    },
+    {
+      "name": "Dimensions in valid range",
+      "expression": "ndim >= 3 and ndim <= 7",
+      "severity": "warning",
+      "message": "NIfTI ndim (dim[0]) should be 3-7 for neuroimaging data"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "NIfTI Header Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "dim[] Array", "offset": 40, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "NIfTI Magic", "offset": 344, "icon": "\uE946", "color": "#FFE66D" },
+      { "name": "Image Data Start", "offset": 352, "icon": "\uEA37", "color": "#95E1D3" }
+    ]
+  },
+  "inspector": {
+    "badge": "niftiMagic",
+    "primaryField": "niftiMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "NIfTI Header",
+        "icon": "\uE71B",
+        "fields": ["hdrSize", "niftiMagic", "ndim", "dim1", "dim2", "dim3", "datatype"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "NIfTI Header (JSON)",
+      "format": "json",
+      "fields": ["hdrSize", "niftiMagic", "ndim", "dim1", "dim2", "dim3", "datatype"]
+    },
+    {
+      "name": "NIfTI Dimensions (Text)",
+      "format": "text",
+      "fields": ["niftiMagic", "ndim", "dim1", "dim2", "dim3"]
+    }
+  ],
+  "forensic": {
+    "category": "medical-imaging",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      "Brain MRI data constitutes protected health information under HIPAA",
+      "Structural MRI may allow facial reconstruction — high re-identification risk",
+      "fMRI activation maps may reveal neurological/psychiatric diagnosis"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "NIfTI-1 header layout (348 bytes): sizeof_hdr(4B LE int32=348) + data_type(10B, unused) + db_name(18B, unused) + extents(4B LE) + session_error(2B) + regular(1B) + dim_info(1B) + dim[8](16B: 8*int16 LE) + intent_p1/p2/p3(12B float32) + intent_code(2B int16) + datatype(2B int16) + bitpix(2B int16) + slice_start(2B int16) + pixdim[8](32B: 8*float32) + vox_offset(4B float32: data offset in .nii file) + scl_slope(4B float32) + scl_inter(4B float32) + slice_end/code/duration/toffset/etc + magic(4B at 344: ni1 or n+1). Image data at ceil(vox_offset) in .nii, or in .img for paired files.",
+    "suggestedInspections": [
+      "Bytes 0-3 (int32 LE): sizeof_hdr — should be 348 (NIfTI-1) or 540 (NIfTI-2)",
+      "Bytes 40-55: dim[0..7] int16 LE array — dim[0]=ndim, dim[1..3]=x,y,z voxel counts",
+      "Bytes 70-71 (int16 LE): datatype — 4=int16 (typical MRI), 16=float32 (preprocessed fMRI)",
+      "Bytes 344-347: magic 'ni1' or 'n+1' — paired vs single file format"
+    ]
+  },
+  "software": [
+    "FSL (FMRIB Software Library)",
+    "SPM (Statistical Parametric Mapping, MATLAB)",
+    "AFNI (Analysis of Functional NeuroImages)",
+    "FreeSurfer",
+    "nibabel (Python NIfTI/MINC library)",
+    "3D Slicer",
+    "ITK-SNAP"
+  ],
+  "formatRelationships": {
+    "category": "Medical",
+    "extensions": [".nii", ".nii.gz", ".hdr", ".img"],
+    "relatedFormats": ["ANALYZE75", "MINC", "DICOM", "MGH"],
+    "note": "NIfTI-1 is a direct extension of Analyze 7.5 — same sizeof_hdr=348 but adds magic and spatial orientation fields at the end of the header. NIfTI-2 (2011) uses 64-bit fields to support very large volumes. .nii.gz files are gzip-compressed NIfTI — HDF5/ZARR are alternatives for very large datasets."
+  },
+  "MimeTypes": [
+    "application/x-nifti",
+    "image/x-nifti"
+  ],
+  "UseCases": [
+    "Structural MRI brain anatomy (T1w, T2w, FLAIR, PD)",
+    "Functional MRI (fMRI) task activation and resting-state connectivity",
+    "Diffusion tensor imaging (DTI) and tractography",
+    "Human Connectome Project, UK Biobank, ABCD Study data",
+    "Machine learning neuroimaging models (brain age, disease classification)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 11,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "Fixed 348-byte binary header + raw voxel data (NIfTI-1) or 540-byte header (NIfTI-2)",
+    "Magic": "'ni1\\x00' or 'n+1\\x00' (NIfTI-1) at offset 344; 'ni2\\x00' or 'n+2\\x00' (NIfTI-2) at offset 4",
+    "Standard": "NIfTI-1 (2004) / NIfTI-2 (2011) — NIMH/NIfTI Data Format Working Group",
+    "Endianness": "little-endian (most common) or big-endian — detected from sizeof_hdr byte-swap check",
+    "Compression": "gzip for .nii.gz (nibabel transparent decompression)"
+  }
+}

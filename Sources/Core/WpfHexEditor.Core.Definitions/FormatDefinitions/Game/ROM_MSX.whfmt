@@ -1,0 +1,246 @@
+{
+  "diffMode": "binary",
+  "formatName": "MSX ROM Cartridge",
+  "version": "1.0",
+  "extensions": [".rom", ".mx1", ".mx2"],
+  "description": "MSX cartridge ROM image for the MSX home computer standard (ASCII Corporation / Microsoft, 1983). ROM images begin with a 2-byte page identifier: 'AB' (0x41 0x42) is the standard MSX ROM cartridge identifier used by nearly all game and application cartridges; 'CD' (0x43 0x44) identifies MSX-DOS ROM images. For 'AB' ROMs the standard 16-byte header follows: init_address (2B LE, called on slot init), statement_address (2B LE, BASIC CALL hook), device_address (2B LE, device handler), text_address (2B LE, BASIC program in ROM, 0 if none), then 6 reserved bytes. Mapper types include: ROM linear (no mapper), ASCII8 (8 KB pages), ASCII16 (16 KB pages), Konami4 (SCC-compatible), Konami5 (SCC+ sound), and GameMaster2. MSX2 and MSX2+ extend the mapper page count.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": [
+    {
+      "specifications": [
+        "MSX Technical Data Book (ASCII/Microsoft, 1984)",
+        "MSX Cartridge ROM Header Specification",
+        "MSX2 Technical Handbook"
+      ],
+      "WebLinks": [
+        "https://www.msx.org/wiki/Category:Mapper",
+        "https://www.msx.org/wiki/ROM_header",
+        "https://en.wikipedia.org/wiki/MSX",
+        "https://fms.komkon.org/MSX/"
+      ]
+    }
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "4142",
+        "offset": 0,
+        "label": "'AB' (0x41 0x42) — MSX ROM cartridge standard identifier used by games and applications",
+        "weight": 1.0
+      },
+      {
+        "value": "4344",
+        "offset": 0,
+        "label": "'CD' (0x43 0x44) — MSX-DOS ROM identifier",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 16,
+      "maxSignatureOffset": 0,
+      "note": "Valid MSX ROM images start with 'AB' or 'CD'. File size should be a power of 2 between 8 KB (8192) and 4 MB (4194304). The 'AB' magic is used by ~95% of all MSX ROM dumps."
+    }
+  },
+  "variables": {
+    "msxId": "",
+    "initAddress": 0,
+    "statementAddr": 0,
+    "deviceAddr": 0,
+    "textAddr": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "MSX ROM Identifier",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "ascii",
+      "description": "2-byte ASCII page identifier at offset 0. 'AB' (0x41 0x42) is the standard MSX ROM cartridge identifier defined in the MSX Technical Data Book. 'CD' is used for MSX-DOS ROM images. The identifier tells the MSX BIOS slot-search routine that this ROM slot contains a valid cartridge with a standard header.",
+      "storeAs": "msxId"
+    },
+    {
+      "type": "field",
+      "name": "Init Address",
+      "offset": 2,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "16-bit LE address at offset 2 called by the BIOS during slot initialization (INIT hook). The BIOS CALLs this address for each ROM found during startup. If 0x0000 the slot is ignored during INIT. Typical values: 0x4000-0x7FFF (Page 1 cartridge space).",
+      "storeAs": "initAddress"
+    },
+    {
+      "type": "field",
+      "name": "Statement Address",
+      "offset": 4,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "16-bit LE address at offset 4 for the BASIC CALL statement handler. If non-zero the BIOS calls this address when a BASIC 'CALL name' statement is executed, enabling cartridge-defined BASIC extensions.",
+      "storeAs": "statementAddr"
+    },
+    {
+      "type": "field",
+      "name": "Device Address",
+      "offset": 6,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "16-bit LE address at offset 6 for the device handler hook. Used by ROM cartridges that register a hardware device accessible via MSX BIOS DSKIO / DSKCHG / GETDPB / CHOICE / DSKFMT / MTOFF vectors.",
+      "storeAs": "deviceAddr"
+    },
+    {
+      "type": "field",
+      "name": "Text Address",
+      "offset": 8,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.35,
+      "valueType": "uint16",
+      "endianness": "little",
+      "description": "16-bit LE address at offset 8 pointing to a tokenised BASIC program embedded in ROM. If 0x0000 the cartridge contains no embedded BASIC program and is a pure machine-code cartridge.",
+      "storeAs": "textAddr"
+    },
+    {
+      "type": "field",
+      "name": "Reserved",
+      "offset": 10,
+      "length": 6,
+      "color": "#E0E0E0",
+      "opacity": 0.2,
+      "valueType": "bytes",
+      "hidden": true,
+      "description": "6 reserved bytes at offsets 10-15. Must be 0x00 in conforming MSX ROM headers."
+    },
+    {
+      "type": "metadata",
+      "name": "MSX ID",
+      "variable": "msxId",
+      "description": "ROM page identifier: 'AB'=cartridge, 'CD'=DOS"
+    },
+    {
+      "type": "metadata",
+      "name": "Init Address",
+      "variable": "initAddress",
+      "description": "BIOS INIT hook address (LE)"
+    },
+    {
+      "type": "metadata",
+      "name": "Text Address",
+      "variable": "textAddr",
+      "description": "Embedded BASIC program address (0=none)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MSX ID valid",
+      "expression": "msxId == 'AB' || msxId == 'CD'",
+      "severity": "error",
+      "message": "MSX ROM must start with page identifier 'AB' (standard cartridge) or 'CD' (MSX-DOS)"
+    },
+    {
+      "name": "Init address in ROM range",
+      "expression": "initAddress == 0 || (initAddress >= 16384 && initAddress <= 49151)",
+      "severity": "warning",
+      "message": "Init address should be 0 or in the MSX cartridge ROM address space (0x4000-0xBFFF)"
+    },
+    {
+      "name": "ROM size power of two",
+      "expression": "fileSize >= 8192",
+      "severity": "warning",
+      "message": "MSX ROM images should be at least 8 KB (smallest standard cartridge page)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "MSX ROM Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ROM Code Start", "offset": 16, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "msxId",
+    "primaryField": "initAddress",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "MSX ROM Header",
+        "icon": "\uE71B",
+        "fields": ["msxId", "initAddress", "statementAddr", "deviceAddr", "textAddr"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "MSX ROM Header (JSON)",
+      "format": "json",
+      "fields": ["msxId", "initAddress", "statementAddr", "deviceAddr", "textAddr"]
+    },
+    {
+      "name": "MSX ROM Header (CSV)",
+      "format": "csv",
+      "fields": ["msxId", "initAddress", "textAddr"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "MSX ROM cartridge: 2-byte ID ('AB' game / 'CD' DOS) + init(2B LE) + statement(2B LE) + device(2B LE) + text(2B LE) + reserved(6B). Mapper type (ASCII8/16, Konami4/5, GameMaster2) is not encoded in the header — must be detected from bank-switch write patterns.",
+    "suggestedInspections": [
+      "Check bytes 0-1 for 'AB' (0x41 0x42) standard cartridge ID or 'CD' (0x43 0x44) MSX-DOS ID",
+      "Read init address (bytes 2-3 uint16 LE) to find cartridge entry point — typical range 0x4000-0xBFFF",
+      "Check text address (bytes 8-9) for 0x0000 (no BASIC program) vs non-zero (embedded BASIC)",
+      "Infer mapper type from file size and bank-switch patterns: ASCII8 uses writes to 0x6000/0x6800/0x7000/0x7800"
+    ]
+  },
+  "software": [
+    "openMSX (cross-platform MSX emulator)",
+    "blueMSX (Windows MSX emulator)",
+    "MAME (MSX machine driver)",
+    "RetroArch with fMSX core"
+  ],
+  "formatRelationships": {
+    "category": "Game",
+    "extensions": [".rom", ".mx1", ".mx2"],
+    "relatedFormats": ["ROM_COLECO"],
+    "note": "MSX1 ROMs use .rom; .mx1 and .mx2 indicate MSX1 and MSX2 specifically. The MSX standard was co-developed by ASCII Corporation and Microsoft as a unified home computer specification."
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Emulation of MSX1/MSX2/MSX2+ cartridge software",
+    "Preservation of MSX game and application ROMs",
+    "ROM hacking and fan translation of MSX games",
+    "Verification of cartridge dump integrity by header inspection"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Platform": "MSX / MSX2 / MSX2+ / MSX TurboR",
+    "CPU": "Zilog Z80A at 3.58 MHz",
+    "ROMPageIdentifier": "'AB' = 0x4142 (cartridge), 'CD' = 0x4344 (MSX-DOS)",
+    "MapperTypes": "Linear, ASCII8, ASCII16, Konami4, Konami5 (SCC), GameMaster2",
+    "AddressSpace": "Page 1 = 0x4000-0x7FFF, Page 2 = 0x8000-0xBFFF"
+  }
+}

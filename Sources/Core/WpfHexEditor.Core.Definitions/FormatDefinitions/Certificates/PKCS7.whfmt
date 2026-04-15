@@ -1,0 +1,217 @@
+{
+  "diffMode": "binary",
+  "formatName": "PKCS#7 Certificate Bundle",
+  "version": "1.0",
+  "extensions": [ ".p7b", ".p7c", ".p7s", ".cer" ],
+  "description": "PKCS#7 / CMS (Cryptographic Message Syntax, RFC 5652) container for certificates, CRLs, and signed/encrypted data. DER outer container starts with 30 82 (SEQUENCE). OID at offset ~6 distinguishes content type: 1.2.840.113549.1.7.1=Data, 1.2.840.113549.1.7.2=SignedData (p7b/p7s), 1.2.840.113549.1.7.3=EnvelopedData (encrypted), 1.2.840.113549.1.7.6=EncryptedData. p7b (certificate bundle): SignedData with empty content and certificates[] only — used for certificate chain distribution. p7s (signature): SignedData with detached or inline signed content and signerInfos[]. OID bytes for SignedData: 06 09 2A 86 48 86 F7 0D 01 07 02. PEM encoding: '-----BEGIN PKCS7-----' + base64 + '-----END PKCS7-----'. Used in Windows certificate import wizard, code signing (Authenticode), S/MIME email signing, and Java JAR signing.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 5652 — Cryptographic Message Syntax (CMS)",
+      "RFC 2315 — PKCS#7 Cryptographic Message Syntax Version 1.5",
+      "RFC 5751 — S/MIME Version 3.2 Message Specification"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc5652",
+      "https://www.openssl.org/docs/man3.0/man1/openssl-pkcs7.html",
+      "https://learn.microsoft.com/en-us/windows/win32/seccrypto/pkcs-7"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3082", "offset": 0, "label": "30 82 — DER SEQUENCE with 2-byte length (PKCS#7 outer ASN.1 container)", "weight": 0.6 },
+      { "value": "2D2D2D2D2D424547494E20504B435337", "offset": 0, "label": "-----BEGIN PKCS7 — PEM-encoded PKCS#7 container", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.6,
+    "required": false,
+    "Strength": "Medium",
+    "validation": {
+      "minFileSize": 10,
+      "maxSignatureOffset": 0,
+      "note": "DER 30 82 is shared with X.509 and PKCS#12. Use .p7b/.p7c/.p7s extension or PEM header for disambiguation. OID at offset ~6 confirms SignedData (2A 86 48 86 F7 0D 01 07 02)."
+    }
+  },
+  "variables": {
+    "asnTag": 0,
+    "lenByte": 0,
+    "contentLen": 0,
+    "innerTag": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Outer SEQUENCE Tag",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "description": "ASN.1 SEQUENCE tag 0x30 beginning the PKCS#7 outer ContentInfo structure. The outer SEQUENCE wraps the contentType OID and the content itself (which for SignedData is wrapped in an [0] EXPLICIT context tag).",
+      "storeAs": "asnTag",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Length Indicator",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "ASN.1 length encoding byte. 0x82 = 2 follow-bytes encode the length. Most PKCS#7 files use 0x82 since certificate bundles are commonly between 256 bytes and 65535 bytes. Very large bundles may use 0x83.",
+      "storeAs": "lenByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Content Length",
+      "offset": 2,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Total byte length of the PKCS#7 ContentInfo content following this header (big-endian). Actual file size = this value + 4. p7b certificate bundles typically range from a few KB (small chain) to hundreds of KB (large CA bundle).",
+      "storeAs": "contentLen",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ContentInfo Inner Tag",
+      "offset": 4,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Next ASN.1 tag after the outer SEQUENCE header. Should be 0x06 (OID tag) for the contentType OID. The OID identifies the PKCS#7 content type: 2A 86 48 86 F7 0D 01 07 02 = pkcs7-signedData.",
+      "storeAs": "innerTag",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "Content Types",
+      "variable": "asnTag",
+      "description": "PKCS#7 OID content types: 1.2.840.113549.1.7.1=Data, .7.2=SignedData (p7b/p7s), .7.3=EnvelopedData (encrypted), .7.4=SignedAndEnvelopedData, .7.5=DigestedData, .7.6=EncryptedData."
+    },
+    {
+      "type": "metadata",
+      "name": "p7b Certificate Bundle",
+      "variable": "contentLen",
+      "description": "p7b files (PKCS#7 certificate bundle) contain SignedData with no eContent payload — only a certificates[0] field with one or more X.509 certificates. Used to distribute CA certificate chains for import into Windows/Java trust stores."
+    },
+    {
+      "type": "metadata",
+      "name": "Inspect Command",
+      "variable": "innerTag",
+      "description": "Parse with OpenSSL: openssl pkcs7 -in file.p7b -inform DER -print_certs -noout. For PEM: openssl pkcs7 -in file.p7b -inform PEM -print_certs -noout."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Outer tag is SEQUENCE",
+      "expression": "asnTag == 48",
+      "severity": "error",
+      "message": "PKCS#7 DER must start with ASN.1 SEQUENCE tag 0x30. File is not a valid DER-encoded PKCS#7 container."
+    },
+    {
+      "name": "Inner tag is OID",
+      "expression": "innerTag == 6",
+      "severity": "warning",
+      "message": "Expected OID tag 0x06 at offset 4 for PKCS#7 contentType. Structure may differ from standard ContentInfo encoding."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Outer SEQUENCE", "offset": 0, "color": "#FF4444" },
+      { "name": "Content Length", "offset": 2, "color": "#44AAFF" },
+      { "name": "ContentType OID", "offset": 4, "color": "#44FF88" }
+    ]
+  },
+  "inspector": {
+    "badge": "P7B",
+    "primaryField": "contentLen",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PKCS#7 Header",
+        "icon": "",
+        "fields": [ "asnTag", "lenByte", "contentLen", "innerTag" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PKCS7 Header (JSON)",
+      "format": "json",
+      "fields": [ "asnTag", "lenByte", "contentLen", "innerTag" ]
+    },
+    {
+      "name": "PKCS7 Summary (Text)",
+      "format": "text",
+      "fields": [ "asnTag", "contentLen" ]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "low",
+    "notes": "PKCS#7 p7b files contain only public certificates — no private keys. p7s signature files may contain signing certificates. EnvelopedData (encrypted content) is medium risk. PKCS#7 does not contain private keys unlike PKCS#12 (.p12/.pfx). Certificate bundles are safe to distribute.",
+    "suspiciousPatterns": [
+      "EnvelopedData content type indicates encrypted message — may require decryption for content analysis",
+      "Unexpected signer certificates in p7s files may indicate forged or unexpected signers",
+      "Certificates with unusual validity periods or extension combinations warrant review"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PKCS#7 ContentInfo: SEQUENCE { contentType OID + content [0] EXPLICIT ANY }. SignedData: SEQUENCE { version INTEGER + digestAlgorithms SET + encapContentInfo + certificates [0] IMPLICIT OPTIONAL + crls [1] IMPLICIT OPTIONAL + signerInfos SET }. p7b = SignedData with empty encapContentInfo (id-data) and certificates[] only. OID 1.2.840.113549.1.7.2 in hex: 2A 86 48 86 F7 0D 01 07 02 (9 bytes after 06 09 OID tag+len).",
+    "suggestedInspections": [
+      "Verify outer SEQUENCE tag 0x30 and OID tag 0x06 at expected positions",
+      "Decode contentType OID to identify p7b (SignedData), encrypted (EnvelopedData), or other type",
+      "For SignedData (p7b): count certificates in the certificates[0] field and extract each X.509 cert",
+      "Check certificate chain validity: leaf -> intermediate -> root CA ordering and date ranges",
+      "For p7s: extract signerInfos to identify signing certificates, digest algorithms, and signature values",
+      "Verify signed attributes (if present) for message digest and signing time in SignerInfo"
+    ]
+  },
+  "software": [
+    "OpenSSL — openssl pkcs7 -print_certs for certificate extraction",
+    "Windows CertMgr — native PKCS#7 certificate import via double-click",
+    "Java keytool — imports p7b certificate chains into JKS keystores",
+    "Bouncy Castle — Java/C# library for full CMS/PKCS#7 processing",
+    "certutil (Windows) — certutil -dump file.p7b"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [ ".p7b", ".p7c", ".p7s", ".cer" ],
+    "relatedFormats": [ "PKCS12", "DER", "PEM", "X509_CRL" ],
+    "note": "PKCS#7 is a container for certificates and signed/encrypted data. PKCS#12 (.p12) is the related format for private key + certificate bundles. RFC 5652 (CMS) supersedes RFC 2315 (PKCS#7 v1.5) with minor additions."
+  },
+  "MimeTypes": [
+    "application/pkcs7-mime",
+    "application/pkcs7-signature",
+    "application/x-pkcs7-certificates",
+    "application/x-pkcs7-certreqresp"
+  ],
+  "UseCases": [
+    "Certificate chain distribution for Windows trust store import",
+    "S/MIME email message signing and encryption",
+    "Windows Authenticode code signing (PE/MSI)",
+    "Java JAR signing with jarsigner",
+    "SSL certificate bundle import and distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "DER-encoded ASN.1 (binary) or PEM (base64)",
+    "DERMagic": "30 82 at offset 0",
+    "PEMHeader": "-----BEGIN PKCS7-----",
+    "SignedDataOID": "1.2.840.113549.1.7.2 (hex: 2A 86 48 86 F7 0D 01 07 02)",
+    "Inspect": "openssl pkcs7 -in file.p7b -inform DER -print_certs -noout",
+    "RFC": "RFC 5652 (CMS), RFC 2315 (PKCS#7 legacy)"
+  }
+}

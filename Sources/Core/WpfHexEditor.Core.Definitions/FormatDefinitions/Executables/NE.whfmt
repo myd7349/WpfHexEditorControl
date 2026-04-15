@@ -1,0 +1,174 @@
+{
+  "diffMode": "binary",
+  "formatName": "New Executable (16-bit Windows)",
+  "version": "1.0",
+  "extensions": [ ".exe", ".dll", ".drv", ".fon" ],
+  "description": "NE (New Executable) format — 16-bit Windows 3.x and OS/2 1.x executable. A DOS MZ stub precedes the NE header at the offset stored in e_lfanew (at DOS offset 60). NE magic bytes are 'NE' (0x4E 0x45). The 64-byte NE header contains: magic (2B), linker version and revision (2B), entry table and size offsets (4B), CRC (4B), module flags (2B including SINGLEDATA, MULTIPLEDATA, WINDOWSCOMPAT, WINDOWSAPI), auto_data_seg (2B), heap and stack sizes (4B), initial IP:CS (4B), initial SP:SS (4B), segment count, module reference count, non-resident name table size, and various table offsets. Target OS byte identifies OS/2 (1), Windows (2), or MS-DOS (3-4).",
+  "category": "Executables",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://wiki.osdev.org/NE",
+    "https://wiki.winehq.org/NE_Format"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "4D5A",
+        "offset": 0,
+        "label": "MZ — DOS stub header at offset 0; NE header located at e_lfanew (offset 60)",
+        "weight": 0.3
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Medium"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "mzMagic",
+      "offset": 0,
+      "size": 2,
+      "type": "ascii",
+      "description": "DOS MZ magic — 2-byte ASCII string at offset 0; must be 'MZ' (0x4D 0x5A) indicating a valid DOS MZ stub header prefixing the NE executable; all NE files begin with this DOS stub for backward compatibility",
+      "storeAs": "mzMagic"
+    },
+    {
+      "name": "e_lfanew",
+      "offset": 60,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "description": "NE header file offset — 2-byte little-endian unsigned integer at DOS header offset 60 (e_lfanew); indicates the byte offset within the file where the NE header begins; the NE magic 'NE' should be found at this offset",
+      "storeAs": "neOffset"
+    },
+    {
+      "name": "neMagic",
+      "offset": -1,
+      "size": 2,
+      "type": "ascii",
+      "offsetVar": "neOffset",
+      "description": "NE format magic — 2-byte ASCII string at the offset indicated by e_lfanew; must be 'NE' (0x4E 0x45) confirming this is a New Executable format file and not PE32, LE, or LX",
+      "storeAs": "neMagic"
+    },
+    {
+      "name": "targetOS",
+      "offset": -1,
+      "size": 1,
+      "type": "uint8",
+      "offsetRelative": "neOffset+54",
+      "description": "Target operating system — 1-byte value at NE header offset 54 indicating the OS for which this executable was built; 1=OS/2, 2=Windows, 3=European DOS 4.x, 4=Multitasking (Windows/386); determines loader behavior",
+      "storeAs": "targetOS",
+      "valueMap": {
+        "1": "OS/2",
+        "2": "Windows",
+        "3": "European DOS",
+        "4": "Multitasking DOS"
+      }
+    },
+    {
+      "name": "moduleFlags",
+      "offset": -1,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "offsetRelative": "neOffset+12",
+      "description": "Module flags — 2-byte little-endian bitmask at NE header offset 12; flags include: bit 0=SINGLEDATA, bit 1=MULTIPLEDATA, bit 2=NOTWINDOWCOMPAT, bit 3=WINDOWSCOMPAT, bit 4=WINDOWSAPI; determines memory and segment behavior"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MzMagicValid",
+      "expression": "mzMagic == 'MZ'",
+      "severity": "error",
+      "message": "DOS MZ magic at offset 0 must be 'MZ' (0x4D 0x5A); file does not have a valid DOS stub header"
+    },
+    {
+      "name": "NeMagicValid",
+      "expression": "neMagic == 'NE'",
+      "severity": "error",
+      "message": "NE magic at e_lfanew offset must be 'NE' (0x4E 0x45); file may be PE32, LE, LX, or a plain DOS executable rather than a New Executable"
+    },
+    {
+      "name": "TargetOSValid",
+      "expression": "targetOS >= 1 && targetOS <= 4",
+      "severity": "warning",
+      "message": "Target OS byte at NE header offset 54 should be 1 (OS/2), 2 (Windows), 3 (European DOS), or 4 (Multitasking); value outside this range is non-standard"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "DOS Stub", "offset": 0, "size": 64, "description": "DOS MZ stub header containing e_lfanew pointer to the NE header" },
+      { "name": "NE Header", "offset": -1, "size": 64, "description": "64-byte NE header at e_lfanew offset containing all module metadata" }
+    ]
+  },
+  "inspector": {
+    "badge": "NE",
+    "primaryField": "targetOS",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "DOS Stub",
+        "fields": [ "mzMagic", "neOffset" ]
+      },
+      {
+        "name": "NE Header",
+        "fields": [ "neMagic", "targetOS", "moduleFlags" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Executable Summary",
+      "format": "text",
+      "template": "New Executable (16-bit Windows/OS2)\nDOS Magic: {mzMagic}\nNE Header Offset: 0x{neOffset:X4}\nNE Magic: {neMagic}\nTarget OS: {targetOS}"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nMzMagic,{mzMagic}\nNeOffset,{neOffset}\nNeMagic,{neMagic}\nTargetOS,{targetOS}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "16-bit NE format executable. Cannot execute on modern 64-bit Windows without compatibility layers. Historical format from Windows 3.x era. .drv and .fon files in this format are used as legacy Windows resources."
+  },
+  "aiHints": {
+    "analysisContext": "NE executables embed a DOS MZ stub for backward compatibility. The real NE header is at the e_lfanew offset (bytes 60-61 in the DOS header). To confirm NE format, verify MZ magic at 0, read e_lfanew, then check for NE magic at that offset — otherwise it may be PE32 (PE magic) or LE/LX.",
+    "suggestedInspections": [
+      "Verify MZ magic (0x4D 0x5A) at offset 0",
+      "Read e_lfanew (uint16 LE at offset 60) to locate the NE header",
+      "Confirm NE magic (0x4E 0x45) at e_lfanew offset — not PE, LE, or LX",
+      "Read target OS byte at neOffset+54 to determine Windows vs OS/2 vs DOS",
+      "Check module flags at neOffset+12 for WINDOWSAPI and MULTIPLEDATA bits",
+      "Read segment count at neOffset+28 to enumerate code and data segments"
+    ]
+  },
+  "software": [
+    { "name": "Windows 3.1", "url": "https://en.wikipedia.org/wiki/Windows_3.1x", "role": "target platform" },
+    { "name": "WINE", "url": "https://www.winehq.org/", "role": "compatibility layer" }
+  ],
+  "formatRelationships": [
+    { "format": "PE_EXE", "relation": "successor — PE32 replaced NE for 32-bit Windows executables; uses same DOS MZ stub with e_lfanew pointing to PE header" },
+    { "format": "LE", "relation": "sibling — LE (Linear Executable) was used for 32-bit OS/2 and Windows 9x VxD drivers; same DOS stub approach" }
+  ],
+  "MimeTypes": [ "application/x-msdownload" ],
+  "UseCases": [
+    "Legacy Windows 3.x application analysis",
+    "Historical OS/2 1.x executable inspection",
+    "16-bit Windows font (.fon) and driver (.drv) file analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "magicOffset": "e_lfanew (bytes 60-61 in DOS header)",
+    "magicBytes": "4E45",
+    "endianness": "little-endian",
+    "notes": "NE format predates PE32. Segment-based memory model. Resource table, import/export name tables, and module reference table follow the fixed 64-byte header. Windows .fon bitmap font files and .drv driver files still use this format."
+  }
+}

@@ -1,239 +1,184 @@
 {
   "diffMode": "binary",
-  "formatName": "MPEG Video",
-  "version": "1.13",
-  "extensions": [
-    ".mpg",
-    ".mpeg",
-    ".m2v",
-    ".m1v"
-  ],
-  "description": "MPEG (Moving Picture Experts Group) video stream format compliant with ISO/IEC 11172 (MPEG-1) and ISO/IEC 13818 (MPEG-2). Raw MPEG video streams start with a Sequence Header start code 0x000001B3 at offset 0. The 12-byte Sequence Header body contains: horizontal size (12 bits), vertical size (12 bits), aspect ratio (4 bits), frame rate (4 bits), bit rate × 400 bps (18 bits), marker bit (1), VBV buffer size (10 bits), constrained parameters (1 bit), load intra quantiser matrix (1 bit). MPEG Program Streams (.mpg) begin with Pack Header 0x000001BA. MPEG-1 supports up to 1920×1152 at 1.5 Mbps; MPEG-2 supports 1920×1080 (HDTV), 5-80 Mbps. MPEG-2 is the standard for DVD-Video, digital broadcast (DVB/ATSC), and Blu-ray secondary video streams.",
+  "formatName": "MPEG Program Stream",
+  "version": "1.0",
+  "extensions": [".mpg", ".mpeg", ".m2v"],
+  "description": "MPEG Program Stream (PS) is a multiplexed container format defined in ISO/IEC 13818-1 for storing compressed video and audio on media with reliable storage (as opposed to Transport Stream which is designed for unreliable transmission). PS files start with either the pack start code 0x000001BA (MPEG-2 PS) or the video sequence header 0x000001B3 (raw MPEG-1/2 video). Pack headers contain System Clock Reference (SCR) timestamps. After each pack header, PES (Packetized Elementary Stream) packets carry individual video or audio streams. MPEG-1 PS files may begin with 0x000001B3 directly without pack wrapping.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "ISO/IEC 11172 — MPEG-1 Video (1993)",
-      "ISO/IEC 13818-2 — MPEG-2 Video (1996)",
-      "ISO/IEC 13818-1 — MPEG-2 Systems (Program/Transport Streams)"
+      "ISO/IEC 13818-1:2000 — MPEG-2 Systems (Program Stream)",
+      "ISO/IEC 11172-1:1993 — MPEG-1 Systems"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/MPEG-1",
-      "https://en.wikipedia.org/wiki/MPEG-2",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000028.shtml"
+      "https://en.wikipedia.org/wiki/MPEG_program_stream",
+      "https://en.wikipedia.org/wiki/MPEG-2"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "000001B3", "offset": 0, "label": "MPEG Sequence Header start code (raw video elementary stream)", "weight": 1.0 },
-      { "value": "000001BA", "offset": 0, "label": "MPEG Program Stream Pack Header start code (.mpg)", "weight": 0.9 },
-      { "value": "000001B8", "offset": 0, "label": "MPEG GOP Header start code", "weight": 0.7 }
+      {
+        "value": "000001BA",
+        "offset": 0,
+        "label": "MPEG-2 Program Stream pack start code 0x000001BA",
+        "weight": 1.0
+      },
+      {
+        "value": "000001B3",
+        "offset": 0,
+        "label": "MPEG video sequence header start code 0x000001B3",
+        "weight": 0.8
+      }
     ],
-    "matchMode": "any",
+    "matchMode": "Any",
     "MinimumScore": 0.7,
-    "required": true,
+    "required": [],
     "Strength": "Strong",
-    "EntropyHint": { "min": 4.5, "max": 7.5 },
+    "EntropyHint": {
+      "min": 5.5,
+      "max": 8.0,
+      "comment": "MPEG compressed video streams exhibit high entropy"
+    },
     "validation": {
-      "minFileSize": 16,
-      "maxSignatureOffset": 0
+      "notes": "0x000001BA indicates MPEG-2 PS; 0x000001B3 indicates MPEG-1/2 raw video elementary stream"
     }
   },
   "variables": {
-    "mpegStartCode": 0,
-    "horizontalSize": 0,
-    "verticalSize": 0,
-    "aspectRatioCode": 0,
-    "frameRateCode": 0,
-    "bitRateValue": 0,
-    "vbvBufferSize": 0
+    "mpegStartCode": "",
+    "scrByte": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "MPEG Sequence Header Start Code",
+      "name": "mpegStartCode",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "MPEG sequence header start code 0x000001B3 (big-endian uint32). The 3-byte start code prefix 0x000001 is shared across all MPEG elementary stream start codes. The fourth byte 0xB3 identifies this as a Sequence Header. MPEG-1 and MPEG-2 raw video streams always begin with this start code. MPEG Program Streams use 0x000001BA (Pack Header) as the outermost wrapper.",
+      "opacity": 0.85,
+      "description": "MPEG start code (4 bytes) — 0x000001BA identifies MPEG-2 Program Stream pack header; 0x000001B3 identifies MPEG video sequence header for raw elementary streams; both use the 0x000001 prefix per MPEG start code convention",
       "storeAs": "mpegStartCode",
-      "valueType": "uint32",
-      "endianness": "big",
-      "valueMap": {
-        "443": "0x000001B3 — Sequence Header (raw video elementary stream)",
-        "442": "0x000001BA — Pack Header (MPEG Program Stream .mpg)",
-        "440": "0x000001B8 — Group of Pictures (GOP) Header"
-      }
+      "valueType": "bytes"
     },
     {
       "type": "field",
-      "name": "Horizontal/Vertical Size + Aspect/Frame Rate",
+      "name": "scrByte",
       "offset": 4,
-      "length": 3,
-      "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "Packed 24-bit big-endian field in the Sequence Header: horizontal_size_value (bits 23-12, 12 bits), vertical_size_value (bits 11-0, wait: 4 bytes at offset 4 in sequence header body). Actually the sequence header body: horizSize(12b) + vertSize(12b) = 3 bytes, then aspectRatioCode(4b) + frameRateCode(4b) = 1 byte. Total Sequence Header payload = 8 bytes minimum.",
-      "storeAs": "horizontalSize",
-      "valueType": "uint32",
-      "endianness": "big"
-    },
-    {
-      "type": "field",
-      "name": "Aspect Ratio + Frame Rate",
-      "offset": 7,
       "length": 1,
-      "color": "#95E1D3",
-      "opacity": 0.30,
-      "description": "Combined aspect ratio (bits 7-4) and frame rate (bits 3-0) byte in the Sequence Header.",
-      "storeAs": "aspectRatioCode",
-      "valueType": "uint8",
-      "bitfields": [
-        {
-          "name": "Aspect Ratio Code",
-          "bits": "7-4",
-          "description": "Display aspect ratio (MPEG-1) or SAR code (MPEG-2)",
-          "valueMap": {
-            "1": "1:1 square pixels",
-            "2": "4:3 (DAR)",
-            "3": "16:9 (DAR)",
-            "4": "2.21:1 (DAR)"
-          }
-        },
-        {
-          "name": "Frame Rate Code",
-          "bits": "3-0",
-          "description": "Frame rate enumeration (MPEG-1 and MPEG-2 shared)",
-          "valueMap": {
-            "1": "23.976 fps (24/1.001)",
-            "2": "24 fps",
-            "3": "25 fps (PAL)",
-            "4": "29.97 fps (NTSC, 30/1.001)",
-            "5": "30 fps",
-            "6": "50 fps",
-            "7": "59.94 fps",
-            "8": "60 fps"
-          }
-        }
-      ]
-    },
-    {
-      "type": "metadata",
-      "name": "MPEG Start Code",
-      "variable": "mpegStartCode",
-      "description": "MPEG start code (0x000001B3=seq header, 0x000001BA=PS pack)"
-    },
-    {
-      "type": "metadata",
-      "name": "Aspect Ratio + Frame Rate",
-      "variable": "aspectRatioCode",
-      "description": "Combined aspect ratio (bits 7-4) and frame rate (bits 3-0)"
+      "color": "#4ECDC4",
+      "opacity": 0.75,
+      "description": "First byte following the start code — for MPEG-2 PS packs this carries System Clock Reference bits; upper 2 bits '01' confirm MPEG-2; for sequence headers this carries horizontal_size_value upper bits",
+      "storeAs": "scrByte",
+      "valueType": "uint8"
     }
   ],
   "assertions": [
     {
-      "name": "MPEG start code prefix valid",
-      "expression": "(mpegStartCode & 0xFFFFFF00) == 0x00000100",
-      "severity": "error",
-      "message": "MPEG start code must begin with 0x000001 prefix followed by a stream_id byte"
+      "field": "mpegStartCode",
+      "op": "in",
+      "value": ["000001BA", "000001B3"],
+      "message": "MPEG start code must be 0x000001BA (PS) or 0x000001B3 (video)"
     },
     {
-      "name": "Sequence or Program Stream start code",
-      "expression": "mpegStartCode == 443 || mpegStartCode == 442 || mpegStartCode == 440",
-      "severity": "info",
-      "message": "File does not start with a known MPEG Sequence Header (0xB3), Pack Header (0xBA), or GOP Header (0xB8)"
+      "field": "mpegStartCode",
+      "op": "startsWith",
+      "value": "000001",
+      "message": "All MPEG start codes begin with 0x000001 prefix"
     }
   ],
-  "versionDetection": {
-    "field": "mpegStartCode",
-    "versions": {
-      "443": "MPEG video elementary stream (Sequence Header first)",
-      "442": "MPEG Program Stream (.mpg — Pack Header first)"
-    }
-  },
   "navigation": {
     "bookmarks": [
-      {
-        "name": "Sequence Header Start Code",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      }
+      { "name": "MPEG Start Code", "offset": 0, "length": 4, "color": "#FF6B6B" },
+      { "name": "SCR / Header Byte", "offset": 4, "length": 1, "color": "#4ECDC4" }
     ]
   },
   "inspector": {
-    "badge": "mpegStartCode",
-    "primaryField": "aspectRatioCode",
+    "badge": "MPEG",
+    "primaryField": "mpegStartCode",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "MPEG Header",
-        "icon": "\uE71B",
-        "fields": ["mpegStartCode", "horizontalSize", "aspectRatioCode"]
+        "name": "Stream Header",
+        "fields": ["mpegStartCode", "scrByte"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "MPEG Sequence Header (JSON)",
+      "name": "MPEG Stream Summary",
+      "format": "text",
+      "template": "Start Code: {mpegStartCode} | First Byte: {scrByte}"
+    },
+    {
+      "name": "MPEG JSON Report",
       "format": "json",
-      "fields": ["mpegStartCode", "horizontalSize", "aspectRatioCode"]
+      "template": "{ \"startCode\": \"{mpegStartCode}\", \"firstByte\": {scrByte} }"
     }
   ],
   "forensic": {
-    "category": "video",
+    "category": "Video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "Missing 0x000001 prefix at offset 0 indicates non-MPEG or corrupted file",
+      "Non-monotonic SCR values across pack headers indicate stream splicing or corruption",
+      "Extremely large PES packet sizes may indicate buffer overflow attempt in legacy players"
+    ]
   },
   "aiHints": {
-    "analysisContext": "MPEG-1/2 start code structure: all MPEG elements begin with start code prefix 0x000001 + stream_id (1B). Key start codes: 0xB3=sequence_header, 0xBA=pack_header (PS), 0xB8=GOP, 0xB0=user_data, 0xB5=extension, 0x00=picture_header, 0x01-0xAF=slice_start. Sequence Header body (starts at byte 4): horizSize(12b,big) + vertSize(12b,big) + aspectRatio(4b) + frameRate(4b) + bitRate×400(18b) + markerBit(1b) + vbvBufferSize×16KB(10b) + constrainedParams(1b) + loadIntraMatrix(1b). MPEG-2 adds extension start codes (0xB5) after sequence header with profile/level information. MPEG-2 profiles: Simple, Main, High. MPEG-2 levels: Low (352×288), Main (720×576), High-1440, High (1920×1080).",
+    "analysisContext": "MPEG PS uses pack+PES structure. Start codes always begin with 0x000001. After the pack header (0x000001BA), PES packets follow with stream IDs: 0xE0-0xEF video, 0xC0-0xDF audio. MPEG-1 system streams may start directly with 0x000001B3 (video sequence header) with no pack wrapper.",
     "suggestedInspections": [
-      "Check start code at offset 0: 0x000001B3 (seq header) or 0x000001BA (PS pack)",
-      "For 0x000001B3: read horizSize (bits 23-12 at offset 4) and vertSize (bits 11-0)",
-      "Read frame rate code (bits 3-0 of byte 7): 3=25fps/4=29.97fps/5=30fps",
-      "MPEG-2: check for 0x000001B5 extension start code after sequence header for profile/level"
+      "Identify start code at offset 0: 0xBA=MPEG-2 PS pack, 0xB3=raw video, 0xB9=sequence end",
+      "For MPEG-2 PS: parse SCR from pack header to determine stream timing base",
+      "Walk PES packets after each pack: check stream_id for video (0xE0) vs audio (0xC0)",
+      "For elementary streams (0x000001B3): parse sequence header for width, height, aspect ratio",
+      "Detect MPEG-1 vs MPEG-2 by SCR byte upper bits: '00'=MPEG-1, '01'=MPEG-2",
+      "Scan for private stream 1 (0xBD) PES packets to find AC-3 or DTS audio tracks"
     ]
   },
   "software": [
-    "VLC media player",
-    "FFmpeg (mpeg1video/mpeg2video codec)",
+    "FFmpeg",
+    "VLC Media Player",
+    "MPEG Streamclip",
     "HandBrake",
-    "DVD players (MPEG-2)",
-    "DVB-T/DVB-S set-top boxes (MPEG-2 TS)"
+    "DVD Flick",
+    "TMPGEnc"
   ],
   "formatRelationships": {
     "category": "Video",
-    "extensions": [".mpg", ".mpeg", ".m2v", ".m1v"],
-    "relatedFormats": ["TS", "VOB", "MP4"],
-    "note": "MPEG-1 (ISO 11172) introduced the 0x000001 start code architecture. MPEG-2 (ISO 13818) extended it with profile/level and interlaced support. MPEG-2 elementary streams (.m2v) are used in DVD-Video (wrapped in Private Stream 1 PES packets). Transport Streams (.ts) carry MPEG-2 video in 188-byte packets with sync byte 0x47."
+    "extensions": [".mpg", ".mpeg", ".m2v"],
+    "relatedFormats": ["VOB", "MPEG-TS", "MP4", "M2TS", "DAT (VCD)"],
+    "note": "MPEG-PS is the DVD/CD storage format; MPEG-TS is the broadcast/streaming variant; both use the same underlying PES elementary stream encoding"
   },
-  "MimeTypes": [
-    "video/mpeg",
-    "video/x-mpeg"
-  ],
+  "MimeTypes": ["video/mpeg", "video/x-mpeg"],
   "UseCases": [
-    "DVD-Video (MPEG-2 video elementary stream)",
-    "Digital broadcast (DVB/ATSC MPEG-2)",
-    "VCD/SVCD (MPEG-1/MPEG-2)",
-    "Legacy video distribution",
-    "CCTV and surveillance systems (MPEG-2)"
+    "DVD-Video MPEG-2 video storage",
+    "VCD (Video CD) MPEG-1 video",
+    "SVCD (Super VCD) MPEG-2 video",
+    "Digital TV broadcast recordings",
+    "Legacy MPEG editing and authoring"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 85,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 5,
+    "BlocksDefined": 2,
     "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "VideoFormat": true,
-    "Endianness": "big-endian (all start codes and header fields)",
-    "StartCodePrefix": "0x000001 (3-byte prefix shared across all MPEG elements)",
-    "Standards": "MPEG-1 (ISO/IEC 11172) and MPEG-2 (ISO/IEC 13818-2)",
-    "MaxResolutionMPEG1": "1920×1152",
-    "MaxResolutionMPEG2": "1920×1080 (Main@High profile)"
+    "startCodes": {
+      "0x000001BA": "Pack Header (MPEG-2 PS)",
+      "0x000001B3": "Video Sequence Header",
+      "0x000001BB": "System Header",
+      "0x000001B9": "Program End"
+    },
+    "pesStreamIds": {
+      "0xE0-0xEF": "Video streams",
+      "0xC0-0xDF": "Audio streams",
+      "0xBD": "Private Stream 1 (AC-3/DTS)"
+    },
+    "maxBitrate": "1.856 Mbps (MPEG-1), 10.08 Mbps (DVD MPEG-2)"
   }
 }

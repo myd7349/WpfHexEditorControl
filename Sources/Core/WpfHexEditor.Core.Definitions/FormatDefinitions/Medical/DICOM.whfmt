@@ -1,212 +1,256 @@
 {
   "diffMode": "binary",
   "formatName": "DICOM Medical Image",
-  "version": "1.15",
-  "extensions": [
-    ".dcm",
-    ".dicom"
-  ],
-  "description": "Digital Imaging and Communications in Medicine (DICOM) is the international standard for medical images and related information. Files begin with a 128-byte preamble followed by the four-byte ASCII magic 'DICM' at offset 128. Data elements follow as tag/VR/length/value sequences encoded in little-endian byte order with either implicit or explicit Value Representation. Used by CT scanners, MRI machines, ultrasound devices, and PACS systems worldwide.",
+  "version": "1.0",
+  "extensions": [".dcm", ".dicom"],
+  "description": "DICOM (Digital Imaging and Communications in Medicine) — ISO 12052 / NEMA PS 3. Preamble: 128 zero bytes + 'DICM' magic (44 49 43 4D) at offset 128. Data elements: (group,element) tag pair + VR (Value Representation, 2B ASCII if explicit transfer syntax) + length(2B or 4B) + value. Tags: (0008,0060)=Modality (CT/MR/CR/DX), (0010,0010)=Patient Name, (0010,0020)=Patient ID, (0028,0010)=Rows, (0028,0011)=Columns, (0028,0100)=Bits Allocated (8 or 16), (0028,0030)=Pixel Spacing, (7FE0,0010)=Pixel Data. Transfer Syntax UID (0002,0010): 1.2.840.10008.1.2=Implicit LE, 1.2.840.10008.1.2.1=Explicit LE (most common), 1.2.840.10008.1.2.4.50=JPEG Baseline lossy. HIPAA: PHI in patient name, ID, DOB, StudyDate — HIGH privacy risk.",
   "category": "Medical",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "hex-editor",
   "references": {
     "specifications": [
-      "DICOM PS3.1-PS3.20 (NEMA)",
-      "ISO 12052:2017 Health informatics — Digital imaging and communication in medicine (DICOM)"
+      "DICOM Standard — NEMA PS3 (2024)",
+      "ISO 12052:2017 — Health informatics — Digital imaging and communication in medicine",
+      "HIPAA Security Rule — 45 CFR Part 164"
     ],
     "WebLinks": [
       "https://www.dicomstandard.org/",
-      "https://en.wikipedia.org/wiki/DICOM"
+      "https://en.wikipedia.org/wiki/DICOM",
+      "https://dicom.nema.org/medical/dicom/current/output/html/part10.html"
     ]
   },
   "detection": {
-    "signature": "4449434D",
-    "offset": 128,
-    "weight": 1.0,
-    "strength": "Strong",
+    "signatures": [
+      {
+        "value": "4449434D",
+        "offset": 128,
+        "label": "DICM — DICOM magic at offset 128 (after 128-byte preamble)",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
     "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 4.5, "max": 7.8 },
     "validation": {
       "minFileSize": 132,
-      "maxSignatureOffset": 128
+      "maxSignatureOffset": 128,
+      "note": "DICOM preamble is exactly 128 bytes (often zeros) followed by 'DICM' at offset 128. Older ACR-NEMA files (pre-DICOM 3.0) lack the preamble and DICM prefix — they begin directly with a data element tag."
     }
   },
   "variables": {
-    "currentOffset": 0,
-    "imageWidth": 0,
-    "imageHeight": 0,
-    "totalPixels": 0,
-    "bitsPerPixel": 0,
-    "preamble": "",
-    "dicmMagic": "",
-    "transferSyntax": ""
+    "preamblePad": "",
+    "dicomMagic": "",
+    "firstGroupTag": 0,
+    "firstElementTag": 0,
+    "firstVR": ""
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Preamble",
+      "name": "DICOM Preamble",
       "offset": 0,
       "length": 128,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "128-byte application-defined preamble; unused by standard DICOM readers but may contain application data",
-      "storeAs": "preamble",
-      "valueType": "ascii"
+      "color": "#DDDDDD",
+      "opacity": 0.2,
+      "description": "DICOM file preamble: 128 bytes at offset 0, typically all zeros (0x00) but may contain application-specific data. The DICOM standard (PS3.10) specifies that the preamble shall not be used to identify or describe the file. Some implementations write 'DICOM' or application identifiers here. This preamble is NOT part of the DICOM data set — it is solely a compatibility aid for non-DICOM-aware applications.",
+      "storeAs": "preamblePad",
+      "valueType": "hex"
     },
     {
       "type": "signature",
-      "name": "DICM Magic",
+      "name": "DICOM Magic",
       "offset": 128,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.8,
-      "description": "Four-byte ASCII magic string 'DICM' (0x44 0x49 0x43 0x4D) confirming DICOM file format",
-      "storeAs": "dicmMagic",
+      "opacity": 0.45,
+      "description": "DICOM magic prefix 'DICM' (44 49 43 4D) at offset 128 (4 ASCII bytes). This 4-byte signature immediately follows the 128-byte preamble and signals the start of the DICOM File Meta Information. The File Meta Information begins with a (0002,0000) FileMetaInformationGroupLength element that specifies the total length of all group 0002 elements.",
+      "storeAs": "dicomMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "File Meta Group Tag",
+      "name": "First Group Tag",
       "offset": 132,
-      "length": 4,
-      "color": "#FFE66D",
-      "opacity": 0.5,
-      "description": "First data element tag (0002,0000) indicating start of File Meta Information group",
-      "storeAs": "fileMetaTag",
-      "valueType": "uint32"
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Group number of the first DICOM data element at offset 132 (2 bytes, little-endian uint16). Should be 0x0002 (group 2) for the File Meta Information header, which contains Transfer Syntax UID (0002,0010), Media Storage SOP Class UID (0002,0002), and Media Storage SOP Instance UID (0002,0003). Group 0002 uses Explicit VR Little Endian transfer syntax regardless of the image data transfer syntax.",
+      "storeAs": "firstGroupTag",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "2": "File Meta Information (Group 0002)"
+      }
     },
     {
       "type": "field",
-      "name": "Transfer Syntax UID",
-      "offset": 0,
-      "length": 26,
+      "name": "First Element Tag",
+      "offset": 134,
+      "length": 2,
       "color": "#95E1D3",
-      "opacity": 0.4,
-      "description": "Transfer syntax UID (tag 0002,0010) specifying encoding: 1.2.840.10008.1.2 implicit LE, 1.2.840.10008.1.2.1 explicit LE",
-      "storeAs": "transferSyntax",
-      "valueType": "ascii"
+      "opacity": 0.35,
+      "description": "Element number of the first DICOM data element at offset 134 (2 bytes, little-endian uint16). For the File Meta Information, the first element should be (0002,0000) = FileMetaInformationGroupLength (UL type, 4-byte value containing length of all group 2 elements). Element numbering uses even group numbers for standard DICOM elements and odd groups for private elements.",
+      "storeAs": "firstElementTag",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First VR",
+      "offset": 136,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "Value Representation (VR) of the first data element at offset 136 (2 ASCII bytes). Present only for Explicit VR transfer syntax files. Common VRs: OB=Other Byte, UI=Unique Identifier (UID string), UL=Unsigned Long (4B), US=Unsigned Short (2B), SQ=Sequence of Items, LO=Long String, CS=Code String, DS=Decimal String, IS=Integer String, DA=Date, TM=Time, PN=Person Name. For (0002,0000), VR should be 'UL'.",
+      "storeAs": "firstVR",
+      "valueType": "ascii",
+      "valueMap": {
+        "OB": "Other Byte",
+        "UI": "Unique Identifier",
+        "UL": "Unsigned Long",
+        "US": "Unsigned Short",
+        "SQ": "Sequence of Items",
+        "LO": "Long String",
+        "PN": "Person Name"
+      }
     },
     {
       "type": "metadata",
-      "name": "Image Width",
-      "variable": "imageWidth",
-      "description": "Image matrix width in pixels (tag 0028,0011)"
+      "name": "DICOM Preamble",
+      "variable": "preamblePad",
+      "description": "128-byte preamble — typically zeros, not part of DICOM data set"
     },
     {
       "type": "metadata",
-      "name": "Image Height",
-      "variable": "imageHeight",
-      "description": "Image matrix height in pixels (tag 0028,0010)"
+      "name": "DICOM Magic",
+      "variable": "dicomMagic",
+      "description": "'DICM' — DICOM 3.0 magic prefix at offset 128"
     },
     {
       "type": "metadata",
-      "name": "Bits Per Pixel",
-      "variable": "bitsPerPixel",
-      "description": "Bits allocated per pixel sample (tag 0028,0100); typically 8, 12, or 16"
+      "name": "First Group Tag",
+      "variable": "firstGroupTag",
+      "description": "Should be 0x0002 for File Meta Information group"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Computed total pixel count: imageWidth × imageHeight"
+      "name": "First VR",
+      "variable": "firstVR",
+      "description": "Value Representation — should be 'UL' for first meta element"
     }
   ],
   "assertions": [
     {
-      "name": "DICM magic present",
-      "expression": "dicmMagic == 'DICM'",
+      "name": "DICOM magic valid",
+      "expression": "dicomMagic == 'DICM'",
       "severity": "error",
-      "message": "Bytes at offset 128 must equal ASCII 'DICM' for a valid DICOM file"
+      "message": "DICOM 3.0 file must have 'DICM' at offset 128 — may be ACR-NEMA or non-DICOM"
     },
     {
-      "name": "Minimum file size",
-      "expression": "fileSize >= 132",
+      "name": "File Meta group present",
+      "expression": "firstGroupTag == 2",
       "severity": "warning",
-      "message": "DICOM file must be at least 132 bytes (128 preamble + 4 magic)"
+      "message": "Expected File Meta Information group (0002) as first element"
+    },
+    {
+      "name": "Preamble length",
+      "expression": "preamblePad length == 128",
+      "severity": "error",
+      "message": "DICOM preamble must be exactly 128 bytes before the DICM prefix"
     }
   ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "DICOM Preamble", "offset": 0, "icon": "\uE71B", "color": "#DDDDDD" },
+      { "name": "DICM Magic", "offset": 128, "icon": "\uE8A5", "color": "#FF6B6B" },
+      { "name": "File Meta Information", "offset": 132, "icon": "\uE946", "color": "#4ECDC4" }
+    ]
+  },
   "inspector": {
+    "badge": "dicomMagic",
+    "primaryField": "dicomMagic",
+    "showQualityScore": true,
     "groups": [
       {
-        "name": "File Header",
-        "fields": ["Preamble", "DICM Magic", "File Meta Group Tag"]
-      },
-      {
-        "name": "Transfer Encoding",
-        "fields": ["Transfer Syntax UID"]
-      },
-      {
-        "name": "Image Dimensions",
-        "fields": ["Image Width", "Image Height", "Bits Per Pixel", "Total Pixels"]
+        "title": "DICOM File Header",
+        "icon": "\uE71B",
+        "fields": ["dicomMagic", "firstGroupTag", "firstElementTag", "firstVR"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "DICOM Header Summary",
-      "fields": ["dicmMagic", "transferSyntax", "imageWidth", "imageHeight", "bitsPerPixel"]
+      "name": "DICOM Header (JSON)",
+      "format": "json",
+      "fields": ["dicomMagic", "firstGroupTag", "firstElementTag", "firstVR"]
+    },
+    {
+      "name": "DICOM PHI Warning (Text)",
+      "format": "text",
+      "fields": ["dicomMagic", "firstGroupTag"]
     }
   ],
+  "forensic": {
+    "category": "medical-imaging",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      "Patient Name (0010,0010) and Patient ID (0010,0020) contain HIPAA PHI",
+      "StudyDate (0008,0020) and StudyTime (0008,0030) are HIPAA PHI",
+      "Pixel Data (7FE0,0010) may contain identifying features (face, tattoos) in CT/MRI",
+      "Burned-in annotations in pixel data may contain PHI text (some CR/DX modalities)"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "DICOM data elements after offset 132: (group,element) as 2B LE each + VR(2B ASCII, Explicit LE) or omitted (Implicit LE) + length(2B or 4B) + value. File Meta elements (group 0002) always Explicit VR LE. Transfer Syntax UID at (0002,0010) determines encoding of data set. Most important tags: Modality (0008,0060), PatientName (0010,0010), Rows (0028,0010), Columns (0028,0011), BitsAllocated (0028,0100), PixelData (7FE0,0010). Pixel Data may be encapsulated (JPEG/RLE) or uncompressed.",
+    "suggestedInspections": [
+      "Bytes 128-131: 'DICM' magic — confirms DICOM 3.0 (not legacy ACR-NEMA 2.0)",
+      "Bytes 132-135: first (group,element) tags — should be (0002,0000) FileMetaLength",
+      "Bytes 136-137: VR 'UL' for first element — confirms Explicit VR Little Endian",
+      "Scan for tag (0010,0010) — Patient Name in PN VR format (PHI — handle carefully)"
+    ]
+  },
   "software": [
-    "OsiriX",
-    "Horos",
-    "3D Slicer",
+    "OsiriX / Horos (macOS DICOM viewer)",
+    "3D Slicer (open-source medical imaging)",
     "RadiAnt DICOM Viewer",
-    "Weasis"
+    "OHIF Viewer (web-based)",
+    "Orthanc DICOM server (open-source PACS)",
+    "pydicom (Python DICOM library)",
+    "dcm4chee (Java-based DICOM/PACS)"
   ],
   "formatRelationships": {
-    "medical_standard": "NEMA",
-    "iso_standard": "ISO 12052",
-    "universal_medical": true,
-    "related": ["DICOM_SR", "NII", "NIFTI2"]
+    "category": "Medical",
+    "extensions": [".dcm", ".dicom"],
+    "relatedFormats": ["NIFTI", "ANALYZE75", "MINC", "HL7"],
+    "note": "DICOM is the universal standard for medical imaging. NIfTI and Analyze 7.5 are research-focused formats derived from DICOM data via conversion tools (dcm2niix, SPM). HL7 v2/FHIR handles clinical messages; DICOM handles image data."
   },
   "MimeTypes": [
-    "application/dicom"
-  ],
-  "Software": [
-    "OsiriX / Horos (macOS)",
-    "3D Slicer",
-    "RadiAnt DICOM Viewer (Windows)",
-    "Weasis (multiplatform)"
+    "application/dicom",
+    "image/dcm"
   ],
   "UseCases": [
-    "Radiological imaging (CT, MRI, X-ray, ultrasound)",
-    "PACS archival and retrieval",
-    "Interoperability between modalities and hospitals",
-    "AI/ML medical image analysis pipelines"
+    "Radiology PACS (CT, MRI, X-ray, ultrasound, PET/SPECT)",
+    "Pathology digital slide management (DICOM for WSI, Supplement 145)",
+    "Radiation therapy treatment planning (RT Structure Set, RT Dose, RT Plan)",
+    "Clinical trial imaging data exchange and archival",
+    "Telemedicine and cross-institutional image sharing (DICOMweb, WADO)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 62,
+    "CompletenessScore": 92,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 8,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Endianness": "Little-endian (standard transfer syntaxes)",
-    "VREncoding": "Implicit or Explicit Value Representation",
-    "PreambleUse": "Application-defined; ignored by standard parsers",
-    "TagFormat": "(GGGG,EEEE) group/element pairs"
-  },
-  "forensic": {
-    "category": "medical",
-    "riskLevel": "low",
-    "suspiciousPatterns": []
-  },
-  "aiHints": {
-    "analysisContext": "DICOM is the universal medical imaging standard. The 'DICM' magic at offset 128 is the definitive identifier. Data elements use Tag+VR+Length+Value encoding; Transfer Syntax UID (0002,0010) determines byte order and VR style. Image pixels are in the Pixel Data element (7FE0,0010).",
-    "suggestedInspections": [
-      "Verify 'DICM' magic bytes at offset 128 (not offset 0)",
-      "Parse File Meta Information group (0002,xxxx) for transfer syntax and SOP class",
-      "Check image dimensions (0028,0010/0011), bits allocated (0028,0100), and pixel data (7FE0,0010)",
-      "Inspect patient/study/series metadata tags for PHI presence"
-    ]
-  },
-  "functions": {
-    "readUInt32LE": "Read tag group/element and lengths",
-    "multiply": "Calculate total pixels",
-    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels"
+    "Format": "Binary with 128-byte preamble, DICM prefix, then TLV data elements",
+    "Magic": "'DICM' (44 49 43 4D) at offset 128 (after 128-byte preamble)",
+    "Standard": "DICOM PS3 (NEMA) — ISO 12052:2017",
+    "Endianness": "little-endian by default (Explicit LE is most common transfer syntax)",
+    "Privacy": "HIPAA PHI — patient name, ID, DOB, images — handle with strict access controls"
   }
 }

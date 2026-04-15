@@ -1,0 +1,254 @@
+{
+  "diffMode": "binary",
+  "formatName": "E57 Point Cloud",
+  "version": "1.0",
+  "extensions": [".e57"],
+  "description": "E57 is the ASTM E2807 standard file format for storing 3D point cloud and image data, designed for interoperability between 3D imaging systems. The 8-byte ASCII magic 'ASTM-E57' (41 53 54 4D 2D 45 35 37) appears at offset 0. The 48-byte file header contains: magic (8B) + majorVersion (4B LE, value 1) + minorVersion (4B LE, value 0) + filePhysicalLength (8B LE uint64, total file size) + xmlPhysicalOffset (8B LE uint64, byte offset to XML section) + xmlPhysicalLength (8B LE uint64, byte length of XML) + pageSize (8B LE uint64, always 1024). The XML section describes the file structure using E57 Foundation classes. Binary sections store compressed point data using bit-packing (CompressedVectorNode). Point attributes include: cartesianX/Y/Z (float64), sphericalRange/Azimuth/Elevation, intensityX, colorRed/Green/Blue, rowIndex, columnIndex, timeStamp, isValid. Supported by: Autodesk ReCap, CloudCompare, FARO Scene, Leica Cyclone, libE57, trimesh2. Used for AEC (Architecture/Engineering/Construction) BIM integration, forensic scanning, and industrial surveying.",
+  "category": "3D",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "ASTM E2807 Standard Specification for 3D Imaging Data Exchange",
+      "E57 File Format Standard — E57 Committee",
+      "libE57 Reference Implementation Documentation"
+    ],
+    "WebLinks": [
+      "https://www.libe57.org/",
+      "https://en.wikipedia.org/wiki/E57_(file_format)",
+      "https://www.astm.org/e2807-22.html",
+      "https://www.cloudcompare.org/doc/wiki/index.php/E57"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "4153544D2D453537", "offset": 0, "label": "ASTM-E57 — E57 point cloud format 8-byte ASCII magic at offset 0", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 48,
+      "maxSignatureOffset": 0,
+      "note": "Magic 'ASTM-E57' must be at offset 0. Header is exactly 48 bytes. majorVersion must be 1, pageSize must be 1024."
+    }
+  },
+  "variables": {
+    "e57Magic": "",
+    "majorVersion": 0,
+    "minorVersion": 0,
+    "fileLength": 0,
+    "xmlOffset": 0,
+    "xmlLength": 0,
+    "pageSize": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "E57 Magic",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "8-byte ASCII magic string 'ASTM-E57' (0x41 0x53 0x54 0x4D 0x2D 0x45 0x35 0x37) at the absolute start of every E57 file. This string identifies the ASTM E2807 standard point cloud format. The hyphen and 'E57' suffix are significant and distinguish this from other ASTM format identifiers.",
+      "storeAs": "e57Magic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "4-byte little-endian unsigned integer specifying the E57 major version number. Must be 1 for all currently defined E57 files as per ASTM E2807. A different value indicates an incompatible future version or a corrupt file.",
+      "storeAs": "majorVersion",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "4-byte little-endian unsigned integer specifying the E57 minor version number. Currently 0. Future minor versions may add new XML elements or binary encoding extensions while remaining backward-compatible with version 1.0 readers.",
+      "storeAs": "minorVersion",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "File Physical Length",
+      "offset": 16,
+      "length": 8,
+      "color": "#C3A6FF",
+      "opacity": 0.35,
+      "description": "8-byte little-endian uint64 specifying the total physical length of the E57 file in bytes. This must equal the actual file size for file integrity validation. The file size is also the upper bound for validating all internal offset fields.",
+      "storeAs": "fileLength",
+      "valueType": "uint64"
+    },
+    {
+      "type": "field",
+      "name": "XML Physical Offset",
+      "offset": 24,
+      "length": 8,
+      "color": "#FFE66D",
+      "opacity": 0.35,
+      "description": "8-byte little-endian uint64 giving the byte offset from the start of the file to the beginning of the XML section. The XML section contains the complete structural description of all point clouds, images, and metadata in the E57 file using the E57 XML schema.",
+      "storeAs": "xmlOffset",
+      "valueType": "uint64"
+    },
+    {
+      "type": "field",
+      "name": "XML Physical Length",
+      "offset": 32,
+      "length": 8,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "8-byte little-endian uint64 specifying the byte length of the XML section. The XML section is not padded to page boundaries. Readers allocate exactly this many bytes to read and parse the XML structure descriptor.",
+      "storeAs": "xmlLength",
+      "valueType": "uint64"
+    },
+    {
+      "type": "field",
+      "name": "Page Size",
+      "offset": 40,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "8-byte little-endian uint64 specifying the page size in bytes. Must always be exactly 1024 for all valid E57 files. Binary point data sections are organized as 1024-byte pages with 4 bytes of CRC32 checksum at the end of each page (bytes 1020-1023), leaving 1020 bytes of actual data per page.",
+      "storeAs": "pageSize",
+      "valueType": "uint64"
+    },
+    {
+      "type": "metadata",
+      "name": "XML Structure Section",
+      "offset": 0,
+      "description": "The XML section at xmlOffset contains the E57 file structure in XML. Root element: <e57Root type='Structure'>. Contains <data3D> (list of 3D point clouds) and <images2D> (2D images). Each data3D entry: <vectorChild type='Structure'> with <points type='CompressedVector'> referencing binary data pages, <pose> (translation + rotation quaternion), <name>, <description>, and <cartesianBounds> or <sphericalBounds>. Point record prototype defines the scalar fields for each point."
+    },
+    {
+      "type": "metadata",
+      "name": "Binary Point Data",
+      "offset": 0,
+      "description": "Point data is stored in CompressedVector binary sections referenced from the XML. Data is bit-packed using E57 BitPackCodec or ConstantCodec. Pages are 1024 bytes each with CRC32 at bytes 1020-1023. Supported point scalar types: float (32/64-bit), integer (8/16/32/64-bit), scaled integer (with scale/offset). Channels: cartesianX/Y/Z, intensityX, colorRed/Green/Blue, rowIndex, columnIndex, timeStamp, isValid flag."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ValidMagic",
+      "expression": "e57Magic == 'ASTM-E57'",
+      "severity": "error",
+      "message": "E57 magic 'ASTM-E57' not found at offset 0. This is not a valid E57 point cloud file."
+    },
+    {
+      "name": "ValidMajorVersion",
+      "expression": "majorVersion == 1",
+      "severity": "error",
+      "message": "E57 major version must be 1 as specified by ASTM E2807. Found unexpected major version value."
+    },
+    {
+      "name": "ValidPageSize",
+      "expression": "pageSize == 1024",
+      "severity": "error",
+      "message": "E57 page size must be exactly 1024 bytes. Non-standard page size indicates a corrupt or non-conformant file."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "E57 Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Version Fields", "offset": 8, "icon": "\uE946", "color": "#4ECDC4" },
+      { "name": "XML Offset/Length", "offset": 24, "icon": "\uE8B7", "color": "#FFE66D" },
+      { "name": "Page Size", "offset": 40, "icon": "\uE946", "color": "#95E1D3" }
+    ]
+  },
+  "inspector": {
+    "badge": "e57Magic",
+    "primaryField": "majorVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["e57Magic", "majorVersion", "minorVersion"]
+      },
+      {
+        "title": "File Structure",
+        "icon": "\uE8B7",
+        "fields": ["fileLength", "xmlOffset", "xmlLength", "pageSize"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "E57 Header (JSON)",
+      "format": "json",
+      "fields": ["e57Magic", "majorVersion", "minorVersion", "fileLength", "xmlOffset", "xmlLength", "pageSize"]
+    },
+    {
+      "name": "E57 Summary (CSV)",
+      "format": "csv",
+      "fields": ["majorVersion", "minorVersion", "fileLength", "xmlOffset", "xmlLength", "pageSize"]
+    }
+  ],
+  "forensic": {
+    "category": "3d",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "xmlOffset pointing beyond fileLength indicates a corrupt or crafted header",
+      "pageSize not equal to 1024 indicates format non-compliance or deliberate manipulation",
+      "CRC32 mismatches in data pages indicate storage corruption or deliberate data modification"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "E57 point cloud format with 48-byte fixed header. Magic 'ASTM-E57' at offset 0. majorVersion must be 1, pageSize must be 1024. XML section at xmlOffset describes all point cloud structures. Binary data organized in 1024-byte pages with CRC32 at page end.",
+    "suggestedInspections": [
+      "Verify 'ASTM-E57' magic and majorVersion=1 and pageSize=1024 for format conformance",
+      "Use xmlOffset and xmlLength to locate and parse the XML structural descriptor section",
+      "From the XML, enumerate <data3D> entries to discover all point cloud scans in the file",
+      "Validate fileLength against actual file size to detect truncation or appended data",
+      "Check xmlOffset + xmlLength does not exceed fileLength to validate header integrity"
+    ]
+  },
+  "software": [
+    "Autodesk ReCap",
+    "CloudCompare",
+    "FARO Scene",
+    "Leica Cyclone",
+    "libE57 (reference library)",
+    "Trimble RealWorks",
+    "Bentley MicroStation"
+  ],
+  "formatRelationships": {
+    "category": "3D",
+    "extensions": [".e57"],
+    "relatedFormats": ["PLY", "LAS", "LAZ", "PTS"],
+    "note": "ASTM E2807 open standard; interoperability format for terrestrial LiDAR scanner data exchange"
+  },
+  "MimeTypes": ["application/vnd.e57", "application/octet-stream"],
+  "UseCases": [
+    "Terrestrial LiDAR scan data exchange between scanner software and BIM tools",
+    "AEC (Architecture/Engineering/Construction) as-built point cloud documentation",
+    "Forensic 3D scene documentation and crime scene reconstruction",
+    "Industrial plant as-built scanning for facilities management"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 94,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "standard": "ASTM E2807",
+    "magic": "ASTM-E57 (8 bytes)",
+    "headerSize": 48,
+    "pageSize": 1024,
+    "pageCRC": "CRC32 at page bytes 1020-1023 (4 bytes per page)",
+    "compression": "BitPackCodec and ConstantCodec (lossless bit-packing)",
+    "encoding": "binary-little-endian with XML structure descriptor"
+  }
+}

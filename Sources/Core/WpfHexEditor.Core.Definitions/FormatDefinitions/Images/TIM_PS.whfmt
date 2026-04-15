@@ -1,0 +1,123 @@
+{
+  "formatName": "PlayStation TIM Image",
+  "version": "1.0",
+  "author": "WPFHexaEditor Team",
+  "lastUpdated": "2026-04-15",
+  "description": "Sony PlayStation 1 (PSX) TIM native texture format (.tim) — stores VRAM-coordinate bitmap images with optional CLUT (color lookup table) in 4bpp, 8bpp, 15bpp, or 24bpp pixel modes.",
+  "extensions": [ ".tim" ],
+  "category": "Images",
+  "diffMode": "binary",
+  "signatures": [
+    {
+      "value": "10000000",
+      "offset": 0,
+      "label": "TIM magic: uint32 LE = 0x00000010 (16 decimal) — PlayStation TIM image identifier",
+      "weight": 1.0,
+      "strength": "Strong"
+    }
+  ],
+  "maxSignatureOffset": 4,
+  "structure": {
+    "fields": [
+      { "offset": 0, "size": 4, "name": "magic",      "type": "uint32le", "description": "TIM magic value, must be 0x00000010 (16)",       "storeAs": "timMagic" },
+      { "offset": 4, "size": 4, "name": "flags",      "type": "uint32le", "description": "Pixel mode (bits 0-2) and CLUT presence (bit 3)", "storeAs": "timFlags" }
+    ],
+    "conditionalFields": {
+      "if_has_clut": {
+        "description": "CLUT block present when (timFlags & 8) != 0",
+        "fields": [
+          { "relativeOffset": 0,  "size": 4, "name": "clut_size",       "type": "uint32le", "description": "CLUT block total size in bytes (including this header)" },
+          { "relativeOffset": 4,  "size": 2, "name": "clut_org_x",      "type": "uint16le", "description": "CLUT VRAM X origin (column, in 16-bit units)" },
+          { "relativeOffset": 6,  "size": 2, "name": "clut_org_y",      "type": "uint16le", "description": "CLUT VRAM Y origin (row)" },
+          { "relativeOffset": 8,  "size": 2, "name": "clut_colors",     "type": "uint16le", "description": "Number of colors per palette" },
+          { "relativeOffset": 10, "size": 2, "name": "clut_num_cluts",  "type": "uint16le", "description": "Number of palettes" }
+        ]
+      },
+      "image_block": {
+        "fields": [
+          { "size": 4, "name": "img_size",   "type": "uint32le", "description": "Image block total size in bytes" },
+          { "size": 2, "name": "img_org_x",  "type": "uint16le", "description": "Image VRAM X origin" },
+          { "size": 2, "name": "img_org_y",  "type": "uint16le", "description": "Image VRAM Y origin" },
+          { "size": 2, "name": "img_width",  "type": "uint16le", "description": "Image width in 16-bit VRAM units" },
+          { "size": 2, "name": "img_height", "type": "uint16le", "description": "Image height in pixels" }
+        ]
+      }
+    }
+  },
+  "inspector": {
+    "displayFields": [ "timMagic", "timFlags" ],
+    "valueMaps": {
+      "timFlags": {
+        "0":  "4bpp + no CLUT",
+        "1":  "8bpp + no CLUT",
+        "2":  "15bpp (A1BGR5) + no CLUT",
+        "3":  "24bpp (RGB888) + no CLUT",
+        "8":  "4bpp + CLUT present",
+        "9":  "8bpp + CLUT present",
+        "10": "15bpp + CLUT present (unusual)",
+        "4":  "Mixed mode"
+      }
+    },
+    "tooltips": {
+      "timMagic":  "Must be 0x10 (16); this low-value magic can produce false positives in binary data",
+      "timFlags":  "Bits 0-2 = pixel mode (0=4bpp,1=8bpp,2=15bpp,3=24bpp,4=mixed); bit 3 = CLUT present"
+    }
+  },
+  "assertions": [
+    { "id": "A1", "field": "timMagic", "operator": "eq",  "value": 16, "description": "Magic must be 0x10 (16)" },
+    { "id": "A2", "field": "timFlags", "operator": "lte", "value": 15, "description": "Pixel mode bits (0-3) must be within valid range" }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "offset": 0, "label": "TIM Magic (0x10)",  "color": "#E74C3C" },
+      { "offset": 4, "label": "Flags / Pixel Mode","color": "#F39C12" },
+      { "offset": 8, "label": "CLUT Block (if present)", "color": "#9B59B6" }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "TIM Header Summary",
+      "fields": [ "timMagic", "timFlags" ],
+      "format": "text"
+    },
+    {
+      "name": "TIM Metadata JSON",
+      "fields": [ "timMagic", "timFlags" ],
+      "format": "json"
+    }
+  ],
+  "aiHints": [
+    "TIM magic 0x10 is a very low value and can match accidentally in binary data; always validate flags (offset 4) and subsequent block sizes for confidence.",
+    "4bpp and 8bpp TIMs always have a CLUT block (bit 3 of flags must be set); 15bpp and 24bpp modes typically do not use a CLUT.",
+    "VRAM coordinates (org_x, org_y) refer to the PlayStation's 1024×512 16-bit VRAM framebuffer layout; img_width is measured in 16-bit VRAM words, not pixels.",
+    "For a 4bpp TIM, the actual pixel width = img_width × 4; for 8bpp, actual pixel width = img_width × 2; for 15bpp it equals img_width.",
+    "Colors in the CLUT are 16-bit A1BGR5 format: bit 15 = semi-transparency flag, bits 10-14 = blue (5), bits 5-9 = green (5), bits 0-4 = red (5).",
+    "Multiple CLUTs (palettes) can be stored in a single TIM for palette animation effects; clut_num_cluts > 1 indicates this."
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": [
+      "TIM files contain only image/palette data; no executable content.",
+      "The 0x10 magic is weak — always confirm the flags and block structure before classifying as TIM.",
+      "Found extensively in PS1 game data files (.bin/.iso) alongside other PSX formats (VAG audio, TMD 3D models)."
+    ]
+  },
+  "formatRelationships": [
+    { "format": "TIM2", "relationship": "successor", "note": "TIM2 is the PlayStation 2 native texture format with extended metadata." }
+  ],
+  "software": [
+    { "name": "TIM2BMP",          "role": "Classic PS1 TIM to BMP converter" },
+    { "name": "Noesis",           "role": "Multi-format 3D/texture viewer with TIM support" },
+    { "name": "PSX Prev",         "role": "PSX format previewer including TIM" },
+    { "name": "Tim2Png",          "role": "TIM to PNG batch converter" },
+    { "name": "Photoshop",        "role": "TIM read/write via third-party plugin" }
+  ],
+  "useCases": [
+    "PlayStation 1 game texture extraction and conversion",
+    "PS1 game modding: texture replacement",
+    "Retro game art asset preservation",
+    "PSX emulator debugging and VRAM inspection"
+  ],
+  "technicalDetails": "Sony PlayStation 1 native texture format stored in and loaded directly into VRAM. The VRAM is a 1024×512 grid of 16-bit cells. TIM coordinates (org_x, org_y) specify the VRAM destination. 4bpp and 8bpp images use a CLUT for color lookup; the CLUT itself is also stored in VRAM at its own coordinates. 15-bit mode uses A1BGR5 (Sony PlayStation colour format). 24-bit mode stores RGB888 in pairs of VRAM cells. Extremely common in PS1 game data; essential format for PS1 asset extraction.",
+  "completenessScore": 80
+}

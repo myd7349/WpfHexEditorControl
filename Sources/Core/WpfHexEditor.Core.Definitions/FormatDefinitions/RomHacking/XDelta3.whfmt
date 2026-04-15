@@ -1,0 +1,199 @@
+{
+  "diffMode": "binary",
+  "formatName": "xdelta3 Binary Patch",
+  "version": "1.0",
+  "extensions": [".xdelta", ".xd3", ".patch"],
+  "description": "xdelta3 delta compression patch file (Joshua MacDonald). Uses the VCDIFF format (RFC 3284) internally. Magic: VCDIFF header bytes 0xD6 0xC3 0xC4 0x00 at offset 0 — bytes 0-2 are the VCDIFF identifier (0xD6 0xC3 0xC4) and byte 3 is the format version (0x00). This magic is shared with all VCDIFF-compliant files; xdelta3-specific features are indicated by the hdr_indicator field. Window structure: each window begins with win_indicator (1B flags: bit0=VCD_SOURCE uses source file, bit1=VCD_TARGET uses target data, bit2=VCD_ADLER32 appended checksum). If source data is referenced: source_segment_size (varint) + source_segment_position (varint). Delta section: delta_length (varint) + target_window_length (varint) + delta_indicator (1B) + ADD_RUN_COPY instruction data. xdelta3 adds an application header (hdr_indicator bit 0x01 set) for tool-specific metadata. Used for binary delta patching of large files. Command line: xdelta3 -d -s source patch output.",
+  "category": "RomHacking",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 3284 — The VCDIFF Generic Differencing and Compression Data Format",
+      "xdelta3 Source Code and Format Documentation (Joshua MacDonald)",
+      "VCDIFF Window Format Reference"
+    ],
+    "WebLinks": [
+      "https://xdelta.org/",
+      "https://www.rfc-editor.org/rfc/rfc3284",
+      "https://github.com/jmacd/xdelta",
+      "https://www.romhacking.net/utilities/598/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "D6C3C400",
+        "offset": 0,
+        "label": "VCDIFF magic (0xD6 0xC3 0xC4) + version 0x00 — xdelta3 / VCDIFF patch format",
+        "weight": 1.0
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "validation": {
+      "minFileSize": 5,
+      "maxSignatureOffset": 0,
+      "note": "xdelta3 and all VCDIFF files start with 0xD6 0xC3 0xC4 0x00. Minimum valid file is the 5-byte header (magic + hdr_indicator). xdelta3 patches typically include an application header (hdr_indicator bit 0)."
+    }
+  },
+  "variables": {
+    "vcdMagic": "",
+    "vcdVersion": 0,
+    "hdrIndicator": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "VCDIFF Magic",
+      "offset": 0,
+      "length": 3,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "valueType": "bytes",
+      "description": "3-byte VCDIFF identifier 0xD6 0xC3 0xC4 at offsets 0-2 as defined in RFC 3284. These three bytes are not printable ASCII; they were chosen to be unique and not collide with other binary formats. The bytes 0xD6 0xC3 0xC4 decode to Unicode code points forming a non-printable sequence ensuring reliable magic-based detection.",
+      "storeAs": "vcdMagic"
+    },
+    {
+      "type": "field",
+      "name": "VCDIFF Version",
+      "offset": 3,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "VCDIFF format version byte at offset 3. Value 0x00 indicates the standard RFC 3284 format. Non-zero values are reserved for future incompatible versions. xdelta3 always produces version 0.",
+      "storeAs": "vcdVersion"
+    },
+    {
+      "type": "field",
+      "name": "Header Indicator",
+      "offset": 4,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "valueType": "uint8",
+      "description": "Header indicator flags byte at offset 4. Bit 0x01 (VCD_DECOMPRESS): a secondary decompressor ID byte follows. Bit 0x02 (VCD_CODETABLE): a custom code table follows. Bit 0x04 (VCD_APPHEADER) for xdelta3: an application header (size varint + data) follows. xdelta3 typically sets bit 0x04 to embed source/target file metadata.",
+      "storeAs": "hdrIndicator"
+    },
+    {
+      "type": "metadata",
+      "name": "VCDIFF Magic",
+      "variable": "vcdMagic",
+      "description": "RFC 3284 VCDIFF identifier bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "VCDIFF Version",
+      "variable": "vcdVersion",
+      "description": "Format version (0=RFC 3284 standard)"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Indicator",
+      "variable": "hdrIndicator",
+      "description": "Header flags (bit2=xdelta3 app header)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "VCDIFF magic valid",
+      "expression": "vcdVersion == 0",
+      "severity": "error",
+      "message": "VCDIFF/xdelta3 format version must be 0x00 at offset 3"
+    },
+    {
+      "name": "Header indicator range",
+      "expression": "hdrIndicator <= 7",
+      "severity": "warning",
+      "message": "VCDIFF header indicator should use only bits 0-2 (values 0-7)"
+    },
+    {
+      "name": "Minimum file size",
+      "expression": "fileSize >= 5",
+      "severity": "error",
+      "message": "VCDIFF/xdelta3 file must be at least 5 bytes (4B magic + 1B hdr_indicator)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "VCDIFF Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "First Window", "offset": 5, "icon": "\uE71B", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "vcdVersion",
+    "primaryField": "hdrIndicator",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "VCDIFF / xdelta3 Header",
+        "icon": "\uE71B",
+        "fields": ["vcdMagic", "vcdVersion", "hdrIndicator"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "xdelta3 Header (JSON)",
+      "format": "json",
+      "fields": ["vcdVersion", "hdrIndicator"]
+    },
+    {
+      "name": "xdelta3 Header (CSV)",
+      "format": "csv",
+      "fields": ["vcdVersion", "hdrIndicator"]
+    }
+  ],
+  "forensic": {
+    "category": "game",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "xdelta3 / VCDIFF: 0xD6 0xC3 0xC4 0x00 (4B) + hdr_indicator(1B) = 5-byte header. Windows start at offset 5 or after optional app header: win_indicator(1B) + [src_size(varint) + src_pos(varint)] + delta_data. xdelta3 sets hdr_indicator bit 0x04 for app-header. Usage: xdelta3 -d -s source.bin patch.xd3 output.bin",
+    "suggestedInspections": [
+      "Read bytes 0-2: 0xD6 0xC3 0xC4 = VCDIFF magic (RFC 3284)",
+      "Read byte 3: 0x00 = standard VCDIFF version (non-zero = future incompatible version)",
+      "Read byte 4 (hdr_indicator): bit 0x01=secondary_decompressor, bit 0x02=code_table, bit 0x04=app_header (xdelta3 extension)",
+      "If hdr_indicator bit 0x04 set: read app_header_size (varint) at offset 5, then app_header_data bytes containing xdelta3 metadata"
+    ]
+  },
+  "software": [
+    "xdelta3 (command-line delta patch tool, cross-platform)",
+    "xdelta UI (Windows GUI for xdelta3)",
+    "UniPatcher (Android — supports xdelta3 patches)",
+    "RomPatcher.js (browser-based, supports xdelta)"
+  ],
+  "formatRelationships": {
+    "category": "RomHacking",
+    "extensions": [".xdelta", ".xd3", ".patch"],
+    "relatedFormats": ["IPS", "UPS", "VCDIFF"],
+    "note": "xdelta3 is built on the RFC 3284 VCDIFF format and shares the same 4-byte magic. xdelta3 adds an optional application header via hdr_indicator bit 0x04. VCDIFF is also used by open-source diffing tools (vcdiff, xdiff). The .patch extension is ambiguous and shared with many other patch formats."
+  },
+  "MimeTypes": ["application/octet-stream", "application/x-xdelta3"],
+  "UseCases": [
+    "Distributing binary patches for large ROM files where IPS 16 MB limit is exceeded",
+    "Delta patching of PS2 and Xbox disc images exceeding traditional patch format limits",
+    "Source-differential ROM distribution for ROM hacking projects",
+    "Binary delta compression of firmware and system software updates"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 86,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "BaseFormat": "VCDIFF RFC 3284",
+    "Magic": "0xD6 0xC3 0xC4 0x00 (4 bytes) at offset 0",
+    "xdelta3AppHeader": "Enabled by hdr_indicator bit 0x04",
+    "WindowFormat": "win_indicator + [src_size + src_pos] + delta_encoding",
+    "MaxFileSize": "Unlimited (varint-addressed)"
+  }
+}

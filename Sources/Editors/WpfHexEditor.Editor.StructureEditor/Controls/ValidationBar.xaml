@@ -19,7 +19,7 @@
     <Border Background="{DynamicResource TE_LineNumberBackground}"
             BorderThickness="0,1,0,0"
             BorderBrush="{DynamicResource TE_LineNumberBackground}"
-            MaxHeight="80">
+            MaxHeight="120">
 
         <Grid>
             <Grid.ColumnDefinitions>
@@ -27,8 +27,10 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <ItemsControl Grid.Column="0"
-                          x:Name="ItemsPanel"
+            <ScrollViewer Grid.Column="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl x:Name="ItemsPanel"
                           Margin="4,2">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:ValidationSummaryItem}">
@@ -63,17 +65,18 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            </ScrollViewer>
 
             <!-- Error/Warning counts -->
             <StackPanel Grid.Column="1" Orientation="Horizontal"
                         VerticalAlignment="Center" Margin="8,0">
                 <TextBlock x:Name="ErrorCountText"
                            FontSize="11"
-                           Foreground="OrangeRed"
+                           Foreground="{DynamicResource SE_ValidationErrorBrush}"
                            Margin="0,0,8,0"/>
                 <TextBlock x:Name="WarningCountText"
                            FontSize="11"
-                           Foreground="Orange"/>
+                           Foreground="{DynamicResource SE_ValidationWarningBrush}"/>
             </StackPanel>
         </Grid>
     </Border>

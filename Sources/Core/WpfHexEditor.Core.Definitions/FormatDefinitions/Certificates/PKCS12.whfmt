@@ -1,0 +1,231 @@
+{
+  "diffMode": "binary",
+  "formatName": "PKCS#12 / PFX Certificate",
+  "version": "1.0",
+  "extensions": [ ".p12", ".pfx" ],
+  "description": "PKCS#12 (PFX) personal information exchange format — DER-encoded container for private key + certificate chain (RFC 7292). Starts with 30 82 (ASN.1 SEQUENCE). Top-level: SEQUENCE { version INTEGER(3), authSafe ContentInfo, macData MacData OPTIONAL }. authSafe wraps SafeContents bags: KeyBag (OID 1.2.840.113549.1.12.10.1.1, unencrypted PKCS#8 private key), PKCS8ShroudedKeyBag (OID .1.2 — encrypted private key), CertBag (OID .1.3 — X.509 certificate), CRLBag (OID .1.4), SecretBag (OID .1.5). macData: HMAC-SHA1/SHA-256 MAC over authSafe DER for integrity. Key encryption: pbeWithSHAAnd3-KeyTripleDES-CBC (legacy) or AES-256-CBC (modern). Version INTEGER 3 appears at offset ~4-6. Used for: browser certificate export, IIS/Apache TLS private key + cert deployment, code signing certificate delivery, client certificate authentication.",
+  "category": "Certificates",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "RFC 7292 — PKCS #12: Personal Information Exchange Syntax v1.1",
+      "RFC 5958 — Asymmetric Key Packages (PKCS#8)",
+      "RFC 5652 — Cryptographic Message Syntax (CMS)"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc7292",
+      "https://www.openssl.org/docs/man3.0/man1/openssl-pkcs12.html",
+      "https://learn.microsoft.com/en-us/windows/win32/seccrypto/pfx"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3082", "offset": 0, "label": "30 82 — DER SEQUENCE with 2-byte length (PKCS#12 PFX outer ASN.1 container)", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": false,
+    "Strength": "Medium",
+    "validation": {
+      "minFileSize": 10,
+      "maxSignatureOffset": 0,
+      "note": "DER 30 82 is shared with X.509 and PKCS#7. Extension .p12 or .pfx is the primary discriminator. Version INTEGER(3) at ~offset 4-8 confirms PKCS#12."
+    }
+  },
+  "variables": {
+    "seqTag": 0,
+    "seqLen": 0,
+    "versionTag": 0,
+    "versionLen": 0,
+    "pfxVersion": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "Outer SEQUENCE Tag",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "description": "ASN.1 SEQUENCE tag 0x30 beginning the PKCS#12 PFXData top-level structure. The entire PKCS#12 file is wrapped in this outer SEQUENCE containing version, authSafe (the certificate and key bags), and optional macData for integrity protection.",
+      "storeAs": "seqTag",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Container Length",
+      "offset": 2,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Total byte length of the PKCS#12 PFX container content following the 4-byte header (big-endian, when length indicator = 0x82). P12 files with multiple certificates and an encrypted private key are typically 2-10 KB. The file size = this value + 4.",
+      "storeAs": "seqLen",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Version INTEGER Tag",
+      "offset": 4,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "ASN.1 INTEGER tag 0x02 for the PFX version field. Immediately follows the outer SEQUENCE header. The version field is always INTEGER(3) for PKCS#12 v1.1 (RFC 7292) which is the only defined version.",
+      "storeAs": "versionTag",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Version Length",
+      "offset": 5,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Length of the version INTEGER value in bytes. Always 0x01 (1 byte) since the version value is always 3 (fits in one byte). Together: tag(02) + length(01) + value(03) = PFX version 3.",
+      "storeAs": "versionLen",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "PFX Version",
+      "offset": 6,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.35,
+      "description": "PKCS#12 PFX version number. Always 3 for RFC 7292. No other version is defined. This value confirms that the DER SEQUENCE is a PKCS#12 PFX container rather than an X.509 certificate or PKCS#7 bundle.",
+      "storeAs": "pfxVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "3": "PFX version 3 — RFC 7292 (only valid PKCS#12 version)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "SafeContents Bags",
+      "variable": "pfxVersion",
+      "description": "PKCS#12 bags: KeyBag (OID .1.1, unencrypted PKCS#8), PKCS8ShroudedKeyBag (.1.2, encrypted key — most common), CertBag (.1.3, X.509 cert), CRLBag (.1.4), SecretBag (.1.5, arbitrary secrets)."
+    },
+    {
+      "type": "metadata",
+      "name": "MAC Integrity",
+      "variable": "seqLen",
+      "description": "Optional macData field provides HMAC-SHA1 or HMAC-SHA256 integrity protection over authSafe. The MAC is computed with a password-derived key using PBKDF1 or PBKDF2 (RFC 8018). Without a password the MAC cannot be verified."
+    },
+    {
+      "type": "metadata",
+      "name": "Inspect Command",
+      "variable": "seqTag",
+      "description": "Parse with OpenSSL: openssl pkcs12 -in file.p12 -info -noout (prompts for password). To extract: openssl pkcs12 -in file.p12 -nocerts -nodes -out key.pem && openssl pkcs12 -in file.p12 -nokeys -out cert.pem."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Outer tag is SEQUENCE",
+      "expression": "seqTag == 48",
+      "severity": "error",
+      "message": "PKCS#12 must start with ASN.1 SEQUENCE tag 0x30. File is not valid DER-encoded PKCS#12."
+    },
+    {
+      "name": "PFX version is 3",
+      "expression": "pfxVersion == 3",
+      "severity": "error",
+      "message": "PKCS#12 version must be 3 (RFC 7292). Any other value is non-standard or corrupt."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Outer SEQUENCE", "offset": 0, "color": "#FF4444" },
+      { "name": "Container Length", "offset": 2, "color": "#44AAFF" },
+      { "name": "Version Field", "offset": 4, "color": "#44FF88" },
+      { "name": "PFX Version Value", "offset": 6, "color": "#FFAA44" }
+    ]
+  },
+  "inspector": {
+    "badge": "PFX",
+    "primaryField": "pfxVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "PFX Header",
+        "icon": "",
+        "fields": [ "seqTag", "seqLen", "versionTag", "versionLen", "pfxVersion" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PFX Header (JSON)",
+      "format": "json",
+      "fields": [ "seqTag", "seqLen", "pfxVersion" ]
+    },
+    {
+      "name": "PFX Summary (Text)",
+      "format": "text",
+      "fields": [ "seqTag", "pfxVersion", "seqLen" ]
+    }
+  ],
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "high",
+    "notes": "PKCS#12 files contain private key material. Any system with access to the .p12/.pfx file and the import password can extract the private key and impersonate the certificate owner. The import password may be weak or empty. PKCS8ShroudedKeyBag uses password-based encryption — weak passwords are vulnerable to offline brute-force attacks. Treat all .p12/.pfx files as highly sensitive.",
+    "suspiciousPatterns": [
+      "Empty or weak import password — private key is easily extractable without brute force",
+      "Legacy encryption algorithm (pbeWithSHAAnd3-KeyTripleDES-CBC) is weaker than modern AES-256",
+      "Missing macData field means no integrity protection — file may have been tampered with"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PKCS#12 PFX DER: 30 82 LL LL (outer SEQUENCE) { 02 01 03 (version=3) + 30(authSafe ContentInfo) { 06(contentType OID) + A0(content) { ... SafeContents bags ... } } + 30(macData OPTIONAL) { 30(MacAlgorithmIdentifier)+04(digest)+02(iterCount) } }. SafeContents: SET { SEQUENCE { OID(bagType) + [0](bagValue) + SET(bagAttributes) } }. KeyBag: PrivateKeyInfo PKCS#8. PKCS8ShroudedKeyBag: EncryptedPrivateKeyInfo. CertBag: CertTypes { x509Certificate [0] DER cert }.",
+    "suggestedInspections": [
+      "Verify outer SEQUENCE 0x30 at offset 0 and PFX version INTEGER 3 at offset ~6",
+      "Check for presence of macData — absent macData means no integrity protection over the key bags",
+      "Identify bag types in SafeContents: PKCS8ShroudedKeyBag OID (.1.2) contains encrypted private key",
+      "For forensic analysis: attempt empty password and common passwords to test key bag encryption strength",
+      "Extract certificate bag and check subject DN, key usage extensions, and validity period",
+      "Verify encryption algorithm in PKCS8ShroudedKeyBag — legacy 3DES (OID 1.2.840.113549.1.12.1.3) is weaker than AES-256"
+    ]
+  },
+  "software": [
+    "OpenSSL — openssl pkcs12 -info -noout -in file.p12",
+    "Windows Certificate Import Wizard — native .p12/.pfx import via double-click",
+    "Java keytool — keytool -importkeystore -srckeystore file.p12 -srcstoretype PKCS12",
+    "Bouncy Castle — Java/C# library for programmatic PKCS#12 processing",
+    "certutil (Windows) — certutil -dump file.p12"
+  ],
+  "formatRelationships": {
+    "category": "Certificates",
+    "extensions": [ ".p12", ".pfx" ],
+    "relatedFormats": [ "PKCS7", "PEM", "DER", "JKS" ],
+    "note": "PKCS#12 bundles private key + certificate chain for portability. PKCS#7 (p7b) carries only public certificates. Java uses JKS or PKCS#12 keystores. .pfx (Personal Information Exchange) is the Windows name for the same PKCS#12 format."
+  },
+  "MimeTypes": [
+    "application/x-pkcs12",
+    "application/pkcs12",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "TLS/HTTPS private key and certificate deployment (IIS, Apache, Nginx)",
+    "Code signing certificate distribution (.p12 from CA)",
+    "Browser certificate export for client authentication",
+    "Email S/MIME signing certificate portability",
+    "Azure / AWS certificate import for cloud services"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "DER-encoded ASN.1 binary (no PEM variant in common use)",
+    "DERMagic": "30 82 at offset 0, then 02 01 03 at offset 4 (version=3)",
+    "Version": "Always 3 (RFC 7292 defines only version 3)",
+    "KeyEncryption": "pbeWithSHAAnd3-KeyTripleDES-CBC (legacy) or AES-256-CBC (modern)",
+    "Inspect": "openssl pkcs12 -in file.p12 -info -noout",
+    "RFC": "RFC 7292 (PKCS#12 v1.1)"
+  }
+}

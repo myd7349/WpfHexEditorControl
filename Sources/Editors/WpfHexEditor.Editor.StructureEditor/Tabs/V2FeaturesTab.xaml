@@ -7,6 +7,8 @@
 <UserControl x:Class="WpfHexEditor.Editor.StructureEditor.Tabs.V2FeaturesTab"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctrl="clr-namespace:WpfHexEditor.Editor.StructureEditor.Controls"
+             xmlns:cp="clr-namespace:WpfHexEditor.ColorPicker.Controls;assembly=WpfHexEditor.ColorPicker"
              Background="{DynamicResource TE_Background}">
 
     <UserControl.Resources>
@@ -24,7 +26,7 @@
             <Setter Property="MinWidth"          Value="100"/>
             <Setter Property="Foreground"        Value="{DynamicResource TE_LineNumberForeground}"/>
         </Style>
-        <Style x:Key="Fld" TargetType="TextBox">
+        <Style x:Key="Fld" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="FontSize"        Value="11"/>
             <Setter Property="Padding"         Value="4,2"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -32,23 +34,17 @@
             <Setter Property="Background"      Value="{DynamicResource TE_Background}"/>
             <Setter Property="Foreground"      Value="{DynamicResource TE_Foreground}"/>
         </Style>
-        <Style x:Key="AddBtn" TargetType="Button">
-            <Setter Property="FontSize"        Value="11"/>
-            <Setter Property="Padding"         Value="6,2"/>
-            <Setter Property="Margin"          Value="0,4,0,0"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="Background"      Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground"      Value="{DynamicResource ET_AccentBrush}"/>
+        <Style x:Key="Combo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Padding"    Value="4,2"/>
+            <Setter Property="Margin"     Value="0,2,4,2"/>
+            <Setter Property="Background" Value="{DynamicResource TE_Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TE_Foreground}"/>
         </Style>
-        <Style x:Key="RemBtn" TargetType="Button">
-            <Setter Property="Content"         Value="✕"/>
-            <Setter Property="FontSize"        Value="10"/>
-            <Setter Property="Padding"         Value="4,1"/>
-            <Setter Property="Background"      Value="Transparent"/>
-            <Setter Property="Foreground"      Value="{DynamicResource TE_LineNumberForeground}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+        <Style x:Key="AddBtn" TargetType="Button" BasedOn="{StaticResource PM_LinkButtonStyle}">
+            <Setter Property="Padding" Value="6,2"/>
         </Style>
+        <Style x:Key="RemBtn" TargetType="Button" BasedOn="{StaticResource PM_RemoveButtonStyle}"/>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -72,10 +68,11 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0" Style="{StaticResource Fld}" Margin="0,0,4,0"
                                                  Text="{Binding AssertionName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Name"/>
-                                        <TextBox Grid.Column="1" Style="{StaticResource Fld}" Margin="0,0,4,0"
-                                                 FontFamily="Consolas"
-                                                 Text="{Binding Expression, UpdateSourceTrigger=PropertyChanged}" ToolTip="Boolean expression"/>
-                                        <ComboBox Grid.Column="2" FontSize="11" Margin="0,0,4,0"
+                                        <ctrl:ExpressionTextBox Grid.Column="1" Margin="0,2,4,2"
+                                                 Text="{Binding Expression, UpdateSourceTrigger=PropertyChanged}"
+                                                 Placeholder="var:name equals 0 or calc:expr"
+                                                 ToolTip="Boolean expression — Ctrl+Space for functions and variables"/>
+                                        <ComboBox Grid.Column="2" Style="{StaticResource Combo}"
                                                   ItemsSource="{Binding SeverityOptions}"
                                                   SelectedItem="{Binding Severity}"/>
                                         <Button Grid.Column="3" Style="{StaticResource RemBtn}"
@@ -108,10 +105,10 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0" Style="{StaticResource Fld}" Margin="0,0,4,0"
                                                  Text="{Binding ChecksumName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Name"/>
-                                        <ComboBox Grid.Column="1" FontSize="11" Margin="0,0,4,0"
+                                        <ComboBox Grid.Column="1" Style="{StaticResource Combo}"
                                                   ItemsSource="{Binding AlgorithmOptions}"
                                                   SelectedItem="{Binding Algorithm}"/>
-                                        <ComboBox Grid.Column="2" FontSize="11" Margin="0,0,4,0"
+                                        <ComboBox Grid.Column="2" Style="{StaticResource Combo}"
                                                   ItemsSource="{Binding SeverityOptions}"
                                                   SelectedItem="{Binding Severity}"/>
                                         <Button Grid.Column="3" Style="{StaticResource RemBtn}"
@@ -140,10 +137,12 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,2">
                                     <TextBox Style="{StaticResource Fld}" Width="120" Margin="0,0,4,0"
                                              Text="{Binding BookmarkName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Name"/>
-                                    <TextBox Style="{StaticResource Fld}" Width="120" Margin="0,0,4,0"
-                                             Text="{Binding OffsetVar, UpdateSourceTrigger=PropertyChanged}" ToolTip="Offset variable"/>
-                                    <TextBox Style="{StaticResource Fld}" Width="70" Margin="0,0,4,0"
-                                             Text="{Binding BookmarkColor, UpdateSourceTrigger=PropertyChanged}" ToolTip="Color #RRGGBB"/>
+                                    <ctrl:ExpressionTextBox Width="120" Margin="0,2,4,2"
+                                             Text="{Binding OffsetVar, UpdateSourceTrigger=PropertyChanged}"
+                                             Placeholder="variableName"
+                                             ToolTip="Variable holding the byte offset — Ctrl+Space for suggestions"/>
+                                    <cp:ColorPicker ShowAlphaChannel="False" Margin="0,0,4,0"
+                                                    SelectedColor="{Binding BookmarkColor, Converter={x:Static ctrl:HexStringToColorConverter.Instance}, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Button Style="{StaticResource RemBtn}" Command="{Binding RemoveCommand}"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -172,7 +171,7 @@
                                         <StackPanel Orientation="Horizontal">
                                             <TextBox Style="{StaticResource Fld}" Width="120" Margin="0,0,4,0"
                                                      Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Template Name"/>
-                                            <ComboBox FontSize="11" Width="100" Margin="0,0,4,0"
+                                            <ComboBox Style="{StaticResource Combo}" Width="100"
                                                       ItemsSource="{Binding FormatOptions}"
                                                       SelectedItem="{Binding Format}"/>
                                             <TextBox Style="{StaticResource Fld}" Width="100" Margin="0,0,4,0"

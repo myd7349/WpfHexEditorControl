@@ -1,0 +1,134 @@
+{
+  "diffMode": "text",
+  "formatName": "Java Properties File",
+  "version": "1.0",
+  "extensions": [ ".properties" ],
+  "description": "Java .properties file format (java.util.Properties). ISO 8859-1 or UTF-8 encoded plain text. Each line is a key=value or key:value pair. Comments are lines beginning with '#' (hash) or '!' (exclamation). Unicode escape sequences ('\\uXXXX') are used for non-Latin characters in ISO 8859-1 files. Continuation lines are indicated by a trailing backslash. Whitespace around delimiters is trimmed. Used extensively in Java applications, Spring Framework (application.properties), Maven, Apache configurations, and Android resources. Keys and values may use '=' or ':' as delimiters.",
+  "category": "Text",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "CodeEditor",
+  "references": [
+    "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Properties.html",
+    "https://en.wikipedia.org/wiki/.properties"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "23",
+        "offset": 0,
+        "label": "# — Java properties comment line using hash character at offset 0",
+        "weight": 0.5
+      },
+      {
+        "value": "21",
+        "offset": 0,
+        "label": "! — Java properties comment using exclamation mark (alternative comment syntax) at offset 0",
+        "weight": 0.4
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "Strength": "Weak"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of the .properties file at offset 0 — commonly 0x23 ('#') for a comment header block at the start of the file, 0x21 ('!') for an exclamation comment, or a printable ASCII character starting the first key name; helps confirm the file is plain text",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "secondByte",
+      "offset": 1,
+      "size": 1,
+      "type": "uint8",
+      "description": "Second byte of the .properties file at offset 1 — the second character of either a comment marker line or the beginning of a key name; used alongside firstByte for encoding and content validation"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FirstByteTextContent",
+      "expression": "firstByte < 128",
+      "severity": "warning",
+      "message": "First byte is not ASCII; Java .properties files should be ISO 8859-1 or UTF-8 encoded without a BOM; unexpected high bytes at offset 0 may indicate wrong encoding"
+    },
+    {
+      "name": "NotBinaryContent",
+      "expression": "firstByte != 0x00",
+      "severity": "warning",
+      "message": "First byte is null (0x00); Java properties files should not contain null bytes; this may be a binary file with a .properties extension"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "File Start", "offset": 0, "size": 512, "description": "Opening comment block and first key-value properties" }
+    ]
+  },
+  "inspector": {
+    "badge": "PROP",
+    "primaryField": "firstByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "File Start",
+        "fields": [ "firstByte", "secondByte" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "File Summary",
+      "format": "text",
+      "template": "Java Properties File\nFirst Byte: 0x{firstByte:X2}\nFormat: key=value plain text (ISO 8859-1 or UTF-8)\nComment syntax: # or !\nDelimiters: = or :"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nSecondByte,{secondByte}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "Java application configuration file. May contain database connection strings, passwords, API keys, or JDBC URLs depending on the application context. Spring application.properties files often contain sensitive infrastructure configuration."
+  },
+  "aiHints": {
+    "analysisContext": "Java .properties files are extension-identified text files. Detection is very weak due to no binary magic. Content pattern matching is the best approach: look for key=value lines, # or ! comments, and \\uXXXX Unicode escape sequences. Spring Framework files commonly include spring.datasource, spring.security, and server.port properties.",
+    "suggestedInspections": [
+      "Scan for key=value and key:value patterns to confirm properties format",
+      "Look for # or ! comment lines as structural confirmation",
+      "Search for '\\u' sequences indicating Unicode-escaped non-Latin characters",
+      "Identify Spring Framework patterns: spring.datasource.url, spring.security",
+      "Look for sensitive keys: password, secret, key, token, credentials",
+      "Check for continuation lines (trailing backslash) that span multiple lines"
+    ]
+  },
+  "software": [
+    { "name": "IntelliJ IDEA", "url": "https://www.jetbrains.com/idea/", "role": "Java IDE" },
+    { "name": "Eclipse", "url": "https://www.eclipse.org/", "role": "Java IDE" }
+  ],
+  "formatRelationships": [
+    { "format": "INI", "relation": "sibling — INI files use [Section] headers while .properties files are flat key-value without sections" },
+    { "format": "YAML", "relation": "successor — application.yml is the modern Spring Framework alternative to application.properties" }
+  ],
+  "MimeTypes": [ "text/x-java-properties", "text/plain" ],
+  "UseCases": [
+    "Java application configuration and externalized settings",
+    "Spring Framework application.properties configuration",
+    "Android resource string localization files",
+    "Maven and Gradle build system configuration"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "encoding": "ISO 8859-1 (classic) or UTF-8 (modern, Java 9+)",
+    "endianness": "N/A (text format)",
+    "notes": "Since Java 9, UTF-8 is the default encoding for .properties files when using ResourceBundle. Classic files use ISO 8859-1 with \\uXXXX Unicode escapes. No BOM should be present. The java.util.Properties class parses this format."
+  }
+}

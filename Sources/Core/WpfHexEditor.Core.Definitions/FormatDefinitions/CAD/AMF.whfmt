@@ -1,0 +1,186 @@
+{
+  "diffMode": "text",
+  "formatName": "Additive Manufacturing File (AMF)",
+  "version": "1.0",
+  "extensions": [".amf"],
+  "description": "AMF (Additive Manufacturing File Format) is the ISO/ASTM 52915:2016 XML standard for 3D printing, developed as an advanced successor to STL. Files start with '<?xml' XML declaration or directly with '<amf'. The root element is '<amf unit=\"millimeter\" version=\"1.1\">'. Key elements: <object id> (3D geometry), <material id> (material properties with name, color, composite percentages), <texture id> (image texture data), <constellation> (multi-object placement arrangement), <metadata type> (arbitrary key/value pairs). Geometry structure: <object> contains <mesh> containing <vertices> (list of <vertex><coordinates><x><y><z>) and <volume> (list of <triangle><v1><v2><v3> with optional material ID). Advanced features: curved triangles using cubic Bezier patches (n1, n2, n3 normal vectors), graded materials with spatial composition functions, per-vertex/triangle/volume color assignments (r, g, b, a), lattice structures. Supports ZIP compression (compressed AMF with .amf extension is a ZIP). Implementations: Materialise Magics, netfabb (Autodesk), Cura, PrusaSlicer. Being gradually superseded by 3MF but AMF remains the ISO standard.",
+  "category": "CAD",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "ISO/ASTM 52915:2016 Standard Specification for AMF Format",
+      "ISO/ASTM 52915:2020 Additive Manufacturing File Format (AMF) Version 1.2",
+      "AMF White Paper — ASTM F42 Committee"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/Additive_Manufacturing_File_Format",
+      "https://www.astm.org/f3122-14.html",
+      "https://docs.fileformat.com/3d/amf/",
+      "https://fileinfo.com/extension/amf"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3C616D66", "offset": 0, "label": "<amf — AMF root element directly at file start (no XML prolog)", "weight": 0.9 },
+      { "value": "3C3F786D6C", "offset": 0, "label": "<?xml — XML declaration preceding AMF root element", "weight": 0.4 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 1.5, "max": 5.5 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "File starts with '<amf' or '<?xml'. Root element must be '<amf' with unit and version attributes."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "amfTag": "",
+    "amfUnit": "",
+    "amfVersion": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "First byte of the AMF file. Must be 0x3C (ASCII '<') since AMF is an XML-based text format. The file either begins directly with '<amf' as the root element or with '<?xml' as an XML processing instruction. Compressed AMF files are ZIP containers (first byte 0x50 'P') that should be detected as ZIP first.",
+      "storeAs": "firstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "AMF Tag Start",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 4 bytes of the AMF file. If starting directly with the root element, these bytes are '<amf' (0x3C 0x61 0x6D 0x66). If an XML declaration is present, these bytes are '<?xm' (start of '<?xml'). Both forms are valid AMF; the root element must ultimately be '<amf>' with unit and version attributes.",
+      "storeAs": "amfTag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "AMF Root Element",
+      "offset": 0,
+      "description": "The <amf> root element has two key attributes: unit (string: 'millimeter' standard, alternatives 'inch', 'feet', 'meter', 'micron') and version (string: '1.1' for ISO/ASTM 52915:2016 or '1.2' for updated version). Child elements: <object>, <material>, <texture>, <constellation>, <metadata>. The unit attribute affects how all coordinate values are interpreted."
+    },
+    {
+      "type": "metadata",
+      "name": "AMF Geometry Structure",
+      "offset": 0,
+      "description": "Each <object id='N'> contains <mesh><vertices> and <mesh><volume>. Vertices: <vertex><coordinates><x>value</x><y>value</y><z>value</z></coordinates></vertex>. Triangles: <triangle><v1>N</v1><v2>N</v2><v3>N</v3></triangle> where v1/v2/v3 are vertex indices. Curved triangles add <n1/n2/n3> normal vectors enabling cubic Bezier patch interpolation for smooth surfaces. Colors: <color> element with <r><g><b><a> channels (0.0-1.0) can appear on vertices, triangles, or volumes."
+    }
+  ],
+  "assertions": [
+    {
+      "name": "ValidFirstByte",
+      "expression": "firstByte == 60",
+      "severity": "error",
+      "message": "First byte must be 0x3C '<'. AMF is an XML text format and must begin with an XML tag. Compressed AMF is a ZIP file and should be detected as ZIP."
+    },
+    {
+      "name": "ValidTagStart",
+      "expression": "amfTag == '<amf' || amfTag == '<?xm'",
+      "severity": "warning",
+      "message": "File does not start with '<amf' or '<?xml'. AMF root element not confirmed from initial bytes."
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "AMF Root", "offset": 0, "icon": "\uE8B7", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "amfTag",
+    "primaryField": "amfVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "amfTag", "amfVersion"]
+      },
+      {
+        "title": "Units",
+        "icon": "\uE946",
+        "fields": ["amfUnit"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "AMF Info (JSON)",
+      "format": "json",
+      "fields": ["amfTag", "amfVersion", "amfUnit"]
+    },
+    {
+      "name": "AMF Summary (CSV)",
+      "format": "csv",
+      "fields": ["amfVersion", "amfUnit"]
+    }
+  ],
+  "forensic": {
+    "category": "cad",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "XXE (XML External Entity) injection risk via DOCTYPE declaration in malformed AMF files",
+      "Compressed AMF (ZIP) containing unexpected additional files beyond the XML payload"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "AMF is XML-based, starting with '<amf' or '<?xml'. Root element is <amf unit='millimeter' version='1.1'>. Contains object/mesh/vertices/volume/triangle geometry, material definitions, textures, and constellation placement data. May be ZIP-compressed.",
+    "suggestedInspections": [
+      "Confirm '<amf' root element and extract unit and version attributes for format validation",
+      "Count <object> elements to determine number of 3D objects in the AMF file",
+      "Check for <material> elements indicating multi-material printing specifications",
+      "Look for <color> elements on vertices, triangles, or volumes for color-coded print geometry",
+      "Check for ZIP signature (PK 50 4B) at offset 0 indicating a compressed AMF file requiring decompression first"
+    ]
+  },
+  "software": [
+    "Materialise Magics",
+    "netfabb (Autodesk)",
+    "Cura (Ultimaker)",
+    "PrusaSlicer",
+    "FreeCAD (AMF export)",
+    "Simplify3D"
+  ],
+  "formatRelationships": {
+    "category": "CAD",
+    "extensions": [".amf"],
+    "relatedFormats": ["STL", "3MF", "OBJ"],
+    "note": "ISO/ASTM XML successor to STL; 3MF is a competing XML standard with better software support"
+  },
+  "MimeTypes": ["application/vnd.ms-package.3dmanufacturing-3dmodel+xml", "application/xml"],
+  "UseCases": [
+    "Multi-material and multi-color 3D printing specifications",
+    "Curved surface 3D printing with Bezier triangle patches",
+    "Graded material composition for advanced additive manufacturing",
+    "ISO-standardized 3D print file archiving and exchange"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "standard": "ISO/ASTM 52915",
+    "encoding": "XML-UTF-8",
+    "versions": ["1.1 (ISO/ASTM 52915:2016)", "1.2 (ISO/ASTM 52915:2020)"],
+    "units": ["millimeter", "inch", "feet", "meter", "micron"],
+    "compression": "optional ZIP container (compressed AMF)",
+    "features": ["curved-triangles", "graded-materials", "per-vertex-color", "textures", "lattice"]
+  }
+}

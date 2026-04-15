@@ -1,211 +1,213 @@
 {
   "diffMode": "binary",
   "formatName": "DVD Video Object",
-  "version": "1.13",
-  "extensions": [
-    ".vob"
-  ],
-  "description": "VOB (Video Object) — the container format used on DVD-Video discs, defined in the DVD-Video specification. A VOB file is an MPEG-2 Program Stream (PS) with the Pack Header start code 0x000001BA at offset 0, followed by a 10-byte Pack Header body: '01' marker (2 bits) + SCR_base (3 bits) + '1' marker + SCR_base_middle (15 bits) + '1' marker + SCR_base_low (15 bits) + '1' marker + SCR_extension (9 bits) + '1' marker + program_mux_rate (22 bits) + '11' markers + pack_stuffing_length (3 bits). DVD-Video VOBs contain MPEG-2 video (up to 9.8 Mbps), Dolby AC-3/DTS/PCM/MPEG-1 audio in private stream 0xBD, and subtitle streams in private stream 0xBF. VOB files on DVD are named VTS_01_0.VOB through VTS_01_9.VOB (up to 1 GB each).",
+  "version": "1.0",
+  "extensions": [".vob", ".mpg"],
+  "description": "DVD Video Object (VOB) files are MPEG-2 Program Stream containers used on DVD-Video discs. Each file begins with the MPEG-2 pack start code 00 00 01 BA, which identifies the start of a Program Stream pack. The byte at offset 4 carries the SCR (System Clock Reference) in its upper 6 bits (with a 01 marker). The mux rate field at offset 10 (3 bytes) declares the multiplexed stream bitrate. VOB files on DVD contain interleaved video (MPEG-2), audio (AC-3, DTS, PCM, or MPEG Audio), and subpicture (subtitle) streams multiplexed together in Program Stream packs.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "DVD-Video Specification — DVD Forum",
-      "ISO/IEC 13818-1 — MPEG-2 Systems (Program Stream)",
-      "DVD MPEG-2 Program Stream specification"
+      "ISO/IEC 13818-1: MPEG-2 Systems — Program Stream",
+      "DVD Forum: DVD Specifications for Read-Only Disc Part 3 Video Specification"
     ],
     "WebLinks": [
       "https://en.wikipedia.org/wiki/VOB",
-      "https://en.wikipedia.org/wiki/MPEG_program_stream",
-      "https://en.wikibooks.org/wiki/Inside_DVD-Video/MPEG_Format",
-      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000173.shtml"
+      "https://en.wikipedia.org/wiki/MPEG_program_stream"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "000001BA", "offset": 0, "label": "MPEG-2 PS Pack Header start code", "weight": 1.0 }
+      {
+        "value": "000001BA",
+        "offset": 0,
+        "label": "MPEG-2 Program Stream pack start code 0x000001BA",
+        "weight": 1.0
+      }
     ],
-    "matchMode": "any",
-    "MinimumScore": 1.0,
-    "required": true,
+    "matchMode": "First",
+    "MinimumScore": 0.9,
+    "required": ["MPEG-2 Program Stream pack start code 0x000001BA"],
     "Strength": "Strong",
-    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "EntropyHint": {
+      "min": 5.5,
+      "max": 8.0,
+      "comment": "MPEG-2 compressed video multiplex exhibits high entropy"
+    },
     "validation": {
-      "minFileSize": 14,
-      "maxSignatureOffset": 0
+      "notes": "Start code 0x000001BA must appear at offset 0; upper 2 bits of offset 4 must be '01' for MPEG-2"
     }
   },
   "variables": {
-    "mpegPsPackHeader": 0,
-    "packHeaderByte4": 0,
-    "scrBits": 0,
-    "muxRate": 0
+    "packStartCode": "",
+    "scrByte": 0,
+    "muxRate": 0,
+    "stuffingLength": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "MPEG-2 PS Pack Header Start Code",
+      "name": "packStartCode",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "MPEG-2 Program Stream Pack Header start code 0x000001BA (big-endian uint32 = 442). The 3-byte start code prefix 0x000001 is shared with all MPEG elementary stream start codes. The stream_id byte 0xBA (186) identifies the Pack Header, which is the outermost wrapper of an MPEG-2 Program Stream (PS). VOB files (DVD-Video) use MPEG-2 PS and always begin with this start code. MPEG-1 PS uses 0x000001BA with different bit encoding in bytes 4-13.",
-      "storeAs": "mpegPsPackHeader",
-      "valueType": "uint32",
-      "endianness": "big"
+      "opacity": 0.85,
+      "description": "MPEG-2 Program Stream pack start code (4 bytes) — always 0x000001BA; marks the beginning of a PS pack which contains header fields and PES packets carrying audio/video elementary streams",
+      "storeAs": "packStartCode",
+      "valueType": "bytes"
     },
     {
       "type": "field",
-      "name": "Pack Header Byte 4 (MPEG version marker)",
+      "name": "scrByte",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "First byte after the Pack Header start code. Bits 7-6 distinguish MPEG-1 PS from MPEG-2 PS: 0x01 (binary 00000001) prefix = MPEG-1 PS, 0x44 (binary 01000100) bit pattern = MPEG-2 PS ('01' marker bits at bits 7-6). For VOB/MPEG-2 PS, bits 7-6 of this byte must be '01' (value 0x40-0x7F range).",
-      "storeAs": "packHeaderByte4",
-      "valueType": "uint8",
-      "bitfields": [
-        { "name": "MPEG Version Marker", "bits": "7-6", "description": "01 = MPEG-2 PS, 00 = MPEG-1 PS", "valueMap": { "1": "MPEG-2 Program Stream (VOB/DVD)", "0": "MPEG-1 Program Stream (legacy)" } }
-      ]
+      "opacity": 0.75,
+      "description": "First byte of System Clock Reference (SCR) field — upper 2 bits must be '01' for MPEG-2 Program Stream (distinguishes from MPEG-1 which uses '0010'); SCR encodes the presentation timestamp",
+      "storeAs": "scrByte",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Mux Rate (partial)",
+      "name": "muxRate",
       "offset": 10,
       "length": 3,
       "color": "#95E1D3",
-      "opacity": 0.30,
-      "description": "MPEG-2 PS mux rate (upper 22 bits of this 3-byte big-endian field, followed by 2 marker bits and 3 stuffing length bits). The mux rate is in units of 50 bytes/second. DVD-Video typical mux rate: ~10080 (10080 × 50 = ~5 Mbps nominal; actual video up to 9.8 Mbps peak).",
+      "opacity": 0.75,
+      "description": "Program Stream mux rate field (22-bit value in 3 bytes) — declares the combined bitrate of all multiplexed elementary streams in units of 50 bytes/second; used by demultiplexers for buffer management",
       "storeAs": "muxRate",
-      "valueType": "uint32",
-      "endianness": "big"
+      "valueType": "uint24BE"
     },
     {
-      "type": "metadata",
-      "name": "Pack Header Start Code",
-      "variable": "mpegPsPackHeader",
-      "description": "MPEG-2 PS Pack Header start code (0x000001BA = 442)"
-    },
-    {
-      "type": "metadata",
-      "name": "MPEG Version",
-      "variable": "packHeaderByte4",
-      "description": "MPEG-2 PS marker bits (01 in bits 7-6)"
+      "type": "field",
+      "name": "stuffingLength",
+      "offset": 13,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.75,
+      "description": "Pack stuffing length (lower 3 bits) — indicates number of 0xFF stuffing bytes appended after this field to pad the pack header to a required alignment; upper 5 bits are reserved marker bits",
+      "storeAs": "stuffingLength",
+      "valueType": "uint8"
     }
   ],
   "assertions": [
     {
-      "name": "Pack Header start code valid",
-      "expression": "mpegPsPackHeader == 442",
-      "severity": "error",
-      "message": "VOB/MPEG-2 PS must start with Pack Header start code 0x000001BA (442) — not a valid VOB or MPEG-2 Program Stream file"
+      "field": "packStartCode",
+      "op": "eq",
+      "value": "000001BA",
+      "message": "VOB pack start code must be 0x000001BA"
     },
     {
-      "name": "MPEG-2 PS version marker",
-      "expression": "(packHeaderByte4 & 192) == 64",
-      "severity": "info",
-      "message": "Byte 4 does not have MPEG-2 PS '01' marker bits — file may be MPEG-1 Program Stream rather than MPEG-2/VOB"
+      "field": "scrByte",
+      "op": "mask",
+      "mask": "0xC0",
+      "value": "0x40",
+      "message": "Upper 2 bits of SCR byte must be '01' (MPEG-2 marker)"
+    },
+    {
+      "field": "muxRate",
+      "op": "gte",
+      "value": 1,
+      "message": "Mux rate must be non-zero"
     }
   ],
-  "versionDetection": {
-    "field": "packHeaderByte4",
-    "versions": {
-      "64": "MPEG-2 Program Stream (VOB / DVD-Video)",
-      "0": "MPEG-1 Program Stream (legacy)"
-    }
-  },
   "navigation": {
     "bookmarks": [
-      {
-        "name": "Pack Header",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      },
-      {
-        "name": "System Header (typical)",
-        "offset": 14,
-        "icon": "\uE8A5",
-        "color": "#4ECDC4"
-      }
+      { "name": "Pack Start Code", "offset": 0, "length": 4, "color": "#FF6B6B" },
+      { "name": "SCR Byte", "offset": 4, "length": 1, "color": "#4ECDC4" },
+      { "name": "Mux Rate", "offset": 10, "length": 3, "color": "#95E1D3" },
+      { "name": "Stuffing Length", "offset": 13, "length": 1, "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "mpegPsPackHeader",
-    "primaryField": "packHeaderByte4",
+    "badge": "VOB",
+    "primaryField": "packStartCode",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "MPEG-2 PS Pack Header",
-        "icon": "\uE71B",
-        "fields": ["mpegPsPackHeader", "packHeaderByte4", "muxRate"]
+        "name": "Pack Header",
+        "fields": ["packStartCode", "scrByte"]
+      },
+      {
+        "name": "Multiplex Info",
+        "fields": ["muxRate", "stuffingLength"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "VOB Pack Header (JSON)",
+      "name": "VOB Pack Summary",
+      "format": "text",
+      "template": "Start Code: {packStartCode} | SCR byte: {scrByte} | Mux Rate: {muxRate} | Stuffing: {stuffingLength}"
+    },
+    {
+      "name": "VOB JSON Report",
       "format": "json",
-      "fields": ["mpegPsPackHeader", "packHeaderByte4", "muxRate"]
+      "template": "{ \"startCode\": \"{packStartCode}\", \"muxRate\": {muxRate} }"
     }
   ],
   "forensic": {
-    "category": "video",
+    "category": "Video",
     "riskLevel": "low",
-    "suspiciousPatterns": []
+    "suspiciousPatterns": [
+      "Missing 0x000001BA at offset 0 indicates corrupted or non-standard VOB file",
+      "SCR values not monotonically increasing indicate stream corruption or splicing",
+      "Encrypted content (CSS) indicated by private stream 1 packets with encrypted flag"
+    ]
   },
   "aiHints": {
-    "analysisContext": "VOB = MPEG-2 Program Stream. Pack Header layout: 0x000001BA(4B) + MPEG2_marker+SCR(6B) + muxRate+stuffing(3B) + stuffing_bytes. After pack: PES packets. PES start: 0x000001+stream_id(1B). Key stream IDs: 0xE0-0xEF=video, 0xC0-0xDF=audio, 0xBD=private1(AC-3/DTS/sub), 0xBE=padding, 0xBF=private2(nav packets). DVD-Video: video PID=0xE0, AC-3 audio starts with 0x80+substream_id in private stream 0xBD. Navigation packets (NAV) in private stream 0xBF contain DSI/PCI data. SCR (System Clock Reference) is 33-bit + 9-bit extension, 90kHz base clock.",
+    "analysisContext": "VOB files are MPEG-2 Program Streams. After the pack header, PES (Packetized Elementary Stream) packets follow. PES stream IDs: 0xE0-0xEF=video, 0xBD=private1 (AC-3/DTS/PCM audio), 0xC0-0xDF=MPEG audio. DVD CSS encryption protects VTS_01_1.VOB through VTS_01_x.VOB.",
     "suggestedInspections": [
-      "Verify 0x000001BA at offset 0 — MPEG-2 PS Pack Header",
-      "Check byte 4 bits 7-6: '01' = MPEG-2 PS, '00' = MPEG-1 PS",
-      "Look for stream ID 0xBD (private stream 1) for AC-3/DTS audio on DVD-Video",
-      "DVD-Video: first VOB bytes contain navigation packs; audio/video follows",
-      "Compute duration from SCR of first and last pack headers"
+      "Verify 0x000001BA pack start code at offset 0 for PS/VOB identification",
+      "Check upper 2 bits of SCR byte: '01' = MPEG-2, '00' = MPEG-1 Program Stream",
+      "Walk PES packets after pack header: identify stream IDs for video and audio tracks",
+      "Detect AC-3 audio (stream ID 0x80 in private stream 1) vs DTS (0x88) vs PCM (0xA0)",
+      "Locate System Header packets (0x000001BB) for overall stream configuration",
+      "Check for CSS encryption by testing for scrambled PES payloads on video streams"
     ]
   },
   "software": [
-    "DVD players (standalone and software)",
-    "VLC media player",
-    "HandBrake (VOB to MP4/MKV)",
-    "FFmpeg (mpegps demuxer)",
-    "MakeMKV",
-    "DVD Decrypter / DVD Shrink (legacy)"
+    "FFmpeg",
+    "VLC Media Player",
+    "HandBrake",
+    "DVD Decrypter",
+    "DVDShrink",
+    "MakeMKV"
   ],
   "formatRelationships": {
     "category": "Video",
-    "extensions": [".vob"],
-    "relatedFormats": ["MPEG", "TS", "MP4"],
-    "note": "VOB is MPEG-2 Program Stream (PS) as used by DVD-Video. Files are named VTS_XX_Y.VOB (max 1 GB each). Title 0 navigation files use VIDEO_TS.VOB. VOB differs from raw MPEG-2 PS only in the use of DVD-specific private streams (0xBD for AC-3/DTS/subtitle, 0xBF for DVD navigation packets)."
+    "extensions": [".vob", ".mpg"],
+    "relatedFormats": ["MPEG-PS", "MPEG-TS", "MP4", "BUP", "IFO"],
+    "note": "VOB files appear in VIDEO_TS folder alongside IFO (navigation) and BUP (backup) files on DVD-Video discs"
   },
-  "MimeTypes": [
-    "video/dvd",
-    "video/mpeg",
-    "video/vob"
-  ],
+  "MimeTypes": ["video/dvd", "video/mpeg", "video/x-vob"],
   "UseCases": [
-    "DVD-Video disc content (main video title files)",
-    "DVD ripping and transcoding",
-    "DVD menu navigation files",
-    "Archival of physical DVD media"
+    "DVD-Video disc primary video container",
+    "MPEG-2 video archiving from broadcast captures",
+    "DVD ripping source format for transcoding",
+    "DVD menu and navigation video clips",
+    "Legacy SVCD and DVD authoring"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 90,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 5,
-    "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 4,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "VideoFormat": true,
-    "ContainerFormat": "MPEG-2 Program Stream (DVD-Video profile)",
-    "Endianness": "big-endian (all MPEG start codes and header fields)",
-    "VideoCodec": "MPEG-2 (up to 9.8 Mbps peak)",
-    "AudioCodecs": "AC-3 (Dolby Digital), DTS, LPCM, MPEG-1 Layer 2",
-    "MaxFileSize": "1 GB (DVD-Video specification limit per VOB file)",
-    "MaxResolution": "720×576 (PAL) or 720×480 (NTSC)"
+    "packStartCode": "0x000001BA",
+    "mpeg2Marker": "upper 2 bits of SCR byte = 01",
+    "muxRateUnit": "50 bytes/second",
+    "streamIds": {
+      "video": "0xE0-0xEF",
+      "mpegAudio": "0xC0-0xDF",
+      "privateStream1": "0xBD (AC-3/DTS/PCM)",
+      "systemHeader": "0x000001BB"
+    },
+    "maxBitrate": "10.08 Mbps (single layer DVD)"
   }
 }

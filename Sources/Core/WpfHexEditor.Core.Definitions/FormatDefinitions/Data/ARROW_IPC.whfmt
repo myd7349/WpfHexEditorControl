@@ -1,0 +1,222 @@
+{
+  "diffMode": "binary",
+  "formatName": "Apache Arrow IPC",
+  "version": "1.0",
+  "extensions": [
+    ".arrow",
+    ".feather"
+  ],
+  "description": "Apache Arrow IPC (Inter-Process Communication) format for columnar in-memory data exchange. Two sub-formats: Stream (no magic — starts with IPC message continuation bytes 0xFF 0xFF 0xFF 0xFF) and File/Random-access (magic 'ARROW1' = 41 52 52 4F 57 31, 6 bytes + 2 null padding = 8B, then 4B metadata version padding = 12B total at file start). File format layout: magic(8B) + [schema message] + [record batch messages] + [dictionary batch messages] + footer + magic(8B) at end. Zero-copy architecture: data stored in columnar layout matching Arrow memory format, enabling direct memory-mapped access. Column types: int8/16/32/64, float16/32/64, binary, utf8, list, struct, union, dictionary. Feather v2 is Arrow IPC file format with optional zstd/lz4 column compression.",
+  "category": "Data",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Apache Arrow IPC format specification — arrow.apache.org/docs/format/IPC.html",
+      "Apache Arrow columnar format — arrow.apache.org/docs/format/Columnar.html",
+      "Feather v2 format (Arrow IPC file) — arrow.apache.org/docs/python/feather.html"
+    ],
+    "WebLinks": [
+      "https://arrow.apache.org/",
+      "https://arrow.apache.org/docs/format/IPC.html",
+      "https://github.com/apache/arrow",
+      "https://en.wikipedia.org/wiki/Apache_Arrow"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "4152524F5731000000000000", "offset": 0, "label": "ARROW1 + 6 bytes padding — Apache Arrow IPC file format magic", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 12,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "arrowMagic": "",
+    "padding": 0,
+    "metadataVersion": 0,
+    "featherVersion": 0,
+    "numColumns": 0,
+    "numRows": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Arrow IPC File Magic",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "8-byte Apache Arrow IPC file format magic: 'ARROW1' (41 52 52 4F 57 31) followed by two null bytes (00 00) padding. The magic 'ARROW1' identifies the Arrow file format (random-access) as opposed to the Arrow stream format which has no magic. The trailing null bytes are alignment padding. The same magic appears at both the start and end of the file (the file footer contains the magic as a terminator). Stream format files do NOT have this magic and start with a continuation indicator.",
+      "storeAs": "arrowMagic",
+      "valueType": "bytes"
+    },
+    {
+      "type": "field",
+      "name": "Metadata Padding",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "4-byte padding value following the 8-byte magic. In Arrow IPC file format, this uint32 LE value is part of the alignment structure before the schema FlatBuffer message. The first IPC message (schema) follows at an 8-byte aligned offset. This field is typically 0 in standard Arrow files but may contain the FlatBuffer size of the first schema message in some implementations.",
+      "storeAs": "padding",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Metadata Version",
+      "variable": "metadataVersion",
+      "description": "Arrow IPC FlatBuffer metadata version from the schema message (V1=1, V2=2, V3=3, V4=4, V5=5 current)"
+    },
+    {
+      "type": "metadata",
+      "name": "Number of Columns",
+      "variable": "numColumns",
+      "description": "Number of fields (columns) in the Arrow schema — each field has a name, type, and optional metadata"
+    },
+    {
+      "type": "metadata",
+      "name": "Number of Rows",
+      "variable": "numRows",
+      "description": "Total row count across all record batches in the Arrow file (sum of all batch row counts from the file footer)"
+    },
+    {
+      "type": "metadata",
+      "name": "Feather Version",
+      "variable": "featherVersion",
+      "description": "Feather format version if file uses Feather conventions (2 = Arrow IPC file with optional compression)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid Arrow IPC magic",
+      "expression": "arrowMagic[0] == 0x41 && arrowMagic[1] == 0x52 && arrowMagic[2] == 0x52 && arrowMagic[3] == 0x4F && arrowMagic[4] == 0x57 && arrowMagic[5] == 0x31",
+      "severity": "error",
+      "message": "File does not begin with Arrow IPC magic 'ARROW1' — not a valid Apache Arrow IPC file"
+    },
+    {
+      "name": "Padding bytes are null",
+      "expression": "arrowMagic[6] == 0x00 && arrowMagic[7] == 0x00",
+      "severity": "warning",
+      "message": "Arrow IPC magic padding bytes (offsets 6-7) should be null — file may use a non-standard layout"
+    },
+    {
+      "name": "File ends with Arrow magic",
+      "expression": "true",
+      "severity": "info",
+      "message": "Verify the last 6 bytes of the file equal 'ARROW1' — Arrow IPC file format terminates with the magic as a footer signature"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Arrow Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Schema Message", "offset": 8, "icon": "\uE8A5", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "arrowMagic",
+    "primaryField": "numRows",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["arrowMagic", "padding", "metadataVersion"]
+      },
+      {
+        "title": "Schema Summary",
+        "icon": "\uE9D9",
+        "fields": ["numColumns", "numRows", "featherVersion"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Arrow IPC Header (JSON)",
+      "format": "json",
+      "fields": ["arrowMagic", "padding", "metadataVersion", "numColumns", "numRows"]
+    },
+    {
+      "name": "Arrow IPC Header (C struct)",
+      "format": "c-struct",
+      "structName": "ARROW_IPC_HEADER",
+      "fields": ["arrowMagic", "padding"]
+    },
+    {
+      "name": "Python Arrow magic check",
+      "format": "python-bytes",
+      "fields": ["arrowMagic"]
+    }
+  ],
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Non-null padding bytes",
+        "condition": "padding != 0",
+        "severity": "info",
+        "description": "Non-zero padding after Arrow magic may indicate a non-standard Arrow file layout or an experimental format version"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Apache Arrow IPC file format: magic(8B: ARROW1\\0\\0) + schema IPC message + zero or more dictionary batch IPC messages + zero or more record batch IPC messages + file footer + footer length (int32 LE) + magic(6B: ARROW1). Each IPC message: continuation(4B: 0xFFFFFFFF) + metadata_size(4B LE) + FlatBuffer metadata + data buffers (8B aligned). The file footer FlatBuffer (at file end - 10 bytes) contains the schema and a list of all record batch + dictionary batch block offsets and sizes for random access. Feather v2 adds optional per-column zstd or lz4 compression in the IPC body. Use pyarrow.ipc.open_file() to read.",
+    "suggestedInspections": [
+      "Verify magic bytes 0-7: 41 52 52 4F 57 31 00 00 ('ARROW1' + two nulls)",
+      "Verify last 6 bytes of file also equal 41 52 52 4F 57 31 ('ARROW1' footer terminator)",
+      "Read footer length (int32 LE) at file_size - 10 to locate the FlatBuffer footer",
+      "Parse footer FlatBuffer to enumerate all record batch offsets for random access",
+      "Check for Feather format indicators: numRows and numColumns in footer metadata",
+      "Use pyarrow: import pyarrow.ipc; reader = pyarrow.ipc.open_file(path); reader.schema"
+    ]
+  },
+  "software": [
+    "Apache Arrow (pyarrow, arrow-cpp, arrow-java, arrow-go)",
+    "Pandas (pd.read_feather, to_feather for Feather v2)",
+    "Polars (native Arrow IPC support)",
+    "DuckDB (reads Arrow IPC files directly)",
+    "Apache Spark (Arrow-optimized data exchange)"
+  ],
+  "formatRelationships": {
+    "category": "Data",
+    "extensions": [".arrow", ".feather"],
+    "relatedFormats": ["PARQUET", "NDJSON", "FLATBUF"],
+    "note": ".arrow is the Arrow IPC file format; .feather is Feather v2 (Arrow IPC file + optional compression). Arrow Stream format (.arrows) has no file magic. Arrow uses FlatBuffers for metadata encoding — different from the Parquet format which uses Thrift."
+  },
+  "MimeTypes": [
+    "application/vnd.apache.arrow.file",
+    "application/vnd.apache.arrow.stream"
+  ],
+  "UseCases": [
+    "Zero-copy data exchange between processes and languages",
+    "Columnar analytics with Pandas, Polars, DuckDB, Spark",
+    "High-performance ML feature stores and data pipelines",
+    "Feather v2 efficient DataFrame persistence on disk",
+    "Cross-language data sharing without serialization overhead"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "MetadataEncoding": "FlatBuffers (fast zero-copy schema and record batch metadata)",
+    "DataLayout": "Columnar with 8-byte alignment and null bitmaps",
+    "Compression": "None (base) or per-column zstd/lz4 (Feather v2)",
+    "AccessPattern": "Random-access file or streaming (no magic for stream format)",
+    "SupportsStreaming": true,
+    "ZeroCopySupport": true
+  }
+}

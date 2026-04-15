@@ -1,242 +1,202 @@
 {
   "diffMode": "binary",
   "formatName": "WebM Video",
-  "version": "1.15",
-  "extensions": [
-    ".webm"
-  ],
-  "description": "WebM is a royalty-free, open-source video format developed by Google based on the Matroska (EBML) container. WebM files use the same EBML structure as MKV but restrict the DocType to 'webm' and the codecs to VP8, VP9, AV1 (video) and Vorbis, Opus (audio). The file starts with the 4-byte EBML element ID 0x1A45DFA3 followed by a VINT-encoded element size and the EBML header body. The EBML DocType element (0x4282) identifies the container as 'webm'. WebM is the mandatory open video format for HTML5 <video> in Chromium/Firefox browsers and is the primary delivery format for YouTube, Google Meet, and WebRTC.",
+  "version": "1.0",
+  "extensions": [".webm"],
+  "description": "WebM is an open, royalty-free media container format based on a subset of the Matroska container. Both WebM and Matroska use the EBML (Extensible Binary Meta Language) binary XML encoding, identified by the 4-byte element ID 1A 45 DF A3. WebM restricts the codec set to VP8, VP9, or AV1 for video and Vorbis or Opus for audio. The EBML header element is followed by a Segment element containing Cluster, Track, and Info elements. WebM is the primary video format for the HTML5 video element and is designed for efficient web delivery with low seek latency via WebM cues.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "WebM Container Guidelines — webmproject.org",
-      "EBML Specification — RFC 8794 (2020)",
-      "Matroska Specification — IETF RFC 9559 (2024)",
-      "VP8 — RFC 6386; VP9 — IETF draft; AV1 — AOMedia"
+      "WebM Container Guidelines — WebM Project (webmproject.org)",
+      "EBML Specification: RFC 8794 — Extensible Binary Meta Language"
     ],
     "WebLinks": [
-      "https://www.webmproject.org/docs/container/",
-      "https://en.wikipedia.org/wiki/WebM",
-      "https://www.rfc-editor.org/rfc/rfc8794",
-      "https://www.ietf.org/rfc/rfc9559"
+      "https://www.webmproject.org/",
+      "https://en.wikipedia.org/wiki/WebM"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "1A45DFA3", "offset": 0, "label": "EBML element ID — Matroska/WebM container", "weight": 0.7 }
+      {
+        "value": "1A45DFA3",
+        "offset": 0,
+        "label": "EBML element ID — header for WebM and Matroska containers",
+        "weight": 1.0
+      }
     ],
-    "matchMode": "any",
-    "MinimumScore": 0.7,
-    "required": true,
-    "Strength": "Medium",
-    "EntropyHint": { "min": 4.5, "max": 7.5 },
+    "matchMode": "First",
+    "MinimumScore": 0.9,
+    "required": ["EBML element ID — header for WebM and Matroska containers"],
+    "Strength": "Strong",
+    "EntropyHint": {
+      "min": 5.0,
+      "max": 8.0,
+      "comment": "VP8/VP9/AV1 compressed video exhibits high entropy"
+    },
     "validation": {
-      "minFileSize": 31,
-      "note": "EBML signature 0x1A45DFA3 is shared between MKV and WebM. Distinguish by DocType element (0x4282): 'webm' = WebM, 'matroska' = MKV. DocType is typically within the first 64 bytes."
+      "notes": "EBML header at offset 0 must be 1A45DFA3; DocType string within EBML header must be 'webm' for WebM files (vs 'matroska' for MKV)"
     }
   },
   "variables": {
-    "ebmlElementId": 0,
-    "ebmlHeaderSize": 0,
-    "mkvDocType": "",
-    "mkvDocTypeVersion": 0,
-    "mkvEBMLVersion": 0,
-    "mkvEBMLReadVersion": 0,
-    "mkvMaxIDLength": 0,
-    "mkvMaxSizeLength": 0,
-    "mkvDocTypeReadVersion": 0
+    "ebmlId": "",
+    "ebmlSize": 0,
+    "ebmlVersion": 0,
+    "docTypeSize": 0
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "EBML Element ID",
+      "name": "ebmlId",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "EBML (Extensible Binary Meta Language) element ID 0x1A45DFA3, identifying the start of the EBML header element. This 4-byte ID is shared between all EBML-based containers including WebM and Matroska (MKV). The bytes 0x1A, 0x45, 0xDF, 0xA3 were chosen to make the header visible in hex dumps: 0x1A is a common non-printable ASCII value used as a sync marker. Distinguish WebM from MKV via the DocType string at offset ~31.",
-      "storeAs": "ebmlElementId",
-      "valueType": "uint32",
-      "endianness": "big"
+      "opacity": 0.85,
+      "description": "EBML Document Type Header element ID — 0x1A45DFA3; this 4-byte Class D EBML element ID is universal across all EBML-based formats including WebM and Matroska; identical to MKV header",
+      "storeAs": "ebmlId",
+      "valueType": "bytes"
     },
     {
       "type": "field",
-      "name": "EBML Header VINT Size",
+      "name": "ebmlSize",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "VINT-encoded (Variable Integer) size of the EBML header element body. In VINT encoding, the number of leading zero bits indicates the integer width: 0x80-0xFF = 1-byte VINT (size 0-127), 0x40-0x7F with next byte = 2-byte VINT, etc. For WebM/MKV header the VINT size byte is typically 0x80+size for small headers. The EBML header body contains the DocType and version fields.",
-      "storeAs": "ebmlHeaderSize",
+      "opacity": 0.75,
+      "description": "EBML variable-length size byte for the EBML Header element — VINT encoded; first byte determines how many bytes the size occupies based on leading zeros; typical EBML headers are 26-35 bytes",
+      "storeAs": "ebmlSize",
       "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "EBML Version",
-      "offset": 6,
-      "length": 2,
+      "name": "ebmlVersion",
+      "offset": 5,
+      "length": 1,
       "color": "#95E1D3",
-      "opacity": 0.30,
-      "description": "EBML element 0x4286 (EBMLVersion) — the version of the EBML specification used. WebM and Matroska use EBML version 1. Stored as a variable-length EBML element: 2-byte ID (0x4286) + VINT size + value.",
-      "storeAs": "mkvEBMLVersion",
-      "valueType": "uint16",
-      "endianness": "big"
+      "opacity": 0.75,
+      "description": "First byte of EBML header payload — begins with EBML sub-elements; the EBMLVersion element (ID 0x4286) typically appears here identifying the EBML specification version used (always 1 for WebM)",
+      "storeAs": "ebmlVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "DocType",
-      "offset": 29,
-      "length": 4,
+      "name": "docTypeSize",
+      "offset": 6,
+      "length": 1,
       "color": "#FFE66D",
-      "opacity": 0.35,
-      "description": "EBML DocType string identifying the container type. 'webm' (0x77 0x65 0x62 0x6D) = WebM, 'matro' (first 5 bytes of 'matroska') = Matroska/MKV. The exact byte offset depends on the EBML header structure, but is typically around offset 29-33. This is the definitive discriminator between WebM and MKV.",
-      "storeAs": "mkvDocType",
-      "valueType": "ascii",
-      "valueMap": {
-        "webm": "WebM — VP8/VP9/AV1 video + Vorbis/Opus audio (Google/Chromium)",
-        "matr": "Matroska (MKV) — open container supporting H.264, HEVC, AV1, etc."
-      }
-    },
-    {
-      "type": "metadata",
-      "name": "Container DocType",
-      "variable": "mkvDocType",
-      "description": "EBML document type: 'webm' = WebM, 'matroska' = MKV"
-    },
-    {
-      "type": "metadata",
-      "name": "EBML Version",
-      "variable": "mkvEBMLVersion",
-      "description": "EBML specification version (always 1 for WebM)"
+      "opacity": 0.75,
+      "description": "Continuation of EBML header payload — contains DocType sub-element; DocType string identifies container type as 'webm' for WebM files or 'matroska' for MKV files; this byte begins the EBMLVersion or DocType sub-element ID",
+      "storeAs": "docTypeSize",
+      "valueType": "uint8"
     }
   ],
   "assertions": [
     {
-      "name": "EBML element ID valid",
-      "expression": "ebmlElementId == 440786851",
-      "severity": "error",
-      "message": "EBML element ID must be 0x1A45DFA3 — not a valid WebM or Matroska file"
+      "field": "ebmlId",
+      "op": "eq",
+      "value": "1A45DFA3",
+      "message": "EBML element ID must be 0x1A45DFA3"
     },
     {
-      "name": "DocType is webm",
-      "expression": "mkvDocType == 'webm'",
-      "severity": "info",
-      "message": "DocType is not 'webm' — file may be Matroska (MKV) rather than WebM"
+      "field": "ebmlSize",
+      "op": "gte",
+      "value": 1,
+      "message": "EBML size field must be present"
     }
   ],
-  "versionDetection": {
-    "field": "mkvDocType",
-    "versions": {
-      "webm": "WebM (VP8/VP9/AV1 + Vorbis/Opus)",
-      "matroska": "Matroska (MKV — broader codec support)"
-    }
-  },
   "navigation": {
     "bookmarks": [
-      {
-        "name": "EBML Header",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      },
-      {
-        "name": "DocType",
-        "offset": 29,
-        "icon": "\uE8A5",
-        "color": "#FFE66D"
-      }
+      { "name": "EBML Header ID", "offset": 0, "length": 4, "color": "#FF6B6B" },
+      { "name": "EBML Size VINT", "offset": 4, "length": 1, "color": "#4ECDC4" },
+      { "name": "EBML Version Sub-element", "offset": 5, "length": 1, "color": "#95E1D3" },
+      { "name": "DocType Region", "offset": 6, "length": 1, "color": "#FFE66D" }
     ]
   },
   "inspector": {
-    "badge": "mkvDocType",
-    "primaryField": "mkvEBMLVersion",
+    "badge": "WEBM",
+    "primaryField": "ebmlId",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "EBML Identity",
-        "icon": "\uE71B",
-        "fields": ["ebmlElementId", "mkvDocType", "mkvEBMLVersion"]
+        "name": "EBML Header",
+        "fields": ["ebmlId", "ebmlSize"]
+      },
+      {
+        "name": "DocType",
+        "fields": ["ebmlVersion", "docTypeSize"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "WebM EBML Header (JSON)",
+      "name": "WebM Header Summary",
+      "format": "text",
+      "template": "EBML ID: {ebmlId} | Size: {ebmlSize} | Version byte: {ebmlVersion}"
+    },
+    {
+      "name": "WebM JSON Report",
       "format": "json",
-      "fields": ["ebmlElementId", "mkvDocType", "mkvEBMLVersion"]
+      "template": "{ \"ebmlId\": \"{ebmlId}\", \"ebmlSize\": {ebmlSize} }"
     }
   ],
   "forensic": {
-    "category": "video",
+    "category": "Video",
     "riskLevel": "low",
     "suspiciousPatterns": [
-      {
-        "name": "DocType is not webm",
-        "condition": "mkvDocType != 'webm'",
-        "severity": "info",
-        "description": "DocType is not 'webm' — file uses the same EBML signature but is a Matroska (MKV) container, not WebM."
-      }
+      "DocType 'matroska' in file with .webm extension indicates mis-labeled Matroska",
+      "Missing Cues element indicates no seek table; may cause browser buffering issues",
+      "VP9/AV1 with wrong DocType claims may indicate file manipulation"
     ]
   },
   "aiHints": {
-    "analysisContext": "WebM = Matroska (EBML) container with DocType 'webm'. EBML header: 0x1A45DFA3(4B) + VINT_size + EBML sub-elements. Key sub-elements: 0x4286=EBMLVersion(1), 0x42F7=EBMLReadVersion(1), 0x42F2=EBMLMaxIDLength(4), 0x42F3=EBMLMaxSizeLength(8), 0x4282=DocType('webm'), 0x4287=DocTypeVersion, 0x4285=DocTypeReadVersion. WebM codec constraints: video only VP8(V_VP8), VP9(V_VP9), AV1(V_AV1); audio only Vorbis(A_VORBIS), Opus(A_OPUS). After EBML header: Segment(0x18538067) > Info > Tracks > Cluster(audio/video frames). Distinguish from MKV: DocType='matroska' for MKV, DocType='webm' for WebM.",
-    "knownVulnerabilities": [
-      "CVE-2019-13767: libwebm out-of-bounds read via crafted WebM file",
-      "Malformed VINT size causing integer overflow in header parsing",
-      "Invalid codec ID in Track element causing decoder confusion"
-    ],
+    "analysisContext": "WebM is a restricted subset of Matroska. Both use EBML ID 0x1A45DFA3 for the header. WebM DocType string is 'webm'; Matroska uses 'matroska'. After the EBML header, the Segment element (ID 0x18538067) contains all media data. WebM mandates VP8/VP9/AV1 video and Vorbis/Opus audio only.",
     "suggestedInspections": [
-      "Verify 0x1A45DFA3 at offset 0 — EBML header start",
-      "Locate DocType (0x4282) element and confirm value is 'webm' (not 'matroska')",
-      "Check DocTypeVersion (0x4287) for compatibility level",
-      "Scan Track elements for codec IDs: V_VP8, V_VP9, V_AV1 (video) + A_VORBIS, A_OPUS (audio only — no H.264 in compliant WebM)",
-      "Non-webm codecs (H.264, HEVC) indicate a non-compliant WebM file"
+      "Verify EBML ID 0x1A45DFA3 at offset 0 for EBML container identification",
+      "Decode VINT-encoded size at offset 4 to find EBML header payload extent",
+      "Read DocType element (ID 0x4282) string: 'webm' vs 'matroska' distinguishes format",
+      "Locate Segment element (0x18538067) after EBML header for media data access",
+      "Parse Segment Info (0x1549A966) for duration, title, MuxingApp, WritingApp",
+      "Find Tracks (0x1654AE6B) element to enumerate video/audio track codec IDs"
     ]
   },
   "software": [
-    "Google Chrome / Chromium (native WebM support)",
-    "Mozilla Firefox",
-    "FFmpeg (libvpx)",
-    "VLC media player",
+    "FFmpeg",
+    "VLC Media Player",
+    "Chrome / Firefox (native HTML5)",
+    "libwebm (Google)",
     "HandBrake",
-    "YouTube (primary upload/delivery format)"
+    "OBS Studio"
   ],
   "formatRelationships": {
     "category": "Video",
     "extensions": [".webm"],
-    "relatedFormats": ["MKV", "OGV", "MP4"],
-    "note": "WebM is a profile of Matroska (EBML) with restricted codec set (VP8/VP9/AV1 video + Vorbis/Opus audio). Google created WebM as a royalty-free alternative to MP4/H.264. WebM uses the same EBML signature (0x1A45DFA3) as MKV — distinguish by DocType: 'webm' vs 'matroska'. WebM is mandatory for HTML5 <video> support in open-source browsers."
+    "relatedFormats": ["MKV", "MKA", "VP8", "VP9", "AV1", "Opus"],
+    "note": "WebM is a restricted Matroska subset; all WebM files are valid Matroska but not vice versa; DocType string 'webm' vs 'matroska' is the key distinction"
   },
-  "MimeTypes": [
-    "video/webm",
-    "audio/webm"
-  ],
+  "MimeTypes": ["video/webm", "audio/webm"],
   "UseCases": [
-    "HTML5 <video> web streaming",
-    "YouTube video delivery",
-    "WebRTC video conferencing",
-    "Open-source video distribution",
-    "Screen recording (browser extensions)"
+    "HTML5 web video embedding (Chrome, Firefox)",
+    "YouTube VP9 video delivery",
+    "Open source video platform hosting",
+    "WebRTC video recording",
+    "Royalty-free streaming video"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 88,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 6,
+    "BlocksDefined": 4,
     "ValidationRules": 2,
-    "LastUpdated": "2026-04-14",
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "VideoFormat": true,
-    "ContainerFormat": "EBML (Matroska subset)",
-    "Endianness": "big-endian (EBML element IDs and sizes)",
-    "Codecs": "VP8, VP9, AV1 (video) + Vorbis, Opus (audio)",
-    "EBMLSignature": "0x1A45DFA3 (shared with MKV)",
-    "DocType": "'webm' (distinguishes from 'matroska')",
-    "OpenSource": true,
-    "RoyaltyFree": true
+    "containerBase": "EBML (Extensible Binary Meta Language) / Matroska subset",
+    "ebmlHeaderId": "0x1A45DFA3",
+    "docType": "webm",
+    "allowedVideoCodecs": ["VP8", "VP9", "AV1"],
+    "allowedAudioCodecs": ["Vorbis", "Opus"],
+    "royaltyFree": true
   }
 }

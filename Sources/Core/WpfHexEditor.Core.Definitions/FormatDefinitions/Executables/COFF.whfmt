@@ -1,0 +1,212 @@
+{
+  "diffMode": "binary",
+  "formatName": "COFF Object File",
+  "version": "1.0",
+  "extensions": [ ".obj", ".o" ],
+  "description": "COFF (Common Object File Format) — compiled object file produced by a compiler before linking. Used by MSVC (.obj) and GCC/Binutils (.o on Windows via MinGW/Cygwin). The first 2 bytes are the Machine type (uint16 LE). Common values: 0x014C=i386, 0x8664=x86_64 (AMD64), 0xAA64=ARM64 (AArch64), 0x01C4=ARM Thumb-2, 0x0EBC=EFI Byte Code. COFF header is 20 bytes: Machine (2B), NumberOfSections (2B), TimeDateStamp (4B), PointerToSymbolTable (4B), NumberOfSymbols (4B), SizeOfOptionalHeader (2B), Characteristics (2B). For standalone .obj files, SizeOfOptionalHeader is 0. If non-zero, a PE optional header follows and this is the beginning of a PE image.",
+  "category": "Executables",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image",
+    "https://wiki.osdev.org/COFF"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "4C01",
+        "offset": 0,
+        "label": "Machine=0x014C — x86 (i386) COFF object file",
+        "weight": 0.7
+      },
+      {
+        "value": "6486",
+        "offset": 0,
+        "label": "Machine=0x8664 — x86-64 (AMD64) COFF object file",
+        "weight": 0.7
+      },
+      {
+        "value": "64AA",
+        "offset": 0,
+        "label": "Machine=0xAA64 — ARM64 (AArch64) COFF object file",
+        "weight": 0.7
+      },
+      {
+        "value": "C401",
+        "offset": 0,
+        "label": "Machine=0x01C4 — ARM Thumb-2 COFF object file",
+        "weight": 0.6
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "Strength": "Medium"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "machine",
+      "offset": 0,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "description": "Machine type — 2-byte little-endian unsigned integer at offset 0 identifying the target CPU architecture; 0x014C=x86, 0x8664=x86-64, 0xAA64=ARM64, 0x01C4=ARM Thumb-2, 0x0EBC=EFI Byte Code, 0x0200=Intel Itanium IA-64",
+      "storeAs": "machine",
+      "valueMap": {
+        "332":   "x86 (i386)",
+        "34404": "x86-64 (AMD64)",
+        "43620": "ARM64 (AArch64)",
+        "452":   "ARM (Thumb-2)",
+        "3772":  "EFI Byte Code",
+        "512":   "Intel Itanium"
+      }
+    },
+    {
+      "name": "numberOfSections",
+      "offset": 2,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "description": "Number of sections — 2-byte little-endian unsigned integer at offset 2 indicating how many section headers follow the COFF header and optional header; typical sections include .text, .data, .bss, .rdata, and .pdata",
+      "storeAs": "sectionCount"
+    },
+    {
+      "name": "timeDateStamp",
+      "offset": 4,
+      "size": 4,
+      "type": "uint32",
+      "endian": "LE",
+      "description": "Compilation timestamp — 4-byte little-endian Unix timestamp at offset 4 recording the time this object file was created by the compiler; value is seconds since January 1, 1970 00:00:00 UTC",
+      "storeAs": "timeDateStamp"
+    },
+    {
+      "name": "pointerToSymbolTable",
+      "offset": 8,
+      "size": 4,
+      "type": "uint32",
+      "endian": "LE",
+      "description": "Symbol table file offset — 4-byte little-endian unsigned integer at offset 8; file offset of the COFF symbol table; 0 if no symbol table is present (stripped object); symbol table entries are 18 bytes each"
+    },
+    {
+      "name": "numberOfSymbols",
+      "offset": 12,
+      "size": 4,
+      "type": "uint32",
+      "endian": "LE",
+      "description": "Number of symbol table entries — 4-byte little-endian unsigned integer at offset 12; count of COFF symbol table entries each 18 bytes in size; 0 for stripped objects; string table immediately follows the symbol table"
+    },
+    {
+      "name": "sizeOfOptionalHeader",
+      "offset": 16,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "description": "Optional header size — 2-byte little-endian unsigned integer at offset 16; for standalone COFF object files this is always 0; non-zero values indicate a PE optional header follows and this file is beginning of a PE image rather than a raw object",
+      "storeAs": "optHeaderSize"
+    },
+    {
+      "name": "characteristics",
+      "offset": 18,
+      "size": 2,
+      "type": "uint16",
+      "endian": "LE",
+      "description": "Characteristics flags — 2-byte little-endian bitmask at offset 18; for object files bit 0 (IMAGE_FILE_RELOCS_STRIPPED) is typically 0; for images, bits indicate relocations, executable, large address aware, 32-bit machine, DLL, and system file attributes",
+      "storeAs": "characteristics"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MachineKnown",
+      "expression": "machine == 332 || machine == 34404 || machine == 43620 || machine == 452 || machine == 3772 || machine == 512",
+      "severity": "warning",
+      "message": "Machine type at offset 0 is not a commonly recognized COFF architecture; verify the value against the PE/COFF specification machine type list"
+    },
+    {
+      "name": "SectionCountPositive",
+      "expression": "sectionCount > 0",
+      "severity": "warning",
+      "message": "Number of sections at offset 2 should be greater than zero; a COFF object with no sections is likely empty or corrupt"
+    },
+    {
+      "name": "OptHeaderSizeZeroForObj",
+      "expression": "optHeaderSize == 0",
+      "severity": "info",
+      "message": "SizeOfOptionalHeader at offset 16 is non-zero; this may be a PE image file rather than a standalone COFF object file; consider inspecting as PE format"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "COFF Header", "offset": 0, "size": 20, "description": "20-byte COFF file header containing machine, section count, timestamp, and symbol table pointer" },
+      { "name": "Section Headers", "offset": 20, "size": -1, "description": "Array of 40-byte section headers beginning at offset 20 (assuming no optional header)" }
+    ]
+  },
+  "inspector": {
+    "badge": "OBJ",
+    "primaryField": "machine",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "COFF Header",
+        "fields": [ "machine", "sectionCount", "timeDateStamp", "optHeaderSize", "characteristics" ]
+      },
+      {
+        "name": "Symbol Table",
+        "fields": [ "pointerToSymbolTable", "numberOfSymbols" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Object File Summary",
+      "format": "text",
+      "template": "COFF Object File\nMachine: {machine} (0x{machine:X4})\nSections: {sectionCount}\nTimestamp: {timeDateStamp}\nOptional Header Size: {optHeaderSize}\nCharacteristics: 0x{characteristics:X4}"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nMachine,{machine}\nSectionCount,{sectionCount}\nTimestamp,{timeDateStamp}\nOptHeaderSize,{optHeaderSize}\nCharacteristics,{characteristics}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "COFF object file produced by a compiler. Not directly executable — must be linked. May contain function names, source file references, and debug symbols in the COFF symbol table. TimeDateStamp reveals compilation time."
+  },
+  "aiHints": {
+    "analysisContext": "COFF object files begin with a 20-byte header. The machine type at offset 0 identifies the target CPU. SizeOfOptionalHeader at offset 16 should be 0 for standalone .obj/.o files. Section headers follow at offset 20 (or 20+optHeaderSize for PE images). Each section header is 40 bytes. Section data offsets are absolute file positions.",
+    "suggestedInspections": [
+      "Read machine type at offset 0 (uint16 LE) to identify target CPU architecture",
+      "Check sizeOfOptionalHeader at offset 16 — 0 confirms this is a raw COFF object, not a PE image",
+      "Read sectionCount at offset 2 and enumerate the 40-byte section headers starting at offset 20",
+      "Convert timeDateStamp at offset 4 from Unix time to readable date for compilation timeline",
+      "Follow pointerToSymbolTable to read the symbol table for exported/imported symbol names",
+      "Look for .debug section or COFF debug symbols for source-level debug information"
+    ]
+  },
+  "software": [
+    { "name": "MSVC (cl.exe)", "url": "https://learn.microsoft.com/en-us/cpp/build/reference/compiler-options", "role": "compiler" },
+    { "name": "GCC (MinGW)", "url": "https://www.mingw-w64.org/", "role": "compiler" },
+    { "name": "dumpbin", "url": "https://learn.microsoft.com/en-us/cpp/build/reference/dumpbin-reference", "role": "object file inspector" }
+  ],
+  "formatRelationships": [
+    { "format": "PE_EXE", "relation": "parent — PE32 image files begin with a COFF header; COFF is the object-level predecessor of the PE image format" },
+    { "format": "ELF", "relation": "alternative — ELF is the Unix/Linux equivalent of COFF for object files and executables" }
+  ],
+  "MimeTypes": [ "application/x-object", "application/x-coff" ],
+  "UseCases": [
+    "Compiled object file inspection before linking",
+    "Symbol table analysis and exported function discovery",
+    "Build system debugging and compilation artifact analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "headerSize": 20,
+    "magicOffset": 0,
+    "endianness": "little-endian",
+    "notes": "COFF does not have a fixed magic number — the machine type at offset 0 is the closest equivalent. The optional header size differentiates standalone objects (0) from PE images (224 for PE32, 240 for PE32+). Symbol table entries are 18 bytes each with 8-byte name or string table reference."
+  }
+}

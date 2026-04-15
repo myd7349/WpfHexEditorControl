@@ -1,0 +1,189 @@
+{
+  "diffMode": "binary",
+  "formatName": "GSM 06.10 Audio",
+  "version": "1.0",
+  "extensions": [".gsm"],
+  "description": "GSM 06.10 is a speech compression standard developed for digital cellular networks. Files consist of a raw sequence of 33-byte frames with no file-level header or magic bytes. Each frame begins with a byte whose upper nibble must equal 0xD (1101 in binary), serving as the only identification marker. The lower nibble carries the first 4 bits of encoded LPC parameters. GSM 06.10 encodes 160 samples of 8 kHz audio (20ms) per 33-byte frame at a fixed 13 kbps bitrate. The absence of a file header makes detection purely heuristic based on frame structure.",
+  "category": "Audio",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "HexEditor",
+  "references": {
+    "specifications": [
+      "ETSI EN 300 961: Digital cellular telecommunications system — Full rate speech; Transcoding (GSM 06.10)",
+      "ITU-T G.711 and G.728 related voice codec standards"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/Full_Rate",
+      "https://www.etsi.org/deliver/etsi_en/300900_300999/300961/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "D0",
+        "offset": 0,
+        "label": "GSM frame marker — upper nibble 0xD at offset 0",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "First",
+    "MinimumScore": 0.4,
+    "required": [],
+    "Strength": "Medium",
+    "EntropyHint": {
+      "min": 4.0,
+      "max": 7.5,
+      "comment": "GSM encoded speech has moderate entropy; low values indicate silence frames"
+    },
+    "validation": {
+      "notes": "Upper nibble of byte 0 must be 0xD; file size should be a multiple of 33 bytes"
+    }
+  },
+  "variables": {
+    "firstFrameByte": 0,
+    "frame1byte2": 0,
+    "frame1end": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "firstFrameByte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.85,
+      "description": "First byte of the first GSM 06.10 frame — upper nibble must be 0xD (binary 1101), serving as the only frame sync marker; lower nibble carries the first 4 LPC coefficient bits",
+      "storeAs": "firstFrameByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "frame1byte2",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.75,
+      "description": "Second byte of the first GSM frame — continues LPC parameter encoding; no fixed pattern but part of the 33-byte frame payload that encodes 160 speech samples",
+      "storeAs": "frame1byte2",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "frame1end",
+      "offset": 32,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.75,
+      "description": "Last byte of the first 33-byte GSM frame (offset 32); examining this byte confirms the complete frame structure and correct 33-byte frame boundary alignment",
+      "storeAs": "frame1end",
+      "valueType": "uint8"
+    }
+  ],
+  "assertions": [
+    {
+      "field": "firstFrameByte",
+      "op": "mask",
+      "mask": "0xF0",
+      "value": "0xD0",
+      "message": "Upper nibble of first byte must be 0xD for valid GSM 06.10 frame"
+    },
+    {
+      "field": "fileSize",
+      "op": "modulo",
+      "divisor": 33,
+      "value": 0,
+      "message": "File size must be a multiple of 33 bytes (one frame per 33 bytes)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Frame 1 Start", "offset": 0, "length": 1, "color": "#FF6B6B" },
+      { "name": "Frame 1 Byte 2", "offset": 1, "length": 1, "color": "#4ECDC4" },
+      { "name": "Frame 1 End", "offset": 32, "length": 1, "color": "#95E1D3" },
+      { "name": "Frame 2 Start", "offset": 33, "length": 1, "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "GSM",
+    "primaryField": "firstFrameByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Frame 1 Structure",
+        "fields": ["firstFrameByte", "frame1byte2", "frame1end"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GSM File Summary",
+      "format": "text",
+      "template": "First Byte: {firstFrameByte} | Frame 1 End: {frame1end} | Frame size: 33 bytes"
+    },
+    {
+      "name": "GSM JSON Report",
+      "format": "json",
+      "template": "{ \"firstByte\": {firstFrameByte}, \"frameSizeBytes\": 33, \"fixedBitrate\": 13000 }"
+    }
+  ],
+  "forensic": {
+    "category": "Audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      "Upper nibble != 0xD at frame boundary offset indicates frame misalignment or corruption",
+      "File size not a multiple of 33 indicates truncation or appended data",
+      "All-zero frames indicate silent padding or deliberate erasure of voice data"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GSM 06.10 has no file-level header — identification is purely structural. Each 33-byte frame starts with a byte whose upper nibble is 0xD. File size divisible by 33 strongly confirms GSM format. At 13 kbps (33 bytes per 20ms), duration = (fileSize / 33) * 0.02 seconds.",
+    "suggestedInspections": [
+      "Confirm upper nibble of byte 0 is 0xD — the only reliable GSM frame marker",
+      "Verify file size is exactly divisible by 33 to confirm frame alignment",
+      "Calculate duration: (fileSize / 33) * 20ms per frame gives total speech duration",
+      "Walk every 33-byte boundary and verify upper nibble is 0xD for stream validation",
+      "Compare against WAV/PCM version if available: GSM is 13 kbps vs 128 kbps PCM",
+      "Check for embedded GSM in WAV files (format tag 0x0031 in RIFF WAV header)"
+    ]
+  },
+  "software": [
+    "FFmpeg",
+    "SoX (Sound eXchange)",
+    "Asterisk PBX (libgsm)",
+    "libgsm library",
+    "Audacity",
+    "VoIP telephony systems"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".gsm"],
+    "relatedFormats": ["AMR", "G.711 ulaw", "G.711 alaw", "EVRC", "WAV (GSM-encoded)"],
+    "note": "GSM 06.10 is frequently embedded as a WAV codec (tag 0x0031); standalone .gsm files are common in telephony server recordings"
+  },
+  "MimeTypes": ["audio/x-gsm", "audio/gsm"],
+  "UseCases": [
+    "Telephony voice recording on PBX systems",
+    "GSM mobile network speech codec",
+    "VoIP server audio file storage (Asterisk)",
+    "Legacy voice message archive files"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 3,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "frameSizeBytes": 33,
+    "samplesPerFrame": 160,
+    "sampleRateHz": 8000,
+    "frameDurationMs": 20,
+    "bitrateKbps": 13,
+    "lossless": false,
+    "headerless": true,
+    "frameMarker": "upper nibble 0xD"
+  }
+}

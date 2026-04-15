@@ -1,212 +1,177 @@
-﻿{
+{
   "diffMode": "binary",
   "formatName": "Musepack Audio",
-  "version": "1.14",
-  "extensions": [
-    ".mpc",
-    ".mp+",
-    ".mpp"
-  ],
-  "description": "Musepack (MPC) — an open-source lossy audio codec derived from MPEG-1 Layer-2, optimized for transparency at high quality settings. Two major versions exist: SV7 (Stream Version 7, legacy) starts with 'MP+' (0x4D502B) followed by 32-bit LE words encoding codec parameters. SV8 (current) starts with 'MPCK' (0x4D50434B) followed by variable-length key-value packets. SV8 packet types: SH (stream header — sample rate, channel count, frame count), RG (ReplayGain), EI (encoder info), SO (seek table offset), AP (audio packets), SE (stream end). APEv2 tags may appear at the end of the file.",
+  "version": "1.0",
+  "extensions": [".mpc", ".mp+"],
+  "description": "Musepack (MPC) is a lossy audio compression format derived from MPEG-1 Layer II with significant modifications for improved quality-per-bit. Stream Version 8 (SV8) files begin with the four-byte magic 'MPCK' (0x4D50434B) followed by variable-length key-length-value packets. Stream Version 7 (SV7) older files use the two-byte 'MP+' prefix. SV8 introduced key-value packet containers for the stream header (SH), replay gain (RG), and end-of-stream (ES) packets. Musepack excels at transparent quality at medium bitrates.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
-  "preferredEditor": "audio-viewer",
+  "preferredEditor": "HexEditor",
   "references": {
     "specifications": [
-      "Musepack SV8 Specification — trac.musepack.net",
-      "Musepack SV7 Bitstream Specification",
-      "APEv2 Tag Specification"
+      "Musepack SV8 Stream Format Specification",
+      "Musepack SV7 Legacy Format Documentation"
     ],
     "WebLinks": [
-      "https://trac.musepack.net/musepack/wiki/SV8Specification",
-      "https://mutagen-specs.readthedocs.io/en/latest/mpc/sv8.html",
-      "https://en.wikipedia.org/wiki/Musepack",
-      "https://www.musepack.net/"
+      "https://www.musepack.net/",
+      "https://wiki.hydrogenaud.io/index.php?title=Musepack"
     ]
   },
   "detection": {
     "signatures": [
-      { "value": "4D50434B", "offset": 0, "label": "MPCK — Musepack SV8 header", "weight": 1.0 },
-      { "value": "4D502B", "offset": 0, "label": "MP+ — Musepack SV7/SV5 header", "weight": 0.8 }
+      {
+        "value": "4D50434B",
+        "offset": 0,
+        "label": "MPCK — Musepack SV8 stream magic",
+        "weight": 1.0
+      },
+      {
+        "value": "4D502B",
+        "offset": 0,
+        "label": "MP+ — Musepack SV7 legacy magic",
+        "weight": 0.8
+      }
     ],
-    "matchMode": "any",
-    "MinimumScore": 0.8,
-    "required": true,
+    "matchMode": "Any",
+    "MinimumScore": 0.5,
+    "required": [],
     "Strength": "Strong",
-    "EntropyHint": { "min": 5.0, "max": 8.0 },
+    "EntropyHint": {
+      "min": 5.0,
+      "max": 8.0,
+      "comment": "Lossy audio with moderate to high entropy"
+    },
     "validation": {
-      "minFileSize": 4,
-      "maxSignatureOffset": 0
+      "notes": "SV8: check 'MPCK' at offset 0; SV7: check 'MP+' at offset 0"
     }
   },
   "variables": {
-    "mpcSignature": "",
-    "streamVersion": 0,
-    "isSV8": false
+    "mpcMagic": "",
+    "firstPacketKey": ""
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "Musepack Signature",
+      "name": "mpcMagic",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
-      "opacity": 0.45,
-      "description": "Musepack stream magic. 'MPCK' (0x4D50434B) indicates SV8 current format. 'MP+' (0x4D502B) with a stream version byte of 7 (bits 7-4 of byte 3) indicates legacy SV7. SV5 ('MP+' with version 5) is an older legacy format. The 4-byte 'MPCK' signature was chosen for SV8 to be unambiguous and distinct from the 3-byte SV7 'MP+' magic.",
-      "storeAs": "mpcSignature",
+      "opacity": 0.85,
+      "description": "Musepack stream identifier — 'MPCK' (0x4D50434B) for SV8 streams or 'MP+' for legacy SV7; the four-byte SV8 form is the canonical current format magic",
+      "storeAs": "mpcMagic",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "SV7 Stream Version Word (SV7 only)",
-      "offset": 3,
-      "length": 4,
+      "name": "firstPacketKey",
+      "offset": 4,
+      "length": 2,
       "color": "#4ECDC4",
-      "opacity": 0.35,
-      "description": "For SV7 files only: first 32-bit little-endian word of stream data. Bits 7-4 of byte 3 (= bits 31-28 of word) encode the stream version (7 for SV7). Bits 3-0 encode the sub-version. Remaining bits encode encoder settings: profile, mid-side stereo flag, intensity stereo flag, and frame count.",
-      "storeAs": "sv7Header",
-      "valueType": "uint32",
-      "endianness": "little",
-      "bitfields": [
-        {
-          "name": "Stream Version",
-          "bits": "31-28",
-          "description": "Musepack stream version (7 = SV7, 5 = SV5 legacy)",
-          "valueMap": {
-            "5": "SV5 — legacy format",
-            "7": "SV7 — current legacy format"
-          }
-        },
-        {
-          "name": "Sub-Version",
-          "bits": "27-24",
-          "description": "SV7 sub-version number"
-        }
-      ]
-    },
-    {
-      "type": "computeFromVariables",
-      "name": "Is SV8",
-      "expression": "calc:mpcSignature == 'MPCK'",
-      "storeAs": "isSV8",
-      "description": "True when signature is 'MPCK' (SV8 format); False when 'MP+' (SV7 legacy)"
-    },
-    {
-      "type": "metadata",
-      "name": "Musepack Signature",
-      "variable": "mpcSignature",
-      "description": "'MPCK' = SV8 (current), 'MP+' = SV7 (legacy)"
-    },
-    {
-      "type": "metadata",
-      "name": "Is SV8",
-      "variable": "isSV8",
-      "description": "True for SV8 packet-based format, False for SV7 legacy"
+      "opacity": 0.75,
+      "description": "Two-character ASCII key of the first SV8 KLV packet immediately after the MPCK magic; expected to be 'SH' (Stream Header), 'RG' (Replay Gain), or 'EI' (Encoder Info)",
+      "storeAs": "firstPacketKey",
+      "valueType": "ascii"
     }
   ],
   "assertions": [
     {
-      "name": "MPC signature valid",
-      "expression": "mpcSignature == 'MPCK' || mpcSignature == 'MP+'",
-      "severity": "error",
-      "message": "Musepack signature must be 'MPCK' (SV8) or 'MP+' (SV7) — not a valid Musepack file"
+      "field": "mpcMagic",
+      "op": "in",
+      "value": ["MPCK", "MP+"],
+      "message": "Musepack magic must be 'MPCK' (SV8) or 'MP+' (SV7)"
+    },
+    {
+      "field": "firstPacketKey",
+      "op": "in",
+      "value": ["SH", "RG", "EI"],
+      "message": "First SV8 packet key must be SH, RG, or EI"
     }
   ],
-  "versionDetection": {
-    "field": "mpcSignature",
-    "versions": {
-      "MPCK": "SV8 — current Musepack format",
-      "MP+": "SV7 — legacy Musepack format (most common in the wild)"
-    }
-  },
   "navigation": {
     "bookmarks": [
-      {
-        "name": "MPC Header",
-        "offset": 0,
-        "icon": "\uE71B",
-        "color": "#FF6B6B"
-      }
+      { "name": "MPCK Magic", "offset": 0, "length": 4, "color": "#FF6B6B" },
+      { "name": "First Packet Key", "offset": 4, "length": 2, "color": "#4ECDC4" }
     ]
   },
   "inspector": {
-    "badge": "isSV8",
-    "primaryField": "mpcSignature",
+    "badge": "MPC",
+    "primaryField": "mpcMagic",
     "showQualityScore": true,
     "groups": [
       {
-        "title": "Musepack Identity",
-        "icon": "\uE71B",
-        "fields": ["mpcSignature", "isSV8"]
+        "name": "Stream Identity",
+        "fields": ["mpcMagic", "firstPacketKey"]
       }
     ]
   },
   "exportTemplates": [
     {
-      "name": "MPC Header (JSON)",
+      "name": "MPC Stream Summary",
+      "format": "text",
+      "template": "Magic: {mpcMagic} | FirstPacket: {firstPacketKey}"
+    },
+    {
+      "name": "MPC JSON Report",
       "format": "json",
-      "fields": ["mpcSignature", "isSV8"]
+      "template": "{ \"magic\": \"{mpcMagic}\", \"firstPacketKey\": \"{firstPacketKey}\" }"
     }
   ],
   "forensic": {
-    "category": "audio",
+    "category": "Audio",
     "riskLevel": "low",
     "suspiciousPatterns": [
-      {
-        "name": "SV5 legacy format",
-        "condition": "mpcSignature == 'MP+' && (sv7Header & 4026531840) >> 28 == 5",
-        "severity": "info",
-        "description": "File uses the very old SV5 Musepack format. Very few decoders support SV5 — may need conversion."
-      }
+      "Missing MPCK or MP+ magic indicates corrupted or mis-identified file",
+      "SV7 files with MP+ magic are legacy format; modern tools prefer SV8",
+      "Invalid first packet key after MPCK may indicate truncated or hand-crafted file"
     ]
   },
   "aiHints": {
-    "analysisContext": "Musepack file identification: 'MPCK' at offset 0 = SV8 format. 'MP+' at offset 0 = SV7/SV5. SV8 packet structure: each packet has 2-byte ASCII key + variable-length count (SVLQ encoded) + data. Key 'SH' = Stream Header: SVLQ sample count + sample rate bits + channel count. Key 'AP' = Audio Packet (frame data). Key 'SE' = Stream End. SV7 uses 32-bit LE words: first word bits 31-28 = version (7). APEv2 tags at EOF. Musepack uses 'bands' (MPEG-1 Layer 2 subbands) for encoding, not transform coding.",
+    "analysisContext": "Musepack SV8 uses a KLV packet container. After the 4-byte MPCK magic, each packet has a 2-char key, a variable-length size field, and a data payload. The SH (Stream Header) packet contains sample rate, channel count, and frame count. SV7 files have a fixed-layout header after 'MP+'.",
     "suggestedInspections": [
-      "Check offset 0: 'MPCK' (SV8) or 'MP+' (SV7)",
-      "For SV7: read first LE uint32 at offset 3, check bits 31-28 = version (must be 7)",
-      "For SV8: first packet key at offset 4 should be 'SH' (stream header)",
-      "Check EOF for APEv2 tag: 'APETAGEX' at EOF-32",
-      "SV8 SH packet contains: sample count (SVLQ) + sample rate index + channel count"
+      "Distinguish SV8 ('MPCK') from SV7 ('MP+') by reading first 4 bytes",
+      "For SV8: walk KLV packets starting at offset 4 to find SH stream header",
+      "Decode stream header sample rate and channel count from SH packet payload",
+      "Check for RG (Replay Gain) packet to find loudness normalization metadata",
+      "Validate EI (Encoder Info) packet to identify encoder version and profile used",
+      "Verify final ES (End of Stream) packet presence to confirm complete file"
     ]
   },
   "software": [
-    "Musepack encoder/decoder (mpcdec, mpcenc)",
     "foobar2000",
-    "VLC media player (with plugin)",
     "Winamp (with plugin)",
-    "MediaMonkey"
+    "FFmpeg",
+    "VLC Media Player",
+    "MPC-HC",
+    "EAC (Exact Audio Copy) with MPC encoder"
   ],
   "formatRelationships": {
     "category": "Audio",
-    "extensions": [".mpc", ".mp+", ".mpp"],
-    "relatedFormats": ["MP3", "AAC", "Vorbis"],
-    "note": "Musepack is derived from MPEG-1 Layer 2 (MP2) with significant modifications for transparency. Popular in early 2000s audiophile communities before AAC/Vorbis became dominant."
+    "extensions": [".mpc", ".mp+"],
+    "relatedFormats": ["MP3", "AAC", "OGG Vorbis", "Opus"],
+    "note": "Musepack SV8 supersedes SV7 with KLV packet structure; both derive from MPEG-1 Layer II perceptual coding"
   },
-  "MimeTypes": [
-    "audio/x-musepack",
-    "audio/mpc",
-    "audio/musepack"
-  ],
+  "MimeTypes": ["audio/x-musepack", "audio/musepack"],
   "UseCases": [
-    "High-quality lossy music encoding (audiophile use)",
-    "foobar2000 / Winamp libraries",
-    "Archival transcoding from CD (niche)"
+    "High-quality lossy audio archiving at medium bitrates",
+    "Audiophile transparent-quality music distribution",
+    "Legacy audio library conversion from SV7 to SV8"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 68,
+    "CompletenessScore": 85,
     "DocumentationLevel": "detailed",
-    "BlocksDefined": 5,
-    "ValidationRules": 1,
-    "LastUpdated": "2026-04-14",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
     "PriorityFormat": false,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "AudioFormat": true,
-    "Endianness": "little-endian (SV7), variable-length encoded (SV8)",
-    "Versions": "SV5 (legacy), SV7 (legacy, most common), SV8 (current)",
-    "TagFormat": "APEv2 (at EOF)",
-    "Compression": "Lossy — MPEG-1 Layer 2 subband coding with Musepack-specific modifications"
+    "streamVersions": {
+      "SV7": "Legacy fixed-layout header, magic 'MP+'",
+      "SV8": "KLV packet container, magic 'MPCK'"
+    },
+    "packetKeys": ["SH", "RG", "EI", "SO", "AP", "SE", "ES"],
+    "derivedFrom": "MPEG-1 Layer II with psychoacoustic extensions",
+    "lossless": false
   }
 }

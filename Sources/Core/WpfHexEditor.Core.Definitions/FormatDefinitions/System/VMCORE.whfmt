@@ -1,0 +1,257 @@
+{
+  "diffMode": "binary",
+  "formatName": "Linux Kernel Core Dump (makedumpfile)",
+  "version": "1.0",
+  "extensions": [".vmcore", ".dump"],
+  "description": "Linux kernel crash dump (vmcore) produced by kdump/kexec. makedumpfile format uses 'KDUMP   ' signature. Raw ELF vmcore starts with ELF magic. Contains full kernel memory at time of panic. Forensic value: credentials, crypto keys, process memory.",
+  "category": "System",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "makedumpfile(8) manual page — Linux kernel kdump utility",
+      "Linux kdump documentation — Documentation/admin-guide/kdump/",
+      "crash utility documentation — Dave Anderson, Red Hat"
+    ],
+    "WebLinks": [
+      "https://www.kernel.org/doc/html/latest/admin-guide/kdump/kdump.html",
+      "https://github.com/makedumpfile/makedumpfile",
+      "https://people.redhat.com/anderson/crash_whitepaper/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "4B44554D502020202020",
+        "offset": 0,
+        "label": "'KDUMP   ' — makedumpfile compressed vmcore signature (8 bytes with trailing spaces)",
+        "weight": 0.9
+      },
+      {
+        "value": "7F454C46",
+        "offset": 0,
+        "label": "ELF magic — raw kernel vmcore produced without makedumpfile compression",
+        "weight": 0.4
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.4,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 4.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 512
+    }
+  },
+  "variables": {
+    "vmcoreMagic": "",
+    "vmcoreHeaderVersion": 0,
+    "vmcoreSystemName": "",
+    "vmcoreNodeName": "",
+    "vmcoreRelease": "",
+    "vmcoreMachine": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "KDUMP Signature",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "'KDUMP   ' — makedumpfile disk_dump_header signature (8 bytes, 3 trailing spaces). This is the primary identifier for makedumpfile-compressed vmcore files. Raw ELF vmcores begin with 0x7F454C46 instead. makedumpfile is the standard tool on RHEL, Fedora, and Ubuntu kdump setups.",
+      "storeAs": "vmcoreMagic",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header Version",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "makedumpfile header version as uint32 LE. Identifies the disk_dump_header format revision. Common values: 1-8 depending on makedumpfile version. Higher versions add features like split dump support and compression algorithm fields.",
+      "storeAs": "vmcoreHeaderVersion",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "System Name",
+      "offset": 12,
+      "length": 16,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "First 16 bytes of the 65-byte uname sysname field (e.g., 'Linux'). Identifies the operating system type of the crashed kernel. Always 'Linux' for Linux kernel dumps. Null-terminated ASCII string within the 65-byte field.",
+      "storeAs": "vmcoreSystemName",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Node Name",
+      "offset": 77,
+      "length": 16,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "First 16 bytes of the 65-byte uname nodename field (hostname). Identifies the machine that produced this crash dump. Useful for correlating vmcore files with specific servers in multi-machine environments.",
+      "storeAs": "vmcoreNodeName",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Kernel Release",
+      "offset": 142,
+      "length": 32,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "First 32 bytes of the 65-byte uname release field containing the kernel version string (e.g., '5.15.0-91-generic'). Critical for loading the correct vmlinux debug symbols when analyzing with crash utility or drgn.",
+      "storeAs": "vmcoreRelease",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Machine Architecture",
+      "offset": 272,
+      "length": 16,
+      "color": "#FF8C94",
+      "opacity": 0.3,
+      "description": "First 16 bytes of the 65-byte uname machine field (e.g., 'x86_64', 'aarch64'). Identifies the CPU architecture. Required for crash utility to interpret register values, memory addresses, and pointer sizes correctly.",
+      "storeAs": "vmcoreMachine",
+      "valueType": "ascii",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "KDUMP or ELF magic present",
+      "expression": "vmcoreMagic == 'KDUMP   ' || vmcoreMagic == '\\x7FELF'",
+      "severity": "error",
+      "message": "Neither 'KDUMP   ' nor ELF magic found — file is not a recognized vmcore format"
+    },
+    {
+      "name": "Header version is positive",
+      "expression": "vmcoreHeaderVersion > 0",
+      "severity": "warning",
+      "message": "Header version is 0 — may indicate a corrupted or truncated vmcore header"
+    },
+    {
+      "name": "System name is Linux",
+      "expression": "vmcoreSystemName == 'Linux'",
+      "severity": "info",
+      "message": "System name is not 'Linux' — unexpected for a Linux vmcore file"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "KDUMP Header",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#FF6B6B"
+      },
+      {
+        "name": "System Info",
+        "offset": 12,
+        "icon": "\uE8A5",
+        "color": "#4ECDC4"
+      },
+      {
+        "name": "Kernel Release",
+        "offset": 142,
+        "icon": "\uE9D9",
+        "color": "#FFE66D"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "vmcoreHeaderVersion",
+    "primaryField": "vmcoreRelease",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Dump Identity",
+        "icon": "\uE8B7",
+        "fields": ["vmcoreMagic", "vmcoreHeaderVersion"]
+      },
+      {
+        "title": "System Information",
+        "icon": "\uE8A5",
+        "fields": ["vmcoreSystemName", "vmcoreNodeName", "vmcoreMachine", "vmcoreRelease"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "KDUMP Header (JSON)",
+      "format": "json",
+      "fields": ["vmcoreMagic", "vmcoreHeaderVersion", "vmcoreSystemName", "vmcoreNodeName", "vmcoreRelease", "vmcoreMachine"]
+    },
+    {
+      "name": "KDUMP Summary (text)",
+      "format": "text",
+      "fields": ["vmcoreRelease", "vmcoreNodeName", "vmcoreMachine", "vmcoreHeaderVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "system",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Full kernel memory dump",
+        "condition": "true",
+        "severity": "warning",
+        "description": "vmcore contains a snapshot of all kernel memory at crash time. May include cleartext passwords from /etc/shadow pages, TLS session keys, SSH keys loaded in memory, bash command history, and database query content."
+      }
+    ],
+    "knownExploitVectors": [
+      "Kernel memory contains all encryption keys, TLS session keys, and loaded credentials",
+      "Process memory of all running processes visible in dump (ssh-agent keys, gpg passphrases)",
+      "Network socket buffers may contain plaintext HTTP/SMTP/FTP traffic",
+      "Kerberos tickets and NTLM hashes visible in kernel memory on domain-joined systems"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "makedumpfile produces KDUMP-prefixed vmcore. Use crash utility: `crash vmlinux vmcore`. Key commands: `bt` (backtrace of panicking task), `ps` (process list), `log` (kernel ring buffer), `files` (open file descriptors), `net` (network state). Need matching vmlinux with debug symbols.",
+    "suggestedInspections": [
+      "Extract vmcoreRelease field to identify exact kernel version and locate matching vmlinux-debuginfo package",
+      "Use crash utility `bt -a` to get stack traces of all CPUs at time of panic",
+      "Run `crash> log` to display kernel ring buffer messages immediately before the panic",
+      "Use volatility3 linux plugin `linux.bash` to extract bash history from memory for forensics",
+      "Check `crash> struct task_struct` to enumerate all running processes and their credentials"
+    ]
+  },
+  "software": ["makedumpfile", "crash (Red Hat crash utility)", "drgn", "volatility3", "kdump-tools", "kexec-tools"],
+  "formatRelationships": {
+    "category": "System",
+    "extensions": [".vmcore", ".dump"],
+    "relatedFormats": ["ELF", "COREDUMP_ELF", "DMP"]
+  },
+  "MimeTypes": ["application/octet-stream"],
+  "UseCases": [
+    "Linux kernel panic post-mortem analysis",
+    "Production server crash root cause investigation",
+    "Kernel security incident response and forensics",
+    "Automated crash collection via kdump/kexec infrastructure"
+  ],
+  "TechnicalDetails": {
+    "KDUMPSignature": "'KDUMP   ' (8B with 3 trailing spaces)",
+    "RawELFAlternative": "ELF vmcore starts with 0x7F454C46, e_type=ET_CORE(4)",
+    "disk_dump_headerFields": "signature(8B) + header_version(4B) + uname fields (65B each): system, node, release, version, machine, domainname",
+    "CompressionAlgorithms": "zlib (default), lzo, snappy (makedumpfile options)",
+    "FilterLevels": "makedumpfile -d level: 0=all pages, 1=zero pages, 2+4+8+16=kernel pages",
+    "AnalysisTool": "crash utility: `crash /usr/lib/debug/vmlinux-$(uname-r) /var/crash/vmcore`"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}

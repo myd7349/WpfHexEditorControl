@@ -1,0 +1,181 @@
+{
+  "diffMode": "text",
+  "formatName": "Windows Error Report",
+  "version": "1.0",
+  "extensions": [".wer"],
+  "description": "Windows Error Reporting (WER) text report generated on application crash or non-response. INI-like format with [Version], [ProblemSignatures], [DynamicSignatures], and [SystemInformation] sections. Contains crash details, exception code, faulting module, and machine identity.",
+  "category": "System",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "Windows Error Reporting (WER) — Microsoft Developer Documentation",
+      "WER API reference — wer.h (Windows SDK)",
+      "Windows Problem Reporting MSDN Documentation"
+    ],
+    "WebLinks": [
+      "https://docs.microsoft.com/en-us/windows/win32/wer/windows-error-reporting",
+      "https://en.wikipedia.org/wiki/Windows_Error_Reporting",
+      "https://docs.microsoft.com/en-us/windows/win32/debug/using-wer"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      {
+        "value": "5B56657273696F6E5D",
+        "offset": 0,
+        "label": "'[Version]' — WER report INI section header at offset 0 (ASCII text format)",
+        "weight": 0.7
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Weak",
+    "EntropyHint": { "min": 2.5, "max": 4.5 },
+    "validation": {
+      "minFileSize": 50
+    }
+  },
+  "variables": {
+    "werFirstByte": 0,
+    "werHeader": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "WER Header Section",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 8 bytes of the WER report text file. Should be '[Version' (ASCII). WER files may optionally begin with a UTF-8 BOM (0xEF 0xBB 0xBF) on some Windows versions — in that case '[Version]' appears at offset 3. The presence of this header section confirms a genuine WER report.",
+      "storeAs": "werHeader",
+      "valueType": "ascii",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the WER file. Expected value: 91 (0x5B = '[') for files without BOM, or 0xEF for UTF-8 BOM prefix. A value of 91 confirms the file starts with '[Version]' header without BOM encoding.",
+      "storeAs": "werFirstByte",
+      "valueType": "uint8",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File starts with bracket or BOM",
+      "expression": "werFirstByte == 91 || werFirstByte == 239",
+      "severity": "warning",
+      "message": "WER file does not start with '[' (0x5B) or UTF-8 BOM — may not be a genuine Windows Error Report"
+    },
+    {
+      "name": "Version section header present",
+      "expression": "werHeader == '[Version'",
+      "severity": "error",
+      "message": "[Version] section header not found at start of file — not a valid WER report"
+    },
+    {
+      "name": "File is not empty",
+      "expression": "werFirstByte > 0",
+      "severity": "error",
+      "message": "WER file appears to be empty or unreadable"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "[Version] Section",
+        "offset": 0,
+        "icon": "\uE8B7",
+        "color": "#4ECDC4"
+      }
+    ]
+  },
+  "inspector": {
+    "badge": "werFirstByte",
+    "primaryField": "werHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "WER File Header",
+        "icon": "\uE8B7",
+        "fields": ["werFirstByte", "werHeader"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "WER Header (JSON)",
+      "format": "json",
+      "fields": ["werHeader", "werFirstByte"]
+    },
+    {
+      "name": "WER Header (text)",
+      "format": "text",
+      "fields": ["werHeader"]
+    }
+  ],
+  "forensic": {
+    "category": "system",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "ACCESS_VIOLATION crash",
+        "condition": "true",
+        "severity": "info",
+        "description": "WER reports with P7=c0000005 (ACCESS_VIOLATION) are common indicators of memory corruption bugs, potential exploit attempts, or heap/stack corruption."
+      }
+    ],
+    "knownExploitVectors": [
+      "WER reports may reveal application binary paths, versions, and crash offsets useful for exploit development",
+      "MachineId in SystemInformation section uniquely identifies the user machine",
+      "AppSessionGuid correlates crashes across multiple reports from same session"
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "WER INI format. Key fields: [ProblemSignatures] P1=AppName, P4=FaultingModule, P7=ExceptionCode (hex), P8=FaultOffset. Exception codes: 0xC0000005=ACCESS_VIOLATION, 0xC000001D=ILLEGAL_INSTRUCTION, 0xC0000374=HEAP_CORRUPTION. EventTime is Unix timestamp. Associated files: .mdmp (minidump), appcompat.txt.",
+    "suggestedInspections": [
+      "Read P7 (ExceptionCode) in [ProblemSignatures] — 0xC0000005 means access violation, potential exploit",
+      "Note P4 (FaultingModule) and P8 (FaultOffset) to pinpoint crash location for binary analysis",
+      "Check EventTime field for Unix timestamp to correlate with other system logs (Event Log, Security Log)",
+      "Extract MachineId from [SystemInformation] for device attribution in multi-machine investigations",
+      "Locate associated .mdmp minidump in C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportQueue for full analysis"
+    ]
+  },
+  "software": ["Windows Error Reporting service", "wermgr.exe", "WinDbg", "Problem Reports Control Panel"],
+  "formatRelationships": {
+    "category": "System",
+    "extensions": [".wer"],
+    "relatedFormats": ["MINIDUMP", "DMP", "ETL", "EVTX"]
+  },
+  "MimeTypes": ["text/plain"],
+  "UseCases": [
+    "Application crash investigation and diagnosis",
+    "Windows reliability history analysis",
+    "Software quality metrics via WER server submission",
+    "Forensic artifact for determining what crashed and when on a Windows system"
+  ],
+  "TechnicalDetails": {
+    "Format": "INI-like text with [Section] headers and Key=Value pairs",
+    "Encoding": "UTF-8 (with or without BOM) or ASCII",
+    "KeySections": "[Version], [ProblemSignatures], [DynamicSignatures], [SystemInformation], [FaultingThread]",
+    "ExceptionCodes": "0xC0000005=ACCESS_VIOLATION, 0xC000001D=ILLEGAL_INSTRUCTION, 0xC0000374=HEAP_CORRUPTION, 0x80000003=BREAKPOINT",
+    "AssociatedFiles": ".mdmp (minidump), appcompat.txt, memory.hdmp",
+    "ReportQueue": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportQueue\\"
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 73,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  }
+}
