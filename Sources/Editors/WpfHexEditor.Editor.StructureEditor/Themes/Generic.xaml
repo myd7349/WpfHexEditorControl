@@ -16,4 +16,14 @@
     <SolidColorBrush x:Key="TE_LineNumberForeground" Color="#6E7681"/>
     <SolidColorBrush x:Key="TE_SelectionBackground"  Color="#264F78"/>
 
+    <!-- Structure Editor specific keys -->
+    <SolidColorBrush x:Key="SE_ValidationErrorBrush"    Color="#FF4C4C"/>
+    <SolidColorBrush x:Key="SE_ValidationWarningBrush"  Color="#FFA500"/>
+    <SolidColorBrush x:Key="SE_ValidationInfoBrush"     Color="#88BBFF"/>
+    <SolidColorBrush x:Key="SE_PlaceholderForeground"   Color="#80808080"/>
+    <SolidColorBrush x:Key="SE_PopToolbarBackground"    Color="#2D2D30"/>
+    <SolidColorBrush x:Key="SE_PopToolbarBorderBrush"   Color="#3F3F46"/>
+    <SolidColorBrush x:Key="SE_ToolbarButtonHoverBrush" Color="#3E3E42"/>
+    <SolidColorBrush x:Key="SE_ToolbarButtonActiveBrush" Color="#505050"/>
+
 </ResourceDictionary>

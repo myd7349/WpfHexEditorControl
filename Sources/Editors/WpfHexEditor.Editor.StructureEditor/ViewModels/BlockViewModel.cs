@@ -25,7 +25,7 @@ internal sealed class BlockViewModel : ViewModelBase
     // Common
     private string _blockType   = "field";
     private string _name        = "";
-    private string _color       = "#4ECDC4";
+    private string _color       = StructureEditorConstants.DefaultBlockColor;
     private double _opacity     = 0.3;
     private string _description = "";
     private bool   _hidden;
@@ -198,7 +198,7 @@ internal sealed class BlockViewModel : ViewModelBase
     {
         BlockType   = b.Type        ?? "field";
         Name        = b.Name        ?? "";
-        Color       = b.Color       ?? "#4ECDC4";
+        Color       = b.Color       ?? StructureEditorConstants.DefaultBlockColor;
         Opacity     = b.Opacity;
         Description = b.Description ?? "";
         Hidden      = b.Hidden ?? false;
@@ -366,7 +366,7 @@ internal sealed class BlockViewModel : ViewModelBase
 
     private void AddColorCycle()
     {
-        var item = new StringItemViewModel("#4ECDC4");
+        var item = new StringItemViewModel(StructureEditorConstants.DefaultBlockColor);
         WireListItem(item, ColorCycle);
         ColorCycle.Add(item);
         RaiseChanged();

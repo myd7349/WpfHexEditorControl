@@ -69,8 +69,7 @@ public sealed partial class V2FeaturesTab : UserControl
         ForensicPanel.Children.Add(riskRow);
 
         // Suspicious patterns
-        var suspLbl = new TextBlock { Text = "Suspicious Patterns", FontSize = 11, Margin = new Thickness(0, 6, 0, 2),
-            Foreground = System.Windows.SystemColors.ControlDarkDarkBrush };
+        var suspLbl = new TextBlock { Text = "Suspicious Patterns", FontSize = 11, Margin = new Thickness(0, 6, 0, 2) };
         suspLbl.SetResourceReference(TextBlock.ForegroundProperty, "TE_LineNumberForeground");
         ForensicPanel.Children.Add(suspLbl);
         ForensicPanel.Children.Add(MakePatternList(vm.SuspiciousPatterns, vm.AddSuspiciousCommand));

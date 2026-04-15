@@ -65,29 +65,35 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Format Name"    Style="{StaticResource Label}"/>
                 <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource Field}"
+                           ToolTip="Human-readable format name (e.g., 'ZIP Archive', 'PNG Image')"
                            Text="{Binding FormatName, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Version"        Style="{StaticResource Label}"/>
                 <TextBox   Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}"
+                           ToolTip="Version of this definition (e.g., '1.0', '2.0')"
                            Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Author"         Style="{StaticResource Label}"/>
                 <TextBox   Grid.Row="2" Grid.Column="1" Style="{StaticResource Field}"
+                           ToolTip="Author of this definition file"
                            Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Category"       Style="{StaticResource Label}"/>
                 <ComboBox  Grid.Row="3" Grid.Column="1" Style="{StaticResource Combo}"
                            IsEditable="True"
+                           ToolTip="Category (auto-set from folder structure: Archives, Images, Audio, Video, etc.)"
                            Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
                            ItemsSource="{Binding CategoryOptions}"/>
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Diff Mode"      Style="{StaticResource Label}"/>
                 <ComboBox  Grid.Row="4" Grid.Column="1" Style="{StaticResource Combo}"
+                           ToolTip="Preferred diff algorithm for DiffViewer"
                            ItemsSource="{Binding DiffModeOptions}"
                            SelectedItem="{Binding DiffMode}"/>
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Preferred Editor" Style="{StaticResource Label}"/>
                 <ComboBox  Grid.Row="5" Grid.Column="1" Style="{StaticResource Combo}"
+                           ToolTip="Preferred editor factory ID for files matching this format"
                            ItemsSource="{Binding PreferredEditorOptions}"
                            SelectedItem="{Binding PreferredEditor}"/>
             </Grid>

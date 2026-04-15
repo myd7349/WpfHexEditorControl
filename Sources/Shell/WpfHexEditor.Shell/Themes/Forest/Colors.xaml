@@ -838,6 +838,15 @@
     <SolidColorBrush x:Key="DE_BreadcrumbForeground"     Color="#999999"/>
     <SolidColorBrush x:Key="DE_BreadcrumbSeparatorBrush" Color="#555555"/>
     <SolidColorBrush x:Key="DE_BreadcrumbHoverBrush"     Color="#2E2E2E"/>
+    <!-- SE_* — Structure Editor -->
+    <SolidColorBrush x:Key="SE_PopToolbarBackground"     Color="#232C1E"/>
+    <SolidColorBrush x:Key="SE_PopToolbarBorderBrush"    Color="#3A5030"/>
+    <SolidColorBrush x:Key="SE_ToolbarButtonHoverBrush"  Color="#2D3828"/>
+    <SolidColorBrush x:Key="SE_ToolbarButtonActiveBrush" Color="#374530"/>
+    <SolidColorBrush x:Key="SE_ValidationErrorBrush"     Color="#BE5046"/>
+    <SolidColorBrush x:Key="SE_ValidationWarningBrush"   Color="#FF8C00"/>
+    <SolidColorBrush x:Key="SE_ValidationInfoBrush"      Color="#7EC8E3"/>
+    <SolidColorBrush x:Key="SE_PlaceholderForeground"    Color="#80506050"/>
     <SolidColorBrush x:Key="DE_StatusBarBackground"      Color="#1A1A1A"/>
     <SolidColorBrush x:Key="DE_StatusBarForeground"      Color="#999999"/>
     <SolidColorBrush x:Key="DE_StatusBarBorderBrush"     Color="#333333"/>

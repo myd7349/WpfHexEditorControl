@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////
 // GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
+// Contributors: Claude Opus 4.6
 // Project: WpfHexEditor.Editor.StructureEditor
 // File: Controls/StructureEditor.xaml.cs
 // Description: Interactive .whfmt editor — IDocumentEditor implementation.
@@ -15,6 +15,7 @@ using System.Windows.Input;
 using WpfHexEditor.Editor.CodeEditor.Services;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.Core.Validation;
+using WpfHexEditor.Editor.StructureEditor.Services;
 using WpfHexEditor.Editor.StructureEditor.ViewModels;
 
 namespace WpfHexEditor.Editor.StructureEditor.Controls;
@@ -37,8 +38,8 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
     {
         InitializeComponent();
 
-        UndoCommand      = new ViewModels.RelayCommand(() => { }, () => false);
-        RedoCommand      = new ViewModels.RelayCommand(() => { }, () => false);
+        UndoCommand      = new ViewModels.RelayCommand(() => _vm.Undo(), () => _vm.UndoRedo.CanUndo);
+        RedoCommand      = new ViewModels.RelayCommand(() => _vm.Redo(), () => _vm.UndoRedo.CanRedo);
         SaveCommand      = new ViewModels.RelayCommand(SaveFile, () => _vm.IsDirty);
         CopyCommand      = new ViewModels.RelayCommand(() => { }, () => false);
         CutCommand       = new ViewModels.RelayCommand(() => { }, () => false);
@@ -75,22 +76,51 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         _vm.DirtyChanged        += OnVmDirtyChanged;
         _vm.ValidationCompleted += OnValidationCompleted;
 
-        // Keyboard save shortcut
-        KeyDown += (_, e) =>
+        // Undo/redo state tracking
+        _vm.UndoRedo.StateChanged += (_, _) =>
         {
-            if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                SaveFile();
-                e.Handled = true;
-            }
+            CanUndoChanged?.Invoke(this, EventArgs.Empty);
+            CanRedoChanged?.Invoke(this, EventArgs.Empty);
+            UpdateToolbarState();
+            SyncPopToolbarState();
         };
+
+        // IDE contributors
+        InitToolbarItems();
+        InitStatusBarItems();
+
+        // Tab switch → status bar + pop-toolbar context update
+        MainTabs.SelectionChanged += (_, _) =>
+        {
+            RefreshStatusBarItems();
+            PopToolbar.SetBlockOperationsVisible(MainTabs.SelectedIndex == 2);
+        };
+
+        // Pop-toolbar events
+        PopToolbar.SaveRequested      += (_, _) => SaveFile();
+        PopToolbar.ValidateRequested  += (_, _) => _vm.TriggerValidationNow();
+        PopToolbar.UndoRequested      += (_, _) => _vm.Undo();
+        PopToolbar.RedoRequested      += (_, _) => _vm.Redo();
+        PopToolbar.AddBlockRequested  += (_, _) => BlocksTabCtrl.RequestAddBlock();
+        PopToolbar.DuplicateRequested += (_, _) => _vm.Blocks.DuplicateCommand.Execute(null);
+
+        // Preload schema for tooltips
+        WhfmtSchemaProvider.Instance.EnsureLoaded();
+
+        // Keyboard shortcuts
+        InputBindings.Add(new KeyBinding(SaveCommand, Key.S, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(UndoCommand, Key.Z, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(RedoCommand, Key.Y, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(
+            new ViewModels.RelayCommand(() => _vm.TriggerValidationNow()),
+            Key.V, ModifierKeys.Control | ModifierKeys.Shift));
     }
 
     // ── IDocumentEditor — State ───────────────────────────────────────────────
 
     public bool IsDirty    => _vm.IsDirty;
-    public bool CanUndo    => false;
-    public bool CanRedo    => false;
+    public bool CanUndo    => _vm.UndoRedo.CanUndo;
+    public bool CanRedo    => _vm.UndoRedo.CanRedo;
     public bool IsReadOnly { get => false; set { } }
     public string Title    { get; private set; } = "";
     public bool IsBusy     { get; private set; }
@@ -114,18 +144,18 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
     public event EventHandler<DocumentOperationEventArgs>?          OperationStarted;
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 
-#pragma warning disable CS0067
     public event EventHandler?         CanUndoChanged;
     public event EventHandler?         CanRedoChanged;
+#pragma warning disable CS0067
     public event EventHandler<string>? OutputMessage;
     public event EventHandler?         SelectionChanged;
     public event EventHandler<DocumentOperationEventArgs>? OperationProgress;
 #pragma warning restore CS0067
 
-    // ── IDocumentEditor — Stubs ───────────────────────────────────────────────
+    // ── IDocumentEditor — Methods ─────────────────────────────────────────────
 
-    public void Undo()  { }
-    public void Redo()  { }
+    public void Undo()  => _vm.Undo();
+    public void Redo()  => _vm.Redo();
     public void Copy()  { }
     public void Cut()   { }
     public void Paste() { }
@@ -148,10 +178,7 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         return Task.CompletedTask;
     }
 
-    public void Close()
-    {
-        _vm.Reset();
-    }
+    public void Close() => _vm.Reset();
 
     // ── IOpenableDocument ─────────────────────────────────────────────────────
 
@@ -189,12 +216,27 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         }
     }
 
-    // ── Toolbar handlers ──────────────────────────────────────────────────────
+    // ── Pop-toolbar ───────────────────────────────────────────────────────────
 
-    private void OnSaveClick(object sender, RoutedEventArgs e) => SaveFile();
+    private void OnPopTriggerMouseEnter(object sender, MouseEventArgs e)
+    {
+        SyncPopToolbarState();
+        PopToolbarPopup.IsOpen = true;
+    }
 
-    private void OnValidateClick(object sender, RoutedEventArgs e)
-        => _vm.TriggerValidationNow();
+    private void OnPopToolbarMouseLeave(object sender, MouseEventArgs e)
+    {
+        PopToolbarPopup.IsOpen = false;
+    }
+
+    private void SyncPopToolbarState()
+    {
+        PopToolbar.UpdateButtonStates(
+            canSave: _vm.IsDirty,
+            canUndo: _vm.UndoRedo.CanUndo,
+            canRedo: _vm.UndoRedo.CanRedo,
+            canDuplicate: _vm.Blocks.SelectedBlock is not null);
+    }
 
     // ── Dirty tracking ────────────────────────────────────────────────────────
 
@@ -203,17 +245,19 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         Dispatcher.InvokeAsync(() =>
         {
             var dirty = _vm.IsDirty;
-            SaveBtn.IsEnabled        = dirty;
             DirtyIndicator.Visibility = dirty ? Visibility.Visible : Visibility.Collapsed;
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, dirty ? $"{Title} *" : Title);
 
-            // Show/hide validation bar
             ValBar.Visibility = _vm.ValidationSummary.Count > 0
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             ValBar.ErrorCount   = _vm.ErrorCount;
             ValBar.WarningCount = _vm.WarningCount;
+
+            UpdateToolbarState();
+            UpdateDirtyStatus();
+            SyncPopToolbarState();
         });
     }
 
@@ -227,6 +271,8 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             ValBar.Visibility   = _vm.ValidationSummary.Count > 0
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+
+            UpdateValidationStatus();
 
             var summary = _vm.ErrorCount > 0
                 ? $"{_vm.ErrorCount} error(s), {_vm.WarningCount} warning(s)"
@@ -250,7 +296,6 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             File.WriteAllText(_filePath, json);
 
             _vm.ClearDirty();
-            SaveBtn.IsEnabled        = false;
             DirtyIndicator.Visibility = Visibility.Collapsed;
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, Title);

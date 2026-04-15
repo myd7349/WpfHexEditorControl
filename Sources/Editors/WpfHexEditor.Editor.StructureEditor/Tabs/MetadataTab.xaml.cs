@@ -9,13 +9,35 @@
 //////////////////////////////////////////////
 
 using System.Windows.Controls;
+using WpfHexEditor.Editor.StructureEditor.Services;
 using WpfHexEditor.Editor.StructureEditor.ViewModels;
 
 namespace WpfHexEditor.Editor.StructureEditor.Tabs;
 
 public sealed partial class MetadataTab : UserControl
 {
-    public MetadataTab() => InitializeComponent();
+    public MetadataTab()
+    {
+        InitializeComponent();
+        ApplySchemaTooltips();
+    }
+
+    private void ApplySchemaTooltips()
+    {
+        var schema = WhfmtSchemaProvider.Instance;
+        schema.EnsureLoaded();
+
+        // Section tooltips using schema descriptions
+        SetTooltipIfAvailable(AddExtBtn, schema.GetPropertyDescription("extensions"));
+        SetTooltipIfAvailable(AddMimeBtn, schema.GetPropertyDescription("mimeTypes"));
+        SetTooltipIfAvailable(AddSoftwareBtn, schema.GetPropertyDescription("software"));
+    }
+
+    private static void SetTooltipIfAvailable(System.Windows.FrameworkElement element, string? tooltip)
+    {
+        if (tooltip is not null && element.ToolTip is null)
+            element.ToolTip = tooltip;
+    }
 
     private MetadataViewModel? VM => DataContext as MetadataViewModel;
 

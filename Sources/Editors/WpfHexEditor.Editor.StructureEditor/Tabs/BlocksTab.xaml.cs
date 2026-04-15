@@ -23,7 +23,10 @@ public sealed partial class BlocksTab : UserControl
 
     private BlocksViewModel? VM => DataContext as BlocksViewModel;
 
-    private void OnAddBlock(object sender, RoutedEventArgs e)
+    private void OnAddBlock(object sender, RoutedEventArgs e) => RequestAddBlock();
+
+    /// <summary>Opens the Add Block dialog. Called from pop-toolbar and toolbar.</summary>
+    internal void RequestAddBlock()
     {
         var dlg = new AddBlockDialog { Owner = Window.GetWindow(this) };
         if (dlg.ShowDialog() != true) return;

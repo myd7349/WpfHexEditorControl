@@ -1,0 +1,116 @@
+<!--
+    GNU Affero General Public License v3.0  2026
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Opus 4.6
+    Description: Floating popup toolbar for Structure Editor — mirrors DocumentPopToolbar pattern.
+-->
+
+<UserControl x:Class="WpfHexEditor.Editor.StructureEditor.Controls.StructurePopToolbar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Opacity="0.95">
+    <UserControl.Resources>
+        <Style x:Key="PopBtnStyle" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="Width"           Value="28"/>
+            <Setter Property="Height"          Value="26"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="3"
+                                Background="{TemplateBinding Background}"
+                                Padding="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource SE_ToolbarButtonHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource SE_ToolbarButtonActiveBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PopSepStyle" TargetType="Separator">
+            <Setter Property="Width"      Value="1"/>
+            <Setter Property="Margin"     Value="2,4"/>
+            <Setter Property="Background" Value="{DynamicResource SE_PopToolbarBorderBrush}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Floating semi-transparent popup card -->
+    <Border Background="{DynamicResource SE_PopToolbarBackground}"
+            BorderBrush="{DynamicResource SE_PopToolbarBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="5"
+            Padding="4,3">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.4" Color="#000000"/>
+        </Border.Effect>
+
+        <StackPanel Orientation="Horizontal">
+            <!-- Group 1: File -->
+            <Button x:Name="PART_SaveBtn"
+                    Style="{StaticResource PopBtnStyle}"
+                    ToolTip="Save (Ctrl+S)"
+                    Click="OnSaveClicked">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74E;" FontSize="13"/>
+            </Button>
+
+            <Button x:Name="PART_ValidateBtn"
+                    Style="{StaticResource PopBtnStyle}"
+                    ToolTip="Validate (Ctrl+Shift+V)"
+                    Click="OnValidateClicked">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE73E;" FontSize="13"/>
+            </Button>
+
+            <Separator Style="{StaticResource PopSepStyle}"/>
+
+            <!-- Group 2: Edit -->
+            <Button x:Name="PART_UndoBtn"
+                    Style="{StaticResource PopBtnStyle}"
+                    ToolTip="Undo (Ctrl+Z)"
+                    Click="OnUndoClicked">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A7;" FontSize="13"/>
+            </Button>
+
+            <Button x:Name="PART_RedoBtn"
+                    Style="{StaticResource PopBtnStyle}"
+                    ToolTip="Redo (Ctrl+Y)"
+                    Click="OnRedoClicked">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A6;" FontSize="13"/>
+            </Button>
+
+            <!-- Group 3: Block operations (visible when Blocks tab is active) -->
+            <Separator x:Name="PART_BlockSep" Style="{StaticResource PopSepStyle}" Visibility="Collapsed"/>
+
+            <Button x:Name="PART_AddBlockBtn"
+                    Style="{StaticResource PopBtnStyle}"
+                    ToolTip="Add block (Ctrl+N)"
+                    Click="OnAddBlockClicked"
+                    Visibility="Collapsed">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" FontSize="13"/>
+            </Button>
+
+            <Button x:Name="PART_DuplicateBtn"
+                    Style="{StaticResource PopBtnStyle}"
+                    ToolTip="Duplicate block (Ctrl+D)"
+                    Click="OnDuplicateClicked"
+                    Visibility="Collapsed">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="13"/>
+            </Button>
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -1,8 +1,8 @@
 <!--
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
-    Contributors: Claude Sonnet 4.6
-    Description: Interactive .whfmt editor shell — TabControl + ValidationBar.
+    Contributors: Claude Opus 4.6
+    Description: Interactive .whfmt editor shell — TabControl + ValidationBar + PopToolbar.
 -->
 
 <UserControl x:Class="WpfHexEditor.Editor.StructureEditor.Controls.StructureEditor"
@@ -31,66 +31,46 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Toolbar -->
             <RowDefinition Height="*"/>     <!-- TabControl -->
             <RowDefinition Height="Auto"/>  <!-- ValidationBar -->
             <RowDefinition Height="22"/>    <!-- Status bar -->
         </Grid.RowDefinitions>
 
-        <!-- ── Toolbar ───────────────────────────────────────────────────── -->
-        <ToolBar Grid.Row="0"
-                 Background="{DynamicResource TE_LineNumberBackground}"
-                 Foreground="{DynamicResource TE_LineNumberForeground}"
-                 ToolBarTray.IsLocked="True">
-            <Button Content="💾 Save" ToolTip="Save (Ctrl+S)"
-                    Click="OnSaveClick" x:Name="SaveBtn"
-                    IsEnabled="False" Padding="6,2"/>
-            <Separator/>
-            <Button Content="✓ Validate" ToolTip="Validate format definition"
-                    Click="OnValidateClick" Padding="6,2"/>
-            <Separator/>
-            <TextBlock x:Name="DirtyIndicator" Text="●" FontSize="14"
-                       VerticalAlignment="Center" Margin="4,0"
-                       Foreground="{DynamicResource ET_AccentBrush}"
-                       Visibility="Collapsed"
-                       ToolTip="Unsaved changes"/>
-        </ToolBar>
-
         <!-- ── TabControl ────────────────────────────────────────────────── -->
-        <TabControl Grid.Row="1"
+        <TabControl Grid.Row="0"
                     x:Name="MainTabs"
                     Background="{DynamicResource TE_Background}"
                     Foreground="{DynamicResource TE_Foreground}"
                     BorderBrush="{DynamicResource DockBorderBrush}"
                     BorderThickness="0,1,0,0">
 
-            <TabItem Header="Metadata">
+            <TabItem Header="_Metadata">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <tabs:MetadataTab x:Name="MetadataTabCtrl"/>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Detection">
+            <TabItem Header="_Detection">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <tabs:DetectionTab x:Name="DetectionTabCtrl"/>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Blocks">
+            <TabItem Header="_Blocks">
                 <tabs:BlocksTab x:Name="BlocksTabCtrl"/>
             </TabItem>
 
-            <TabItem Header="Variables">
+            <TabItem Header="_Variables">
                 <tabs:VariablesTab x:Name="VariablesTabCtrl"/>
             </TabItem>
 
-            <TabItem Header="v2.0 Features">
+            <TabItem Header="v2.0 _Features">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <tabs:V2FeaturesTab x:Name="V2TabCtrl"/>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Quality">
+            <TabItem Header="_Quality">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <tabs:QualityMetricsTab x:Name="QualityTabCtrl"/>
                 </ScrollViewer>
@@ -98,13 +78,46 @@
 
         </TabControl>
 
-        <!-- ── Validation bar ────────────────────────────────────────────── -->
-        <ctrl:ValidationBar Grid.Row="2"
+        <!-- ── Pop-toolbar trigger zone (invisible, top-right) ────────── -->
+        <Border Grid.Row="0"
+                x:Name="PopToolbarTrigger"
+                Height="36" Width="200"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="Transparent"
+                IsHitTestVisible="True"
+                MouseEnter="OnPopTriggerMouseEnter"/>
+
+        <!-- ── Pop-toolbar popup ──────────────────────────────────────── -->
+        <Popup x:Name="PopToolbarPopup"
+               PlacementTarget="{Binding ElementName=PopToolbarTrigger}"
+               Placement="Bottom"
+               HorizontalOffset="-40"
+               AllowsTransparency="True"
+               PopupAnimation="Fade"
+               StaysOpen="False">
+            <ctrl:StructurePopToolbar x:Name="PopToolbar"
+                                      MouseLeave="OnPopToolbarMouseLeave"/>
+        </Popup>
+
+        <!-- ── Dirty indicator (floating, top-left of tab area) ──────── -->
+        <TextBlock x:Name="DirtyIndicator" Text="●" FontSize="14"
+                   Grid.Row="0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Top"
+                   Margin="8,6,0,0"
+                   Foreground="{DynamicResource ET_AccentBrush}"
+                   Visibility="Collapsed"
+                   IsHitTestVisible="False"
+                   ToolTip="Unsaved changes"/>
+
+        <!-- ── Validation bar ────────────────────────────────────────── -->
+        <ctrl:ValidationBar Grid.Row="1"
                             x:Name="ValBar"
                             Visibility="Collapsed"/>
 
-        <!-- ── Status bar ────────────────────────────────────────────────── -->
-        <StatusBar Grid.Row="3"
+        <!-- ── Status bar ────────────────────────────────────────────── -->
+        <StatusBar Grid.Row="2"
                    Background="{DynamicResource TE_LineNumberBackground}"
                    Foreground="{DynamicResource TE_LineNumberForeground}"
                    Height="22">

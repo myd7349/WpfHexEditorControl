@@ -25,6 +25,8 @@ public sealed class ValidationSummaryItem
     public int                Column   { get; init; }
     /// <summary>Validation layer that produced this item (e.g. Schema, Semantic).</summary>
     public string             Layer    { get; init; } = "";
+    /// <summary>Navigation target for click-to-navigate (e.g., block name or tab name).</summary>
+    public string?            NavigationTarget { get; init; }
 
     /// <summary>Segoe MDL2 glyph for the severity icon.</summary>
     public string Glyph => Severity switch

@@ -87,10 +87,10 @@ internal sealed class ExpressionTextBox : Grid
         {
             Height          = 2,
             VerticalAlignment = VerticalAlignment.Bottom,
-            Background      = Brushes.Red,
             Visibility      = Visibility.Collapsed,
             Margin          = new Thickness(2, 0, 2, 0),
         };
+        _errorBar.SetResourceReference(Border.BackgroundProperty, "SE_ValidationErrorBrush");
 
         // Outer border for theme-consistent look
         var outer = new Border { BorderThickness = new Thickness(1) };

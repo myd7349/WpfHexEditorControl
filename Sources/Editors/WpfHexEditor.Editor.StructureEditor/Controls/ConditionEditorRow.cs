@@ -12,7 +12,6 @@
 
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using WpfHexEditor.Editor.StructureEditor.ViewModels;
 
 namespace WpfHexEditor.Editor.StructureEditor.Controls;
@@ -191,11 +190,11 @@ internal sealed class ConditionEditorRow : Border
             if (string.IsNullOrEmpty(tb.Text))
             {
                 tb.Text = placeholder;
-                tb.Foreground = new SolidColorBrush(Color.FromArgb(0x80, 0x80, 0x80, 0x80));
+                tb.SetResourceReference(TextBox.ForegroundProperty, "SE_PlaceholderForeground");
             }
         };
         tb.Text = placeholder;
-        tb.Foreground = new SolidColorBrush(Color.FromArgb(0x80, 0x80, 0x80, 0x80));
+        tb.SetResourceReference(TextBox.ForegroundProperty, "SE_PlaceholderForeground");
         return tb;
     }
 }

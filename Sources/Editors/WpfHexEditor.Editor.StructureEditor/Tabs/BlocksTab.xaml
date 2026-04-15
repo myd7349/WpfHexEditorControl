@@ -1,7 +1,7 @@
 <!--
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
-    Contributors: Claude Sonnet 4.6
+    Contributors: Claude Opus 4.6
 -->
 
 <UserControl x:Class="WpfHexEditor.Editor.StructureEditor.Tabs.BlocksTab"
@@ -24,38 +24,31 @@
     </UserControl.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>   <!-- Toolbar -->
-            <RowDefinition Height="*"/>      <!-- Tree + Editor -->
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" MinWidth="160" MaxWidth="500"/>
+            <ColumnDefinition Width="4"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- ── Toolbar ────────────────────────────────────────────────────── -->
-        <ToolBar Grid.Row="0"
-                 Background="{DynamicResource TE_LineNumberBackground}"
-                 ToolBarTray.IsLocked="True">
-            <Button x:Name="AddBtn"      Content="＋ Add"   ToolTip="Add a new block" Click="OnAddBlock"   Padding="6,2"/>
-            <Button x:Name="RemoveBtn"   Content="✕ Remove" ToolTip="Remove selected" Click="OnRemoveBlock" Padding="6,2"
-                    Command="{Binding RemoveCommand}"/>
-            <Separator/>
-            <Button x:Name="MoveUpBtn"   Content="↑" Width="28"
-                    Command="{Binding MoveUpCommand}"/>
-            <Button x:Name="MoveDownBtn" Content="↓" Width="28"
-                    Command="{Binding MoveDownCommand}"/>
-            <Separator/>
-            <Button x:Name="DupBtn"      Content="⧉ Duplicate" Padding="6,2"
-                    Command="{Binding DuplicateCommand}"/>
-        </ToolBar>
+        <!-- Left panel: search + tree -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- ── Tree + Editor ──────────────────────────────────────────────── -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="260" MinWidth="160" MaxWidth="500"/>
-                <ColumnDefinition Width="4"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+            <!-- Search box -->
+            <TextBox Grid.Row="0" x:Name="SearchBox"
+                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="11" Padding="4,3"
+                     Background="{DynamicResource TE_LineNumberBackground}"
+                     Foreground="{DynamicResource TE_Foreground}"
+                     BorderBrush="{DynamicResource DockBorderBrush}"
+                     BorderThickness="0,0,0,1"
+                     ToolTip="Filter blocks by name"/>
 
             <!-- Block Tree -->
-            <TreeView Grid.Column="0"
+            <TreeView Grid.Row="1"
                       x:Name="BlockTree"
                       ItemsSource="{Binding BlockTree}"
                       Background="{DynamicResource TE_Background}"
@@ -64,6 +57,22 @@
                       BorderBrush="{DynamicResource TE_LineNumberBackground}"
                       FontFamily="Consolas" FontSize="11"
                       SelectedItemChanged="OnTreeSelectionChanged">
+                <TreeView.ContextMenu>
+                    <ContextMenu Background="{DynamicResource TE_LineNumberBackground}"
+                                 Foreground="{DynamicResource TE_Foreground}"
+                                 BorderBrush="{DynamicResource DockBorderBrush}">
+                        <MenuItem Header="Add Block..." Click="OnAddBlock"/>
+                        <Separator/>
+                        <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" InputGestureText="Ctrl+D"/>
+                        <MenuItem Header="Remove" Command="{Binding RemoveCommand}" InputGestureText="Del"/>
+                        <Separator/>
+                        <MenuItem Header="Move Up" Command="{Binding MoveUpCommand}" InputGestureText="Ctrl+Up"/>
+                        <MenuItem Header="Move Down" Command="{Binding MoveDownCommand}" InputGestureText="Ctrl+Down"/>
+                        <Separator/>
+                        <MenuItem Header="Copy as JSON" Command="{Binding CopyBlockCommand}" InputGestureText="Ctrl+C"/>
+                        <MenuItem Header="Paste Block" Command="{Binding PasteBlockCommand}" InputGestureText="Ctrl+V"/>
+                    </ContextMenu>
+                </TreeView.ContextMenu>
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="True"/>
@@ -83,33 +92,34 @@
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
-
-            <!-- Splitter -->
-            <GridSplitter Grid.Column="1"
-                          Width="4"
-                          HorizontalAlignment="Stretch"
-                          Background="{DynamicResource TE_LineNumberBackground}"
-                          ResizeDirection="Columns"/>
-
-            <!-- Contextual block editor -->
-            <ScrollViewer Grid.Column="2"
-                          VerticalScrollBarVisibility="Auto"
-                          x:Name="EditorScroll">
-                <ContentControl x:Name="BlockEditor"
-                                Content="{Binding SelectedBlock}"
-                                ContentTemplateSelector="{StaticResource BlockEditorTemplateSelector}"
-                                Margin="8"/>
-            </ScrollViewer>
-
-            <!-- Empty state -->
-            <TextBlock Grid.Column="2"
-                       x:Name="EmptyHint"
-                       Text="Select a block in the tree to edit its properties."
-                       FontSize="12"
-                       Foreground="{DynamicResource TE_LineNumberForeground}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Visibility="Visible"/>
         </Grid>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1"
+                      Width="4"
+                      HorizontalAlignment="Stretch"
+                      Background="{DynamicResource TE_LineNumberBackground}"
+                      ResizeDirection="Columns"/>
+
+        <!-- Contextual block editor -->
+        <ScrollViewer Grid.Column="2"
+                      VerticalScrollBarVisibility="Auto"
+                      x:Name="EditorScroll">
+            <ContentControl x:Name="BlockEditor"
+                            Content="{Binding SelectedBlock}"
+                            ContentTemplateSelector="{StaticResource BlockEditorTemplateSelector}"
+                            Margin="8"/>
+        </ScrollViewer>
+
+        <!-- Empty state -->
+        <TextBlock Grid.Column="2"
+                   x:Name="EmptyHint"
+                   Text="Select a block in the tree to edit its properties.&#x0a;Right-click for more options."
+                   FontSize="12"
+                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   TextAlignment="Center"
+                   Visibility="Visible"/>
     </Grid>
 </UserControl>
