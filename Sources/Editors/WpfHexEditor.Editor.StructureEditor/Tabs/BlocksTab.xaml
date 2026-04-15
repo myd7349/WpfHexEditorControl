@@ -51,13 +51,19 @@
             <!-- Block Tree -->
             <TreeView Grid.Row="1"
                       x:Name="BlockTree"
-                      ItemsSource="{Binding BlockTree}"
+                      ItemsSource="{Binding FilteredBlockTree}"
                       Background="{DynamicResource TE_Background}"
                       Foreground="{DynamicResource TE_Foreground}"
                       BorderThickness="0,0,1,0"
                       BorderBrush="{DynamicResource TE_LineNumberBackground}"
                       FontFamily="Consolas" FontSize="11"
-                      SelectedItemChanged="OnTreeSelectionChanged">
+                      AllowDrop="True"
+                      SelectedItemChanged="OnTreeSelectionChanged"
+                      PreviewMouseLeftButtonDown="OnBlockDragStart"
+                      PreviewMouseMove="OnBlockDragMove"
+                      Drop="OnBlockDrop"
+                      DragOver="OnBlockDragOver"
+                      DragLeave="OnBlockDragLeave">
                 <TreeView.ContextMenu>
                     <ContextMenu Background="{DynamicResource TE_LineNumberBackground}"
                                  Foreground="{DynamicResource TE_Foreground}"

@@ -74,6 +74,29 @@
     <DataTemplate x:Key="BlockTemplate_Repeating" DataType="{x:Type vm:BlockViewModel}">
         <StackPanel Style="{StaticResource BlockPanel}">
             <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BlockCommonHeader}"/>
+
+            <!-- Position -->
+            <TextBlock Text="Position" Style="{StaticResource SectionHeader}"/>
+            <Grid Style="{StaticResource PropGrid}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Offset"      Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding OffsetText, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="File offset where the array starts — integer or var:name"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Offset From" Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="1" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding OffsetFrom, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="Variable used as the base offset for this array"/>
+            </Grid>
+
+            <!-- Array -->
             <TextBlock Text="Array" Style="{StaticResource SectionHeader}"/>
             <Grid Style="{StaticResource PropGrid}">
                 <Grid.ColumnDefinitions>
@@ -189,7 +212,9 @@
     <DataTemplate x:Key="BlockTemplate_Pointer" DataType="{x:Type vm:BlockViewModel}">
         <StackPanel Style="{StaticResource BlockPanel}">
             <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BlockCommonHeader}"/>
-            <TextBlock Text="Pointer" Style="{StaticResource SectionHeader}"/>
+
+            <!-- Where the pointer value is stored in the file -->
+            <TextBlock Text="Pointer Location" Style="{StaticResource SectionHeader}"/>
             <Grid Style="{StaticResource PropGrid}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -198,13 +223,44 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Offset"      Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding OffsetText, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="File offset where the pointer value is read"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Offset From" Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="1" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding OffsetFrom, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="Variable name used as the base offset"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Length"      Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="2" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding LengthText, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="Size of the pointer value in bytes (e.g. 4 for uint32)"/>
+            </Grid>
+
+            <!-- Target + storage -->
+            <TextBlock Text="Target &amp; Storage" Style="{StaticResource SectionHeader}"/>
+            <Grid Style="{StaticResource PropGrid}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Target Var" Style="{StaticResource PropLabel}"/>
                 <TextBox   Grid.Row="0" Grid.Column="1" Style="{StaticResource PropField}"
                            Text="{Binding TargetVar, UpdateSourceTrigger=PropertyChanged}"
-                           ToolTip="Variable holding the target offset"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Label"      Style="{StaticResource PropLabel}"/>
+                           ToolTip="Variable that will receive the resolved pointer address"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Store As"   Style="{StaticResource PropLabel}"/>
                 <TextBox   Grid.Row="1" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding StoreAs, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="Variable to store the raw pointer value"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Label"      Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="2" Grid.Column="1" Style="{StaticResource PropField}"
                            Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
                            ToolTip="Annotation label shown in the hex view"/>
             </Grid>

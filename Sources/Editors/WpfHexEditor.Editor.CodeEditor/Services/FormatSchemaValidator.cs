@@ -396,11 +396,50 @@ namespace WpfHexEditor.Editor.CodeEditor.Services
             var declaredVariables = new HashSet<string>();
             CollectVariableNames(root, declaredVariables);
 
+            // Collect variables declared in the top-level "variables" object
+            if (root["variables"] is JsonObject vars)
+            {
+                foreach (var kv in vars)
+                    declaredVariables.Add(kv.Key);
+            }
+
             // Validate variable references (var:...)
             ValidateVariableReferences(root, declaredVariables, errors, jsonText);
 
             // Validate calc expressions (calc:...)
             ValidateCalcExpressions(root, declaredVariables, errors, jsonText);
+
+            // Validate whfmt block variable cross-references (storeAs/offsetFrom/targetVar/actionVariable/indexVar)
+            ValidateBlockVariableCrossReferences(root, declaredVariables, errors);
+        }
+
+        private static readonly string[] VariableRefFields = { "storeAs", "offsetFrom", "targetVar", "actionVariable", "indexVar", "mappedValueStoreAs" };
+
+        private void ValidateBlockVariableCrossReferences(JsonObject root, HashSet<string> declared, List<ValidationError> errors)
+        {
+            if (root["blocks"] is not JsonArray blocks) return;
+
+            foreach (var node in blocks)
+            {
+                if (node is not JsonObject block) continue;
+                var blockName = block["name"]?.ToString() ?? "(unnamed)";
+
+                foreach (var field in VariableRefFields)
+                {
+                    var value = block[field]?.ToString();
+                    if (string.IsNullOrEmpty(value)) continue;
+                    if (!declared.Contains(value))
+                    {
+                        errors.Add(new ValidationError(0, 0,
+                            $"Variable '{value}' referenced in block '{blockName}' ({field}) is not declared in variables.",
+                            ValidationSeverity.Warning)
+                        {
+                            ErrorCode = "UNDEFINED_VAR_REF",
+                            Layer     = ValidationLayer.Semantic
+                        });
+                    }
+                }
+            }
         }
 
         private void CollectVariableNames(JsonNode token, HashSet<string> variables)

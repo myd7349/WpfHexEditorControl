@@ -2145,7 +2145,7 @@
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
         <CommandBinding Command="{x:Static ApplicationCommands.Open}"  Executed="OnOpenFile" />
-        <CommandBinding Command="{x:Static ApplicationCommands.Save}"  Executed="OnSave" />
+        <CommandBinding Command="{x:Static ApplicationCommands.Save}"  Executed="OnSave" CanExecute="OnCanSave" />
         <CommandBinding Command="{x:Static ApplicationCommands.Close}" Executed="OnCloseActiveDocument" />
         <CommandBinding Command="{x:Static ApplicationCommands.Find}"                 Executed="OnShowAdvancedSearch" />
         <CommandBinding Command="{x:Static local:MainWindow.AdvancedSearchCommand}" Executed="OnShowAdvancedSearchDialog" />

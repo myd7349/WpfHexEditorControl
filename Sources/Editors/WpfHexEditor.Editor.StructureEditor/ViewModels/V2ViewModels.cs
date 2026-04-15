@@ -583,8 +583,8 @@ internal sealed class QualityMetricsViewModel : ViewModelBase
         set => SetField(ref _typeDistribution, value);
     }
 
-    /// <summary>Recompute live metrics from current Blocks/Variables state.</summary>
-    internal void Refresh(BlocksViewModel blocks, VariablesViewModel variables)
+    /// <summary>Recompute live metrics from current Blocks/Variables/Assertions state.</summary>
+    internal void Refresh(BlocksViewModel blocks, VariablesViewModel variables, int assertionCount = 0)
     {
         var allBlocks = FlattenBlocks(blocks.BlockTree).ToList();
         int total     = allBlocks.Count;
@@ -594,6 +594,7 @@ internal sealed class QualityMetricsViewModel : ViewModelBase
         BlockCoverage   = total > 0 ? (int)Math.Round(withDesc * 100.0 / total) : 0;
         MaxNestingDepth = allBlocks.Count > 0 ? allBlocks.Max(b => b.Depth) : 0;
         VariableCount   = variables.Items.Count;
+        AssertionCount  = assertionCount;
 
         var dist = allBlocks
             .GroupBy(b => b.BlockType)

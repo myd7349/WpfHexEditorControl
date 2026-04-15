@@ -319,6 +319,27 @@ internal sealed class BlockViewModel : ViewModelBase
         return b;
     }
 
+    // ── Filter ────────────────────────────────────────────────────────────────
+
+    /// <summary>True if this block or any descendant matches <paramref name="text"/>.</summary>
+    internal bool MatchesFilter(string text) =>
+        DisplayName.Contains(text, StringComparison.OrdinalIgnoreCase) ||
+        Description.Contains(text, StringComparison.OrdinalIgnoreCase) ||
+        Children.Any(c => c.MatchesFilter(text));
+
+    // ── Variable cross-reference ──────────────────────────────────────────────
+
+    /// <summary>Yields every variable name this block references.</summary>
+    internal IEnumerable<string> GetReferencedVariables()
+    {
+        if (!string.IsNullOrEmpty(StoreAs))         yield return StoreAs;
+        if (!string.IsNullOrEmpty(MappedValueStoreAs)) yield return MappedValueStoreAs;
+        if (!string.IsNullOrEmpty(OffsetFrom))      yield return OffsetFrom;
+        if (!string.IsNullOrEmpty(TargetVar))       yield return TargetVar;
+        if (!string.IsNullOrEmpty(ActionVariable))  yield return ActionVariable;
+        if (!string.IsNullOrEmpty(IndexVar))        yield return IndexVar;
+    }
+
     // ── Raw JSON for "{ } Raw" popup ─────────────────────────────────────────
 
     internal string ToRawJson()

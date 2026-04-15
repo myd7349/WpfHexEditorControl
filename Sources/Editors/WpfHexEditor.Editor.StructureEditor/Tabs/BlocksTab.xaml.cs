@@ -10,6 +10,7 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.Editor.StructureEditor.Dialogs;
@@ -17,9 +18,48 @@ using WpfHexEditor.Editor.StructureEditor.ViewModels;
 
 namespace WpfHexEditor.Editor.StructureEditor.Tabs;
 
+// ── Drop indicator adorner ────────────────────────────────────────────────────
+
+file sealed class DropLineAdorner : Adorner
+{
+    private readonly bool _below;
+
+    public DropLineAdorner(UIElement element, bool below) : base(element) { _below = below; IsHitTestVisible = false; }
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        var pen = new Pen(Brushes.CornflowerBlue, 2) { DashStyle = DashStyles.Solid };
+        var y   = _below ? ((FrameworkElement)AdornedElement).ActualHeight - 1 : 1;
+        dc.DrawLine(pen, new Point(0, y), new Point(((FrameworkElement)AdornedElement).ActualWidth, y));
+    }
+}
+
+// ── Visual tree helper ────────────────────────────────────────────────────────
+
+file static class BlocksTabExtensions
+{
+    internal static BlockViewModel? FindBlockViewModelAncestor(this DependencyObject obj)
+    {
+        var cur = obj;
+        while (cur is not null)
+        {
+            if (cur is FrameworkElement fe && fe.DataContext is BlockViewModel vm)
+                return vm;
+            cur = VisualTreeHelper.GetParent(cur);
+        }
+        return null;
+    }
+}
+
 public sealed partial class BlocksTab : UserControl
 {
-    public BlocksTab() => InitializeComponent();
+    public BlocksTab()
+    {
+        InitializeComponent();
+        InputBindings.Add(new KeyBinding(
+            new ViewModels.RelayCommand(() => SearchBox.Focus()),
+            Key.F, ModifierKeys.Control));
+    }
 
     private BlocksViewModel? VM => DataContext as BlocksViewModel;
 
@@ -55,6 +95,99 @@ public sealed partial class BlocksTab : UserControl
         var hasSelection = VM.SelectedBlock is not null;
         EmptyHint.Visibility   = hasSelection ? Visibility.Collapsed : Visibility.Visible;
         BlockEditor.Visibility = hasSelection ? Visibility.Visible   : Visibility.Collapsed;
+    }
+
+    // ── Drag-and-drop reordering ──────────────────────────────────────────────
+
+    private Point          _dragStart;
+    private BlockViewModel? _dragSource;
+    private Adorner? _dropAdorner;
+
+    private void OnBlockDragStart(object sender, MouseButtonEventArgs e)
+    {
+        _dragStart  = e.GetPosition(BlockTree);
+        _dragSource = (e.OriginalSource as DependencyObject)?.FindBlockViewModelAncestor();
+    }
+
+    private void OnBlockDragMove(object sender, MouseEventArgs e)
+    {
+        if (_dragSource is null || e.LeftButton != MouseButtonState.Pressed) return;
+        var pos = e.GetPosition(BlockTree);
+        if (Math.Abs(pos.X - _dragStart.X) < 4 && Math.Abs(pos.Y - _dragStart.Y) < 4) return;
+
+        DragDrop.DoDragDrop(BlockTree, _dragSource, DragDropEffects.Move);
+        _dragSource = null;
+        RemoveDropAdorner();
+    }
+
+    private void OnBlockDragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(typeof(BlockViewModel)))
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        e.Effects = DragDropEffects.Move;
+        e.Handled = true;
+
+        // Show a drop-indicator line between items
+        var targetItem = FindTreeViewItemAt(e.GetPosition(BlockTree));
+        UpdateDropAdorner(targetItem, e.GetPosition(targetItem is not null ? (IInputElement)targetItem : BlockTree));
+    }
+
+    private void OnBlockDragLeave(object sender, DragEventArgs e) => RemoveDropAdorner();
+
+    private void OnBlockDrop(object sender, DragEventArgs e)
+    {
+        RemoveDropAdorner();
+        if (!e.Data.GetDataPresent(typeof(BlockViewModel))) return;
+
+        var source = (BlockViewModel)e.Data.GetData(typeof(BlockViewModel));
+        var vm     = VM;
+        if (vm is null || source is null) return;
+
+        var targetItem = FindTreeViewItemAt(e.GetPosition(BlockTree));
+        var targetVm   = targetItem?.DataContext as BlockViewModel;
+        if (targetVm is null || ReferenceEquals(source, targetVm)) return;
+
+        var targetIdx = vm.BlockTree.IndexOf(targetVm);
+        if (targetIdx >= 0)
+            vm.MoveBlock(source, targetIdx);
+
+        e.Handled = true;
+    }
+
+    // ── Drag helpers ──────────────────────────────────────────────────────────
+
+    private TreeViewItem? FindTreeViewItemAt(Point pos)
+    {
+        var hit = BlockTree.InputHitTest(pos) as DependencyObject;
+        while (hit is not null)
+        {
+            if (hit is TreeViewItem tvi) return tvi;
+            hit = VisualTreeHelper.GetParent(hit);
+        }
+        return null;
+    }
+
+    private void UpdateDropAdorner(TreeViewItem? item, Point relPos)
+    {
+        RemoveDropAdorner();
+        if (item is null) return;
+        var layer = AdornerLayer.GetAdornerLayer(BlockTree);
+        if (layer is null) return;
+        var below = relPos.Y > item.ActualHeight / 2;
+        _dropAdorner = new DropLineAdorner(item, below);
+        layer.Add(_dropAdorner);
+    }
+
+    private void RemoveDropAdorner()
+    {
+        if (_dropAdorner is null) return;
+        AdornerLayer.GetAdornerLayer(BlockTree)?.Remove(_dropAdorner);
+        _dropAdorner = null;
     }
 
     // ── Raw JSON popup ────────────────────────────────────────────────────────

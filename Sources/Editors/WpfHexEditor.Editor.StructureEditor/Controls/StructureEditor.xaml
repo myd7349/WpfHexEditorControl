@@ -121,6 +121,10 @@
                     </ScrollViewer>
                 </TabItem>
 
+                <TabItem Header="Test">
+                    <tabs:TestTab x:Name="TestTabCtrl"/>
+                </TabItem>
+
             </TabControl>
 
             <!-- ── Col 1 : Splitter ────────────────────────────────────── -->

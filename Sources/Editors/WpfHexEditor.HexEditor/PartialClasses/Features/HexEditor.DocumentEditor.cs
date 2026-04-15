@@ -220,6 +220,17 @@ namespace WpfHexEditor.HexEditor
                     _viewModel.SaveAs(filePath, overwrite: true);
                     FileName = filePath;
                     IsModified = false;
+
+                    // After SaveAs the ByteProvider has reopened the file internally.
+                    // Refresh the viewport so it reflects the new file-backed state.
+                    _viewModel.ReloadFromDisk();
+                    HexViewport.LinesSource = _viewModel.Lines;
+                    VerticalScroll.Maximum = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines + 3);
+                    VerticalScroll.ViewportSize = _viewModel.VisibleLines;
+                    UpdateVisibleLines();
+
+                    _isNewUnsavedFile = false;
+
                     RaiseDocumentEditorTitleChanged();
                     _docEditorStatusMessage?.Invoke(this, $"Saved: {Path.GetFileName(filePath)}");
                 });

@@ -30,8 +30,9 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
 {
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private readonly StructureEditorViewModel _vm = new();
-    private readonly FormatSchemaValidator    _schemaValidator = new();
+    private readonly StructureEditorViewModel    _vm          = new();
+    private readonly FormatSchemaValidator       _schemaValidator = new();
+    private readonly ViewModels.TestTabViewModel _testVm      = new();
     private string _filePath = string.Empty;
 
     // ── Live code view ────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         VariablesTabCtrl.DataContext = _vm.Variables;
         V2TabCtrl.DataContext        = _vm;
         QualityTabCtrl.DataContext   = _vm.QualityMetrics;
+        TestTabCtrl.DataContext      = _testVm;
 
         // Dirty + validation tracking
         _vm.DirtyChanged        += OnVmDirtyChanged;
@@ -94,6 +96,14 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
         InitToolbarItems();
         InitStatusBarItems();
 
+        // Show code view by default — apply layout once XAML is loaded
+        Loaded += (_, _) =>
+        {
+            if (_tbLayout is not null) _tbLayout.IsEnabled = true;
+            ApplyCodeViewDock(_codeViewDock);
+            PushJsonToCodeView();
+        };
+
         // Tab switch → status bar + pop-toolbar context update + code view navigation
         MainTabs.SelectionChanged += (_, _) =>
         {
@@ -101,7 +111,9 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
             UpdateToolbarState();
             PopToolbar.SetBlockOperationsVisible(MainTabs.SelectedIndex == 2);
             if (MainTabs.SelectedIndex == 5) // Quality tab
-                _vm.QualityMetrics.Refresh(_vm.Blocks, _vm.Variables);
+                _vm.QualityMetrics.Refresh(_vm.Blocks, _vm.Variables, _vm.Assertions.Count);
+            if (MainTabs.SelectedIndex == 6) // Test tab — push current definition into Tag
+                TestTabCtrl.Tag = _vm.BuildDefinition();
 
             // Navigate live code view to the selected tab's JSON section root
             var key = MainTabs.SelectedIndex switch
@@ -344,6 +356,10 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
 
         try
         {
+            TryBumpVersion(_vm.Metadata);
+            // Auto-stamp the save date when field is empty or format is a priority
+            if (string.IsNullOrEmpty(_vm.QualityMetrics.LastUpdated) || _vm.QualityMetrics.PriorityFormat)
+                _vm.QualityMetrics.LastUpdated = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var json = _vm.SerializeToJson();
             File.WriteAllText(_filePath, json);
 
@@ -362,6 +378,21 @@ public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpe
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Increments the patch segment of the version string (e.g. "2.02" → "2.03", "1.0" → "1.1").
+    /// Leaves non-numeric or already-bumped versions unchanged.
+    /// </summary>
+    private static void TryBumpVersion(ViewModels.MetadataViewModel meta)
+    {
+        var v   = meta.Version ?? "";
+        var dot = v.LastIndexOf('.');
+        if (dot >= 0 && int.TryParse(v[(dot + 1)..], out var patch))
+            meta.Version = $"{v[..dot]}.{patch + 1:D2}";
+        else if (int.TryParse(v, out var major))
+            meta.Version = $"{major + 1}";
+        // else: leave unchanged (e.g. "alpha", "beta", non-numeric)
+    }
 
     private void SetStatus(string msg) => StatusText.Text = msg;
 

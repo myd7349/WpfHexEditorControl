@@ -31,7 +31,7 @@ public sealed partial class StructureEditor : IEditorToolbarContributor, IStatus
     private EditorToolbarItem? _tbLayout;
 
     // Tracks whether the live code view split pane is open
-    private bool   _codeViewVisible;
+    private bool   _codeViewVisible = true;
     private string _codeViewDock = "Right"; // "Left" | "Right" | "Top" | "Bottom"
 
     private void InitToolbarItems()

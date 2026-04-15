@@ -53,11 +53,11 @@ internal sealed class BlocksViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Returns blocks matching the current filter (case-insensitive).</summary>
+    /// <summary>Returns blocks matching the current filter (case-insensitive on name, description, and children).</summary>
     public IEnumerable<BlockViewModel> FilteredBlockTree =>
         string.IsNullOrWhiteSpace(_filterText)
             ? BlockTree
-            : BlockTree.Where(b => b.DisplayName.Contains(_filterText, StringComparison.OrdinalIgnoreCase));
+            : BlockTree.Where(b => b.MatchesFilter(_filterText));
 
     // ── Load / Save ───────────────────────────────────────────────────────────
 
@@ -174,6 +174,24 @@ internal sealed class BlocksViewModel : ViewModelBase
         try { return Clipboard.GetText().StartsWith(ClipboardPrefix, StringComparison.Ordinal); }
         catch { return false; }
     }
+
+    // ── Drag-and-drop ─────────────────────────────────────────────────────────
+
+    /// <summary>Moves <paramref name="source"/> to <paramref name="targetIndex"/> in the flat block list.</summary>
+    internal void MoveBlock(BlockViewModel source, int targetIndex)
+    {
+        var idx = BlockTree.IndexOf(source);
+        if (idx < 0 || idx == targetIndex) return;
+        BlockTree.Move(idx, Math.Clamp(targetIndex, 0, BlockTree.Count - 1));
+        RaiseChanged();
+    }
+
+    // ── Variable cross-reference ──────────────────────────────────────────────
+
+    /// <summary>All distinct variable names referenced by any block in the tree.</summary>
+    public IEnumerable<string> ReferencedVariableNames =>
+        BlockTree.SelectMany(b => b.GetReferencedVariables())
+                 .Distinct(StringComparer.Ordinal);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

@@ -58,7 +58,7 @@
             <TextBlock Text="Loop Condition" Style="{StaticResource SectionHeader}"/>
             <ctrl:ConditionEditorRow DataContext="{Binding Condition}" Margin="0,0,0,4"/>
 
-            <!-- Count / MaxIterations -->
+            <!-- Count / MaxIterations / IndexVar -->
             <TextBlock Text="Bounds" Style="{StaticResource SectionHeader}"/>
             <Grid Style="{StaticResource PropGrid}">
                 <Grid.ColumnDefinitions>
@@ -66,6 +66,8 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -77,6 +79,14 @@
                 <TextBox   Grid.Row="1" Grid.Column="1" Style="{StaticResource PropField}"
                            Text="{Binding MaxIterations, UpdateSourceTrigger=PropertyChanged}"
                            ToolTip="Safety cap — integer"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Index Var"      Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="2" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding IndexVar, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="Variable that receives the current iteration index (0-based)"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Store As"       Style="{StaticResource PropLabel}"/>
+                <TextBox   Grid.Row="3" Grid.Column="1" Style="{StaticResource PropField}"
+                           Text="{Binding StoreAs, UpdateSourceTrigger=PropertyChanged}"
+                           ToolTip="Variable to store the iteration count after loop completes"/>
             </Grid>
 
             <TextBlock Text="Body blocks are shown as children in the tree."
