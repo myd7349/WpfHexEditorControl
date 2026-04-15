@@ -1,0 +1,183 @@
+{
+  "diffMode": "text",
+  "formatName": "strace System Call Log",
+  "version": "1.0",
+  "extensions": [
+    ".strace",
+    ".log",
+    ".out"
+  ],
+  "description": "strace system call trace log (Linux). Plain text output from `strace -o file.log command`. Each line format: [pid] syscall_name(args...) = return_value [error_string]. Example: '4321 openat(AT_FDCWD, \"/etc/passwd\", O_RDONLY) = 3'. With -t flag: '14:23:01 execve(...)'. With -T flag: adds '(0.000023)' elapsed time. With -tt flag: microsecond timestamps. With -r flag: relative timestamps '0.000152'. Process events: '+++ exited with 0 +++', '--- SIGCHLD ---'. The first line of a typical strace output is the execve() call for the traced command. Arguments use C-style syntax: strings in double quotes, flags as OR-expressions (O_RDONLY|O_CLOEXEC), structs as {field=value}. Extremely useful for debugging file access, network calls, IPC, and performance analysis. No binary magic — pure text format.",
+  "category": "System",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "strace manual page — strace.io/docs/latest/",
+      "Linux syscall interface — man7.org/linux/man-pages/man2/",
+      "strace source code — github.com/strace/strace"
+    ],
+    "WebLinks": [
+      "https://strace.io/",
+      "https://github.com/strace/strace",
+      "https://man7.org/linux/man-pages/man1/strace.1.html",
+      "https://en.wikipedia.org/wiki/Strace"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "65786563766528", "offset": 0, "label": "execve( — strace log starting with initial execve system call", "weight": 0.5 },
+      { "value": "5B", "offset": 0, "label": "[ — strace log starting with PID annotation or signal marker", "weight": 0.2 }
+    ],
+    "required": false,
+    "Strength": "Weak",
+    "MinimumScore": 0.1,
+    "EntropyHint": { "min": 4.0, "max": 5.5 },
+    "validation": {
+      "minFileSize": 10
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "firstChars": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.30,
+      "description": "First byte of the strace log file. For standard strace output starting with execve: 0x65 ('e'). For PID-annotated output (-f flag): 0x5B ('['). For timestamp-prefixed output (-t flag): 0x31-0x39 (digit). All are printable ASCII characters since strace produces pure text output.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "101": "0x65 'e' — starts with execve( (common first syscall)",
+        "91": "0x5B '[' — starts with PID annotation or signal marker",
+        "111": "0x6F 'o' — starts with openat( or open(",
+        "43": "0x2B '+' — starts with +++ exited (process exit line)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First 8 Characters",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "First 8 bytes of the strace log as ASCII text. Helps identify the log style: 'execve(' for direct syscall output, '[pid NNN' for -f multi-process mode, '14:23:01' for -t timestamp mode, '0.000000' for -r relative timestamp mode. All strace output is UTF-8 safe ASCII.",
+      "storeAs": "firstChars",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Log Start",
+      "variable": "firstChars",
+      "description": "First 8 characters of the strace log — identifies the strace invocation style"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First character: 'e'=execve, '['=PID, digit=timestamp prefix"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File starts with printable ASCII",
+      "expression": "firstByte >= 32 && firstByte <= 126",
+      "severity": "warning",
+      "message": "strace log should start with printable ASCII text — non-printable first byte suggests binary content or incorrect file type"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Log Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "firstChars",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Log Identity",
+        "icon": "\uE71B",
+        "fields": ["firstChars", "firstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "strace log header (JSON)",
+      "format": "json",
+      "fields": ["firstChars", "firstByte"]
+    },
+    {
+      "name": "strace log info (text)",
+      "format": "text",
+      "fields": ["firstChars"]
+    }
+  ],
+  "forensic": {
+    "category": "system",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Binary content in text log",
+        "condition": "firstByte < 32 || firstByte > 126",
+        "severity": "warning",
+        "description": "strace output is pure text. A non-printable first byte indicates this is not a strace log or the file has been corrupted or mis-identified."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "strace log line formats: (1) basic: 'syscall(args) = retval'; (2) with PID (-f): 'NNN syscall(args) = retval'; (3) with time (-t): 'HH:MM:SS syscall(args) = retval'; (4) with relative time (-r): 'N.NNNNNN syscall(args) = retval'; (5) with elapsed (-T): 'syscall(args) = retval <N.NNNNNN>'. Error lines: 'syscall(args) = -1 ERRNO (Error description)'. Signal lines: '--- SIGNAME {...} ---'. Process exit: '+++ exited with N +++' or '+++ killed by SIGNAME +++'.",
+    "suggestedInspections": [
+      "Identify log format by first line: execve=direct, [pid=multi-process, digit=timestamped",
+      "Search for '= -1 E' patterns to find all failed system calls",
+      "Search for 'open(' or 'openat(' lines to trace all file accesses",
+      "Search for 'connect(' lines to trace network connections with IP addresses",
+      "Count 'clone(' or 'fork(' calls to understand process/thread creation patterns"
+    ]
+  },
+  "software": [
+    "strace (Linux syscall tracer)",
+    "ltrace (library call tracer)",
+    "perf trace (Linux perf)",
+    "gdb (GNU Debugger, similar output mode)",
+    "dtruss (macOS DTrace equivalent)"
+  ],
+  "formatRelationships": {
+    "category": "System",
+    "extensions": [".strace", ".log", ".out"],
+    "relatedFormats": ["ETL", "KDUMP"],
+    "containerVariant": "Text output — no binary container; -ff flag produces per-PID files"
+  },
+  "MimeTypes": [
+    "text/plain"
+  ],
+  "UseCases": [
+    "Application debugging — tracing file, network, and IPC calls",
+    "Performance analysis — identifying slow or repeated system calls",
+    "Security analysis — detecting unauthorized file access or network connections",
+    "Malware analysis — understanding unknown binary behavior without source code"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 2,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FileType": "Plain text Linux system call trace log",
+    "TextEncoding": "ASCII (UTF-8 compatible)",
+    "LineEndings": "LF (Unix)",
+    "NoMagicBytes": true,
+    "DetectionMethod": "File extension + first-line pattern matching"
+  }
+}

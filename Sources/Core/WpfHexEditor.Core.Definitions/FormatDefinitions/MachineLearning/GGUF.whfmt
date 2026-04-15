@@ -1,0 +1,275 @@
+{
+  "diffMode": "binary",
+  "formatName": "GGUF LLM Model",
+  "version": "1.0",
+  "extensions": [
+    ".gguf"
+  ],
+  "description": "GGUF (GPT-Generated Unified Format) — binary format for large language model weights, introduced by llama.cpp (August 2023). Replaces GGML. Magic: 'GGUF' (47 47 55 46) at offset 0 + uint32 LE version (1, 2, or 3) at offset 4 + uint64 LE tensor_count at offset 8 + uint64 LE metadata_kv_count at offset 16. Metadata key-value pairs follow with typed values (string, uint32, float32, array, etc.). Tensor info and tensor data blocks follow. Supports quantization: Q4_0, Q4_K_M, Q5_K_S, Q8_0, F16, F32. Used by llama.cpp, Ollama, LM Studio, Jan, koboldcpp.",
+  "category": "MachineLearning",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "GGUF Format Specification — github.com/ggerganov/ggml/blob/master/docs/gguf.md",
+      "llama.cpp GGUF implementation — github.com/ggerganov/llama.cpp",
+      "GGUF version history: v1 (initial), v2 (alignment fix), v3 (big-endian support)"
+    ],
+    "WebLinks": [
+      "https://github.com/ggerganov/ggml/blob/master/docs/gguf.md",
+      "https://huggingface.co/docs/hub/gguf",
+      "https://en.wikipedia.org/wiki/Llama_(language_model)",
+      "https://ollama.com/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "47475546", "offset": 0, "label": "GGUF — GPT-Generated Unified Format magic", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 6.5, "max": 8.0 },
+    "validation": {
+      "minFileSize": 24,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "ggufMagic": "",
+    "ggufVersion": 0,
+    "tensorCount": 0,
+    "metadataKvCount": 0,
+    "quantizationType": "",
+    "modelArchitecture": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "GGUF Magic Number",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ASCII magic string 'GGUF' (0x47 0x47 0x55 0x46) identifying the GPT-Generated Unified Format. This magic was introduced by llama.cpp in August 2023 to replace the older GGML format. All valid GGUF files must begin with these four bytes. The magic is stored as plain ASCII, not as a multi-byte integer.",
+      "storeAs": "ggufMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "GGUF Format Version",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint32 little-endian version number of the GGUF format specification. Version 1: initial release (August 2023). Version 2: fixed alignment requirements for tensor data blocks to 32-byte boundaries. Version 3: added support for big-endian architectures (used on IBM Z, SPARC). Most production models use version 2 or 3. Version 1 files may require conversion before loading into current llama.cpp builds.",
+      "storeAs": "ggufVersion",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "1": "GGUF v1 (August 2023, initial)",
+        "2": "GGUF v2 (alignment fix)",
+        "3": "GGUF v3 (big-endian support, current)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Tensor Count",
+      "offset": 8,
+      "length": 8,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint64 little-endian count of tensor info entries stored in this GGUF file. Each tensor has a name, shape, data type, and offset into the tensor data block. Typical small models (7B parameters) contain 291 tensors. Larger models (70B) may contain 800+ tensors. A value of zero indicates an invalid or empty model file. Tensor info section follows the metadata key-value section.",
+      "storeAs": "tensorCount",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Metadata KV Count",
+      "offset": 16,
+      "length": 8,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint64 little-endian count of metadata key-value pairs in the header. Metadata encodes model properties: general.architecture (e.g. 'llama'), general.name, llama.context_length, llama.embedding_length, llama.block_count, llama.feed_forward_length, tokenizer.ggml.model, tokenizer.ggml.tokens, tokenizer.ggml.scores. Each KV pair: string key + uint32 value_type + typed value. Value types: 0=uint8, 1=int8, 2=uint16, 3=int16, 4=uint32, 5=int32, 6=float32, 7=bool, 8=string, 9=array.",
+      "storeAs": "metadataKvCount",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Quantization Type",
+      "variable": "quantizationType",
+      "description": "Model weight quantization format derived from tensor type metadata (e.g. Q4_0, Q4_K_M, Q5_K_S, Q8_0, F16, F32)"
+    },
+    {
+      "type": "metadata",
+      "name": "Model Architecture",
+      "variable": "modelArchitecture",
+      "description": "Neural network architecture identifier from general.architecture metadata key (e.g. llama, mistral, falcon, phi)"
+    },
+    {
+      "type": "metadata",
+      "name": "Tensor Count Summary",
+      "variable": "tensorCount",
+      "description": "Total number of weight tensors in this model file — indicates model layer depth and overall parameter count"
+    },
+    {
+      "type": "metadata",
+      "name": "Metadata Entry Count",
+      "variable": "metadataKvCount",
+      "description": "Number of key-value metadata pairs encoded in the GGUF header after the fixed 24-byte preamble"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid GGUF magic",
+      "expression": "ggufMagic == 'GGUF'",
+      "severity": "error",
+      "message": "File does not begin with GGUF magic — not a valid GGUF model file"
+    },
+    {
+      "name": "Known GGUF version",
+      "expression": "ggufVersion >= 1 && ggufVersion <= 3",
+      "severity": "error",
+      "message": "GGUF version must be 1, 2, or 3 — unknown version may indicate a future or corrupted format"
+    },
+    {
+      "name": "Non-empty tensor count",
+      "expression": "tensorCount > 0",
+      "severity": "warning",
+      "message": "Tensor count is zero — file may be an empty model template or corrupt GGUF"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "GGUF Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Format Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Tensor Count", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" },
+      { "name": "Metadata KV Count", "offset": 16, "icon": "\uE946", "color": "#C7CEEA" }
+    ]
+  },
+  "inspector": {
+    "badge": "modelArchitecture",
+    "primaryField": "tensorCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["ggufMagic", "ggufVersion"]
+      },
+      {
+        "title": "Model Structure",
+        "icon": "\uE9D9",
+        "fields": ["tensorCount", "metadataKvCount", "modelArchitecture"]
+      },
+      {
+        "title": "Quantization",
+        "icon": "\uE946",
+        "fields": ["quantizationType"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GGUF Header (JSON)",
+      "format": "json",
+      "fields": ["ggufMagic", "ggufVersion", "tensorCount", "metadataKvCount", "modelArchitecture", "quantizationType"]
+    },
+    {
+      "name": "GGUF Header (C struct)",
+      "format": "c-struct",
+      "structName": "GGUF_HEADER",
+      "fields": ["ggufMagic", "ggufVersion", "tensorCount", "metadataKvCount"]
+    },
+    {
+      "name": "Python GGUF magic check",
+      "format": "python-bytes",
+      "fields": ["ggufMagic", "ggufVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "machine-learning",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Unknown GGUF version",
+        "condition": "ggufVersion > 3",
+        "severity": "warning",
+        "description": "GGUF version exceeds known specification versions — may indicate a modified or experimental format variant"
+      },
+      {
+        "name": "Empty model tensors",
+        "condition": "tensorCount == 0",
+        "severity": "warning",
+        "description": "Model has zero tensors — file may be a template, stub, or corrupted model"
+      },
+      {
+        "name": "Training data artifacts",
+        "condition": "metadataKvCount > 500",
+        "severity": "info",
+        "description": "Large number of metadata entries may indicate training corpus fingerprints or configuration data embedded in model"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GGUF is the standard binary format for quantized LLM inference, replacing the deprecated GGML format. Key header fields: magic (4B), version (4B LE), tensor_count (8B LE), metadata_kv_count (8B LE). After the 24-byte fixed header, metadata KV pairs are stored with string keys and typed values encoding model architecture, tokenizer vocabulary, context length, and quantization settings. Tensor info follows metadata. Actual tensor weights are stored after a 32-byte alignment pad from the end of tensor info. Quantization types: F32=full precision, F16=half precision, Q8_0=8-bit symmetric, Q4_0/Q4_1=4-bit, Q4_K_M/Q5_K_M=k-quant mixed precision. Models from Hugging Face GGUF repos are safe; always verify SHA-256 hash.",
+    "knownVulnerabilities": [
+      "Large GGUF files (30GB+) may cause OOM if mmap is not used — always use memory-mapped loading",
+      "Metadata string values are user-controlled and may contain extremely long strings intended to cause parser DoS"
+    ],
+    "suggestedInspections": [
+      "Verify magic bytes 0-3 == 47 47 55 46 ('GGUF') before any further parsing",
+      "Check version field at offset 4 — reject if not 1, 2, or 3",
+      "Inspect metadata_kv_count at offset 16 — count must be reasonable (< 10000) before iterating KV pairs",
+      "Look for general.architecture metadata key to identify model family (llama, mistral, phi, falcon)",
+      "Check tensor data alignment: in v2+ tensor data must start at 32-byte aligned offset",
+      "Verify tensor_count matches the actual number of tensor info entries before reading tensor offsets"
+    ]
+  },
+  "software": [
+    "llama.cpp (reference implementation)",
+    "Ollama",
+    "LM Studio",
+    "Jan (AI desktop)",
+    "koboldcpp",
+    "GPT4All",
+    "gguf-py (Python library, huggingface)"
+  ],
+  "formatRelationships": {
+    "category": "MachineLearning",
+    "extensions": [".gguf"],
+    "relatedFormats": ["GGML", "SAFETENSORS", "KERAS_H5"],
+    "note": "GGUF replaces GGML (deprecated August 2023). GGUF adds: typed metadata KV store, alignment guarantees, versioning, and multi-architecture support. Not related to PyTorch .pt or TensorFlow SavedModel formats — GGUF is specifically optimized for CPU/GPU inference via llama.cpp backend."
+  },
+  "MimeTypes": [
+    "application/x-gguf",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Local LLM inference (llama.cpp, Ollama, LM Studio)",
+    "Quantized model distribution on Hugging Face Hub",
+    "Edge/embedded AI deployment",
+    "Privacy-preserving on-device language model inference",
+    "Model weight archival with embedded metadata"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Endianness": "little-endian (v1/v2), both (v3)",
+    "Alignment": "Tensor data aligned to 32-byte boundaries (v2+)",
+    "QuantizationTypes": "F32, F16, Q8_0, Q4_0, Q4_1, Q4_K_M, Q5_K_M, Q5_K_S, Q2_K, Q3_K_M",
+    "MetadataEncoding": "Typed KV store with string keys and variant value types (0-9)",
+    "TypicalFileSize": "1GB (7B Q4) to 80GB+ (70B F16)",
+    "SupportsStreaming": false
+  }
+}

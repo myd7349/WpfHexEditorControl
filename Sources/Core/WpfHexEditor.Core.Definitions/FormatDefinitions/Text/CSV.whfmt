@@ -1,0 +1,133 @@
+{
+  "diffMode": "text",
+  "formatName": "Comma-Separated Values",
+  "version": "1.0",
+  "extensions": [ ".csv", ".tsv" ],
+  "description": "CSV (Comma-Separated Values) — RFC 4180 plain text tabular format. Each line is a record with fields separated by commas (CSV) or tabs (TSV). Fields containing delimiters or newlines may be enclosed in double-quotes; embedded double-quotes are escaped as two consecutive double-quotes. An optional header row names each column. Encoding: UTF-8 (with or without BOM), UTF-16, or legacy codepages. Used universally for data exchange in spreadsheets, databases, and analytics pipelines. BOM signatures: UTF-8 = EF BB BF, UTF-16 LE = FF FE, UTF-16 BE = FE FF.",
+  "category": "Text",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "CodeEditor",
+  "references": [
+    "https://www.rfc-editor.org/rfc/rfc4180",
+    "https://www.iana.org/assignments/media-types/text/csv"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "EFBBBF",
+        "offset": 0,
+        "label": "UTF-8 BOM — CSV file with UTF-8 Byte Order Mark prefix",
+        "weight": 0.3
+      },
+      {
+        "value": "FFFE",
+        "offset": 0,
+        "label": "UTF-16 LE BOM — CSV file in UTF-16 Little Endian encoding",
+        "weight": 0.2
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.1,
+    "Strength": "Weak"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of the CSV file at offset 0 — should be a printable ASCII character (0x20-0x7E) for UTF-8 encoded files, or 0xEF for UTF-8 BOM files, or 0xFF/0xFE for UTF-16 BOM files; binary values suggest this is not a CSV",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "secondByte",
+      "offset": 1,
+      "size": 1,
+      "type": "uint8",
+      "description": "Second byte of the CSV file at offset 1 — part of the BOM sequence if the first byte is a BOM marker, or the second character of the first field or header row; used alongside firstByte for encoding detection"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FirstByteAsciiOrBOM",
+      "expression": "firstByte < 128 || firstByte == 0xEF || firstByte == 0xFF || firstByte == 0xFE",
+      "severity": "warning",
+      "message": "First byte suggests non-text content; CSV files should start with ASCII printable text or a recognized Unicode BOM (EF BB BF for UTF-8, FF FE for UTF-16 LE)"
+    },
+    {
+      "name": "NotBinaryContent",
+      "expression": "firstByte != 0x00",
+      "severity": "warning",
+      "message": "First byte is null (0x00); CSV files should not contain null bytes; this may be a binary file misidentified by extension"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "File Start", "offset": 0, "size": 512, "description": "First 512 bytes containing BOM (if present) and initial header row or first data record" }
+    ]
+  },
+  "inspector": {
+    "badge": "CSV",
+    "primaryField": "firstByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Encoding Markers",
+        "fields": [ "firstByte", "secondByte" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "File Summary",
+      "format": "text",
+      "template": "Comma-Separated Values (CSV)\nFirst Byte: 0x{firstByte:X2}\nFormat: RFC 4180 plain text tabular data\nDelimiter: comma (CSV) or tab (TSV)\nEncoding: UTF-8 / UTF-16 / legacy codepage"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nSecondByte,{secondByte}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "CSV text file. No executable content. May contain personally identifiable information (PII), financial records, or other sensitive tabular data. Encoding detection is important for proper field parsing."
+  },
+  "aiHints": {
+    "analysisContext": "CSV detection is extension-based with minimal binary cues. Check for UTF-8 BOM (EF BB BF) or UTF-16 BOM (FF FE / FE FF) at offset 0. Scan the first line for comma or tab delimiters. Verify no null bytes in the first 512 bytes. Tab-separated files (.tsv) share this format definition.",
+    "suggestedInspections": [
+      "Check for UTF-8 BOM (0xEF 0xBB 0xBF) or UTF-16 BOM (0xFF 0xFE) at offset 0",
+      "Scan first 512 bytes for null bytes — presence suggests binary file, not CSV",
+      "Count comma and tab occurrences per line to determine the delimiter type",
+      "Check if first line appears to be a header row with descriptive field names",
+      "Verify consistent field count per row for well-formed RFC 4180 compliance",
+      "Detect quoted fields with double-quote escaping for multi-line value support"
+    ]
+  },
+  "software": [
+    { "name": "Microsoft Excel", "url": "https://www.microsoft.com/en-us/microsoft-365/excel", "role": "spreadsheet" },
+    { "name": "LibreOffice Calc", "url": "https://www.libreoffice.org/", "role": "spreadsheet" }
+  ],
+  "formatRelationships": [
+    { "format": "INI", "relation": "sibling text format — INI uses key=value structure, CSV uses delimited columns" }
+  ],
+  "MimeTypes": [ "text/csv", "text/tab-separated-values" ],
+  "UseCases": [
+    "Data exchange between spreadsheet applications and databases",
+    "Analytics pipeline input and output",
+    "Configuration and data export from enterprise applications"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "standard": "RFC 4180",
+    "encoding": "UTF-8, UTF-16, or legacy codepages",
+    "endianness": "N/A (text format)",
+    "notes": "No binary magic. Detection is extension-based. RFC 4180 defines CRLF line endings but LF-only files are common. TSV files use tab as delimiter but otherwise follow the same structure."
+  }
+}

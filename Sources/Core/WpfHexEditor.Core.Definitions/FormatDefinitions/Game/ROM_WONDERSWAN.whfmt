@@ -1,0 +1,121 @@
+{
+  "diffMode": "binary",
+  "formatName": "Bandai WonderSwan ROM",
+  "version": "1.0",
+  "extensions": [ ".ws", ".wsc" ],
+  "description": "Bandai WonderSwan and WonderSwan Color ROM image. The cartridge metadata footer occupies the last 16 bytes of the ROM file (at fileSize - 16). Footer layout: publisher_id (1B), color_flag (1B: 0=WonderSwan monochrome, 1=WonderSwan Color), game_id (1B), game_version (1B), rom_size code (1B), save_type code (1B), boot_orientation (1B), checksum (2B LE). The .ws extension indicates monochrome, .wsc indicates color hardware. Detection is extension-based and structurally weak.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://www.yaronet.com/topics/183523-fichiers-rom-wonderswan",
+    "https://wiki.tcrf.net/WonderSwan"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "434F5059",
+        "offset": 0,
+        "label": "COPY — some WonderSwan ROM dumps include a copyright header at offset 0",
+        "weight": 0.2
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.1,
+    "Strength": "Weak"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of ROM data at offset 0 — the initial byte of the WonderSwan ROM payload; typically part of the Z80 compatible instruction stream or a jump to the main code entry point",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "secondByte",
+      "offset": 1,
+      "size": 1,
+      "type": "uint8",
+      "description": "Second byte of ROM data at offset 1 — second byte of the WonderSwan ROM instruction stream; used alongside firstByte for partial content fingerprinting"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FileSizeNonZero",
+      "expression": "fileSize > 0",
+      "severity": "error",
+      "message": "ROM file must not be empty; a valid WonderSwan ROM image requires at least 16 bytes for the footer metadata"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "ROM Data", "offset": 0, "size": -1, "description": "Complete ROM data; footer is located in the last 16 bytes of the file" }
+    ]
+  },
+  "inspector": {
+    "badge": "WS",
+    "primaryField": "firstByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "ROM Start",
+        "fields": [ "firstByte", "secondByte" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ROM Summary",
+      "format": "text",
+      "template": "Bandai WonderSwan ROM\nFirst Byte: 0x{firstByte:X2}\nExtension indicates: .ws = monochrome, .wsc = color\nMetadata footer is in the last 16 bytes of the file"
+    },
+    {
+      "name": "Minimal Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nSecondByte,{secondByte}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "Bandai WonderSwan ROM image. Extension-only detection with no reliable binary magic at offset 0. Footer metadata is at end of file. Small commercial library of approximately 200 titles."
+  },
+  "aiHints": {
+    "analysisContext": "WonderSwan ROM files store their metadata in a 16-byte footer at the very end of the file, not in a header at the start. The .ws extension indicates the monochrome model, .wsc the color model. Detection is very weak — rely on extension and file size alignment to a power-of-two boundary.",
+    "suggestedInspections": [
+      "Seek to fileSize-16 to read the metadata footer containing publisher, game ID, and checksum",
+      "Check color_flag byte in footer (offset -15 from end) to confirm WS vs WSC",
+      "Validate the 2-byte checksum in footer against the computed ROM checksum",
+      "Verify file size is a power of two (common ROM sizes: 512KB, 1MB, 2MB, 4MB)",
+      "Check boot_orientation byte to determine expected screen rotation for this title",
+      "Cross-reference publisher_id against the known Bandai licensee list"
+    ]
+  },
+  "software": [
+    { "name": "Mednafen", "url": "https://mednafen.github.io/", "role": "emulator" },
+    { "name": "Oswan", "url": "https://sourceforge.net/projects/oswan/", "role": "emulator" }
+  ],
+  "formatRelationships": [
+    { "format": "ROM_NGP", "relation": "similar era — both are late-1990s Japanese handheld cartridge ROM formats with footer-based metadata" }
+  ],
+  "MimeTypes": [ "application/x-wonderswan-rom" ],
+  "UseCases": [
+    "Game preservation of Bandai WonderSwan and WonderSwan Color cartridges",
+    "Emulation and ROM research",
+    "Footer metadata extraction for catalog and checksumming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "footerOffset": -16,
+    "footerSize": 16,
+    "endianness": "little-endian",
+    "notes": "No magic at offset 0. Metadata is in the last 16 bytes. File size is typically a power of two. The monochrome WonderSwan and the color WonderSwan Color share the same ROM header format."
+  }
+}

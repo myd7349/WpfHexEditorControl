@@ -1,0 +1,248 @@
+{
+  "diffMode": "binary",
+  "formatName": "PyTorch TorchScript Model",
+  "version": "1.0",
+  "extensions": [
+    ".pt",
+    ".pth",
+    ".ptl"
+  ],
+  "description": "PyTorch TorchScript serialized model (.pt, .pth, .ptl). ZIP-based format (PK magic 50 4B 03 04). ZIP contains: archive/data.pkl (Python pickle of model weights — SECURITY RISK: arbitrary code execution on load), archive/constants.pkl (constant tensors), archive/code/ (TorchScript bytecode .py files), archive/data/ (tensor binary data files). The pickle format starts with opcodes: 0x80 0x02 (protocol 2) or 0x80 0x05 (protocol 5). TorchScript models contain code/__torch__.py. WARNING: Loading untrusted .pt files via torch.load() executes arbitrary Python code via the pickle deserializer. Use weights_only=True (PyTorch 2.0+) or SafeTensors format for untrusted sources.",
+  "category": "MachineLearning",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "PyTorch serialization format documentation — pytorch.org/docs/stable/generated/torch.save.html",
+      "TorchScript documentation — pytorch.org/docs/stable/jit.html",
+      "Python pickle protocol 5 — PEP 574 (2019)"
+    ],
+    "WebLinks": [
+      "https://pytorch.org/docs/stable/generated/torch.save.html",
+      "https://pytorch.org/docs/stable/jit.html",
+      "https://github.com/pytorch/pytorch",
+      "https://huggingface.co/docs/safetensors/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "PK ZIP — PyTorch model ZIP container", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 5.5, "max": 8.0 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "PyTorch .pt/.pth files share PK ZIP magic with many formats. File extension and internal archive/data.pkl path distinguish PyTorch models from other ZIP-based formats."
+    }
+  },
+  "variables": {
+    "pkMagic": "",
+    "zipVersion": 0,
+    "compressionMethod": 0,
+    "fileNameLength": 0,
+    "pickleProtocol": 0,
+    "torchVersion": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "ZIP Local File Header Signature",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ZIP local file header signature 0x504B0304 (PK\\x03\\x04). PyTorch uses the ZIP container format for all model serialization since PyTorch 1.6. The ZIP archive contains the pickle data, constant tensors, and binary weight storage. CRITICAL SECURITY WARNING: The archive/data.pkl entry contains Python pickle data that executes arbitrary Python code when deserialized. Always use torch.load(f, weights_only=True) in PyTorch 2.0+ or the SafeTensors format for untrusted model sources.",
+      "storeAs": "pkMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ZIP Version Needed",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint16 little-endian minimum ZIP version required for extraction. PyTorch models typically use version 20 (2.0, basic DEFLATE support). Large models using ZIP64 extensions require version 45. The upper byte encodes the originating OS (0=MS-DOS/Windows, 3=Unix).",
+      "storeAs": "zipVersion",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint16 little-endian compression method for the first ZIP entry. PyTorch models typically store entries uncompressed (0=Stored) for fast memory-mapped tensor access, or DEFLATE (8) for metadata. The pickle and constants entries may be compressed; raw tensor data is usually stored uncompressed.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "8": "DEFLATE compressed"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Entry File Name Length",
+      "offset": 26,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint16 little-endian byte length of the file name of the first ZIP entry. The first entry in a PyTorch model ZIP is typically 'archive/data.pkl' (18 bytes) or a similar path. This field precedes the actual file name string at offset 30.",
+      "storeAs": "fileNameLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Pickle Protocol",
+      "variable": "pickleProtocol",
+      "description": "Python pickle protocol version found in archive/data.pkl (0x80 opcode + version byte: 0x02=protocol 2, 0x04=protocol 4, 0x05=protocol 5)"
+    },
+    {
+      "type": "metadata",
+      "name": "PyTorch Version",
+      "variable": "torchVersion",
+      "description": "PyTorch version string from the archive record_size or serialization_id metadata in the ZIP comment or internal pickle"
+    },
+    {
+      "type": "metadata",
+      "name": "ZIP Version",
+      "variable": "zipVersion",
+      "description": "ZIP specification version * 10 required to extract (20=2.0, 45=4.5 ZIP64)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid PK ZIP magic",
+      "expression": "pkMagic == 1347093252",
+      "severity": "error",
+      "message": "File does not begin with PK ZIP signature 0x504B0304 — not a valid PyTorch model file"
+    },
+    {
+      "name": "Known compression method",
+      "expression": "compressionMethod == 0 || compressionMethod == 8",
+      "severity": "warning",
+      "message": "Unexpected first-entry compression method — PyTorch uses Stored (0) or DEFLATE (8)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ZIP Signature", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ZIP Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Compression", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "torchVersion",
+    "primaryField": "pickleProtocol",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ZIP Container",
+        "icon": "\uE71B",
+        "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+      },
+      {
+        "title": "PyTorch Metadata",
+        "icon": "\uE946",
+        "fields": ["torchVersion", "pickleProtocol"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PyTorch Header (JSON)",
+      "format": "json",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "torchVersion", "pickleProtocol"]
+    },
+    {
+      "name": "PyTorch ZIP Header (C struct)",
+      "format": "c-struct",
+      "structName": "PYTORCH_ZIP_HEADER",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+    }
+  ],
+  "forensic": {
+    "category": "machine-learning",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Pickle code execution risk",
+        "condition": "true",
+        "severity": "critical",
+        "description": "PyTorch .pt/.pth files contain Python pickle data (archive/data.pkl) that executes arbitrary Python code when loaded via torch.load(). NEVER load untrusted .pt files without weights_only=True (PyTorch 2.0+). This is a known supply-chain attack vector used in Hugging Face model poisoning attacks."
+      },
+      {
+        "name": "High entropy weight data",
+        "condition": "compressionMethod == 0",
+        "severity": "info",
+        "description": "Uncompressed tensor storage is expected for fast mmap access, but also means weight data is in raw form and may be extracted without decompression"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PyTorch model files use ZIP containers with an internal structure: archive/data.pkl (pickle protocol 2-5, model state dict), archive/constants.pkl (constant folded tensors), archive/code/*.py (TorchScript bytecode), archive/data/*.storage (raw tensor binary storage). The pickle opcodes 0x80 0x02 (PROTO 2) or 0x80 0x05 (PROTO 5) appear at the start of data.pkl. PyTorch 1.6+ always uses this ZIP-based format; older PyTorch used a single pickle file. Security: torch.load() with default settings executes the pickle — use weights_only=True. SafeTensors (.safetensors) is the safe alternative. Inspect ZIP contents with: unzip -l model.pt",
+    "knownVulnerabilities": [
+      "Pickle deserialization: arbitrary Python code execution via __reduce__ methods in serialized objects",
+      "CVE-2022-45907: PyTorch JIT compiler vulnerability in TorchScript type inference",
+      "Hugging Face model supply chain attacks (2023): malicious .pt files distributed as model weights"
+    ],
+    "suggestedInspections": [
+      "List ZIP contents — look for archive/data.pkl as the main indicator of a PyTorch model",
+      "Check archive/data.pkl first two bytes: 0x80 0x02 (protocol 2) or 0x80 0x05 (protocol 5)",
+      "Inspect archive/code/*.py for TorchScript bytecode to identify model architecture",
+      "Scan archive/data.pkl for suspicious pickle opcodes: GLOBAL (0x63), REDUCE (0x52), INST (0x69)",
+      "Never load untrusted .pt files — use SafeTensors format or weights_only=True for safe loading",
+      "Check for archive/constants.pkl for constant tensor values embedded in TorchScript graphs"
+    ]
+  },
+  "software": [
+    "PyTorch (torch.save / torch.load)",
+    "torch.jit.save / torch.jit.load (TorchScript)",
+    "Hugging Face Transformers (model hub downloads)",
+    "TorchServe (production model serving)",
+    "Netron (model visualization)"
+  ],
+  "formatRelationships": {
+    "category": "MachineLearning",
+    "extensions": [".pt", ".pth", ".ptl"],
+    "relatedFormats": ["GGUF", "KERAS_H5", "SAFETENSORS"],
+    "note": ".pt and .pth are functionally identical — .pth is a historical convention for checkpoints with optimizer state, .pt for final exports. .ptl is the PyTorch Lite (Mobile) format. SafeTensors (.safetensors) is the security-safe replacement for .pt weight files."
+  },
+  "MimeTypes": [
+    "application/octet-stream",
+    "application/x-pytorch"
+  ],
+  "UseCases": [
+    "PyTorch model weight checkpointing during training",
+    "TorchScript model export for production inference",
+    "Hugging Face model hub weight distribution",
+    "PyTorch Mobile deployment (.ptl format)",
+    "Transfer learning — loading pretrained weights"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Container": "ZIP archive with internal archive/ directory structure",
+    "Serialization": "Python pickle protocol 2 or 5 (SECURITY RISK)",
+    "TensorStorage": "Raw binary float32/float16/bfloat16 in archive/data/*.storage",
+    "SafeAlternative": "SafeTensors format (.safetensors) — no code execution risk",
+    "SupportsStreaming": false,
+    "TorchScriptSupport": true
+  }
+}

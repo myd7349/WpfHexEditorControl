@@ -1,0 +1,190 @@
+{
+  "diffMode": "text",
+  "formatName": "vCard Contact",
+  "version": "1.0",
+  "extensions": [
+    ".vcf",
+    ".vcard"
+  ],
+  "description": "vCard contact format — open standard for electronic business cards. RFC 6350 (v4.0), RFC 2426 (v3.0), vCard 2.1 (original Versit standard). Text-based. Every vCard starts with 'BEGIN:VCARD' and ends with 'END:VCARD'. Required properties (v4.0): VERSION and FN (formatted name). Common properties: N (structured name: family;given;additional;prefix;suffix), ORG (organization), TITLE, EMAIL (with TYPE=work/home), TEL (with TYPE=voice/cell/fax), ADR (structured address), URL, PHOTO (inline base64 or URI), BDAY (birthday), ANNIVERSARY, UID, REV (revision timestamp). v2.1: charset/encoding in property parameters; QUOTED-PRINTABLE for non-ASCII. v3.0: UTF-8 default; encoded values with ENCODING=b. v4.0: URI and grouping (label:PROP), KIND:individual/org/group/location. Multiple vCards may appear sequentially in one file.",
+  "category": "Documents",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "RFC 6350 — vCard Format Specification v4.0, August 2011",
+      "RFC 2426 — vCard MIME Directory Profile v3.0, September 1998",
+      "vCard 2.1 — Versit Consortium Specification, September 1996"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc6350",
+      "https://en.wikipedia.org/wiki/VCard",
+      "https://vcard.sourceforge.net/",
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition"
+    ]
+  },
+  "detection": {
+    "signature": "424547494E3A5643415244",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 3.0, "max": 5.5 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "vcardMagic": "",
+    "nextByte": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "vCard Begin Marker",
+      "offset": 0,
+      "length": 11,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "vCard opening marker: ASCII 'BEGIN:VCARD' (11 bytes: 42 45 47 49 4E 3A 56 43 41 52 44). Every valid vCard file must start with exactly this string followed by a line break. Inherited from the MIME directory profile syntax defined in RFC 2045. Case-insensitive per RFC 6350 but uppercase is canonical.",
+      "storeAs": "vcardMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "BEGIN:VCARD" }
+    },
+    {
+      "type": "field",
+      "name": "Line Terminator After BEGIN:VCARD",
+      "offset": 11,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "First byte of the line ending after BEGIN:VCARD. RFC 6350 v4.0 mandates CRLF (0x0D 0x0A) line endings. v2.1 and v3.0 files may use CRLF or LF. The VERSION property line immediately follows. Byte 0x0D indicates CRLF (standards-compliant); 0x0A indicates LF-only (common in Unix-generated vCards).",
+      "storeAs": "nextByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "13": "0x0D CR — CRLF line endings (RFC 6350 compliant)",
+        "10": "0x0A LF — LF-only line endings (Unix style, widely tolerated)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "vCard Root Marker",
+      "variable": "vcardMagic",
+      "description": "vCard opening delimiter — must be exactly 'BEGIN:VCARD'"
+    },
+    {
+      "type": "metadata",
+      "name": "Line Ending Style",
+      "variable": "nextByte",
+      "description": "Line ending character: 0x0D=CRLF (RFC compliant), 0x0A=LF-only (non-standard)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "vCard must start with BEGIN:VCARD",
+      "expression": "vcardMagic == 'BEGIN:VCARD'",
+      "severity": "error",
+      "message": "vCard file must begin with 'BEGIN:VCARD' — not a valid .vcf file"
+    },
+    {
+      "name": "VERSION property must follow BEGIN",
+      "expression": "nextByte == 13 || nextByte == 10",
+      "severity": "warning",
+      "message": "Expected CRLF or LF after BEGIN:VCARD — unexpected byte may indicate encoding or BOM issue"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "BEGIN:VCARD", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "vcardMagic",
+    "primaryField": "vcardMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "vCard Identity",
+        "icon": "\uE71B",
+        "fields": ["vcardMagic", "nextByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "vCard header (JSON)",
+      "format": "json",
+      "fields": ["vcardMagic", "nextByte"]
+    },
+    {
+      "name": "vCard info (text)",
+      "format": "text",
+      "fields": ["vcardMagic"]
+    }
+  ],
+  "forensic": {
+    "category": "document",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid BEGIN marker",
+        "condition": "vcardMagic != 'BEGIN:VCARD'",
+        "severity": "error",
+        "description": "File does not start with BEGIN:VCARD. Not a valid vCard file; may be truncated or mis-encoded."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "vCard line-by-line structure: BEGIN:VCARD, VERSION:4.0 (or 3.0 or 2.1), FN:Full Name, N:Last;First;Middle;Prefix;Suffix, ORG:Company, TEL;TYPE=cell:+1-555-0100, EMAIL;TYPE=work:user@example.com, ADR:;;Street;City;State;ZIP;Country, PHOTO;ENCODING=b;TYPE=JPEG:<base64>, END:VCARD. Multiple vCards are concatenated directly without any separator between END:VCARD and the next BEGIN:VCARD.",
+    "suggestedInspections": [
+      "Verify first 11 bytes are ASCII 'BEGIN:VCARD' (42 45 47 49 4E 3A 56 43 41 52 44)",
+      "Find 'VERSION:' property line to determine vCard version (2.1, 3.0, or 4.0)",
+      "Locate 'FN:' property — formatted full name (required in v3.0 and v4.0)",
+      "Count BEGIN:VCARD occurrences to determine how many contacts are in the file",
+      "Check for PHOTO property — may contain large base64 encoded image data"
+    ]
+  },
+  "software": [
+    "Apple Contacts (macOS/iOS)",
+    "Google Contacts",
+    "Microsoft Outlook",
+    "Mozilla Thunderbird",
+    "Android Contacts app",
+    "Evolution (Linux)",
+    "CardDAV clients (Nextcloud, Radicale)"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".vcf", ".vcard"],
+    "relatedFormats": ["ICAL"],
+    "containerVariant": "CardDAV protocol uses vCard as its data format over HTTP/WebDAV"
+  },
+  "MimeTypes": [
+    "text/vcard",
+    "text/x-vcard"
+  ],
+  "UseCases": [
+    "Contact data exchange between address book applications",
+    "Business card sharing via email or NFC",
+    "Address book backup and migration",
+    "CardDAV contact synchronization (CalDAV companion)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentType": "Text-based contact interchange format",
+    "EncodingStandard": "RFC 6350 (v4.0), RFC 2426 (v3.0), Versit 2.1",
+    "TextEncoding": "UTF-8 (v3.0/v4.0); v2.1 supports CHARSET parameter",
+    "LineEndings": "CRLF (RFC 6350 mandate); LF-only widely tolerated",
+    "MultiVCard": "Multiple vCards concatenated directly in one file",
+    "PhotoEncoding": "Inline base64 (ENCODING=b) or URI reference"
+  }
+}

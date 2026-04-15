@@ -1,0 +1,175 @@
+{
+  "diffMode": "binary",
+  "formatName": "Commodore 64 Disk Image (D64)",
+  "version": "1.0",
+  "extensions": [ ".d64" ],
+  "description": "Commodore 64 D64 disk image — standard 1541 floppy disk format. 35 tracks with 17-21 sectors per track × 256 bytes per sector = 174848 bytes standard; 175531 bytes with appended error byte table. Track 18 sector 0 (the BAM — Block Availability Map) is located at byte offset 91392 (0x16500). The BAM first two bytes are 0x12 and 0x01, indicating track 18 sector 1 as the start of the directory. No binary magic at offset 0; detection relies on the BAM structure and file size.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://vice-emu.sourceforge.io/vice_17.html",
+    "http://unusedino.de/ec64/technical/formats/d64.html"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "1201",
+        "offset": 91392,
+        "label": "BAM track/sector pointer at offset 91392 (0x16500): track 18, sector 1 — start of directory",
+        "weight": 0.8
+      },
+      {
+        "value": "1201FF",
+        "offset": 91392,
+        "label": "BAM track/sector + 0xFF free sector map — strong 1541 disk image indicator",
+        "weight": 0.9
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "Strength": "Medium"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of the disk image at offset 0 — this is the first byte of track 1 sector 0; on a standard 1541 disk this is part of the bootloader or the first data sector of the disk",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "bamTrack",
+      "offset": 91392,
+      "size": 1,
+      "type": "uint8",
+      "description": "BAM first byte — byte at offset 91392 (0x16500) containing the track number (0x12 = 18) pointing to the first directory sector; this is the canonical check for a valid CBM 1541 disk image",
+      "storeAs": "bamTrack"
+    },
+    {
+      "name": "bamSector",
+      "offset": 91393,
+      "size": 1,
+      "type": "uint8",
+      "description": "BAM second byte — byte at offset 91393 containing the sector number (0x01) pointing to the first directory sector on track 18; must be 0x01 in a standard CBM 1541 disk image",
+      "storeAs": "bamSector"
+    },
+    {
+      "name": "dosVersion",
+      "offset": 91394,
+      "size": 1,
+      "type": "uint8",
+      "description": "DOS version byte — byte at offset 91394 indicating the DOS version that formatted this disk; 0x41 ('A') = CBM DOS 2.6 used by the 1541 drive; 0x00 means the disk was not formatted",
+      "storeAs": "dosVersion",
+      "valueMap": {
+        "65": "DOS 2.6 (CBM 1541)",
+        "100": "DOS 3.0 (CBM 8050)"
+      }
+    },
+    {
+      "name": "diskLabel",
+      "offset": 91418,
+      "size": 16,
+      "type": "ascii",
+      "description": "Disk label (name) — 16-byte ASCII string at offset 91418 within the BAM sector containing the disk name as assigned when the disk was formatted; CBM shifted-ASCII encoding, padded with 0xA0 bytes"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "BamTrackValid",
+      "expression": "bamTrack == 0x12",
+      "severity": "error",
+      "message": "BAM track pointer at offset 91392 must be 0x12 (18); value mismatch indicates this is not a valid CBM 1541 disk image or the BAM sector is corrupted"
+    },
+    {
+      "name": "BamSectorValid",
+      "expression": "bamSector == 0x01",
+      "severity": "error",
+      "message": "BAM sector pointer at offset 91393 must be 0x01; this should point to track 18 sector 1 as the first directory sector in a standard 1541 disk image"
+    },
+    {
+      "name": "FileSizeValid",
+      "expression": "fileSize == 174848 || fileSize == 175531",
+      "severity": "warning",
+      "message": "D64 file size should be 174848 bytes (standard) or 175531 bytes (with error table); other sizes indicate a non-standard or corrupted disk image"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "Track 1 Sector 0", "offset": 0, "size": 256, "description": "First sector of the disk image" },
+      { "name": "BAM (Track 18 Sec 0)", "offset": 91392, "size": 256, "description": "Block Availability Map — disk catalog and free block bitmap" },
+      { "name": "Directory (Track 18 Sec 1)", "offset": 91648, "size": 256, "description": "First directory sector listing up to 8 file entries" }
+    ]
+  },
+  "inspector": {
+    "badge": "D64",
+    "primaryField": "diskLabel",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "BAM",
+        "fields": [ "bamTrack", "bamSector", "dosVersion", "diskLabel" ]
+      },
+      {
+        "name": "Disk Start",
+        "fields": [ "firstByte" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Disk Summary",
+      "format": "text",
+      "template": "Commodore 64 D64 Disk Image\nDisk Label: {diskLabel}\nDOS Version: {dosVersion}\nBAM Track: {bamTrack} | BAM Sector: {bamSector}"
+    },
+    {
+      "name": "BAM Fields CSV",
+      "format": "csv",
+      "template": "Field,Value\nDiskLabel,{diskLabel}\nDosVersion,{dosVersion}\nBamTrack,{bamTrack}\nBamSector,{bamSector}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "Commodore 64 disk image for the CBM 1541 floppy drive. Used for game and software preservation. No executable threat to modern systems. T/S chain must be followed to enumerate files."
+  },
+  "aiHints": {
+    "analysisContext": "D64 images use a track-and-sector chain to navigate the file system. Track 18 sector 0 is the BAM (Block Availability Map) containing the disk name and a bitmap of free sectors. Navigate to track 18 sector 1 for directory entries. Each sector is exactly 256 bytes; track sizes vary (17-21 sectors depending on track number).",
+    "suggestedInspections": [
+      "Verify BAM track pointer at offset 91392 equals 0x12 (track 18)",
+      "Read disk label at offset 91418 in the BAM sector (16 bytes, CBM PETSCII encoding)",
+      "Follow T/S chain from BAM sector to enumerate directory entries on track 18",
+      "Check DOS version byte at offset 91394 for the formatting DOS version",
+      "Verify file size is 174848 (standard) or 175531 (with error table)",
+      "Decode CBM PETSCII encoding of disk label and file names for display"
+    ]
+  },
+  "software": [
+    { "name": "VICE", "url": "https://vice-emu.sourceforge.io/", "role": "emulator" },
+    { "name": "DirMaster", "url": "http://style64.org/dirmaster", "role": "disk image tool" }
+  ],
+  "formatRelationships": [
+    { "format": "ROM_C64_PRG", "relation": "complementary — PRG files are the program files stored within D64 disk images" }
+  ],
+  "MimeTypes": [ "application/x-d64-disk-image" ],
+  "UseCases": [
+    "Commodore 64 software and game preservation",
+    "CBM 1541 floppy disk emulation",
+    "File extraction and directory analysis from C64 disk images"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "sectorSize": 256,
+    "standardSize": 174848,
+    "extendedSize": 175531,
+    "bamOffset": 91392,
+    "endianness": "little-endian",
+    "notes": "CBM 1541 uses 35 tracks with variable sectors per track: tracks 1-17 have 21 sectors, tracks 18-24 have 19, tracks 25-30 have 18, and tracks 31-35 have 17. Directory is always on track 18."
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "diffMode": "text",
+  "formatName": "MHTML Web Archive",
+  "version": "1.0",
+  "extensions": [
+    ".mht",
+    ".mhtml"
+  ],
+  "description": "MHTML (MIME HTML) web archive format — RFC 2557. Single-file web page archive containing HTML and all referenced resources (images, CSS, JavaScript, fonts) encoded as MIME multipart message. Starts with MIME headers: 'MIME-Version: 1.0' and 'Content-Type: multipart/related'. Parts separated by unique MIME boundary strings. Content-Transfer-Encoding: base64 or quoted-printable for binary resources; 7bit or 8bit for HTML. Saved by Internet Explorer, legacy Edge, Opera, and Chromium-based browsers (via extensions). Also used for email HTML messages (.eml). First line is typically 'MIME-Version: 1.0\r\n' or 'From: ' (Outlook-style saved pages with origin information). Subject to MIME injection vulnerabilities in older parsers.",
+  "category": "Documents",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "RFC 2557 — MIME Encapsulation of Aggregate Documents (MHTML), March 1999",
+      "RFC 2045 — MIME Part One: Format of Internet Message Bodies",
+      "RFC 2046 — MIME Part Two: Media Types (multipart/related)"
+    ],
+    "WebLinks": [
+      "https://www.rfc-editor.org/rfc/rfc2557",
+      "https://en.wikipedia.org/wiki/MHTML",
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types",
+      "https://fileformats.archiveteam.org/wiki/MHTML"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "4D494D452D56657273696F6E3A", "offset": 0, "label": "MIME-Version: — standard MHTML header start", "weight": 1.0 },
+      { "value": "46726F6D3A20", "offset": 0, "label": "From:  — Outlook-style MHTML saved page header", "weight": 0.7 }
+    ],
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.7,
+    "EntropyHint": { "min": 4.0, "max": 6.5 },
+    "validation": {
+      "minFileSize": 64
+    }
+  },
+  "variables": {
+    "firstLine": "",
+    "mimeHeader": "",
+    "firstByte": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Header Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the MHTML file. Expected to be 0x4D ('M' for 'MIME-Version:') or 0x46 ('F' for 'From:' Outlook-style headers). Plain ASCII printable — confirms this is a text-based MIME message file rather than a binary format.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "77": "0x4D 'M' — starts with 'MIME-Version:' header (standard RFC 2557)",
+        "70": "0x46 'F' — starts with 'From:' header (Outlook saved page style)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "MIME Header Identifier",
+      "offset": 0,
+      "length": 12,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "First 12 bytes of the MHTML header. For standard MHTML files, this is the beginning of 'MIME-Version:' (4D 49 4D 45 2D 56 65 72 73 69 6F 6E). This prefix uniquely identifies the file as a MIME-encoded message conforming to RFC 2045/2557. Readable as plain ASCII in any hex viewer.",
+      "storeAs": "mimeHeader",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "MIME Header Start",
+      "variable": "mimeHeader",
+      "description": "Beginning of the MIME header — 'MIME-Version:' for standard or 'From: ' for Outlook-style archives"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First character of the file: 'M'=standard MIME-Version header, 'F'=Outlook From header"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File starts with MIME or From header",
+      "expression": "firstByte == 77 || firstByte == 70",
+      "severity": "warning",
+      "message": "MHTML file should start with 'MIME-Version:' (0x4D) or 'From:' (0x46) — other first bytes indicate a non-MHTML or malformed file"
+    },
+    {
+      "name": "MIME header is recognizable",
+      "expression": "mimeHeader == 'MIME-Version'",
+      "severity": "info",
+      "message": "Standard MHTML files begin with 'MIME-Version:' header per RFC 2557"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "MIME Header Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "firstByte",
+    "primaryField": "mimeHeader",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "MIME Identity",
+        "icon": "\uE71B",
+        "fields": ["mimeHeader", "firstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "MHTML header summary (JSON)",
+      "format": "json",
+      "fields": ["mimeHeader", "firstByte"]
+    },
+    {
+      "name": "MHTML info (text)",
+      "format": "text",
+      "fields": ["mimeHeader"]
+    }
+  ],
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Unexpected file start",
+        "condition": "firstByte != 77 && firstByte != 70",
+        "severity": "warning",
+        "description": "MHTML file does not start with 'MIME-Version:' or 'From:'. File may be corrupt, misidentified, or contain a BOM or encoding mark."
+      },
+      {
+        "name": "Potential MIME injection",
+        "condition": "false",
+        "severity": "info",
+        "description": "MHTML files can be abused for MIME injection attacks in older browsers. Verify the Content-Type multipart boundary is properly random and not predictable."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "MHTML structure: starts with MIME headers (MIME-Version: 1.0, Content-Type: multipart/related; boundary=...). Main HTML part comes first, followed by embedded resources as MIME parts separated by '--boundary' lines. Each part has Content-Type, Content-Transfer-Encoding (base64 or quoted-printable), Content-Location (original URL). File ends with '--boundary--' terminator.",
+    "suggestedInspections": [
+      "Check first bytes for 'MIME-Version: 1.0' or 'From: ' header line",
+      "Find 'Content-Type: multipart/related' header and extract boundary parameter",
+      "Identify the main HTML part (first MIME part after global headers)",
+      "Count embedded resource parts (images, CSS, JS) separated by boundary markers",
+      "Check Content-Transfer-Encoding of each part: base64 resources are normal; non-encoded executables may be suspicious"
+    ]
+  },
+  "software": [
+    "Internet Explorer (Save As .mht)",
+    "Microsoft Edge (legacy)",
+    "Opera",
+    "Chromium extensions (Save as MHTML)",
+    "Microsoft Outlook (HTML email export)",
+    "Python email / mailbox module"
+  ],
+  "formatRelationships": {
+    "category": "Documents",
+    "extensions": [".mht", ".mhtml"],
+    "relatedFormats": ["HTML", "EML"],
+    "containerVariant": "MIME multipart/related encapsulating HTML + embedded resources"
+  },
+  "MimeTypes": [
+    "message/rfc822",
+    "multipart/related"
+  ],
+  "UseCases": [
+    "Offline web page archiving (single-file snapshot of a webpage)",
+    "Email HTML message storage",
+    "Web content evidence preservation for legal proceedings",
+    "Cross-platform webpage sharing as a single attachment"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentType": "MIME multipart web archive (text-based)",
+    "EncodingStandard": "RFC 2557 + RFC 2045/2046",
+    "TextEncoding": "UTF-8 or ISO-8859-1 (per MIME content charset)",
+    "LineEndings": "CRLF (MIME standard)",
+    "ResourceEncoding": "base64 or quoted-printable",
+    "MultiPartBoundary": "Unique string defined in Content-Type header"
+  }
+}

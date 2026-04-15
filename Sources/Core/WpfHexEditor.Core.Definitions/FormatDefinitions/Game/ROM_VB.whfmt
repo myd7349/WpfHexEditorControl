@@ -1,0 +1,121 @@
+{
+  "diffMode": "binary",
+  "formatName": "Nintendo Virtual Boy ROM",
+  "version": "1.0",
+  "extensions": [ ".vb", ".vboy" ],
+  "description": "Nintendo Virtual Boy cartridge ROM image. The ROM header is located in the last 544 bytes of the ROM. For a standard 1MB (1048576 byte) ROM, the header starts at offset 0xFFFE0 (1048544). Header fields: game_title (21B ASCII padded with spaces), reserved (4B), game_code (4B ASCII), maker_code (2B ASCII), game_version (1B), country (1B). The Virtual Boy had a very small commercial library of approximately 22 games, all released in 1995. Detection is extension-based due to no magic at offset 0.",
+  "category": "Game",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://www.planetvb.com/modules/documents/?sec=techspecs&page=cartfmt",
+    "http://www.goliathindustries.com/vb/download/vbprog.pdf"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "00000000",
+        "offset": 0,
+        "label": "First 4 bytes often 0x00 — ROM padding at start of Virtual Boy image (very weak indicator)",
+        "weight": 0.1
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.1,
+    "Strength": "Weak"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of ROM data at offset 0 — initial byte of the Virtual Boy ROM payload; typically 0x00 due to ROM padding at the beginning of cartridge images before the executable code region",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "secondByte",
+      "offset": 1,
+      "size": 1,
+      "type": "uint8",
+      "description": "Second byte of ROM data at offset 1 — second byte of the ROM payload; used alongside firstByte for very weak content-based fingerprinting when extension matching is ambiguous"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FileSizeReasonable",
+      "expression": "fileSize >= 65536",
+      "severity": "warning",
+      "message": "Virtual Boy ROM file should be at least 64KB; a smaller file cannot be a valid Virtual Boy cartridge image"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "ROM Start", "offset": 0, "size": -1, "description": "Full ROM data; header is located at the end of the file (last 544 bytes)" }
+    ]
+  },
+  "inspector": {
+    "badge": "VB",
+    "primaryField": "firstByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "ROM Start",
+        "fields": [ "firstByte", "secondByte" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "ROM Summary",
+      "format": "text",
+      "template": "Nintendo Virtual Boy ROM\nFirst Byte: 0x{firstByte:X2}\nNote: ROM header is located in the last 544 bytes of this file\nExpected header offset for 1MB ROM: 0xFFFE0 (1048544)"
+    },
+    {
+      "name": "Minimal CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nSecondByte,{secondByte}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "Nintendo Virtual Boy ROM image. Extremely small commercial library (approximately 22 titles). No executable threat to modern systems. Header is at the end of the file. Very weak detection."
+  },
+  "aiHints": {
+    "analysisContext": "Virtual Boy ROM headers are at the end of the file, not the beginning. For a 1MB ROM, navigate to offset 0xFFFE0 (1048544) to find the 21-byte game title and other header fields. The commercial library is very small (~22 games), so file size and title matching are useful disambiguation tools.",
+    "suggestedInspections": [
+      "Navigate to fileSize-544 to locate the ROM header at the end of the image",
+      "Read 21-byte ASCII game title starting at the header base offset",
+      "Read 4-byte game code for product identification",
+      "Read 2-byte maker code to identify the developer or publisher",
+      "Verify file size is a power of two (typical sizes: 512KB, 1MB, 2MB)",
+      "Cross-reference game code against the complete VB library of approximately 22 titles"
+    ]
+  },
+  "software": [
+    { "name": "Mednafen", "url": "https://mednafen.github.io/", "role": "emulator" },
+    { "name": "Reality Boy", "url": "https://www.goliathindustries.com/vb/", "role": "emulator" }
+  ],
+  "formatRelationships": [
+    { "format": "ROM_GBA", "relation": "successor hardware — Game Boy Advance used a similar end-of-header approach and shares the same developer ecosystem" }
+  ],
+  "MimeTypes": [ "application/x-virtual-boy-rom" ],
+  "UseCases": [
+    "Nintendo Virtual Boy game preservation",
+    "Emulation of the Virtual Boy stereoscopic display hardware",
+    "ROM header research for the limited commercial library"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "headerOffset": "fileSize - 544",
+    "headerSize": 544,
+    "endianness": "little-endian",
+    "notes": "ROM header is at the last 544 bytes, not at offset 0. No binary magic at start. Commercial library is approximately 22 titles. CPU is NEC V810 (32-bit RISC). Extension .vb and .vboy are both common."
+  }
+}

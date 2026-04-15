@@ -1,0 +1,237 @@
+{
+  "diffMode": "binary",
+  "formatName": "Redis RDB Snapshot",
+  "version": "1.0",
+  "extensions": [
+    ".rdb"
+  ],
+  "description": "Redis RDB (Redis Database) snapshot file — point-in-time serialized dump of Redis in-memory data. Magic: 'REDIS' (52 45 44 49 53) followed by 4-byte ASCII version number ('0001' through '0011'). Structure: magic+version(9 bytes), then optional AUX fields (key-value metadata: redis-ver, redis-bits, ctime, used-mem prefixed by 0xFA), then DB selectors (0xFE + db_number as length-encoded integer), then key-value pairs (type byte + encoded key + encoded value), finally EOF marker 0xFF followed by 8-byte LE CRC-64 checksum. Value type codes: 0=STRING, 1=LIST, 2=SET, 3=ZSET, 4=HASH, 9=LIST_ZIPLIST, 10=SET_INTSET, 11=ZSET_ZIPLIST, 12=HASH_ZIPLIST, 13=LIST_QUICKLIST, 14=STREAM_LISTPACK. Expiry markers: 0xFC (milliseconds uint64 LE) or 0xFD (seconds uint32 LE) before type byte.",
+  "category": "Database",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Redis RDB Format — rdb.fnordig.de/file_format.html (Salvatore Sanfilippo)",
+      "Redis Source: src/rdb.c — github.com/redis/redis",
+      "redis-rdb-tools documentation — github.com/sripathikrishnan/redis-rdb-tools"
+    ],
+    "WebLinks": [
+      "https://rdb.fnordig.de/file_format.html",
+      "https://redis.io/docs/manual/persistence/",
+      "https://github.com/redis/redis",
+      "https://en.wikipedia.org/wiki/Redis"
+    ]
+  },
+  "detection": {
+    "signature": "5245444953",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 3.5, "max": 7.5 },
+    "validation": {
+      "minFileSize": 9,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "redisMagic": "",
+    "rdbVersion": "",
+    "rdbVersionInt": 0,
+    "firstByte": 0,
+    "firstByteHex": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Redis RDB Magic",
+      "offset": 0,
+      "length": 5,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Redis RDB magic string: ASCII 'REDIS' (bytes 52 45 44 49 53). This 5-byte signature appears at the very beginning of every Redis RDB snapshot file. The magic is in plain ASCII and readable in any hex editor, making it easy to identify Redis dumps in forensic analysis.",
+      "storeAs": "redisMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "REDIS" }
+    },
+    {
+      "type": "field",
+      "name": "RDB Format Version",
+      "offset": 5,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.40,
+      "description": "RDB on-disk format version as a 4-byte ASCII decimal string (e.g., '0009' for RDB version 9). The version determines which encoding types and features are supported. Version 9 added stream support. Version 10 added listpack encodings. Versions 1-11 are known; RDB readers should reject unknown versions.",
+      "storeAs": "rdbVersion",
+      "valueType": "ascii",
+      "valueMap": {
+        "0001": "RDB v1 — Redis 1.0",
+        "0002": "RDB v2 — Redis 1.1",
+        "0003": "RDB v3 — Redis 1.2",
+        "0004": "RDB v4 — Redis 2.0 (added expire ms)",
+        "0005": "RDB v5",
+        "0006": "RDB v6 — Redis 2.6 (added LZF string compression)",
+        "0007": "RDB v7 — Redis 2.8",
+        "0008": "RDB v8 — Redis 3.2 (added CRC64 checksum)",
+        "0009": "RDB v9 — Redis 5.0 (added Streams)",
+        "0010": "RDB v10 — Redis 6.0",
+        "0011": "RDB v11 — Redis 7.0 (listpack encodings)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Data Byte (section marker)",
+      "offset": 9,
+      "length": 1,
+      "color": "#FFEAA7",
+      "opacity": 0.35,
+      "description": "First byte after the magic+version header. Indicates the type of the first section in the RDB file. 0xFA (250) marks an AUX field (key-value metadata header). 0xFE (254) marks a DB selector (followed by database number). 0xFF (255) marks immediate EOF — an empty database dump. Any other value is a value type byte for the first key-value pair.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "250": "0xFA — AUX field (metadata: redis-ver, redis-bits, ctime, used-mem)",
+        "254": "0xFE — DB selector (database number follows)",
+        "255": "0xFF — EOF marker (empty database)"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "RDB Version",
+      "variable": "rdbVersion",
+      "description": "Redis RDB on-disk format version as ASCII string (e.g., '0009' for Redis 5.0 format)"
+    },
+    {
+      "type": "metadata",
+      "name": "First Section Marker",
+      "variable": "firstByte",
+      "description": "Type of the first section after header: 0xFA=AUX metadata, 0xFE=DB selector, 0xFF=empty dump"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Redis magic must be 'REDIS'",
+      "expression": "redisMagic == 'REDIS'",
+      "severity": "error",
+      "message": "RDB magic at offset 0 must be ASCII 'REDIS' — not a valid Redis RDB snapshot file"
+    },
+    {
+      "name": "RDB version must be in range 0001-0011",
+      "expression": "rdbVersion >= '0001' && rdbVersion <= '0011'",
+      "severity": "warning",
+      "message": "RDB version string must be between '0001' and '0011' — unknown version may indicate an incompatible Redis release"
+    },
+    {
+      "name": "First data byte must be a valid section marker",
+      "expression": "firstByte == 250 || firstByte == 254 || firstByte == 255 || firstByte <= 20",
+      "severity": "warning",
+      "message": "First data byte should be a recognized RDB section marker (0xFA AUX, 0xFE DB selector, 0xFF EOF) or a valid value type code (0-20)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "REDIS Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "RDB Version", "offset": 5, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "First Section", "offset": 9, "icon": "\uE9D9", "color": "#FFEAA7" }
+    ]
+  },
+  "inspector": {
+    "badge": "rdbVersion",
+    "primaryField": "redisMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Header",
+        "icon": "\uE71B",
+        "fields": ["redisMagic", "rdbVersion"]
+      },
+      {
+        "title": "Data Structure",
+        "icon": "\uE8A5",
+        "fields": ["firstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "RDB Header (JSON)",
+      "format": "json",
+      "fields": ["redisMagic", "rdbVersion", "firstByte"]
+    },
+    {
+      "name": "Redis RDB summary (text)",
+      "format": "text",
+      "fields": ["redisMagic", "rdbVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "database",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid REDIS magic",
+        "condition": "redisMagic != 'REDIS'",
+        "severity": "error",
+        "description": "File does not start with ASCII 'REDIS'. The RDB dump is invalid, truncated, or has been modified at the beginning."
+      },
+      {
+        "name": "Unknown RDB version",
+        "condition": "rdbVersion > '0011'",
+        "severity": "warning",
+        "description": "RDB version exceeds known range (0001-0011). May indicate a future Redis release or a forged/tampered header."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Redis RDB layout: 'REDIS' (5B ASCII) + version (4B ASCII decimal) + optional AUX fields (0xFA + key + value, length-prefixed strings) + DB blocks (0xFE + varint db_num + key-value pairs) + 0xFF EOF + CRC-64 (8B LE). Length-encoded integers: if high 2 bits are 00=6-bit int, 01=14-bit int, 10=32-bit BE, 11=special encoding. Value types determine encoding: strings (plain, int, LZF), lists (quicklist), hash (listpack or hashtable), set (intset or hashtable), zset (listpack or skiplist).",
+    "suggestedInspections": [
+      "Verify first 5 bytes are ASCII 'REDIS' (52 45 44 49 53)",
+      "Parse bytes 5-8 as ASCII decimal for RDB version number",
+      "Check byte at offset 9: 0xFA=AUX metadata present, 0xFE=direct DB selector, 0xFF=empty dump",
+      "For RDB v8+: last 8 bytes should contain CRC-64 checksum after 0xFF EOF marker",
+      "Scan for 0xFC (expire ms, 8B LE) and 0xFD (expire sec, 4B LE) markers before value type bytes"
+    ]
+  },
+  "software": [
+    "Redis 1.0+",
+    "Redis Stack",
+    "KeyDB (Redis fork)",
+    "redis-rdb-tools (Python)",
+    "rdb-rs (Rust)",
+    "redis-cli (--rdb flag)",
+    "RedisInsight"
+  ],
+  "formatRelationships": {
+    "category": "Database",
+    "extensions": [".rdb"],
+    "relatedFormats": ["LMDB", "ROCKSDB_LOG"],
+    "containerVariant": "Redis AOF (.aof) is the alternative append-only persistence format"
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Redis database backup and restore",
+    "Redis replication initial sync (FULLRESYNC RDB transfer)",
+    "Cache warm-up from serialized snapshot",
+    "Database forensics — extracting Redis keyspace from RDB dumps"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 3,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DatabaseType": "In-memory key-value store snapshot",
+    "MagicSize": "5 bytes (ASCII 'REDIS')",
+    "VersionSize": "4 bytes (ASCII decimal)",
+    "EOFMarker": "0xFF",
+    "ChecksumAlgorithm": "CRC-64 (Jones polynomial, 8B LE, added in RDB v8)",
+    "Endianness": "mixed (big-endian length-encoded integers, little-endian CRC and expire timestamps)",
+    "CompressionSupport": "LZF for strings longer than 20 bytes (optional)",
+    "MaxDatabases": 65536
+  }
+}

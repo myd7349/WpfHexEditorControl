@@ -1,0 +1,298 @@
+{
+  "diffMode": "binary",
+  "formatName": "Snap Package (SquashFS)",
+  "version": "1.0",
+  "extensions": [
+    ".snap"
+  ],
+  "description": "Snap package for Linux — SquashFS filesystem image containing an application and all its dependencies in a self-contained bundle. Magic: 'hsqs' (68 73 71 73) for little-endian SquashFS or 'sqsh' (73 71 73 68) for big-endian. Snap-specific contents: snap.yaml at root (application metadata: name, version, grade, confinement, apps, plugs), meta/ directory (hooks, icon.png), usr/ (application files). SquashFS header structure: magic(4B), inode_count(4B LE), mod_time(4B LE), block_size(4B LE: must be power of 2, range 4096-1048576), fragment_entry_count(4B), compression(2B LE: 1=gzip,2=lzma,3=lzo,4=xz,5=lz4,6=zstd), block_log(2B), flags(2B), id_count(2B), version_major(2B: must be 4), version_minor(2B: must be 0), root_inode_ref(8B), bytes_used(8B).",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "SquashFS v4 format specification — dr-emann.github.io/squashfs/squashfs.html",
+      "Snap package format documentation — snapcraft.io/docs/snap-format",
+      "snapcraft.yaml reference — snapcraft.io/docs/snapcraft-yaml-reference"
+    ],
+    "WebLinks": [
+      "https://snapcraft.io/",
+      "https://dr-emann.github.io/squashfs/squashfs.html",
+      "https://github.com/snapcore/snapd",
+      "https://en.wikipedia.org/wiki/Snap_(software)"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "68737173", "offset": 0, "label": "hsqs — SquashFS little-endian magic (Snap package)", "weight": 1.0 },
+      { "value": "73717368", "offset": 0, "label": "sqsh — SquashFS big-endian magic", "weight": 0.8 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 6.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 96,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "sqfsMagic": "",
+    "inodeCount": 0,
+    "modTime": 0,
+    "blockSize": 0,
+    "fragmentEntryCount": 0,
+    "compression": 0,
+    "blockLog": 0,
+    "flags": 0,
+    "idCount": 0,
+    "versionMajor": 0,
+    "versionMinor": 0,
+    "rootInodeRef": 0,
+    "bytesUsed": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "SquashFS Magic Number",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte SquashFS magic identifying the byte order. 'hsqs' (0x68737173) = little-endian SquashFS v4 — the standard format used by all Snap packages on x86, x64, and ARM Linux. 'sqsh' (0x73717368) = big-endian SquashFS — used on SPARC, PowerPC (rare). Snap packages produced by snapcraft are always little-endian regardless of target architecture.",
+      "storeAs": "sqfsMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Inode Count",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint32 little-endian count of inodes in the SquashFS image. Inodes represent all files, directories, symbolic links, device nodes, and other filesystem objects bundled in the Snap. Typical Snap packages: 100-10000 inodes. The inode table is stored at the end of the image. Count does not include the root inode (always inode 1).",
+      "storeAs": "inodeCount",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Modification Time",
+      "offset": 8,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint32 little-endian Unix timestamp of the last filesystem modification time. For Snap packages, this represents the build time of the snap image. Stored as seconds since Unix epoch (January 1, 1970 UTC). Used by snapd to track package freshness.",
+      "storeAs": "modTime",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Block Size",
+      "offset": 12,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint32 little-endian size of compressed data blocks in bytes. Must be a power of 2 in the range 4096 to 1048576 (4 KB to 1 MB). Snap packages typically use 131072 (128 KB) or 1048576 (1 MB) block sizes. Larger blocks give better compression ratios but require more memory during decompression. The block_log field stores log2(block_size).",
+      "storeAs": "blockSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Algorithm",
+      "offset": 20,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.35,
+      "description": "uint16 little-endian compression algorithm identifier for data block compression. 1=gzip (default, best compatibility), 2=lzma (high ratio, slow), 3=lzo (fast decompression), 4=xz (highest ratio, LZMA2), 5=lz4 (fastest decompression, lower ratio), 6=zstd (best balance of ratio/speed, Snap default since snapcraft 7.x). Snap packages defaulted to xz historically, now zstd for faster install times.",
+      "storeAs": "compression",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "1": "gzip (RFC 1952)",
+        "2": "lzma",
+        "3": "lzo",
+        "4": "xz (LZMA2)",
+        "5": "lz4",
+        "6": "zstd (RFC 8878)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Version Major",
+      "offset": 28,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "uint16 little-endian SquashFS major version number. Must be 4 for all SquashFS v4 images (the only version supported by the Linux kernel 2.6.29+ and by snapd). Earlier versions (1, 2, 3) used different magic numbers and incompatible on-disk layouts.",
+      "storeAs": "versionMajor",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Version Minor",
+      "offset": 30,
+      "length": 2,
+      "color": "#B8D4E8",
+      "opacity": 0.3,
+      "description": "uint16 little-endian SquashFS minor version number. Must be 0 for standard SquashFS v4.0. Minor version 0 is the only defined minor version. Non-zero values indicate extended SquashFS variants not defined in the standard specification.",
+      "storeAs": "versionMinor",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Bytes Used",
+      "offset": 40,
+      "length": 8,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "uint64 little-endian total size of the SquashFS image in bytes. The image is padded to a 4 KB boundary for alignment in Snap packages. This value represents the actual filesystem data size before padding. Used to verify image integrity and calculate the total package size.",
+      "storeAs": "bytesUsed",
+      "valueType": "uint64",
+      "endianness": "little"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid SquashFS magic",
+      "expression": "sqfsMagic == 'hsqs' || sqfsMagic == 'sqsh'",
+      "severity": "error",
+      "message": "File does not begin with SquashFS magic 'hsqs' or 'sqsh' — not a valid Snap/SquashFS image"
+    },
+    {
+      "name": "SquashFS version 4.0",
+      "expression": "versionMajor == 4 && versionMinor == 0",
+      "severity": "error",
+      "message": "SquashFS version must be 4.0 — only version 4 is supported by the Linux kernel and snapd"
+    },
+    {
+      "name": "Valid compression algorithm",
+      "expression": "compression >= 1 && compression <= 6",
+      "severity": "warning",
+      "message": "Unknown SquashFS compression algorithm — expected gzip(1), lzma(2), lzo(3), xz(4), lz4(5), or zstd(6)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "SquashFS Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Inode Count", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Block Size", "offset": 12, "icon": "\uE9D9", "color": "#C7CEEA" },
+      { "name": "Compression", "offset": 20, "icon": "\uE946", "color": "#FFA07A" },
+      { "name": "Version", "offset": 28, "icon": "\uE71B", "color": "#98D8C8" }
+    ]
+  },
+  "inspector": {
+    "badge": "sqfsMagic",
+    "primaryField": "bytesUsed",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "SquashFS Identity",
+        "icon": "\uE71B",
+        "fields": ["sqfsMagic", "versionMajor", "versionMinor"]
+      },
+      {
+        "title": "Filesystem Parameters",
+        "icon": "\uE9D9",
+        "fields": ["inodeCount", "blockSize", "compression", "fragmentEntryCount"]
+      },
+      {
+        "title": "Image Metadata",
+        "icon": "\uE946",
+        "fields": ["modTime", "idCount", "bytesUsed"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SquashFS Superblock (JSON)",
+      "format": "json",
+      "fields": ["sqfsMagic", "versionMajor", "versionMinor", "inodeCount", "blockSize", "compression", "modTime", "bytesUsed"]
+    },
+    {
+      "name": "SquashFS Superblock (C struct)",
+      "format": "c-struct",
+      "structName": "SQUASHFS_SUPER_BLOCK",
+      "fields": ["sqfsMagic", "inodeCount", "modTime", "blockSize", "fragmentEntryCount", "compression", "blockLog", "flags", "idCount", "versionMajor", "versionMinor"]
+    },
+    {
+      "name": "Python SquashFS check",
+      "format": "python-bytes",
+      "fields": ["sqfsMagic", "versionMajor", "versionMinor", "compression"]
+    }
+  ],
+  "forensic": {
+    "category": "package",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Non-standard compression",
+        "condition": "compression > 6",
+        "severity": "warning",
+        "description": "SquashFS compression ID exceeds known algorithms — may indicate a custom or modified SquashFS variant"
+      },
+      {
+        "name": "Setuid/setgid binaries",
+        "condition": "true",
+        "severity": "info",
+        "description": "Snap packages use AppArmor confinement, but the SquashFS image may contain setuid binaries — inspect snap.yaml confinement level (strict, classic, devmode)"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Snap packages are SquashFS v4 filesystem images mounted read-only by snapd at /snap/name/revision/. The SquashFS superblock is always at offset 0. Key fields at fixed offsets: magic(0-3), inode_count(4-7), mod_time(8-11), block_size(12-15), fragment_count(16-19), compression(20-21), block_log(22-23), flags(24-25), id_count(26-27), version_major(28-29), version_minor(30-31), root_inode_ref(32-39), bytes_used(40-47). To inspect: unsquashfs -l snap.snap (list files), unsquashfs snap.snap (extract). The snap.yaml (meta/snap.yaml) declares name, version, grade, confinement, apps, and interface plugs/slots.",
+    "suggestedInspections": [
+      "Verify SquashFS magic at offset 0: 68 73 71 73 (hsqs little-endian)",
+      "Check version_major (offset 28) == 4 and version_minor (offset 30) == 0",
+      "Read compression algorithm (offset 20) to identify decompressor needed",
+      "Use unsquashfs to extract and inspect snap.yaml for app metadata and confinement",
+      "Check confinement field in snap.yaml: 'classic' snaps run without sandbox restrictions"
+    ]
+  },
+  "software": [
+    "snapcraft (Snap package build tool)",
+    "snapd (Snap daemon, installs and manages snaps)",
+    "unsquashfs (extract SquashFS images)",
+    "mksquashfs (create SquashFS images)",
+    "snap (CLI for managing Snap packages)"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".snap"],
+    "relatedFormats": ["FLATPAK", "APPX", "ZIP"],
+    "note": "Snap (.snap) and Flatpak (.flatpak) are competing Linux universal package formats. Snap uses SquashFS; Flatpak uses OSTree/ZIP. AppImage uses a different SquashFS embedding. All three aim to solve Linux distribution fragmentation."
+  },
+  "MimeTypes": [
+    "application/vnd.snap",
+    "application/x-squashfs"
+  ],
+  "UseCases": [
+    "Ubuntu/Snap Store application distribution",
+    "Cross-distribution Linux app packaging",
+    "IoT device application deployment (Ubuntu Core)",
+    "Server application deployment with automatic updates",
+    "Container-like app isolation with AppArmor confinement"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FilesystemType": "SquashFS v4.0 read-only compressed filesystem",
+    "CompressionOptions": "gzip, lzma, lzo, xz, lz4, zstd",
+    "MountPoint": "/snap/<name>/<revision>/ (read-only loop mount)",
+    "Confinement": "AppArmor + seccomp (strict), none (classic), or relaxed (devmode)",
+    "SupportsStreaming": false,
+    "PlatformLock": "Linux with snapd (Ubuntu, Debian, Fedora, openSUSE)"
+  }
+}

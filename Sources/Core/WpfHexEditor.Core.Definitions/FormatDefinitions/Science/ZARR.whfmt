@@ -1,0 +1,182 @@
+{
+  "diffMode": "text",
+  "formatName": "Zarr Array Store",
+  "version": "1.0",
+  "extensions": [
+    ".zarr",
+    ".zip"
+  ],
+  "description": "Zarr is a format for chunked, compressed, N-dimensional arrays commonly used in scientific computing and big data. A Zarr store is a directory (or ZIP archive) containing JSON metadata files and binary chunk data. The .zarray JSON file describes an array: shape (list of dimension sizes), chunks (chunk shape), dtype (NumPy dtype string e.g. '<f4'), compressor (Blosc, gzip, bz2, lzma, zstd, or null), fill_value, order ('C' row-major or 'F' column-major), and filters. .zattrs contains arbitrary user-defined metadata. Groups use .zgroup JSON marker. Chunk files are named by coordinates (e.g., '0.0.0' for a 3D array). Zarr v2: .zarray per array; Zarr v3: zarr.json at root. Used in: xarray, Dask, Pangeo geospatial stack, neuroimaging (NeuroZarr), Zarr-based OME-NGFF microscopy. Detection from file content only.",
+  "category": "Science",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "Zarr Storage Specification v2 — zarr.readthedocs.io/en/stable/spec/v2.html",
+      "Zarr Storage Specification v3 — zarr-specs.readthedocs.io/",
+      "OME-NGFF Specification — ngff.openmicroscopy.org"
+    ],
+    "WebLinks": [
+      "https://zarr.readthedocs.io/",
+      "https://zarr-specs.readthedocs.io/",
+      "https://github.com/zarr-developers/zarr-python",
+      "https://en.wikipedia.org/wiki/Zarr_(format)"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "7B0A2020227A617272", "offset": 0, "label": "{\\n  \"zarr — .zarray JSON content start", "weight": 0.5 },
+      { "value": "7B226368756E6B73223A", "offset": 0, "label": "{\"chunks\": — Zarr .zarray chunks field (compact JSON)", "weight": 0.7 }
+    ],
+    "required": false,
+    "Strength": "Weak",
+    "MinimumScore": 0.2,
+    "EntropyHint": { "min": 3.0, "max": 6.0 },
+    "validation": {
+      "minFileSize": 20
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "jsonStart": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte (JSON start)",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the .zarray or .zgroup metadata file. Expected to be 0x7B ('{') indicating the start of a JSON object. Zarr metadata files are always JSON objects. If this byte is not '{', the file is either a binary chunk file or not a valid Zarr metadata file.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "123": "0x7B '{' — JSON object start (valid Zarr metadata)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "JSON Content Start",
+      "offset": 0,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "First 8 bytes of the Zarr metadata JSON file. For .zarray files these bytes will be part of '{\"zarr_' or '{\"chunks\"' or '{\\n  \"zarr' depending on formatting. For .zgroup files they will be part of '{\"zarr_'. For Zarr v3 zarr.json they start with '{\"zarr_'. Used to distinguish Zarr metadata from other JSON files.",
+      "storeAs": "jsonStart",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "JSON Start",
+      "variable": "jsonStart",
+      "description": "First 8 characters of Zarr JSON metadata file content"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First byte: 0x7B=JSON object start (valid Zarr metadata)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Zarr metadata must be a JSON object",
+      "expression": "firstByte == 123",
+      "severity": "warning",
+      "message": "Zarr .zarray / .zgroup metadata must start with '{' (0x7B) — not a valid Zarr metadata file"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "JSON Metadata Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "jsonStart",
+    "primaryField": "jsonStart",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Zarr Metadata",
+        "icon": "\uE71B",
+        "fields": ["jsonStart", "firstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Zarr metadata (JSON)",
+      "format": "json",
+      "fields": ["jsonStart", "firstByte"]
+    },
+    {
+      "name": "Zarr info (text)",
+      "format": "text",
+      "fields": ["jsonStart"]
+    }
+  ],
+  "forensic": {
+    "category": "science",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid JSON start",
+        "condition": "firstByte != 123",
+        "severity": "warning",
+        "description": "Zarr metadata file does not start with '{'. May be a binary chunk file, or the .zarray file has been corrupted."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Zarr store structure: directory tree where each array has a .zarray JSON file describing: zarr_format (2 or 3), shape, chunks, dtype, compressor ({id:'blosc',cname:'lz4',...} or null), fill_value, order ('C'/'F'), filters. Chunk files are named '0', '0.1', '0.0.0' etc. (.zgroup marks a group node, .zattrs holds user attributes). Zarr v3 replaces .zarray with zarr.json. Binary chunk files can be compressed Blosc blocks with Blosc header: magic 0x02010200.",
+    "suggestedInspections": [
+      "Verify .zarray or .zgroup file starts with '{' (0x7B)",
+      "Parse zarr_format field: 2 for Zarr v2, 3 for Zarr v3",
+      "Read 'shape' array to understand array dimensions",
+      "Read 'chunks' array to understand chunking strategy",
+      "Check 'compressor' field: null=uncompressed, or {id:'blosc'/'gzip'/'zstd'} for compression"
+    ]
+  },
+  "software": [
+    "zarr-python",
+    "xarray (Python)",
+    "Dask (parallel computing)",
+    "Pangeo (geospatial/climate data)",
+    "OME-NGFF (microscopy imaging)",
+    "Julia Zarr.jl",
+    "zarr-js (JavaScript)"
+  ],
+  "formatRelationships": {
+    "category": "Science",
+    "extensions": [".zarr", ".zip"],
+    "relatedFormats": ["VCF_GENOMICS", "BAM"],
+    "containerVariant": "Zarr store can be: directory store, ZIP store, S3 store, GCS store (cloud-native)"
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Climate and weather model output storage (Pangeo, ERA5)",
+    "Neuroimaging data storage (NeuroZarr, NWB format)",
+    "Satellite imagery and geospatial raster data",
+    "Machine learning large dataset storage (cloud-native random access)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 2,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FileType": "Chunked N-dimensional array store (directory or ZIP)",
+    "MetadataFormat": "JSON (.zarray, .zgroup, .zattrs)",
+    "ChunkNaming": "Dot-separated coordinate indices (e.g., '0.1.2')",
+    "SupportedCompressors": ["Blosc", "gzip", "bz2", "lzma", "zstd", "null (no compression)"],
+    "Versions": ["v2 (.zarray)", "v3 (zarr.json)"],
+    "DtypeEncoding": "NumPy dtype strings (e.g., '<f4' = float32 LE, '>i8' = int64 BE)"
+  }
+}

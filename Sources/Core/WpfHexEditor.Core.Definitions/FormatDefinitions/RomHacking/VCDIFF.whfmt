@@ -1,0 +1,165 @@
+{
+  "diffMode": "binary",
+  "formatName": "VCDIFF Delta Compression",
+  "version": "1.0",
+  "extensions": [ ".vcdiff", ".xdelta", ".patch" ],
+  "description": "VCDIFF delta compression format as defined in RFC 3284. Used by xdelta3, Google open-vcdiff, and many ROM patching tools. Magic: 3 bytes 0xD6 0xC3 0xC4 followed by version byte (0x00=standard RFC 3284). Header continues with hdr_indicator byte: bit 0 = VCD_DECOMPRESS (secondary compressor), bit 1 = VCD_CODETABLE (custom code table). If VCD_DECOMPRESS is set, an application-specific compressor ID follows as a variable-length field. Used in Chrome auto-updates, game ROM translation and hack patches.",
+  "category": "RomHacking",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "HexEditor",
+  "references": [
+    "https://www.rfc-editor.org/rfc/rfc3284",
+    "https://github.com/jmacd/xdelta"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "D6C3C400",
+        "offset": 0,
+        "label": "VCDIFF magic + version 0x00 — standard RFC 3284 delta file",
+        "weight": 1.0
+      },
+      {
+        "value": "D6C3C4",
+        "offset": 0,
+        "label": "VCDIFF magic (version variable) — VCDIFF delta file with non-standard version byte",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.8,
+    "Strength": "Strong"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "vcdMagic",
+      "offset": 0,
+      "size": 3,
+      "type": "bytes",
+      "description": "VCDIFF magic identifier — 3 bytes at offset 0 with values 0xD6 0xC3 0xC4; these are the mandatory magic bytes defined in RFC 3284 that identify all VCDIFF-format delta files regardless of version",
+      "storeAs": "vcdMagic"
+    },
+    {
+      "name": "vcdVersion",
+      "offset": 3,
+      "size": 1,
+      "type": "uint8",
+      "description": "VCDIFF format version — 1-byte value at offset 3; 0x00 indicates standard RFC 3284 format; non-zero values indicate format extensions such as those used by xdelta3 or Google open-vcdiff",
+      "storeAs": "vcdVersion",
+      "valueMap": {
+        "0": "RFC 3284 standard VCDIFF"
+      }
+    },
+    {
+      "name": "hdrIndicator",
+      "offset": 4,
+      "size": 1,
+      "type": "uint8",
+      "description": "Header indicator flags — 1-byte bitmask at offset 4; bit 0 (VCD_DECOMPRESS) = secondary compressor present, bit 1 (VCD_CODETABLE) = custom code table present; all other bits must be 0 in standard RFC 3284",
+      "storeAs": "hdrIndicator",
+      "bitfields": [
+        { "name": "VCD_DECOMPRESS", "bit": 0 },
+        { "name": "VCD_CODETABLE", "bit": 1 }
+      ]
+    },
+    {
+      "name": "deltaWindows",
+      "offset": 5,
+      "size": -1,
+      "type": "bytes",
+      "description": "VCDIFF delta windows — variable-length sequence of delta window records beginning at offset 5 (or later if VCD_DECOMPRESS or VCD_CODETABLE flags require additional header data); each window encodes a portion of the target file using copy, add, and run instructions"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "MagicValid",
+      "expression": "vcdMagic[0] == 0xD6 && vcdMagic[1] == 0xC3 && vcdMagic[2] == 0xC4",
+      "severity": "error",
+      "message": "VCDIFF magic bytes at offset 0-2 must be 0xD6 0xC3 0xC4; file is not a valid VCDIFF delta"
+    },
+    {
+      "name": "VersionStandard",
+      "expression": "vcdVersion == 0",
+      "severity": "warning",
+      "message": "VCDIFF version byte at offset 3 is non-zero; non-RFC 3284 format variant (xdelta3 extension or open-vcdiff) — some features may not be compatible with all decoders"
+    },
+    {
+      "name": "HdrIndicatorValid",
+      "expression": "hdrIndicator <= 3",
+      "severity": "warning",
+      "message": "Header indicator at offset 4 should use only bits 0 and 1 (values 0-3); higher bits are reserved in RFC 3284 and indicate a non-standard or corrupt header"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "File Header", "offset": 0, "size": 5, "description": "5-byte VCDIFF header: magic (3B), version (1B), hdr_indicator (1B)" },
+      { "name": "Delta Windows", "offset": 5, "size": -1, "description": "Sequence of VCDIFF delta window records containing the compressed delta instructions" }
+    ]
+  },
+  "inspector": {
+    "badge": "VCD",
+    "primaryField": "vcdVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "Header",
+        "fields": [ "vcdMagic", "vcdVersion", "hdrIndicator" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Delta Summary",
+      "format": "text",
+      "template": "VCDIFF Delta Compression\nMagic: D6 C3 C4\nVersion: 0x{vcdVersion:X2}\nHeader Indicator: 0x{hdrIndicator:X2}\nVCD_DECOMPRESS: {hdrIndicator & 1}\nVCD_CODETABLE: {(hdrIndicator >> 1) & 1}"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nVersion,{vcdVersion}\nHdrIndicator,{hdrIndicator}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "VCDIFF delta patch file per RFC 3284. No executable content. Requires original (source) file and a compatible decoder such as xdelta3 or open-vcdiff to reconstruct the target file."
+  },
+  "aiHints": {
+    "analysisContext": "VCDIFF encodes deltas as a series of window records, each covering a portion of the output. Each window specifies a source segment from the original file and encodes three types of instructions: COPY (from source or target), ADD (literal bytes), and RUN (repeated byte). The hdrIndicator flags indicate whether a secondary compressor or custom code table is present.",
+    "suggestedInspections": [
+      "Verify 3-byte magic 0xD6 0xC3 0xC4 at offset 0",
+      "Check version byte at offset 3: 0x00 is standard RFC 3284",
+      "Inspect hdrIndicator at offset 4 for VCD_DECOMPRESS (bit 0) and VCD_CODETABLE (bit 1) flags",
+      "If VCD_DECOMPRESS set, read secondary compressor ID at offset 5",
+      "Locate first delta window header after the file header for window analysis",
+      "Estimate output size by summing the target window length fields across all windows"
+    ]
+  },
+  "software": [
+    { "name": "xdelta3", "url": "https://github.com/jmacd/xdelta", "role": "encoder/decoder" },
+    { "name": "open-vcdiff", "url": "https://github.com/google/open-vcdiff", "role": "encoder/decoder" }
+  ],
+  "formatRelationships": [
+    { "format": "BSDIFF", "relation": "alternative delta format — bsdiff uses suffix arrays and bzip2 compression while VCDIFF uses copy/add/run instruction windows" }
+  ],
+  "MimeTypes": [ "application/x-vcdiff" ],
+  "UseCases": [
+    "ROM patching for game modifications and translations",
+    "Software update delta packages (Chrome browser updates)",
+    "Bandwidth-efficient binary file synchronization"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "headerSize": 5,
+    "magicOffset": 0,
+    "magicBytes": "D6C3C4",
+    "standard": "RFC 3284",
+    "endianness": "big-endian variable-length integers",
+    "notes": "VCDIFF uses variable-length integers (VarInt) encoded in big-endian throughout the window records. The format supports source dictionaries enabling dictionary compression. Used by Google for Chrome update distribution."
+  }
+}

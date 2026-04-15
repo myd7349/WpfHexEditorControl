@@ -1,0 +1,247 @@
+{
+  "diffMode": "binary",
+  "formatName": "Apple Core ML Model",
+  "version": "1.0",
+  "extensions": [
+    ".mlmodel",
+    ".mlpackage"
+  ],
+  "description": "Apple Core ML model format (.mlmodel / .mlpackage). ZIP-based container (PK magic 50 4B 03 04). Contains: model.espresso.net (protobuf neural network graph), model.espresso.shape (tensor shapes), model.espresso.weights (binary float weights), model.mil (Model Intermediate Language, text IR for newer models), Manifest.json (metadata), METADATA.json (input/output feature specifications). Used on iOS, macOS, watchOS, tvOS. Compiled to .mlmodelc bundle for on-device deployment. Created by coremltools (Python) from TensorFlow, PyTorch, scikit-learn, XGBoost. Supports: neural networks, pipelines, support vector machines, tree ensembles, generalized linear models.",
+  "category": "MachineLearning",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Apple Core ML Model Format Specification — developer.apple.com/documentation/coreml/core_ml_api",
+      "Core ML protobuf schema — github.com/apple/coremltools/tree/main/mlmodel/format",
+      "coremltools documentation — coremltools.readme.io"
+    ],
+    "WebLinks": [
+      "https://developer.apple.com/documentation/coreml",
+      "https://github.com/apple/coremltools",
+      "https://en.wikipedia.org/wiki/Core_ML",
+      "https://coremltools.readme.io/docs"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "PK ZIP header — Core ML model ZIP container", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.5,
+    "required": false,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 5.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "Core ML .mlmodel files share PK ZIP magic with many other formats. Extension and internal structure (Manifest.json, model.espresso.net) distinguish them from generic ZIPs."
+    }
+  },
+  "variables": {
+    "pkMagic": "",
+    "pkVersion": 0,
+    "compressionMethod": 0,
+    "fileNameLength": 0,
+    "coreMLVersion": "",
+    "modelType": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "ZIP Local File Header Signature",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ZIP local file header signature 0x504B0304 (PK\\x03\\x04) identifying this as a ZIP-format container. Apple Core ML .mlmodel files are valid ZIP archives containing protobuf files, weight binaries, and JSON manifests. The ZIP container enables incremental loading of model components. The same magic is shared with DOCX, XLSX, APK, JAR, and other ZIP-based formats — file extension and internal directory listing distinguish .mlmodel files.",
+      "storeAs": "pkMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ZIP Version Needed",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint16 little-endian minimum ZIP specification version needed to extract this archive. Value is version * 10 (e.g., 20 = ZIP 2.0, 45 = ZIP 4.5 for ZIP64). Core ML models typically use version 20 (basic DEFLATE) or 45 (ZIP64 for large weight files). Encoded as: lower byte = version, upper byte = compatibility OS (0=MS-DOS/Windows, 3=Unix).",
+      "storeAs": "pkVersion",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint16 little-endian compression method for the first file entry in the ZIP archive. Core ML models typically store the first entry (often Manifest.json) as either Stored (0=no compression) or DEFLATE (8=compressed). Weight files (.espresso.weights) may be stored uncompressed for fast mmap access. Neural network graph files (.espresso.net, .mil) are typically DEFLATE-compressed.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "8": "DEFLATE compressed"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Entry File Name Length",
+      "offset": 26,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint16 little-endian length of the file name for the first entry in the ZIP local file header at offset 0. Core ML first entries are typically Manifest.json (13 bytes), model.espresso.net, or model.mil. This length field immediately precedes the file name string at offset 30.",
+      "storeAs": "fileNameLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Core ML Version",
+      "variable": "coreMLVersion",
+      "description": "Core ML specification version from Manifest.json (e.g., '3', '4', '5', '6', '7') indicating the model feature set and iOS compatibility"
+    },
+    {
+      "type": "metadata",
+      "name": "Model Type",
+      "variable": "modelType",
+      "description": "Core ML model type from Manifest.json: neuralNetwork, pipeline, supportVectorClassifier, treeEnsemble, GLM, milFunction"
+    },
+    {
+      "type": "metadata",
+      "name": "ZIP Version",
+      "variable": "pkVersion",
+      "description": "ZIP specification version * 10 required to extract the archive (20=2.0 basic, 45=4.5 ZIP64)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression",
+      "variable": "compressionMethod",
+      "description": "Compression method of first ZIP entry (0=stored, 8=deflate)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid PK ZIP magic",
+      "expression": "pkMagic == 1347093252",
+      "severity": "error",
+      "message": "File does not start with PK ZIP signature 0x504B0304 — not a valid Core ML model container"
+    },
+    {
+      "name": "Known compression method",
+      "expression": "compressionMethod == 0 || compressionMethod == 8",
+      "severity": "warning",
+      "message": "Unexpected compression method in first ZIP entry — Core ML uses Stored (0) or DEFLATE (8)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ZIP Signature", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ZIP Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Compression Method", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "modelType",
+    "primaryField": "coreMLVersion",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ZIP Container",
+        "icon": "\uE71B",
+        "fields": ["pkMagic", "pkVersion", "compressionMethod", "fileNameLength"]
+      },
+      {
+        "title": "Core ML Metadata",
+        "icon": "\uE946",
+        "fields": ["coreMLVersion", "modelType"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Core ML Header (JSON)",
+      "format": "json",
+      "fields": ["pkMagic", "pkVersion", "compressionMethod", "coreMLVersion", "modelType"]
+    },
+    {
+      "name": "Core ML ZIP Header (C struct)",
+      "format": "c-struct",
+      "structName": "COREML_ZIP_HEADER",
+      "fields": ["pkMagic", "pkVersion", "compressionMethod", "fileNameLength"]
+    }
+  ],
+  "forensic": {
+    "category": "machine-learning",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Large uncompressed weight file",
+        "condition": "compressionMethod == 0",
+        "severity": "info",
+        "description": "Uncompressed storage in Core ML is normal for weight files to enable memory-mapped fast access, but unexpected for metadata files"
+      },
+      {
+        "name": "Non-standard ZIP version",
+        "condition": "pkVersion > 45",
+        "severity": "warning",
+        "description": "ZIP version exceeds known Core ML requirements — file may be produced by a non-standard toolchain"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Apple Core ML .mlmodel files are ZIP archives with a specific internal layout. Key contents: Manifest.json (specifies coremlSpecificationVersion and type), model.espresso.net (protobuf NeuralNetwork or NeuralNetworkClassifier), model.espresso.weights (raw float32/float16 weight tensors), model.mil (MIL — Model Intermediate Language for newer models, iOS 15+). Inspect using: unzip -l model.mlmodel to list contents. The .mlpackage format is a directory (not ZIP) containing the same components. coremlSpecificationVersion: 1=iOS 11, 2=iOS 12, 3=iOS 13, 4=iOS 14, 5=iOS 15, 6=iOS 16, 7=iOS 17.",
+    "suggestedInspections": [
+      "List ZIP contents to identify model type from internal file names (espresso.net vs .mil)",
+      "Extract and inspect Manifest.json for coremlSpecificationVersion and model type",
+      "Check for model.espresso.weights — presence indicates legacy NeuralNetwork format",
+      "Inspect METADATA.json for model input/output feature descriptions and types",
+      "Look for model.mil indicating MIL-based model (iOS 15+, more optimized)"
+    ]
+  },
+  "software": [
+    "Apple coremltools (Python conversion library)",
+    "Xcode (model compilation and inspection)",
+    "Core ML Converter (TensorFlow/PyTorch to .mlmodel)",
+    "Create ML (Apple's drag-and-drop model training tool)",
+    "Netron (model visualization)"
+  ],
+  "formatRelationships": {
+    "category": "MachineLearning",
+    "extensions": [".mlmodel", ".mlpackage"],
+    "relatedFormats": ["KERAS_H5", "TORCHSCRIPT", "GGUF"],
+    "note": ".mlmodel is the distributable ZIP archive; .mlpackage is the unzipped directory form used during development. Both compile to .mlmodelc (binary bundle) via Xcode for deployment. Not compatible with non-Apple platforms."
+  },
+  "MimeTypes": [
+    "application/x-mlmodel",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "iOS/macOS on-device machine learning inference",
+    "Image classification and object detection (Vision framework)",
+    "Natural language processing (NaturalLanguage framework)",
+    "Sound classification (SoundAnalysis framework)",
+    "Custom model deployment via Create ML or coremltools"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 8,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Container": "ZIP archive (PK 0x504B0304) or directory bundle (.mlpackage)",
+    "GraphFormat": "Apple Espresso protobuf (legacy) or MIL — Model Intermediate Language (iOS 15+)",
+    "WeightFormat": "Raw float32/float16 tensor blobs in model.espresso.weights",
+    "DeploymentFormat": ".mlmodelc — compiled binary bundle for production deployment",
+    "SupportsStreaming": false,
+    "PlatformLock": "Apple only (iOS 11+, macOS 10.13+, watchOS 4+, tvOS 11+)"
+  }
+}

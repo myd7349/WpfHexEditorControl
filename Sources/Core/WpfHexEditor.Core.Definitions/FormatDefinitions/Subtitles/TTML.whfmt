@@ -1,0 +1,192 @@
+{
+  "diffMode": "text",
+  "formatName": "Timed Text Markup Language",
+  "version": "1.0",
+  "extensions": [
+    ".ttml",
+    ".dfxp",
+    ".tt"
+  ],
+  "description": "TTML (Timed Text Markup Language) — W3C standard for subtitle and caption delivery (W3C Recommendation). XML-based format. Root element is <tt> or <tt:tt> with namespace 'http://www.w3.org/ns/ttml'. Document structure: <head> (metadata, styling with <styling>, layout regions with <layout>) and <body> (timed content in <div> and <p> elements). Time expressions use 'HH:MM:SS.mmm' (SMPTE-style), tick-based, or frame-count notation. Styling attributes: tts:fontFamily, tts:fontSize, tts:color, tts:backgroundColor, tts:textAlign, tts:displayAlign, tts:fontWeight, tts:fontStyle. DFXP (Distribution Format Exchange Profile) is a major TTML subset/profile used by Netflix, Disney+, Amazon Prime Video. EBU-TT is the European Broadcasting Union TTML profile. W3C IMSC (Internet Media Subtitles and Captions) is the W3C streaming profile.",
+  "category": "Subtitles",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "W3C TTML 2 Recommendation — www.w3.org/TR/ttml2/",
+      "DFXP (Distribution Format Exchange Profile) — SMPTE ST 2052",
+      "EBU-TT Part 1 — tech.ebu.ch/publications/tech3380"
+    ],
+    "WebLinks": [
+      "https://www.w3.org/TR/ttml2/",
+      "https://en.wikipedia.org/wiki/Timed_Text_Markup_Language",
+      "https://tech.ebu.ch/publications/tech3380",
+      "https://www.w3.org/TR/ttml-imsc/"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "3C74742000", "offset": 0, "label": "<tt  — TTML root element with attributes", "weight": 0.7 },
+      { "value": "3C74743A74742000", "offset": 0, "label": "<tt:tt  — TTML with namespace prefix", "weight": 0.7 },
+      { "value": "3C3F786D6C", "offset": 0, "label": "<?xml — TTML with XML declaration", "weight": 0.4 }
+    ],
+    "required": false,
+    "Strength": "Medium",
+    "MinimumScore": 0.4,
+    "EntropyHint": { "min": 3.5, "max": 5.5 },
+    "validation": {
+      "minFileSize": 50
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "xmlOrTag": ""
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the TTML file. Expected value is 0x3C ('<') indicating either an XML declaration '<?xml...' or the root '<tt' element directly. Some files may start with a UTF-8 BOM (0xEF BB BF) before XML content, which is technically valid UTF-8 but not recommended for XML.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "60": "0x3C '<' — XML declaration or root element start",
+        "239": "0xEF — UTF-8 BOM before XML content"
+      }
+    },
+    {
+      "type": "field",
+      "name": "XML Declaration or Root Tag Start",
+      "offset": 0,
+      "length": 5,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "First 5 bytes of the TTML file content. For files with XML declaration: '<?xml' (3C 3F 78 6D 6C). For files starting directly with root element: '<tt x' or '<tt:t'. Both forms are valid TTML. The XML declaration is recommended but optional in XML 1.0.",
+      "storeAs": "xmlOrTag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "XML Start",
+      "variable": "xmlOrTag",
+      "description": "First 5 bytes: '<?xml' for XML-declared or '<tt x'/'<tt:t' for direct root element"
+    },
+    {
+      "type": "metadata",
+      "name": "First Byte",
+      "variable": "firstByte",
+      "description": "First byte: 0x3C=XML content start, 0xEF=UTF-8 BOM present"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "File must start with XML content",
+      "expression": "firstByte == 60 || firstByte == 239",
+      "severity": "warning",
+      "message": "TTML file should start with '<' (0x3C) or UTF-8 BOM (0xEF) — other first bytes indicate invalid content"
+    },
+    {
+      "name": "Expected XML declaration or tt element",
+      "expression": "xmlOrTag == '<?xml' || xmlOrTag == '<tt x' || xmlOrTag == '<tt:t'",
+      "severity": "info",
+      "message": "TTML file should begin with XML declaration or <tt root element"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Document Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "xmlOrTag",
+    "primaryField": "xmlOrTag",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "TTML Identity",
+        "icon": "\uE71B",
+        "fields": ["xmlOrTag", "firstByte"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "TTML header (JSON)",
+      "format": "json",
+      "fields": ["xmlOrTag", "firstByte"]
+    },
+    {
+      "name": "TTML info (text)",
+      "format": "text",
+      "fields": ["xmlOrTag"]
+    }
+  ],
+  "forensic": {
+    "category": "subtitle",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Not valid XML start",
+        "condition": "firstByte != 60 && firstByte != 239",
+        "severity": "warning",
+        "description": "TTML file does not start with XML content. May be corrupt or misidentified."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "TTML structure: XML document with root <tt xml:lang='en' xmlns='http://www.w3.org/ns/ttml' xmlns:tts='http://www.w3.org/ns/ttml#styling'>. <head> contains <styling> (tts:style elements) and <layout> (tts:region elements defining display areas). <body> contains <div> containing <p begin='00:00:01.000' end='00:00:03.000' region='r1'>Subtitle text</p>. Time values: HH:MM:SS.mmm or frames (30f) or ticks. DFXP is a subset; EBU-TT extends with ebutts namespace.",
+    "suggestedInspections": [
+      "Verify root element is <tt> or <tt:tt> with TTML namespace",
+      "Find xmlns attribute value — should contain 'w3.org/ns/ttml'",
+      "Check for <head>/<styling>/<layout> structure for styled subtitles",
+      "Count <p> elements with begin/end attributes to determine subtitle count",
+      "Identify TTML profile: check <metadata> for DFXP, EBU-TT, or IMSC profile URI"
+    ]
+  },
+  "software": [
+    "Netflix (DFXP/TTML delivery)",
+    "Amazon Prime Video",
+    "Disney+",
+    "Apple Final Cut Pro",
+    "Adobe Premiere Pro",
+    "EBU teletext systems",
+    "Subtitle Edit"
+  ],
+  "formatRelationships": {
+    "category": "Subtitles",
+    "extensions": [".ttml", ".dfxp", ".tt"],
+    "relatedFormats": ["SRT", "WebVTT", "ASSA"],
+    "containerVariant": "DFXP = Distribution Format Exchange Profile (SMPTE ST 2052); EBU-TT = European Broadcasting Union profile"
+  },
+  "MimeTypes": [
+    "application/ttml+xml",
+    "application/ttaf+xml"
+  ],
+  "UseCases": [
+    "Streaming video subtitle delivery (Netflix, Amazon, Disney+)",
+    "Broadcast subtitle distribution (EBU-TT)",
+    "Accessibility captions for web video",
+    "Subtitle authoring and conversion workflows"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FileType": "XML-based timed text / subtitle format",
+    "EncodingStandard": "W3C TTML 2 (2018)",
+    "TextEncoding": "UTF-8 (recommended)",
+    "Namespace": "http://www.w3.org/ns/ttml",
+    "StylingNamespace": "http://www.w3.org/ns/ttml#styling",
+    "Profiles": ["DFXP (SMPTE ST 2052)", "EBU-TT", "W3C IMSC 1.1"]
+  }
+}

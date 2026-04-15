@@ -1,0 +1,229 @@
+{
+  "diffMode": "binary",
+  "formatName": "Amazon Ion Binary",
+  "version": "1.0",
+  "extensions": [
+    ".10n",
+    ".ion"
+  ],
+  "description": "Amazon Ion binary format (developed at Amazon, open-sourced 2020, Apache 2.0 license). Ion Version Marker (IVM) = E0 01 00 EA (4 bytes) at offset 0 identifies binary Ion format v1.0. Ion is a superset of JSON adding: typed nulls (null.int, null.string, etc.), timestamps (with full timezone and precision), blobs (arbitrary binary), clobs (text binary), symbols (interned string IDs with symbol tables), annotations (metadata decorators), S-expressions (Lisp-style ordered sequences). Binary encoding: type descriptor byte (high nibble = type code 0-14, low nibble = length/value). Types: null(0), bool(1), posint(2), negint(3), float(4), decimal(5), timestamp(6), symbol(7), string(8), clob(9), blob(10), list(11), sexp(12), struct(13), annotation(14), system-reserved(15). Used in AWS DynamoDB export, AWS SDK internal protocol, Amazon order pipeline.",
+  "category": "Data",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Amazon Ion specification — amazon-ion.github.io/ion-docs/docs/spec.html",
+      "Ion binary encoding — amazon-ion.github.io/ion-docs/docs/binary.html",
+      "Ion cookbook — amazon-ion.github.io/ion-docs/guides/cookbook.html"
+    ],
+    "WebLinks": [
+      "https://amazon-ion.github.io/ion-docs/",
+      "https://github.com/amazon-ion/ion-java",
+      "https://github.com/amazon-ion/ion-python",
+      "https://en.wikipedia.org/wiki/Ion_(serialization_format)"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "E00100EA", "offset": 0, "label": "Ion Version Marker (IVM) — Amazon Ion binary v1.0", "weight": 1.0 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.9,
+    "required": true,
+    "Strength": "Strong",
+    "EntropyHint": { "min": 3.5, "max": 7.5 },
+    "validation": {
+      "minFileSize": 4,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "ionIVM": "",
+    "firstTypeByte": 0,
+    "ionMajorVersion": 0,
+    "ionMinorVersion": 0,
+    "firstTypeCode": 0,
+    "firstLengthNibble": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Ion Version Marker (IVM)",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte Ion Version Marker: E0 01 00 EA. Byte 0: 0xE0 = annotation wrapper type (1110xxxx) with length nibble 0 — reserved for IVM. Byte 1: 0x01 = Ion major version 1. Byte 2: 0x00 = Ion minor version 0. Byte 3: 0xEA = IVM terminator byte. The IVM may appear multiple times within a stream (each occurrence resets the symbol table and starts a new Ion system value). Both binary Ion streams (.10n) and data portions of mixed text/binary files start with or may contain this marker.",
+      "storeAs": "ionIVM",
+      "valueType": "bytes"
+    },
+    {
+      "type": "field",
+      "name": "Major Version",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Ion major version byte at offset 1 of the IVM. Must be 0x01 (decimal 1) for Ion 1.0. If this byte is not 0x01, the reader must reject the stream as an unsupported Ion version. Ion 1.1 is in draft and uses a different IVM structure.",
+      "storeAs": "ionMajorVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Minor Version",
+      "offset": 2,
+      "length": 1,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Ion minor version byte at offset 2 of the IVM. Must be 0x00 (decimal 0) for Ion 1.0. A future minor version increment would indicate new Ion features while maintaining backward compatibility with v1.0 readers for the common subset.",
+      "storeAs": "ionMinorVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Data Type Byte",
+      "offset": 4,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "First data type descriptor byte after the IVM. High nibble (bits 7-4) = Ion type code: 0=null, 1=bool, 2=positive int, 3=negative int, 4=float, 5=decimal, 6=timestamp, 7=symbol, 8=string, 9=clob, 10=blob, 11=list, 12=sexp, 13=struct, 14=annotation wrapper, 15=system reserved (IVM). Low nibble (bits 3-0) = length: 0-13=inline length, 14=null of that type, 15=variable length follows (VarUInt).",
+      "storeAs": "firstTypeByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "First Type Code",
+      "variable": "firstTypeCode",
+      "description": "High nibble of first data byte — Ion type code (0-14) indicating the type of the first value after the IVM"
+    },
+    {
+      "type": "metadata",
+      "name": "First Length Nibble",
+      "variable": "firstLengthNibble",
+      "description": "Low nibble of first data byte — inline length (0-13), null indicator (14), or variable-length flag (15)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid Ion IVM",
+      "expression": "ionIVM[0] == 0xE0 && ionIVM[3] == 0xEA",
+      "severity": "error",
+      "message": "Ion Version Marker is invalid — first byte must be 0xE0 and terminator must be 0xEA"
+    },
+    {
+      "name": "Ion major version is 1",
+      "expression": "ionMajorVersion == 1",
+      "severity": "error",
+      "message": "Ion major version must be 1 — Ion 2.x is not yet defined; unsupported version"
+    },
+    {
+      "name": "Ion minor version is 0",
+      "expression": "ionMinorVersion == 0",
+      "severity": "warning",
+      "message": "Ion minor version is not 0 — may indicate a future Ion 1.x version not supported by all readers"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Ion IVM", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "First Value", "offset": 4, "icon": "\uE8A5", "color": "#C7CEEA" }
+    ]
+  },
+  "inspector": {
+    "badge": "ionIVM",
+    "primaryField": "firstTypeByte",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Ion Version Marker",
+        "icon": "\uE71B",
+        "fields": ["ionIVM", "ionMajorVersion", "ionMinorVersion"]
+      },
+      {
+        "title": "First Value",
+        "icon": "\uE9D9",
+        "fields": ["firstTypeByte", "firstTypeCode", "firstLengthNibble"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Ion Binary Header (JSON)",
+      "format": "json",
+      "fields": ["ionIVM", "ionMajorVersion", "ionMinorVersion", "firstTypeByte"]
+    },
+    {
+      "name": "Ion IVM (C struct)",
+      "format": "c-struct",
+      "structName": "ION_IVM",
+      "fields": ["ionIVM", "ionMajorVersion", "ionMinorVersion"]
+    },
+    {
+      "name": "Python Ion magic check",
+      "format": "python-bytes",
+      "fields": ["ionIVM"]
+    }
+  ],
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Unexpected Ion version",
+        "condition": "ionMajorVersion != 1 || ionMinorVersion != 0",
+        "severity": "warning",
+        "description": "Ion version is not 1.0 — may indicate a future version or a non-standard Ion dialect not supported by current readers"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Amazon Ion binary encoding: IVM (E0 01 00 EA) + sequence of type-descriptor bytes. Each value: 1B type descriptor (high nibble=type 0-14, low nibble=length 0-15) + optional VarUInt length + value bytes. Special low-nibble values: 0xE=null of that type, 0xF=variable-length (VarUInt follows). Symbol tables: system symbol table has 9 predefined symbols ($ion, $ion_1_0, $ion_symbol_table, etc.). Local symbol table is a struct with field id 3 ($ion_symbol_table) annotated. DynamoDB export uses Ion binary for compact, typed data storage. Transcoding: ion-java or ion-python can convert binary Ion to text Ion (JSON superset readable format).",
+    "suggestedInspections": [
+      "Verify IVM bytes 0-3: E0 01 00 EA — binary Ion v1.0 marker",
+      "Check major version (offset 1) == 0x01 and minor version (offset 2) == 0x00",
+      "Parse first type descriptor byte at offset 4: high nibble = type code, low nibble = length",
+      "Look for local symbol table struct (type code 13 with annotation 14 wrapping type code 7 symbol '$ion_symbol_table')",
+      "Use ion-java or ion-python to transcode to readable text Ion format for inspection"
+    ]
+  },
+  "software": [
+    "ion-java (Amazon, github.com/amazon-ion/ion-java)",
+    "ion-python (Amazon, pip install amazon.ion)",
+    "ion-go (Amazon, github.com/amazon-ion/ion-go)",
+    "ion-dotnet (Amazon, NuGet: Amazon.IonDotnet)",
+    "AWS DynamoDB (uses Ion binary for data export)"
+  ],
+  "formatRelationships": {
+    "category": "Data",
+    "extensions": [".10n", ".ion"],
+    "relatedFormats": ["NDJSON", "FLATBUF", "CAPNPROTO"],
+    "note": ".ion files can be either text Ion (JSON superset, human-readable) or binary Ion (E0 01 00 EA magic). The .10n extension is exclusively for binary Ion. Text Ion uses the same .ion extension as text JSON. Ion is a superset of JSON — all valid JSON is valid text Ion."
+  },
+  "MimeTypes": [
+    "application/x-amazon-ion",
+    "text/x-ion"
+  ],
+  "UseCases": [
+    "AWS DynamoDB data export (binary Ion format for bulk exports)",
+    "Amazon internal microservice data exchange protocol",
+    "AWS SDK intermediate data format",
+    "Typed data storage replacing JSON where type fidelity matters",
+    "Timestamp and binary data embedding without Base64 overhead"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 90,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "TypeSystem": "15 Ion types including JSON-incompatible: timestamp, symbol, blob, clob, sexp, typed nulls",
+    "Encoding": "IVM (E0 01 00 EA) + type-descriptor bytes with variable-length values",
+    "SymbolTables": "System (9 predefined symbols) + optional local symbol table struct",
+    "JSONSuperset": "Text Ion is a strict superset of JSON; binary Ion is a compact binary encoding",
+    "SupportsStreaming": true
+  }
+}

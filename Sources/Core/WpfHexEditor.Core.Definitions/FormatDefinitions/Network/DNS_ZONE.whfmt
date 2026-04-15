@@ -1,0 +1,224 @@
+{
+  "diffMode": "text",
+  "formatName": "DNS Zone File",
+  "version": "1.0",
+  "extensions": [
+    ".zone",
+    ".db",
+    ".dns"
+  ],
+  "description": "DNS zone file in RFC 1035 master file format. Text-based, line-oriented. Each resource record (RR): [name] [ttl] [class] type rdata. Name can be relative (appended with current $ORIGIN) or absolute (ends with '.'). Class defaults to IN (Internet); rarely CH (Chaosnet) or HS (Hesiod). Directives: $ORIGIN (sets default domain suffix for relative names), $TTL (sets default TTL for records without explicit TTL), $INCLUDE (includes another file). Record types: SOA (Start of Authority), NS (nameserver), A (IPv4), AAAA (IPv6), MX (mail), CNAME (alias), TXT (text), PTR (reverse), SRV (service), CAA (certification authority), DNSKEY (DNSSEC key), RRSIG (DNSSEC signature), NSEC/NSEC3 (DNSSEC denial), DS (delegation signer). Comments: ; (semicolon, rest of line). SOA record: zone TTL IN SOA primary-ns hostmaster-email (serial refresh retry expire minimum). Used by BIND, PowerDNS, NSD, Knot DNS, and all authoritative DNS servers.",
+  "category": "Network",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "RFC 1035 — Domain Names — Implementation and Specification (master file format)",
+      "RFC 2308 — Negative Caching of DNS Queries (SOA TTL clarification)",
+      "RFC 4034 — Resource Records for the DNS Security Extensions (DNSSEC)"
+    ],
+    "WebLinks": [
+      "https://datatracker.ietf.org/doc/html/rfc1035",
+      "https://en.wikipedia.org/wiki/Zone_file",
+      "https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml",
+      "https://bind9.readthedocs.io/en/latest/reference.html#zone-file"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "24545454C", "offset": 0, "label": "$TTL — DNS zone TTL directive at file start", "weight": 0.8 },
+      { "value": "244F524947494E20", "offset": 0, "label": "$ORIGIN  — DNS zone origin directive", "weight": 0.9 },
+      { "value": "3B", "offset": 0, "label": "; — DNS zone file comment character", "weight": 0.3 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 5,
+      "maxSignatureOffset": 0,
+      "note": "DNS zone files are plain text with no unique binary signature. Detection relies on $TTL or $ORIGIN directives, SOA record presence, and .zone/.db/.dns extension. The .db extension is shared with database files."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "firstTag": "",
+    "originDomain": "",
+    "soaSerial": 0,
+    "defaultTTL": 0,
+    "nameserverCount": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First File Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the DNS zone file. '$' (0x24) indicates a zone directive ($TTL, $ORIGIN, $INCLUDE) at the start. ';' (0x3B) indicates an initial comment line (common for auto-generated zone files with a generation timestamp comment). '@' (0x40) indicates the zone apex record. A-Z/a-z (alphabetic 0x41-0x7A) indicates a resource record name. Numeric (0x30-0x39) also valid for relative names. Zone files MUST be UTF-8 or ASCII — BOM and extended characters are not standard in zone files.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "36": "$ — Zone directive ($TTL, $ORIGIN, $INCLUDE)",
+        "59": "; — Comment line",
+        "64": "@ — Zone apex placeholder",
+        "92": "\\ — Escaped character sequence"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Tag / Directive",
+      "offset": 0,
+      "length": 7,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "First 7 bytes for directive pattern matching. '$ORIGIN' (24 4F 52 49 47 49 4E): sets the default domain for relative names — all relative names in the zone are appended with this origin. '$TTL   ' (24 54 54 4C 20): sets default TTL for records without explicit TTL. '; ' (3B 20): comment line. Most authoritative zone files begin with either $TTL or $ORIGIN as the first directive. BIND-generated files typically begin with a '; This is a generated zone' comment.",
+      "storeAs": "firstTag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Origin Domain",
+      "variable": "originDomain",
+      "description": "Value of the $ORIGIN directive — the zone's authoritative domain name (FQDN ending with '.')"
+    },
+    {
+      "type": "metadata",
+      "name": "SOA Serial",
+      "variable": "soaSerial",
+      "description": "SOA record serial number — conventionally YYYYMMDDNN format (e.g. 2024041501) used for zone transfer control"
+    },
+    {
+      "type": "metadata",
+      "name": "Default TTL",
+      "variable": "defaultTTL",
+      "description": "Value of $TTL directive — default time-to-live in seconds for records without an explicit TTL"
+    },
+    {
+      "type": "metadata",
+      "name": "Nameserver Count",
+      "variable": "nameserverCount",
+      "description": "Number of NS records in the zone — authoritative nameservers for this zone"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid ASCII text start",
+      "expression": "firstByte >= 32 && firstByte <= 126",
+      "severity": "error",
+      "message": "DNS zone file must contain printable ASCII text — binary or non-ASCII start byte indicates wrong file type"
+    },
+    {
+      "name": "Starts with valid zone construct",
+      "expression": "firstByte == 36 || firstByte == 59 || firstByte == 64 || (firstByte >= 65 && firstByte <= 90) || (firstByte >= 97 && firstByte <= 122) || (firstByte >= 48 && firstByte <= 57)",
+      "severity": "warning",
+      "message": "DNS zone file should start with '$' (directive), ';' (comment), '@' (apex), or an alphanumeric record name"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "File Start", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "originDomain",
+    "primaryField": "soaSerial",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Zone Header",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "firstTag"]
+      },
+      {
+        "title": "Zone Properties",
+        "icon": "\uE946",
+        "fields": ["originDomain", "soaSerial", "defaultTTL", "nameserverCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Zone File Info (JSON)",
+      "format": "json",
+      "fields": ["originDomain", "soaSerial", "defaultTTL", "nameserverCount"]
+    },
+    {
+      "name": "Zone summary (text)",
+      "format": "text",
+      "fields": ["originDomain", "soaSerial", "defaultTTL", "nameserverCount"]
+    }
+  ],
+  "forensic": {
+    "category": "network",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Wildcard DNS records",
+        "condition": "true",
+        "severity": "info",
+        "description": "Wildcard records (*.domain.com) in zone files match all subdomains not otherwise defined — commonly used in legitimate CDN/load-balancer setups but also in phishing infrastructure"
+      },
+      {
+        "name": "Low TTL values",
+        "condition": "defaultTTL < 60",
+        "severity": "info",
+        "description": "Very low TTL values (< 60 seconds) may indicate dynamic DNS or DNS-based load balancing, but also fast-flux DNS used in botnet command-and-control infrastructure"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "RFC 1035 zone file format: text, one RR per line (multi-line with parentheses). Record format: [name] [ttl] [class] type rdata. Name '@' = zone apex (same as $ORIGIN). Name omitted = repeat previous name. Class IN (Internet) assumed if omitted. SOA record: name TTL IN SOA primary-ns email(as.domain.) (serial refresh retry expire min-ttl). Email uses '.' instead of '@'. NS records define authoritative nameservers. A/AAAA for IPv4/IPv6. MX with priority. CNAME cannot coexist with other records for same name. TXT record data in double-quoted strings. BIND check: named-checkzone domain.com zone.db",
+    "suggestedInspections": [
+      "Check first meaningful line for $TTL or $ORIGIN directive — establishes zone defaults",
+      "Locate SOA record — required for every zone, contains serial for zone transfer versioning",
+      "Count NS records — minimum 2 authoritative nameservers required per RFC best practice",
+      "Inspect TXT records for SPF (v=spf1), DKIM (v=DKIM1), DMARC (_dmarc subdomain)",
+      "Look for CAA records specifying which CAs are authorized to issue certificates for this zone",
+      "Verify SOA serial is in YYYYMMDDNN format — non-standard serials indicate manual or old zone management"
+    ]
+  },
+  "software": [
+    "BIND (named — industry standard, named-checkzone for validation)",
+    "PowerDNS (pdns_server, supports zone file import)",
+    "NSD (Name Server Daemon — high-performance authoritative)",
+    "Knot DNS (knotd — modern authoritative server)",
+    "CoreDNS (Kubernetes DNS, supports zone file plugin)"
+  ],
+  "formatRelationships": {
+    "category": "Network",
+    "extensions": [".zone", ".db", ".dns"],
+    "relatedFormats": ["HAR"],
+    "note": "DNS zone files (.zone, .db) define authoritative DNS data for a domain. .db is a common BIND convention (named.db). .zone is the generic extension. These are text master files; DNS servers also use binary zone storage internally (BIND journal files, .jnl). AXFR/IXFR zone transfers use binary DNS wire format, not zone file format."
+  },
+  "MimeTypes": [
+    "text/dns",
+    "text/plain"
+  ],
+  "UseCases": [
+    "Authoritative DNS server zone data configuration",
+    "Domain name to IP address resolution records (A, AAAA)",
+    "Email routing configuration (MX records)",
+    "Email authentication setup (SPF, DKIM, DMARC TXT records)",
+    "Domain certificate authority authorization (CAA records)",
+    "Reverse DNS lookup zones (PTR records)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Format": "RFC 1035 master file — plain ASCII/UTF-8 text, line-oriented",
+    "Directives": "$ORIGIN (default domain), $TTL (default TTL), $INCLUDE (file inclusion)",
+    "RecordSyntax": "[name] [ttl] [class] type rdata — fields separated by whitespace",
+    "Comments": "; (semicolon) begins a comment extending to end of line",
+    "MultiLine": "Parentheses () allow multi-line records (e.g. SOA record)",
+    "Validation": "BIND named-checkzone, PowerDNS zone2sql --check, Knot DNS kjournalprint"
+  }
+}

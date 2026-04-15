@@ -1,0 +1,140 @@
+{
+  "diffMode": "text",
+  "formatName": "LRC Lyrics",
+  "version": "1.0",
+  "extensions": [ ".lrc" ],
+  "description": "LRC (Lyric) synchronized lyrics format. Plain UTF-8 text where each line begins with a timestamp tag in the format [mm:ss.xx] followed by lyric text. Enhanced LRC (A2 extension) adds word-level timestamps in angle brackets. Header metadata tags: [ar:Artist], [ti:Title], [al:Album], [by:Creator of LRC file], [offset:+/-ms for global timing adjustment]. The first non-empty non-comment character is typically '['. Widely supported in music players, karaoke software, and streaming services including Apple Music and Spotify for synchronized lyric display.",
+  "category": "Subtitles",
+  "author": "WPFHexaEditor Team",
+  "LastUpdated": "2026-04-15",
+  "preferredEditor": "CodeEditor",
+  "references": [
+    "https://wiki.lrcfile.com/en/LRC-Format",
+    "https://docs.lrclib.net/"
+  ],
+  "detection": {
+    "signatures": [
+      {
+        "value": "5B",
+        "offset": 0,
+        "label": "[ — LRC timestamp or tag opening bracket at offset 0",
+        "weight": 0.5
+      },
+      {
+        "value": "5B61723A",
+        "offset": 0,
+        "label": "[ar: — Artist metadata tag at start of LRC file",
+        "weight": 0.8
+      },
+      {
+        "value": "5B74693A",
+        "offset": 0,
+        "label": "[ti: — Title metadata tag at start of LRC file",
+        "weight": 0.8
+      }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "Strength": "Weak"
+  },
+  "variables": {},
+  "blocks": [
+    {
+      "name": "firstByte",
+      "offset": 0,
+      "size": 1,
+      "type": "uint8",
+      "description": "First byte of the LRC file at offset 0 — expected to be 0x5B (ASCII '[') at the start of a metadata tag or timestamp; presence of this bracket is the primary content-based detection indicator for LRC files",
+      "storeAs": "firstByte"
+    },
+    {
+      "name": "firstTag",
+      "offset": 0,
+      "size": 4,
+      "type": "ascii",
+      "description": "First 4-byte string at offset 0 — typically the beginning of a metadata tag such as '[ar:' (artist), '[ti:' (title), '[al:' (album), or '[00:' (first lyric timestamp); used for more precise format identification",
+      "storeAs": "firstTag"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "FirstByteIsBracket",
+      "expression": "firstByte == 91",
+      "severity": "warning",
+      "message": "First byte should be 0x5B ('['); most LRC files begin with a metadata tag or timestamp bracket; UTF-8 BOM at offset 0 is also acceptable"
+    },
+    {
+      "name": "ContentIsAsciiLike",
+      "expression": "firstByte < 128 || firstByte == 0xEF",
+      "severity": "info",
+      "message": "LRC files should contain ASCII or UTF-8 text; unexpected high bytes at offset 0 may indicate a different encoding or binary content"
+    }
+  ],
+  "navigation": {
+    "anchors": [
+      { "name": "File Start", "offset": 0, "size": 256, "description": "Opening tags and metadata header section of the LRC file" }
+    ]
+  },
+  "inspector": {
+    "badge": "LRC",
+    "primaryField": "firstTag",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "name": "File Header",
+        "fields": [ "firstByte", "firstTag" ]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "File Summary",
+      "format": "text",
+      "template": "LRC Lyrics File\nFirst Tag: {firstTag}\nFormat: Synchronized lyrics with [mm:ss.xx] timestamps\nEncoding: UTF-8 (typically)"
+    },
+    {
+      "name": "Header CSV",
+      "format": "csv",
+      "template": "Field,Value\nFirstByte,{firstByte}\nFirstTag,{firstTag}"
+    }
+  ],
+  "forensic": {
+    "riskLevel": "low",
+    "notes": "LRC lyrics text file. Plain text format with no executable content. May contain copyrighted song lyrics. The [offset:] tag can shift all timestamps globally."
+  },
+  "aiHints": {
+    "analysisContext": "LRC files use square-bracket timestamp tags [mm:ss.xx] before each lyric line. Metadata header tags use the same bracket syntax: [ar:], [ti:], [al:], [by:], [offset:]. Enhanced LRC adds word-level timing in angle brackets. Parse line-by-line, extracting the timestamp from the opening bracket to the closing ']' character.",
+    "suggestedInspections": [
+      "Check that file starts with '[' bracket (ASCII 0x5B) at offset 0 or after BOM",
+      "Parse metadata tags: [ar:] artist, [ti:] title, [al:] album, [by:] LRC creator",
+      "Scan for [offset:] tag to find global timing adjustment value in milliseconds",
+      "Count timestamp lines matching [mm:ss.xx] pattern for lyric line count",
+      "Look for Enhanced LRC word-level timestamps in angle bracket format",
+      "Verify timestamps are in ascending order for proper playback synchronization"
+    ]
+  },
+  "software": [
+    { "name": "foobar2000", "url": "https://www.foobar2000.org/", "role": "music player" },
+    { "name": "AIMP", "url": "https://www.aimp.ru/", "role": "music player" },
+    { "name": "Winamp", "url": "https://www.winamp.com/", "role": "music player" }
+  ],
+  "formatRelationships": [
+    { "format": "SMI", "relation": "alternative — SAMI uses HTML-like syntax for video subtitles; LRC is simpler plain-text for music lyrics" }
+  ],
+  "MimeTypes": [ "text/plain", "application/x-lrc" ],
+  "UseCases": [
+    "Synchronized lyric display in music players",
+    "Karaoke software timing files",
+    "Streaming service lyric synchronization (Apple Music, Spotify)"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "LastUpdated": "2026-04-15"
+  },
+  "TechnicalDetails": {
+    "encoding": "UTF-8 (recommended), ASCII, or UTF-16",
+    "timestampFormat": "[mm:ss.xx] where xx is centiseconds",
+    "notes": "No formal standard — multiple variations exist. Enhanced LRC word-level timestamps use <mm:ss.xx>. The [offset:+/-ms] tag adjusts all timestamps. Some players support multiple timestamps on one line for chorus repeats."
+  }
+}

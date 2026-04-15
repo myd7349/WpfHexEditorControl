@@ -1,0 +1,381 @@
+{
+  "diffMode": "binary",
+  "formatName": "Game Boy Sound System",
+  "version": "1.0",
+  "extensions": [
+    ".gbs"
+  ],
+  "description": "GBS (Game Boy Sound System) — audio rip format for Game Boy (DMG) and Game Boy Color music. Magic: 'GBS' + version byte 0x01 (47 42 53 01). The fixed 112-byte (0x70) header contains: magic(3B 'GBS') + version(1B: 0x01) + song_count(1B: number of songs) + first_song(1B: 1-based index of default song) + load_address(2B LE: Game Boy Z80 address to load code) + init_address(2B LE: Z80 address of init routine) + play_address(2B LE: Z80 address of vblank/timer playback routine) + stack_pointer(2B LE: typically 0xFFFE) + timer_modulo(1B: TMA register value for timer-based tracks) + timer_control(1B: TAC register: 0=4096Hz, 1=262144Hz, 2=65536Hz, 3=16384Hz) + title(32B ASCII NUL-padded) + author(32B ASCII NUL-padded) + copyright(32B ASCII NUL-padded). After the 112-byte header: Game Boy Z80 machine code binary loaded at load_address.",
+  "category": "Audio",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "GBS Format Specification v1.0 — vgmpf.com/Wiki/index.php/GBS",
+      "Game Boy CPU Manual — pastraiser.com/cpu/gameboy/gameboy_opcodes.html",
+      "GBS player source — github.com/mmitch/gbsplay"
+    ],
+    "WebLinks": [
+      "https://vgmpf.com/Wiki/index.php/GBS",
+      "https://en.wikipedia.org/wiki/Game_Boy_Sound_System",
+      "https://github.com/mmitch/gbsplay",
+      "https://www.zophar.net/music/gameboy-gbs"
+    ]
+  },
+  "detection": {
+    "signature": "47425301",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 112,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "gbsMagic": "",
+    "gbsVersion": 0,
+    "songCount": 0,
+    "firstSong": 0,
+    "loadAddress": 0,
+    "initAddress": 0,
+    "playAddress": 0,
+    "stackPointer": 0,
+    "timerModulo": 0,
+    "timerControl": 0,
+    "title": "",
+    "author": "",
+    "copyright": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "GBS Magic",
+      "offset": 0,
+      "length": 3,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "GBS format identifier: ASCII 'GBS' (47 42 53). This 3-byte magic followed by the version byte (0x01) forms the complete 4-byte file signature. 'GBS' stands for Game Boy Sound System, the format used for ripping and replaying Game Boy game music outside of original hardware.",
+      "storeAs": "gbsMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "GBS" }
+    },
+    {
+      "type": "field",
+      "name": "GBS Version",
+      "offset": 3,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "GBS format version number (1-byte uint8). Must be 0x01 for all current GBS files. The version byte is always 1 — there is only one version of the GBS format. Combined with the magic, bytes 0-3 are always 47 42 53 01.",
+      "storeAs": "gbsVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "GBS format version 1 (the only version)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Song Count",
+      "offset": 4,
+      "length": 1,
+      "color": "#FFEAA7",
+      "opacity": 0.35,
+      "description": "Total number of songs (tracks) contained in this GBS file (1-byte uint8). Each song corresponds to a different music track from the original game. Range: 1-255. The default song for playback is specified by the first_song field.",
+      "storeAs": "songCount",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "First Song (Default)",
+      "offset": 5,
+      "length": 1,
+      "color": "#FF8C69",
+      "opacity": 0.30,
+      "description": "1-based index of the default (first) song to play (1-byte uint8). GBS players use this to determine which track to start playing when the file is loaded. Typically 1, but some game music files default to a later track (e.g., title screen music).",
+      "storeAs": "firstSong",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Load Address",
+      "offset": 6,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Game Boy Z80 memory address where the GBS code is loaded by the player (2-byte little-endian uint16). Typically 0x0400 or 0x4000 (ROM bank 0 or bank 1 area). The player copies the GBS binary data to this address in emulated Game Boy RAM before calling the init routine.",
+      "storeAs": "loadAddress",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Init Address",
+      "offset": 8,
+      "length": 2,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "Z80 address of the initialization routine (2-byte little-endian uint16). The GBS player calls this address once per song change (CALL init_address) with the song number in register A. The routine initializes the Game Boy APU (audio hardware registers) for the selected track.",
+      "storeAs": "initAddress",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Play Address",
+      "offset": 10,
+      "length": 2,
+      "color": "#87CEEB",
+      "opacity": 0.30,
+      "description": "Z80 address of the periodic playback routine (2-byte little-endian uint16). Called repeatedly by the GBS player at each vblank or timer interrupt (as determined by timer_control). The routine advances the music sequencer and updates Game Boy APU register values for the next audio frame.",
+      "storeAs": "playAddress",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Stack Pointer",
+      "offset": 12,
+      "length": 2,
+      "color": "#F7DC6F",
+      "opacity": 0.30,
+      "description": "Initial Z80 stack pointer value for GBS execution (2-byte little-endian uint16). Typically 0xFFFE (top of Game Boy RAM). The stack pointer must point to valid RAM. Most GBS files use 0xFFFE (high RAM) or 0xDFFE (end of internal RAM).",
+      "storeAs": "stackPointer",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Timer Modulo (TMA)",
+      "offset": 14,
+      "length": 1,
+      "color": "#98D8C8",
+      "opacity": 0.25,
+      "description": "Timer Modulo value for the Game Boy TMA register (1-byte uint8). When timer_control enables timer-based playback, the Z80 timer generates interrupts based on TMA reload value. Higher TMA values = faster timer overflow = more frequent playback calls. Used in conjunction with timer_control.",
+      "storeAs": "timerModulo",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Timer Control (TAC)",
+      "offset": 15,
+      "length": 1,
+      "color": "#FF8C69",
+      "opacity": 0.35,
+      "description": "Timer Control register value (TAC) for playback rate (1-byte uint8). Bit 2 enables timer; bits 1-0 select clock: 0=4096Hz (60fps vblank), 1=262144Hz, 2=65536Hz, 3=16384Hz. Value 0 means vblank interrupt (60fps) is used instead of timer.",
+      "storeAs": "timerControl",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "0x00 — vblank interrupt (approx. 60 Hz, most common)",
+        "4": "0x04 — timer enabled, 4096 Hz clock",
+        "5": "0x05 — timer enabled, 262144 Hz clock",
+        "6": "0x06 — timer enabled, 65536 Hz clock",
+        "7": "0x07 — timer enabled, 16384 Hz clock"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Title",
+      "offset": 16,
+      "length": 32,
+      "color": "#4ECDC4",
+      "opacity": 0.30,
+      "description": "Title of the game or music collection (32-byte NUL-padded ASCII string). Contains the name of the original game from which the music was ripped (e.g., 'Super Mario Land' or 'Tetris'). Trailing bytes are zero-padded if shorter than 32 characters.",
+      "storeAs": "title",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Author / Composer",
+      "offset": 48,
+      "length": 32,
+      "color": "#95E1D3",
+      "opacity": 0.25,
+      "description": "Name of the music composer (32-byte NUL-padded ASCII string). Contains the original composer of the game music (e.g., 'Hirokazu Tanaka' for Metroid). Trailing bytes are zero-padded. Some rips list the game company instead of the individual composer.",
+      "storeAs": "author",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Copyright",
+      "offset": 80,
+      "length": 32,
+      "color": "#FFEAA7",
+      "opacity": 0.25,
+      "description": "Copyright information for the music (32-byte NUL-padded ASCII string). Typically contains the year and company name (e.g., '1989 Nintendo'). Trailing bytes are zero-padded. This field is informational only; it does not affect playback behavior.",
+      "storeAs": "copyright",
+      "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Title",
+      "variable": "title",
+      "description": "Game or music collection title (up to 32 ASCII characters)"
+    },
+    {
+      "type": "metadata",
+      "name": "Author",
+      "variable": "author",
+      "description": "Music composer name (up to 32 ASCII characters)"
+    },
+    {
+      "type": "metadata",
+      "name": "Copyright",
+      "variable": "copyright",
+      "description": "Copyright year and company (up to 32 ASCII characters)"
+    },
+    {
+      "type": "metadata",
+      "name": "Song Count",
+      "variable": "songCount",
+      "description": "Total number of music tracks in the GBS file"
+    },
+    {
+      "type": "metadata",
+      "name": "Timer Control",
+      "variable": "timerControl",
+      "description": "Playback rate control: 0=vblank 60Hz, or timer-based rates"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "GBS magic must be 'GBS'",
+      "expression": "gbsMagic == 'GBS'",
+      "severity": "error",
+      "message": "GBS file must start with ASCII 'GBS' (47 42 53) — not a valid GBS audio rip file"
+    },
+    {
+      "name": "GBS version must be 1",
+      "expression": "gbsVersion == 1",
+      "severity": "error",
+      "message": "GBS version byte at offset 3 must be 0x01 — unexpected version value"
+    },
+    {
+      "name": "Song count must be positive",
+      "expression": "songCount > 0",
+      "severity": "error",
+      "message": "GBS song count at offset 4 must be at least 1 — a GBS file with no songs is invalid"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "GBS Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Addresses", "offset": 6, "icon": "\uE8A5", "color": "#95E1D3" },
+      { "name": "Title", "offset": 16, "icon": "\uE9D9", "color": "#4ECDC4" },
+      { "name": "Author", "offset": 48, "icon": "\uE9D9", "color": "#95E1D3" },
+      { "name": "Code Start", "offset": 112, "icon": "\uE8B7", "color": "#FFEAA7" }
+    ]
+  },
+  "inspector": {
+    "badge": "songCount",
+    "primaryField": "title",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "GBS Identity",
+        "icon": "\uE71B",
+        "fields": ["gbsMagic", "gbsVersion", "songCount", "firstSong"]
+      },
+      {
+        "title": "Metadata",
+        "icon": "\uE9D9",
+        "fields": ["title", "author", "copyright"]
+      },
+      {
+        "title": "Z80 Addresses",
+        "icon": "\uE8A5",
+        "fields": ["loadAddress", "initAddress", "playAddress", "stackPointer"]
+      },
+      {
+        "title": "Playback Control",
+        "icon": "\uE8B7",
+        "fields": ["timerModulo", "timerControl"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GBS Header (JSON)",
+      "format": "json",
+      "fields": ["gbsMagic", "gbsVersion", "songCount", "firstSong", "loadAddress", "initAddress", "playAddress", "stackPointer", "timerModulo", "timerControl", "title", "author", "copyright"]
+    },
+    {
+      "name": "gbs_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "gbs_header",
+      "fields": ["gbsMagic", "gbsVersion", "songCount", "firstSong", "loadAddress", "initAddress", "playAddress", "stackPointer", "timerModulo", "timerControl"]
+    }
+  ],
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid GBS magic",
+        "condition": "gbsMagic != 'GBS'",
+        "severity": "error",
+        "description": "File does not start with 'GBS'. Not a valid Game Boy Sound System audio rip."
+      },
+      {
+        "name": "Zero song count",
+        "condition": "songCount == 0",
+        "severity": "error",
+        "description": "Song count is zero. GBS file must contain at least one track."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GBS header is exactly 112 bytes. After the header, Game Boy Z80 machine code binary follows, loaded by the player at load_address. The player emulates the Game Boy CPU and APU. Init is called with song number in register A. Play is called at vblank (60Hz) or timer interrupt. Title/author/copyright fields are null-terminated within their 32-byte allocations.",
+    "suggestedInspections": [
+      "Verify bytes 0-3 are 47 42 53 01 (ASCII 'GBS' + version 1)",
+      "Read song count at offset 4 and first song at offset 5",
+      "Parse load address (offset 6, 2B LE), init address (offset 8, 2B LE), play address (offset 10, 2B LE)",
+      "Read title (offset 16, 32B), author (offset 48, 32B), copyright (offset 80, 32B) as null-terminated ASCII",
+      "Check timer_control at offset 15: 0=vblank mode, non-zero=timer mode"
+    ]
+  },
+  "software": [
+    "gbsplay (Linux console player)",
+    "VGMTrans (conversion tool)",
+    "foobar2000 with Game Boy plugin",
+    "Winamp with Game Boy plugin",
+    "OpenMPT",
+    "VGM Rips community"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".gbs"],
+    "relatedFormats": ["PSF", "NSF"],
+    "containerVariant": "NSF = NES Sound Format (similar concept for NES); PSF = Portable Sound Format (PS1/PS2)"
+  },
+  "MimeTypes": [
+    "audio/x-gbs",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Game Boy game music preservation and archiving",
+    "Chiptune music playback and enjoyment",
+    "Game music ripping from ROM dumps",
+    "Chiptune composition reference and study"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 13,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": "Game Boy APU emulation (4-channel: 2 square, 1 wave, 1 noise)",
+    "HeaderSize": 112,
+    "CPUArchitecture": "Game Boy Z80 (Sharp LR35902)",
+    "Endianness": "little-endian for address fields",
+    "TextFieldWidth": 32,
+    "MaxSongs": 255,
+    "PlaybackRates": ["vblank ~59.73Hz", "4096Hz", "16384Hz", "65536Hz", "262144Hz"]
+  }
+}

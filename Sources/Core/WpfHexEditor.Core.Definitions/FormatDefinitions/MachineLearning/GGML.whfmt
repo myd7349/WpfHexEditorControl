@@ -1,0 +1,243 @@
+{
+  "diffMode": "binary",
+  "formatName": "GGML Binary Model",
+  "version": "1.0",
+  "extensions": [
+    ".bin",
+    ".ggml"
+  ],
+  "description": "GGML binary model format — predecessor to GGUF, deprecated in llama.cpp after August 2023. Magic variants: 'ggml' (67 67 6D 6C, original v1), 'ggjt' (67 67 6A 74, v2 with 32-byte alignment fix), 'fmgg' (66 6D 67 67, FMGG variant for RWKV models). After magic: uint32 LE version, then vocabulary section (n_vocab uint32 + per-token: token_length uint32 + token bytes + score float32), then model hyperparameters (embed_dim, ff_dim, n_heads, n_layers as uint32 LE fields), then tensor data. Now superseded by GGUF but many legacy models on hobbyist repositories still use this format. Convert with llama.cpp convert scripts.",
+  "category": "MachineLearning",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "GGML format history — github.com/ggerganov/llama.cpp/blob/master/docs/gguf.md#deprecation-of-ggml",
+      "RWKV GGML variant — github.com/saharNooby/rwkv.cpp",
+      "llama.cpp GGML loader source — github.com/ggerganov/llama.cpp/blob/master/llama.cpp (pre-GGUF)"
+    ],
+    "WebLinks": [
+      "https://github.com/ggerganov/ggml",
+      "https://github.com/ggerganov/llama.cpp",
+      "https://github.com/saharNooby/rwkv.cpp",
+      "https://en.wikipedia.org/wiki/Llama_(language_model)"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "67676D6C", "offset": 0, "label": "ggml — GGML model magic v1 (original)", "weight": 0.9 },
+      { "value": "6767 6A74", "offset": 0, "label": "ggjt — GGML model magic v2 (aligned, 32B)", "weight": 0.9 },
+      { "value": "666D6767", "offset": 0, "label": "fmgg — FMGG RWKV variant", "weight": 0.7 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.7,
+    "required": true,
+    "Strength": "Medium",
+    "EntropyHint": { "min": 5.5, "max": 8.0 },
+    "validation": {
+      "minFileSize": 16,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "ggmlMagic": "",
+    "ggmlVersion": 0,
+    "nVocab": 0,
+    "nEmbd": 0,
+    "nMult": 0,
+    "nHead": 0,
+    "nLayer": 0,
+    "vocabType": 0,
+    "magicVariant": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "GGML Magic Number",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ASCII magic identifying the GGML format variant. 'ggml' (0x67676D6C): original v1 format without alignment padding between tensors, deprecated. 'ggjt' (0x6767 6A74): v2 format with mandatory 32-byte alignment between tensor data blocks for SIMD vectorization. 'fmgg' (0x666D6767): FMGG variant used by RWKV (Receptance Weighted Key Value) recurrent language models. All three are superseded by GGUF (47 47 55 46). This format is no longer supported in llama.cpp >= commit a0cee0c (August 2023).",
+      "storeAs": "ggmlMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "GGML Format Version",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint32 little-endian GGML format version number. For 'ggml' magic: typically 1. For 'ggjt' magic: typically 1-3, where version 3 adds vocabulary score support. For 'fmgg' magic: RWKV-specific version (1-6 for RWKV v1-v6 architectures). Version 0 is invalid in all variants. Version number combined with magic identifies the specific serialization layout.",
+      "storeAs": "ggmlVersion",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Vocabulary Size (n_vocab)",
+      "offset": 8,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint32 little-endian size of the model vocabulary (number of unique tokens). LLaMA-1 uses 32000. LLaMA-2 uses 32000. GPT-NeoX uses 50277. RWKV World models use 65536. This field begins the model hyperparameters section immediately following the 8-byte header. Each vocabulary entry: uint32 token_length + token bytes (UTF-8) + float32 score (used for SentencePiece-based tokenizers).",
+      "storeAs": "nVocab",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Magic Variant",
+      "variable": "magicVariant",
+      "description": "Human-readable GGML format variant: 'ggml-v1' (original), 'ggjt-v2' (aligned), 'fmgg-rwkv' (RWKV variant)"
+    },
+    {
+      "type": "metadata",
+      "name": "Embedding Dimension",
+      "variable": "nEmbd",
+      "description": "Model embedding dimension (n_embd) from hyperparameters — number of hidden dimensions per token"
+    },
+    {
+      "type": "metadata",
+      "name": "Attention Heads",
+      "variable": "nHead",
+      "description": "Number of attention heads (n_head) in the transformer model hyperparameters"
+    },
+    {
+      "type": "metadata",
+      "name": "Layer Count",
+      "variable": "nLayer",
+      "description": "Number of transformer layers (n_layer) — determines model depth (7B LLaMA = 32 layers)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid GGML magic",
+      "expression": "ggmlMagic == 'ggml' || ggmlMagic == 'ggjt' || ggmlMagic == 'fmgg'",
+      "severity": "error",
+      "message": "File does not begin with a known GGML magic (ggml, ggjt, fmgg) — not a valid GGML model file"
+    },
+    {
+      "name": "Non-zero GGML version",
+      "expression": "ggmlVersion >= 1",
+      "severity": "error",
+      "message": "GGML version 0 is invalid — file may be corrupted or use an unknown GGML variant"
+    },
+    {
+      "name": "Non-zero vocabulary size",
+      "expression": "nVocab > 0",
+      "severity": "warning",
+      "message": "Vocabulary size is zero — file may be corrupt or a non-vocabulary model (embedding-only)"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "GGML Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Format Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Vocabulary Size", "offset": 8, "icon": "\uE9D9", "color": "#FFE66D" }
+    ]
+  },
+  "inspector": {
+    "badge": "magicVariant",
+    "primaryField": "nVocab",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Identity",
+        "icon": "\uE71B",
+        "fields": ["ggmlMagic", "ggmlVersion", "magicVariant"]
+      },
+      {
+        "title": "Model Hyperparameters",
+        "icon": "\uE9D9",
+        "fields": ["nVocab", "nEmbd", "nHead", "nLayer"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "GGML Header (JSON)",
+      "format": "json",
+      "fields": ["ggmlMagic", "ggmlVersion", "nVocab", "nEmbd", "nHead", "nLayer", "magicVariant"]
+    },
+    {
+      "name": "GGML Header (C struct)",
+      "format": "c-struct",
+      "structName": "GGML_HEADER",
+      "fields": ["ggmlMagic", "ggmlVersion", "nVocab"]
+    },
+    {
+      "name": "Python GGML identification",
+      "format": "python-bytes",
+      "fields": ["ggmlMagic", "ggmlVersion"]
+    }
+  ],
+  "forensic": {
+    "category": "machine-learning",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Deprecated format",
+        "condition": "ggmlMagic == 'ggml' || ggmlMagic == 'ggjt'",
+        "severity": "info",
+        "description": "GGML format is deprecated since August 2023 — modern llama.cpp no longer supports this format. Convert to GGUF using llama.cpp convert scripts."
+      },
+      {
+        "name": "RWKV FMGG variant",
+        "condition": "ggmlMagic == 'fmgg'",
+        "severity": "info",
+        "description": "FMGG variant indicates an RWKV recurrent language model, not a transformer. Requires rwkv.cpp or equivalent for inference."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "GGML is the predecessor binary format to GGUF. Magic identifies the variant: 'ggml' (original, no alignment), 'ggjt' (aligned to 32 bytes for SIMD), 'fmgg' (RWKV models). File structure: magic(4B) + version(4B LE) + hyperparameters (n_vocab, n_embd, n_mult, n_head, n_layer, as uint32 LE) + ftype (quantization type uint32 LE) + vocabulary (n_vocab entries: len uint32 + text bytes + score float32) + tensors. To convert to GGUF: use llama.cpp/convert-llama-ggmlv3-to-gguf.py. The 'ggjt' format introduced 32-byte alignment padding before each tensor for AVX2/AVX-512 memory alignment, which was later standardized in GGUF v2.",
+    "suggestedInspections": [
+      "Check magic bytes 0-3: 67676D6C (ggml), 67676A74 (ggjt), 666D6767 (fmgg)",
+      "Read version at offset 4 (uint32 LE) — must be >= 1",
+      "Read n_vocab at offset 8 (uint32 LE) — typical values: 32000 (LLaMA), 50277 (GPT-NeoX), 65536 (RWKV World)",
+      "For 'ggjt' format, verify 32-byte alignment padding between tensor entries",
+      "Consider converting to GGUF using llama.cpp tools for modern inference compatibility"
+    ]
+  },
+  "software": [
+    "llama.cpp (legacy support, pre-August 2023 builds)",
+    "rwkv.cpp (FMGG/RWKV support)",
+    "whisper.cpp (uses GGML for audio model weights)",
+    "GGML convert scripts (github.com/ggerganov/llama.cpp)"
+  ],
+  "formatRelationships": {
+    "category": "MachineLearning",
+    "extensions": [".bin", ".ggml"],
+    "relatedFormats": ["GGUF", "KERAS_H5", "TORCHSCRIPT"],
+    "note": "GGML (.bin/.ggml) is fully superseded by GGUF (.gguf). The .bin extension is also used for many unrelated binary formats — use magic bytes for positive identification. GGUF added: typed metadata KV store, proper versioning, alignment guarantees, and multi-architecture support absent from GGML."
+  },
+  "MimeTypes": [
+    "application/octet-stream",
+    "application/x-ggml"
+  ],
+  "UseCases": [
+    "Legacy LLM inference with old llama.cpp builds",
+    "RWKV recurrent language model inference (fmgg variant)",
+    "Historical model archival and format research",
+    "Conversion source for GGUF migration"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 88,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Status": "DEPRECATED — superseded by GGUF (August 2023)",
+    "Variants": "ggml (v1, no alignment), ggjt (v2, 32B aligned), fmgg (RWKV)",
+    "Endianness": "little-endian",
+    "Alignment": "None (ggml) or 32-byte (ggjt)",
+    "SupportsStreaming": false,
+    "ConversionPath": "llama.cpp/convert-llama-ggmlv3-to-gguf.py"
+  }
+}

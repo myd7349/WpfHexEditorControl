@@ -1,0 +1,338 @@
+{
+  "diffMode": "binary",
+  "formatName": "LMDB Database",
+  "version": "1.0",
+  "extensions": [
+    ".mdb",
+    ".lmdb"
+  ],
+  "description": "LMDB (Lightning Memory-Mapped Database) single-file database. Magic: 0xBEEFC0DE stored as little-endian uint32 = bytes DE C0 EF BE at offset 0. Full page-0 header: magic(4B LE), version(4B LE: always 1), fixed_map_addr(8B), map_size(8B), last_pgno(8B), last_txnid(8B), max_readers(4B), numDbs(4B), pagesize(4B: typically 4096), flags(4B), root_pgno(8B: page number of root B-tree), free_pgno(8B: page number of free list). Pages are 4KB by default. B-tree uses copy-on-write — two roots enabling reader/writer separation without locks. Supports: multi-process access, ACID transactions, no write-ahead log. Written by Symas Corporation, used in OpenLDAP.",
+  "category": "Database",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "LMDB Source: lmdb/libraries/liblmdb/lmdb.h — Symas Corporation",
+      "LMDB Technical Documentation — symas.com/lmdb/technical",
+      "LMDB File Format — github.com/LMDB/lmdb"
+    ],
+    "WebLinks": [
+      "https://www.symas.com/lmdb",
+      "https://lmdb.readthedocs.io/",
+      "https://github.com/LMDB/lmdb",
+      "https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database"
+    ]
+  },
+  "detection": {
+    "signature": "DEC0EFBE",
+    "offset": 0,
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 2.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 4096,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "lmdbMagic": 0,
+    "lmdbVersion": 0,
+    "fixedMapAddr": 0,
+    "mapSize": 0,
+    "lastPageNo": 0,
+    "lastTxnId": 0,
+    "maxReaders": 0,
+    "numDbs": 0,
+    "pageSize": 0,
+    "dbFlags": 0,
+    "rootPgno": 0,
+    "freePgno": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "LMDB Magic Number",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "LMDB database file magic number: 0xBEEFC0DE stored in little-endian byte order as DE C0 EF BE. This 4-byte magic uniquely identifies the file as an LMDB database. The mnemonic 'BEEF CODE' was chosen as an amusing but unique identifier for the Symas LMDB format.",
+      "storeAs": "lmdbMagic",
+      "valueType": "uint32",
+      "endianness": "little",
+      "validation": { "expectedValue": "0xBEEFC0DE" }
+    },
+    {
+      "type": "field",
+      "name": "LMDB Format Version",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "LMDB on-disk format version number (4-byte little-endian uint32). Must be 1 for all current LMDB releases. Version mismatch between the LMDB library and the file format will cause the library to refuse to open the database.",
+      "storeAs": "lmdbVersion",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "1": "LMDB on-disk format version 1 (current)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Fixed Map Address",
+      "offset": 8,
+      "length": 8,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Fixed memory-map address hint (8-byte little-endian uint64). When non-zero, LMDB will attempt to memory-map the database at this specific virtual address to ensure pointer stability across process restarts. Zero (most common) means LMDB will use a system-chosen address.",
+      "storeAs": "fixedMapAddr",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Map Size (bytes)",
+      "offset": 16,
+      "length": 8,
+      "color": "#FFEAA7",
+      "opacity": 0.30,
+      "description": "Maximum size of the memory-mapped database file in bytes (8-byte little-endian uint64). This is the hard upper limit on database growth. LMDB maps the entire database into virtual address space at open time. Typical default: 10MB; production deployments set this to gigabytes.",
+      "storeAs": "mapSize",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Last Page Number",
+      "offset": 24,
+      "length": 8,
+      "color": "#FF8C69",
+      "opacity": 0.30,
+      "description": "Page number of the last page allocated in the database (8-byte little-endian uint64). Used by the allocator to find the next free page region. Combined with page_size, this gives the current logical database size: (last_pgno + 1) * page_size bytes.",
+      "storeAs": "lastPageNo",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Last Transaction ID",
+      "offset": 32,
+      "length": 8,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "Transaction ID of the most recently committed write transaction (8-byte little-endian uint64). Monotonically increasing. LMDB uses this for MVCC (Multi-Version Concurrency Control) — readers see a consistent snapshot of the database at their transaction ID.",
+      "storeAs": "lastTxnId",
+      "valueType": "uint64",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Max Readers",
+      "offset": 40,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.30,
+      "description": "Maximum number of concurrent reader slots in the reader table (4-byte little-endian uint32). Determines the size of the lock-free reader table in the shared memory lock file (.mdb-lock). Default: 126. This limit applies per environment, across all processes accessing the database.",
+      "storeAs": "maxReaders",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Named Databases",
+      "offset": 44,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.30,
+      "description": "Number of named sub-databases (named DBI handles) stored in this LMDB environment (4-byte little-endian uint32). Zero means only the default (unnamed) database is present. Named databases are stored in the root B-tree as additional sub-trees.",
+      "storeAs": "numDbs",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Page Size (bytes)",
+      "offset": 52,
+      "length": 4,
+      "color": "#F7DC6F",
+      "opacity": 0.35,
+      "description": "Database page size in bytes (4-byte little-endian uint32). Must be a power of 2. Default is the OS page size, typically 4096. Larger page sizes reduce B-tree depth for large datasets but increase I/O for small random reads. Set at database creation and cannot be changed.",
+      "storeAs": "pageSize",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "4096": "4KB (standard OS page size)",
+        "8192": "8KB",
+        "16384": "16KB",
+        "32768": "32KB",
+        "65536": "64KB"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "LMDB Version",
+      "variable": "lmdbVersion",
+      "description": "LMDB on-disk format version (always 1 for current LMDB releases)"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "pageSize",
+      "description": "Database page size in bytes — power of 2, default 4096"
+    },
+    {
+      "type": "metadata",
+      "name": "Last Transaction ID",
+      "variable": "lastTxnId",
+      "description": "Highest committed transaction ID — monotonically increasing MVCC counter"
+    },
+    {
+      "type": "metadata",
+      "name": "Map Size",
+      "variable": "mapSize",
+      "description": "Maximum virtual address space allocated for database memory mapping"
+    },
+    {
+      "type": "metadata",
+      "name": "Last Page Number",
+      "variable": "lastPageNo",
+      "description": "Highest allocated page number — current database size is (lastPageNo+1) * pageSize"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "LMDB magic number is valid",
+      "expression": "lmdbMagic == 0xBEEFC0DE",
+      "severity": "error",
+      "message": "LMDB magic at offset 0 must be 0xBEEFC0DE (LE: DE C0 EF BE) — not a valid LMDB database file"
+    },
+    {
+      "name": "LMDB format version must be 1",
+      "expression": "lmdbVersion == 1",
+      "severity": "error",
+      "message": "LMDB on-disk version must be 1 — unexpected version indicates incompatible LMDB variant or file corruption"
+    },
+    {
+      "name": "Page size must be valid power of 2",
+      "expression": "pageSize >= 4096 && (pageSize & (pageSize - 1)) == 0",
+      "severity": "error",
+      "message": "LMDB page size must be a power of 2 and at least 4096 bytes — invalid page size indicates header corruption"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "LMDB Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Map Size", "offset": 16, "icon": "\uE9D9", "color": "#FFEAA7" },
+      { "name": "Page Size", "offset": 52, "icon": "\uE72E", "color": "#F7DC6F" }
+    ]
+  },
+  "inspector": {
+    "badge": "lmdbVersion",
+    "primaryField": "lastTxnId",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Database Identity",
+        "icon": "\uE71B",
+        "fields": ["lmdbMagic", "lmdbVersion", "pageSize"]
+      },
+      {
+        "title": "Storage Limits",
+        "icon": "\uE8A5",
+        "fields": ["mapSize", "lastPageNo", "maxReaders", "numDbs"]
+      },
+      {
+        "title": "Transaction State",
+        "icon": "\uE8B7",
+        "fields": ["lastTxnId", "fixedMapAddr"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "LMDB Header (JSON)",
+      "format": "json",
+      "fields": ["lmdbMagic", "lmdbVersion", "mapSize", "lastPageNo", "lastTxnId", "maxReaders", "numDbs", "pageSize"]
+    },
+    {
+      "name": "MDB_meta_t (C struct)",
+      "format": "c-struct",
+      "structName": "MDB_meta",
+      "fields": ["lmdbMagic", "lmdbVersion", "fixedMapAddr", "mapSize", "lastPageNo", "lastTxnId", "maxReaders", "numDbs", "pageSize"]
+    }
+  ],
+  "forensic": {
+    "category": "database",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid LMDB magic",
+        "condition": "lmdbMagic != 0xBEEFC0DE",
+        "severity": "error",
+        "description": "Magic bytes do not match LMDB signature. File is not a valid LMDB database or has been corrupted at offset 0."
+      },
+      {
+        "name": "Unexpected format version",
+        "condition": "lmdbVersion != 1",
+        "severity": "warning",
+        "description": "LMDB format version is not 1. The library will refuse to open this file. May indicate an experimental fork or future format."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "LMDB uses memory-mapped B-trees with copy-on-write (CoW) semantics. Page 0 is the meta-page containing the file header. Two alternating meta-pages (0 and 1) provide atomic updates — the one with the higher last_txnid is the current state. Pages use a freelist B-tree alongside the data B-tree. No write-ahead log — durability by msync/fsync at transaction commit.",
+    "suggestedInspections": [
+      "Verify magic at offset 0 equals DE C0 EF BE (LE 0xBEEFC0DE)",
+      "Check lmdbVersion at offset 4 equals 1",
+      "Verify pageSize at offset 52 is a power of 2 (bitwise: pageSize & (pageSize-1) == 0)",
+      "Compare lastTxnId across page 0 and page 1 to determine the current active meta-page",
+      "Check mapSize is non-zero and larger than (lastPageNo + 1) * pageSize"
+    ]
+  },
+  "software": [
+    "OpenLDAP (original user)",
+    "Symas LMDB",
+    "py-lmdb (Python)",
+    "lmdb-go (Go)",
+    "Lightning.NET (.NET)",
+    "Caffe deep learning framework",
+    "Tor Project (descriptor storage)"
+  ],
+  "formatRelationships": {
+    "category": "Database",
+    "extensions": [".mdb", ".lmdb"],
+    "relatedFormats": ["SQLITE", "INNODB"],
+    "containerVariant": "Companion lock file: data.mdb + lock.mdb (reader table)"
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Embedded key-value storage in applications requiring ACID transactions",
+    "OpenLDAP directory server backend storage",
+    "Machine learning dataset storage (Caffe, LMDB-backed datasets)",
+    "High-read-concurrency database workloads with minimal write contention"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 9,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DatabaseType": "Memory-mapped B-tree key-value store",
+    "DefaultPageSize": 4096,
+    "TransactionModel": "MVCC (Multi-Version Concurrency Control)",
+    "ConcurrencyModel": "Single writer, multiple readers (SWMR)",
+    "Endianness": "little-endian",
+    "JournalType": "None (CoW B-tree — no WAL)",
+    "ACIDCompliant": true,
+    "SupportsNamedDatabases": true,
+    "LockFile": "data.mdb-lock (reader table)"
+  }
+}

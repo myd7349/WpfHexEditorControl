@@ -1,0 +1,226 @@
+{
+  "diffMode": "binary",
+  "formatName": "Flatpak Application Bundle",
+  "version": "1.0",
+  "extensions": [
+    ".flatpak"
+  ],
+  "description": "Flatpak application bundle for Linux desktop. A .flatpak single-file bundle is a ZIP-based archive (PK magic 50 4B 03 04) containing an OSTree repository commit. Internal structure: metadata (INI-style application metadata: name, runtime, sdk, command, finish-args), export/ (desktop files .desktop, icons, D-Bus service files, AppStream metadata), files/ (application content: binaries, libraries, data). Bundles are created with 'flatpak build-bundle' and installed with 'flatpak install foo.flatpak'. Alternative delivery: OCI images. The OSTree content-addressed object store uses SHA-256 hashes for all objects. GPG signatures may be embedded in the bundle for authenticity verification.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Flatpak bundle format — docs.flatpak.org/en/latest/single-file-bundles.html",
+      "OSTree repository format — ostreedev.github.io/ostree/repository-management/",
+      "Flatpak metadata specification — docs.flatpak.org/en/latest/flatpak-command-reference.html"
+    ],
+    "WebLinks": [
+      "https://flatpak.org/",
+      "https://docs.flatpak.org/",
+      "https://github.com/flatpak/flatpak",
+      "https://en.wikipedia.org/wiki/Flatpak"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "504B0304", "offset": 0, "label": "PK ZIP — Flatpak bundle ZIP container", "weight": 0.6 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.3,
+    "required": false,
+    "Strength": "Weak",
+    "EntropyHint": { "min": 4.0, "max": 8.0 },
+    "validation": {
+      "minFileSize": 30,
+      "maxSignatureOffset": 0,
+      "note": "Flatpak bundles share PK ZIP magic. Internal 'metadata' INI file and 'export/' directory are definitive identifiers. File extension .flatpak is the most reliable detection signal."
+    }
+  },
+  "variables": {
+    "pkMagic": "",
+    "zipVersion": 0,
+    "compressionMethod": 0,
+    "fileNameLength": 0,
+    "appId": "",
+    "runtimeRef": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "ZIP Local File Header Signature",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "4-byte ZIP local file header signature 0x504B0304 (PK\\x03\\x04). Flatpak single-file bundles are ZIP archives containing an embedded OSTree repository. The ZIP format allows standard tools to inspect and extract the bundle contents. Key internal paths: 'metadata' (INI configuration), 'export/share/applications/' (desktop launcher files), 'export/share/icons/' (application icons), 'files/' (application binaries and libraries in the bundle).",
+      "storeAs": "pkMagic",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "ZIP Version Needed",
+      "offset": 4,
+      "length": 2,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "uint16 little-endian minimum ZIP version required for extraction. Flatpak bundles typically use version 20 (basic DEFLATE) or 45 (ZIP64 for large application bundles). Application bundles with multiple large libraries or data files may require ZIP64.",
+      "storeAs": "zipVersion",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "uint16 little-endian compression method for the first ZIP entry. Flatpak bundles typically store most content with DEFLATE (8) for space efficiency. The OSTree object data may be stored compressed or uncompressed depending on the bundle creation options.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "8": "DEFLATE compressed"
+      }
+    },
+    {
+      "type": "field",
+      "name": "First Entry File Name Length",
+      "offset": 26,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "uint16 little-endian byte length of the first ZIP entry file name. The first entry in a Flatpak bundle is typically 'metadata' (8 bytes) — the INI-format application metadata file containing the application ID, runtime reference, and finish-args.",
+      "storeAs": "fileNameLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Application ID",
+      "variable": "appId",
+      "description": "Flatpak application ID from metadata INI file (reverse-domain format, e.g. 'org.gnome.Calculator' or 'com.spotify.Client')"
+    },
+    {
+      "type": "metadata",
+      "name": "Runtime Reference",
+      "variable": "runtimeRef",
+      "description": "Flatpak runtime reference from metadata [Context] Runtime key (e.g. 'org.gnome.Platform//45' or 'org.freedesktop.Platform//23.08')"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid PK ZIP magic",
+      "expression": "pkMagic == 1347093252",
+      "severity": "error",
+      "message": "File does not begin with PK ZIP signature — not a valid Flatpak bundle"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "ZIP Signature", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "ZIP Version", "offset": 4, "icon": "\uE8A5", "color": "#4ECDC4" }
+    ]
+  },
+  "inspector": {
+    "badge": "appId",
+    "primaryField": "runtimeRef",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "ZIP Container",
+        "icon": "\uE71B",
+        "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+      },
+      {
+        "title": "Application Metadata",
+        "icon": "\uE946",
+        "fields": ["appId", "runtimeRef"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "Flatpak Bundle Header (JSON)",
+      "format": "json",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "appId", "runtimeRef"]
+    },
+    {
+      "name": "Flatpak ZIP Header (C struct)",
+      "format": "c-struct",
+      "structName": "FLATPAK_ZIP_HEADER",
+      "fields": ["pkMagic", "zipVersion", "compressionMethod", "fileNameLength"]
+    }
+  ],
+  "forensic": {
+    "category": "package",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [
+      {
+        "name": "Missing GPG signature",
+        "condition": "true",
+        "severity": "info",
+        "description": "Flatpak bundles from unofficial sources may lack GPG signatures. Verify the bundle with 'flatpak install --from-file' which checks the signature against trusted keys."
+      },
+      {
+        "name": "Untrusted runtime",
+        "condition": "true",
+        "severity": "warning",
+        "description": "The runtime reference in metadata should point to a known Flatpak runtime (GNOME, KDE, Freedesktop). Custom runtime references may indicate a modified or untrusted bundle."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Flatpak single-file bundles are ZIP archives with an embedded OSTree repository. Key internal files: 'metadata' (INI with [Application] section: name=app.id, runtime=..., sdk=..., command=...; [Context] section: shared=..., sockets=..., finish-args). The OSTree objects are stored in 'objects/' directory using SHA-256 content addressing. Desktop integration files are in 'export/share/'. GPG signature in 'signatures/' directory. Install with: flatpak install app.flatpak. Inspect with: unzip -l app.flatpak. Extract and view metadata: unzip -p app.flatpak metadata.",
+    "suggestedInspections": [
+      "List ZIP contents to verify 'metadata' INI file and 'export/' directory presence",
+      "Extract and read 'metadata' INI to identify application ID and required runtime",
+      "Check 'export/share/applications/' for .desktop launcher files",
+      "Review finish-args in metadata for sandbox capability declarations (--allow=all is suspicious)",
+      "Check for GPG signatures in 'signatures/' directory for bundle authenticity"
+    ]
+  },
+  "software": [
+    "flatpak (install: flatpak install foo.flatpak)",
+    "flatpak-builder (create Flatpak bundles from manifests)",
+    "GNOME Software (GUI installer for Flatpak bundles)",
+    "KDE Discover (KDE app store, supports Flatpak)",
+    "7-Zip, unzip (ZIP extraction for inspection)"
+  ],
+  "formatRelationships": {
+    "category": "Programming",
+    "extensions": [".flatpak"],
+    "relatedFormats": ["SNAP", "APPX", "ZIP"],
+    "note": "Flatpak (.flatpak) and Snap (.snap) are competing universal Linux package formats. Flatpak uses Wayland-native portals and is GNOME/KDE ecosystem focused; Snap is Canonical/Ubuntu focused and uses AppArmor confinement. AppImage is a third alternative using a different embedded SquashFS."
+  },
+  "MimeTypes": [
+    "application/vnd.flatpak",
+    "application/zip"
+  ],
+  "UseCases": [
+    "Linux desktop application distribution across distributions",
+    "GNOME/KDE ecosystem app packaging and Flathub publishing",
+    "Cross-distribution app delivery with runtime dependency isolation",
+    "Enterprise Linux application sideloading"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 1,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Container": "ZIP archive (PK 0x504B0304) wrapping OSTree repository objects",
+    "MetadataFormat": "INI key-value file named 'metadata' at ZIP root",
+    "ContentAddressing": "OSTree SHA-256 content-addressed object store in 'objects/'",
+    "Signing": "GPG signature in 'signatures/' (optional for sideloading, required for Flathub)",
+    "SupportsStreaming": false,
+    "PlatformLock": "Linux with flatpak runtime (Fedora, Ubuntu, Debian, Arch, openSUSE)"
+  }
+}

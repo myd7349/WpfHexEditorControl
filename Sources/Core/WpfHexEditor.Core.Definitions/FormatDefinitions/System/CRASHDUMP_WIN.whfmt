@@ -1,0 +1,332 @@
+{
+  "diffMode": "binary",
+  "formatName": "Windows Crash Dump",
+  "version": "1.0",
+  "extensions": [
+    ".dmp",
+    ".mdmp"
+  ],
+  "description": "Windows crash dump file — kernel memory dump or MiniDump. Three format variants: (1) Full kernel dump 'PAGEDUMP' magic (50 41 47 45 44 55 4D 50) for 32-bit, (2) 'PAGEDU64' magic (50 41 47 45 44 55 36 34) for 64-bit full/kernel/complete dumps, (3) 'MDMP' (4D 44 4D 50) for MiniDump user-mode crash reports. Full dump PAGEDUMP/PAGEDU64 header (4096-byte page): Signature(4B: PAGE or PAGE) + ValidDump(4B: DUMP or DU64) + MajorVersion(4B LE uint32) + MinorVersion(4B LE uint32) + DirectoryTableBase(8B) + PfnDataBase(8B) + PsLoadedModuleList(8B) + PsActiveProcessHead(8B) + MachineImageType(4B: 0x14C=x86, 0x8664=AMD64, 0xAA64=ARM64) + NumberProcessors(4B) + BugCheckCode(4B) + BugCheckParameters[4](4B each). BugCheck (STOP error) code identifies the crash type (e.g., 0x0000007F UNEXPECTED_KERNEL_MODE_TRAP). MiniDump (MDMP) is a separate format for user-mode crash reports (WER, Dr. Watson).",
+  "category": "System",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "Windows PAGEDUMP format — Microsoft WinDbg documentation",
+      "MDMP MiniDump format — Microsoft DbgHelp SDK",
+      "Microsoft DMP File Format — learn.microsoft.com/en-us/windows-hardware/drivers/debugger/"
+    ],
+    "WebLinks": [
+      "https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/",
+      "https://en.wikipedia.org/wiki/Windows_Error_Reporting",
+      "https://github.com/volatilityfoundation/volatility",
+      "https://docs.microsoft.com/en-us/windows/win32/debug/minidump-files"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "5041474544554D50", "offset": 0, "label": "PAGEDUMP — Windows 32-bit full kernel crash dump", "weight": 1.0 },
+      { "value": "5041474544553634", "offset": 0, "label": "PAGEDU64 — Windows 64-bit full/kernel crash dump", "weight": 1.0 },
+      { "value": "4D444D50", "offset": 0, "label": "MDMP — Windows MiniDump (user-mode or WER)", "weight": 0.9 }
+    ],
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.9,
+    "EntropyHint": { "min": 3.0, "max": 7.8 },
+    "validation": {
+      "minFileSize": 4096
+    }
+  },
+  "variables": {
+    "dmpMagic": "",
+    "validDump": "",
+    "majorVersion": 0,
+    "minorVersion": 0,
+    "machineType": 0,
+    "numberProcessors": 0,
+    "bugCheckCode": 0,
+    "bugCheckParam1": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "Dump File Magic / Signature",
+      "offset": 0,
+      "length": 8,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "Windows crash dump magic signature (8 bytes ASCII). Three valid values: 'PAGEDUMP' (32-bit full/kernel dump), 'PAGEDU64' (64-bit full/kernel/complete dump), 'MDMP    ' (MiniDump — note: MDMP is only 4 bytes, followed by 4 bytes of version). For PAGEDUMP/PAGEDU64 dumps the first 4 bytes are 'PAGE' and the next 4 are 'DUMP' or 'DU64'.",
+      "storeAs": "dmpMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Valid Dump Identifier",
+      "offset": 8,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Secondary validity marker for PAGEDUMP format files (4 bytes ASCII). For 32-bit full dumps: 'DUMP'. For 64-bit full dumps: 'DU64'. For MiniDump files (MDMP magic) this field contains the MiniDump format version instead. The combination of magic + validDump uniquely identifies the dump generation.",
+      "storeAs": "validDump",
+      "valueType": "ascii",
+      "valueMap": {
+        "DUMP": "32-bit full dump (PAGEDUMP + DUMP)",
+        "DU64": "64-bit full dump (PAGEDU64 + DU64)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Windows Major Version",
+      "offset": 12,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.30,
+      "description": "Windows kernel major version number (4-byte little-endian uint32). Value 15 = Windows XP/Vista/7/8/8.1/10/11 (NT 6.x uses 10 for 10+ builds). This is the NtMajorVersion from the KUSER_SHARED_DATA area. Helps identify which Windows generation the dump came from.",
+      "storeAs": "majorVersion",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "5": "Windows XP / Server 2003 (NT 5.x)",
+        "6": "Windows Vista / 7 / 8 / 8.1 / Server 2008-2012 (NT 6.x)",
+        "10": "Windows 10 / 11 / Server 2016+ (NT 10.0)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Windows Build Number (Minor Version)",
+      "offset": 16,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.30,
+      "description": "Windows kernel minor version or build number (4-byte little-endian uint32). For NT 10.0 this encodes the Windows 10/11 build number (e.g., 19041 for 20H1, 22000 for Windows 11). Combined with majorVersion uniquely identifies the Windows release.",
+      "storeAs": "minorVersion",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Machine Image Type",
+      "offset": 44,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.40,
+      "description": "CPU architecture type of the crashed system (4-byte little-endian uint32). Uses the same constants as PE (Portable Executable) machine type field. This field determines which debugger architecture extensions are needed to analyze the dump.",
+      "storeAs": "machineType",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "332": "0x014C — x86 (i386, 32-bit Intel)",
+        "34404": "0x8664 — x64 (AMD64 / Intel 64)",
+        "43620": "0xAA64 — ARM64 (AArch64)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Processors",
+      "offset": 48,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "Number of logical processors in the crashed system (4-byte little-endian uint32). Useful for understanding multi-core crash contexts. High values (>1) suggest SMP (Symmetric Multi-Processing) systems where race conditions and lock contention may be relevant.",
+      "storeAs": "numberProcessors",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "BugCheck Code (STOP Code)",
+      "offset": 52,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.45,
+      "description": "Windows kernel BugCheck (STOP error) code (4-byte little-endian uint32). The hexadecimal STOP code displayed on the Blue Screen of Death (BSOD). Examples: 0x0000007F=UNEXPECTED_KERNEL_MODE_TRAP, 0x0000001E=KMODE_EXCEPTION_NOT_HANDLED, 0x00000050=PAGE_FAULT_IN_NONPAGED_AREA, 0x0000009F=DRIVER_POWER_STATE_FAILURE, 0x000000EF=CRITICAL_PROCESS_DIED.",
+      "storeAs": "bugCheckCode",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "30": "0x0000001E — KMODE_EXCEPTION_NOT_HANDLED",
+        "80": "0x00000050 — PAGE_FAULT_IN_NONPAGED_AREA",
+        "127": "0x0000007F — UNEXPECTED_KERNEL_MODE_TRAP",
+        "159": "0x0000009F — DRIVER_POWER_STATE_FAILURE",
+        "239": "0x000000EF — CRITICAL_PROCESS_DIED",
+        "244": "0x000000F4 — CRITICAL_OBJECT_TERMINATION"
+      }
+    },
+    {
+      "type": "field",
+      "name": "BugCheck Parameter 1",
+      "offset": 56,
+      "length": 4,
+      "color": "#F7DC6F",
+      "opacity": 0.30,
+      "description": "First BugCheck parameter (4-byte little-endian uint32). Meaning is specific to each BugCheck code. For PAGE_FAULT_IN_NONPAGED_AREA (0x50): this is the invalid virtual address that caused the fault. For KMODE_EXCEPTION_NOT_HANDLED (0x1E): this is the exception code (e.g., 0xC0000005 = access violation).",
+      "storeAs": "bugCheckParam1",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "metadata",
+      "name": "Dump Magic",
+      "variable": "dmpMagic",
+      "description": "Dump magic: 'PAGEDUMP' (32-bit), 'PAGEDU64' (64-bit), or 'MDMP    ' (MiniDump)"
+    },
+    {
+      "type": "metadata",
+      "name": "Windows Version",
+      "variable": "majorVersion",
+      "description": "Windows NT major version: 5=XP/2003, 6=Vista/7/8, 10=Windows 10/11"
+    },
+    {
+      "type": "metadata",
+      "name": "Build Number",
+      "variable": "minorVersion",
+      "description": "Windows build number (e.g., 19041 for Windows 10 20H1)"
+    },
+    {
+      "type": "metadata",
+      "name": "BugCheck Code",
+      "variable": "bugCheckCode",
+      "description": "STOP error code (e.g., 0x50=PAGE_FAULT, 0x7F=UNEXPECTED_TRAP)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Type",
+      "variable": "machineType",
+      "description": "CPU architecture: 0x14C=x86, 0x8664=x64, 0xAA64=ARM64"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Dump magic must be a valid Windows dump signature",
+      "expression": "dmpMagic == 'PAGEDUMP' || dmpMagic == 'PAGEDU64' || dmpMagic == 'MDMP    '",
+      "severity": "error",
+      "message": "File must start with 'PAGEDUMP', 'PAGEDU64', or 'MDMP    ' — not a valid Windows crash dump"
+    },
+    {
+      "name": "Valid dump secondary marker",
+      "expression": "validDump == 'DUMP' || validDump == 'DU64' || dmpMagic == 'MDMP    '",
+      "severity": "warning",
+      "message": "PAGEDUMP dumps require 'DUMP' at offset 8; PAGEDU64 requires 'DU64' — unexpected value indicates corruption"
+    },
+    {
+      "name": "Major version must be positive",
+      "expression": "majorVersion > 0",
+      "severity": "warning",
+      "message": "Windows major version must be greater than 0 — zero indicates corrupt header or non-full-dump format"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "Dump Magic", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "Valid Dump", "offset": 8, "icon": "\uE8A5", "color": "#4ECDC4" },
+      { "name": "Machine Type", "offset": 44, "icon": "\uE9D9", "color": "#FF8C69" },
+      { "name": "BugCheck Code", "offset": 52, "icon": "\uE72E", "color": "#87CEEB" }
+    ]
+  },
+  "inspector": {
+    "badge": "bugCheckCode",
+    "primaryField": "dmpMagic",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "Dump Identity",
+        "icon": "\uE71B",
+        "fields": ["dmpMagic", "validDump", "majorVersion", "minorVersion"]
+      },
+      {
+        "title": "System Info",
+        "icon": "\uE8A5",
+        "fields": ["machineType", "numberProcessors"]
+      },
+      {
+        "title": "Crash Details",
+        "icon": "\uE72E",
+        "fields": ["bugCheckCode", "bugCheckParam1"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "PAGEDUMP Header (JSON)",
+      "format": "json",
+      "fields": ["dmpMagic", "validDump", "majorVersion", "minorVersion", "machineType", "numberProcessors", "bugCheckCode", "bugCheckParam1"]
+    },
+    {
+      "name": "DUMP_HEADER64 (C struct excerpt)",
+      "format": "c-struct",
+      "structName": "dump_header64",
+      "fields": ["dmpMagic", "validDump", "majorVersion", "minorVersion", "machineType", "numberProcessors", "bugCheckCode"]
+    }
+  ],
+  "forensic": {
+    "category": "system",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Full kernel dump — contains sensitive data",
+        "condition": "dmpMagic == 'PAGEDUMP' || dmpMagic == 'PAGEDU64'",
+        "severity": "warning",
+        "description": "Full kernel memory dumps contain the entire physical RAM contents including encryption keys, passwords, session tokens, and other sensitive data. Handle with appropriate data security controls."
+      },
+      {
+        "name": "Unknown machine type",
+        "condition": "machineType != 332 && machineType != 34404 && machineType != 43620",
+        "severity": "warning",
+        "description": "Machine type is not a recognized PE architecture constant. May indicate a non-standard architecture or corrupted header."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "PAGEDUMP/PAGEDU64 header (4096 bytes): Signature(4B) + ValidDump(4B) + MajorVersion(4B LE) + MinorVersion(4B LE) + DirectoryTableBase(8B) + PfnDataBase(8B) + PsLoadedModuleList(8B) + PsActiveProcessHead(8B) + MachineImageType(4B LE) + NumberProcessors(4B LE) + BugCheckCode(4B LE) + BugCheckParameters[4](4B each LE) + ... + PfnDataBase, ContextRecord, Exception. MDMP (MiniDump) has its own separate stream-based format. WinDbg command: '!analyze -v' for crash analysis.",
+    "suggestedInspections": [
+      "Verify magic at offset 0: 'PAGEDUMP' (32-bit) or 'PAGEDU64' (64-bit) or 'MDMP' (MiniDump)",
+      "For PAGEDUMP/PAGEDU64: read ValidDump at offset 8 ('DUMP' or 'DU64')",
+      "Read MachineImageType at offset 44 (4B LE): 0x14C=x86, 0x8664=x64, 0xAA64=ARM64",
+      "Read BugCheckCode at offset 52 (4B LE) and look up STOP code meaning",
+      "Parse Windows version: MajorVersion(offset 12) and MinorVersion/Build(offset 16)"
+    ]
+  },
+  "software": [
+    "WinDbg (Windows Debugger — Microsoft)",
+    "Volatility Framework (memory forensics)",
+    "Rekall (memory analysis)",
+    "x64dbg",
+    "Process Hacker",
+    "Windows Error Reporting (WER) for MDMP",
+    "Visual Studio debugger"
+  ],
+  "formatRelationships": {
+    "category": "System",
+    "extensions": [".dmp", ".mdmp"],
+    "relatedFormats": ["KDUMP", "ETL"],
+    "containerVariant": "MDMP = MiniDump (user-mode process dumps); PAGEDUMP = kernel memory dump; Complete Memory Dump = full physical RAM"
+  },
+  "MimeTypes": [
+    "application/x-dmp",
+    "application/octet-stream"
+  ],
+  "UseCases": [
+    "Windows kernel crash (BSOD) analysis and root-cause investigation",
+    "User-mode process crash analysis via WinDbg/Visual Studio",
+    "Windows Error Reporting (WER) crash telemetry analysis",
+    "Digital forensics — memory analysis for malware and artifacts"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 7,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "FormatVariants": ["PAGEDUMP (32-bit full)", "PAGEDU64 (64-bit full/kernel/complete)", "MDMP (MiniDump user-mode)"],
+    "HeaderSize": 4096,
+    "BugCheckOffset": 52,
+    "MachineTypeOffset": 44,
+    "Endianness": "little-endian",
+    "SensitiveData": "Full physical RAM contents including keys and credentials",
+    "AnalysisTool": "WinDbg (Microsoft), Volatility Framework"
+  }
+}

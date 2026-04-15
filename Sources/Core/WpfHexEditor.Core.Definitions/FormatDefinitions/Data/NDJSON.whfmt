@@ -1,0 +1,204 @@
+{
+  "diffMode": "text",
+  "formatName": "Newline Delimited JSON",
+  "version": "1.0",
+  "extensions": [
+    ".ndjson",
+    ".jsonl",
+    ".ldjson"
+  ],
+  "description": "NDJSON (Newline Delimited JSON) / JSON Lines — text format where each line is a complete, valid JSON value (object or array). No official RFC standard; documented at ndjson.org and jsonlines.org. First byte is typically '{' (0x7B) for JSON object lines or '[' (0x5B) for JSON array lines. Each line terminated by LF (0x0A) or CRLF (0x0D 0x0A). UTF-8 encoded, no BOM. No metadata header — first line is a data record. Used in: Elasticsearch bulk API, Logstash/Filebeat log shipping, OpenAI fine-tuning datasets, LLM training corpora (The Pile, RedPajama), Spark/Beam streaming pipelines, HTTP streaming APIs (server-sent events). Streaming-friendly: parse line by line without loading the full file into memory.",
+  "category": "Data",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "text-editor",
+  "references": {
+    "specifications": [
+      "NDJSON specification v1.0 — ndjson.org",
+      "JSON Lines specification — jsonlines.org",
+      "JSON RFC 8259 — datatracker.ietf.org/doc/html/rfc8259"
+    ],
+    "WebLinks": [
+      "http://ndjson.org/",
+      "https://jsonlines.org/",
+      "https://datatracker.ietf.org/doc/html/rfc8259",
+      "https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "7B", "offset": 0, "label": "{ — First JSON object line", "weight": 0.5 },
+      { "value": "5B", "offset": 0, "label": "[ — First JSON array line", "weight": 0.4 }
+    ],
+    "matchMode": "any",
+    "MinimumScore": 0.2,
+    "required": false,
+    "Strength": "Weak",
+    "validation": {
+      "minFileSize": 2,
+      "maxSignatureOffset": 0,
+      "note": "NDJSON has weak detection — '{' is shared with plain JSON. Extension (.ndjson, .jsonl, .ldjson) is the primary distinguisher. Content verification requires checking that each line is a complete JSON value."
+    }
+  },
+  "variables": {
+    "firstByte": 0,
+    "secondByte": 0,
+    "lineTerminator": "",
+    "estimatedLineCount": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "First Record Start Byte",
+      "offset": 0,
+      "length": 1,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "First byte of the first NDJSON record. '{' (0x7B) indicates a JSON object record (most common for log and event data). '[' (0x5B) indicates a JSON array record (used in some ML dataset formats). '\"' (0x22) indicates a JSON string (rare but valid JSON value). 't'/'f' (0x74/0x66) indicate JSON boolean true/false. 'n' (0x6E) indicates JSON null. Digit 0-9 (0x30-0x39) or '-' (0x2D) indicate a JSON number. UTF-8 BOM (0xEF) is invalid for NDJSON per the specification.",
+      "storeAs": "firstByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "123": "{ — JSON object record",
+        "91": "[ — JSON array record",
+        "34": "\" — JSON string record",
+        "116": "t — JSON true literal",
+        "102": "f — JSON false literal",
+        "110": "n — JSON null literal"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Second Byte",
+      "offset": 1,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "Second byte of the file. For JSON object records, this is typically a '\"' (0x22) starting the first property key, a whitespace ' ' (0x20), or a newline starting an empty object '}'. For JSON array records, this may be '[' (nested array), '{' (object in array), or a digit. The combination of firstByte and secondByte helps distinguish NDJSON from plain JSON files.",
+      "storeAs": "secondByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "Line Terminator",
+      "variable": "lineTerminator",
+      "description": "Line ending style: LF (Unix, 0x0A), CRLF (Windows, 0x0D 0x0A) — NDJSON spec recommends LF"
+    },
+    {
+      "type": "metadata",
+      "name": "Estimated Line Count",
+      "variable": "estimatedLineCount",
+      "description": "Estimated number of JSON records — approximately file_size / average_line_length"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "Valid JSON start byte",
+      "expression": "firstByte == 123 || firstByte == 91 || firstByte == 34 || firstByte == 116 || firstByte == 102 || firstByte == 110 || (firstByte >= 48 && firstByte <= 57) || firstByte == 45",
+      "severity": "warning",
+      "message": "First byte is not a valid JSON value start character — may not be valid NDJSON"
+    },
+    {
+      "name": "No UTF-8 BOM",
+      "expression": "firstByte != 239",
+      "severity": "warning",
+      "message": "File starts with UTF-8 BOM (0xEF) — NDJSON specification prohibits BOM; may cause parsing errors in strict JSON parsers"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "First Record", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" }
+    ]
+  },
+  "inspector": {
+    "badge": "lineTerminator",
+    "primaryField": "estimatedLineCount",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "File Start",
+        "icon": "\uE71B",
+        "fields": ["firstByte", "secondByte"]
+      },
+      {
+        "title": "Format Properties",
+        "icon": "\uE946",
+        "fields": ["lineTerminator", "estimatedLineCount"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "NDJSON File Info (JSON)",
+      "format": "json",
+      "fields": ["firstByte", "lineTerminator", "estimatedLineCount"]
+    },
+    {
+      "name": "NDJSON summary",
+      "format": "text",
+      "fields": ["firstByte", "lineTerminator", "estimatedLineCount"]
+    }
+  ],
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "UTF-8 BOM present",
+        "condition": "firstByte == 239",
+        "severity": "warning",
+        "description": "UTF-8 BOM (EF BB BF) is not valid for NDJSON — may cause parse errors in strict JSON parsers and stream processing pipelines"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "NDJSON/JSON Lines is a streaming text format: one complete JSON value per line, separated by LF (0x0A). Each line is independently parseable. Common in: Elasticsearch bulk API (alternating action/source lines), OpenAI fine-tuning (one {'messages':[...]} per line), LLM training datasets, log aggregation (Logstash, Fluent Bit). Strict rules: no trailing commas, no comments, UTF-8 without BOM, LF line endings recommended (CRLF tolerated). Distinguish from JSON: a single-file JSON starts with { or [ and is not line-oriented. Tool: jq -c . < file.json > file.jsonl converts JSON to NDJSON.",
+    "suggestedInspections": [
+      "Check first byte: 0x7B ('{') for object records, 0x5B ('[') for array records",
+      "Verify no UTF-8 BOM (EF BB BF) at file start — prohibited by NDJSON spec",
+      "Spot-check random lines to verify each is a complete, valid JSON value",
+      "Check for consistent record structure (same keys per line for tabular data)",
+      "For Elasticsearch bulk API files: verify alternating action/source line pattern"
+    ]
+  },
+  "software": [
+    "jq (CLI JSON processor, supports NDJSON with -c flag)",
+    "Elasticsearch (bulk API uses NDJSON)",
+    "Apache Spark (spark.read.json for NDJSON input)",
+    "Pandas (pd.read_json with lines=True)",
+    "DuckDB (read_json_auto supports NDJSON)"
+  ],
+  "formatRelationships": {
+    "category": "Data",
+    "extensions": [".ndjson", ".jsonl", ".ldjson"],
+    "relatedFormats": ["ION", "ARROW_IPC", "CAPNPROTO"],
+    "note": ".ndjson (Newline Delimited JSON), .jsonl (JSON Lines), and .ldjson (Line Delimited JSON) are functionally identical formats with different naming conventions. All three: one JSON value per line, LF terminated, UTF-8 encoding."
+  },
+  "MimeTypes": [
+    "application/x-ndjson",
+    "application/x-jsonlines",
+    "application/jsonl"
+  ],
+  "UseCases": [
+    "Elasticsearch/OpenSearch bulk indexing API",
+    "LLM and ML training dataset distribution",
+    "Log streaming and aggregation (Logstash, Fluentd)",
+    "HTTP streaming API responses (server-sent events)",
+    "Large-scale data pipeline processing with Apache Spark/Beam"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 4,
+    "ValidationRules": 2,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "Encoding": "UTF-8 without BOM",
+    "LineTerminator": "LF (recommended) or CRLF (tolerated)",
+    "RecordFormat": "One complete JSON value per line — object, array, string, number, boolean, or null",
+    "SupportsStreaming": true,
+    "RandomAccess": false,
+    "MaxLineLength": "Unspecified — parsers typically support at least 64 MB per line"
+  }
+}

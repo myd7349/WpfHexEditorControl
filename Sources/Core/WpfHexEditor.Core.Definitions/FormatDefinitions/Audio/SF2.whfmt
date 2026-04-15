@@ -1,0 +1,270 @@
+{
+  "diffMode": "binary",
+  "formatName": "SoundFont 2",
+  "version": "1.0",
+  "extensions": [
+    ".sf2",
+    ".sf3"
+  ],
+  "description": "SoundFont 2 (SF2) — synthesizer instrument bank format developed by E-mu Systems and Creative Technology Ltd. RIFF-based container: 52 49 46 46 ('RIFF') + size(4B LE) + 'sfbk' (73 66 62 6B) at offset 8. SF2 RIFF tree: RIFF:sfbk -> LIST:INFO (metadata: INAM name, ISFT software, ICOP copyright, ICRD date, IENG engineer, IPRD product, ICMT comment) + LIST:sdta (smpl=16-bit LE signed PCM samples, sm24=24-bit extension bytes) + LIST:pdta (preset and instrument tables: phdr=preset headers, pbag=preset bags, pmod=preset modulators, pgen=preset generators, inst=instruments, ibag=instrument bags, imod=instrument modulators, igen=instrument generators, shdr=sample headers). SF3 variant compresses samples with OGG Vorbis. Used by: FluidSynth, BASSMIDI, SForzando, Vienna Symphonic Library, MuseScore, LMMS.",
+  "category": "Audio",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",
+  "references": {
+    "specifications": [
+      "SoundFont 2.04 Technical Specification — Creative Technology",
+      "SoundFont 2.01 specification — E-mu Systems (1996)",
+      "FluidSynth SF2 implementation — fluidsynth.org"
+    ],
+    "WebLinks": [
+      "https://en.wikipedia.org/wiki/SoundFont",
+      "https://www.fluidsynth.org/",
+      "https://musescore.org/handbook/soundfonts-and-sfz-files",
+      "https://github.com/FluidSynth/fluidsynth"
+    ]
+  },
+  "detection": {
+    "signatures": [
+      { "value": "52494646", "offset": 0, "label": "RIFF — SoundFont 2 RIFF container start", "weight": 0.5 },
+      { "value": "7366626B", "offset": 8, "label": "sfbk — SoundFont 2 RIFF form type identifier", "weight": 1.0 }
+    ],
+    "required": true,
+    "Strength": "Strong",
+    "MinimumScore": 0.7,
+    "EntropyHint": { "min": 4.0, "max": 7.5 },
+    "validation": {
+      "minFileSize": 256,
+      "maxSignatureOffset": 0
+    }
+  },
+  "variables": {
+    "riffMagic": "",
+    "riffSize": 0,
+    "sfbkId": "",
+    "listMagic": "",
+    "listSize": 0,
+    "listType": ""
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "RIFF Container Magic",
+      "offset": 0,
+      "length": 4,
+      "color": "#FF6B6B",
+      "opacity": 0.45,
+      "description": "RIFF container magic: ASCII 'RIFF' (52 49 46 46). SoundFont 2 uses the standard RIFF (Resource Interchange File Format) container originally developed by Microsoft and IBM. This 4-byte signature identifies the file as a RIFF-based format; the form type at offset 8 ('sfbk') specifies that it is a SoundFont bank.",
+      "storeAs": "riffMagic",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "RIFF" }
+    },
+    {
+      "type": "field",
+      "name": "RIFF Chunk Size",
+      "offset": 4,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.35,
+      "description": "Total size of the RIFF file data in bytes, not including the 8-byte RIFF header (4-byte magic + 4-byte size field) itself (4-byte little-endian uint32). This value equals file_size - 8. For typical SoundFont files this ranges from a few kilobytes (minimal GM bank) to hundreds of megabytes (orchestral libraries).",
+      "storeAs": "riffSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "SoundFont Form Type (sfbk)",
+      "offset": 8,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.45,
+      "description": "RIFF form type identifier: ASCII 'sfbk' (73 66 62 6B = SoundFont BanK). This 4-byte code at offset 8 unambiguously identifies the RIFF file as a SoundFont 2 bank, distinguishing it from WAV (WAVE), AVI (AVI ), RMI (RMID), and other RIFF-based formats. SF3 files also use 'sfbk' but use OGG-compressed samples.",
+      "storeAs": "sfbkId",
+      "valueType": "ascii",
+      "validation": { "expectedValue": "sfbk" }
+    },
+    {
+      "type": "field",
+      "name": "First LIST Chunk Magic",
+      "offset": 12,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.35,
+      "description": "Magic bytes of the first LIST chunk within the RIFF:sfbk container: ASCII 'LIST' (4C 49 53 54). The SoundFont 2 format organizes all data as LIST chunks. The three mandatory LIST chunks are INFO (metadata), sdta (sample data), and pdta (preset/instrument data). Each LIST chunk starts with 'LIST' + size(4B LE) + type(4B ASCII).",
+      "storeAs": "listMagic",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "First LIST Chunk Size",
+      "offset": 16,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.30,
+      "description": "Size of the first LIST chunk body in bytes (4-byte little-endian uint32), not including the 8-byte LIST chunk header. This is the size of the INFO metadata section. Typical SF2 INFO sections are small (100-500 bytes), while the sdta (sample data) LIST can be hundreds of megabytes for large orchestral banks.",
+      "storeAs": "listSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First LIST Type",
+      "offset": 20,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.35,
+      "description": "Type identifier of the first LIST chunk (4-byte ASCII). In a well-formed SoundFont 2 file, the first LIST chunk is always 'INFO' (49 4E 46 4F) containing metadata sub-chunks. The INFO list is followed by sdta (sample data) and pdta (preset/instrument tables) LIST chunks.",
+      "storeAs": "listType",
+      "valueType": "ascii",
+      "valueMap": {
+        "INFO": "Metadata INFO chunk — INAM, ISFT, ICOP, ICRD, IENG, IPRD, ICMT sub-chunks",
+        "sdta": "Sample data chunk — smpl (16-bit PCM) and optional sm24 (24-bit extension)",
+        "pdta": "Preset/instrument data — phdr, pbag, pmod, pgen, inst, ibag, imod, igen, shdr tables"
+      }
+    },
+    {
+      "type": "metadata",
+      "name": "RIFF Form Type",
+      "variable": "sfbkId",
+      "description": "RIFF form type: 'sfbk' identifies this as a SoundFont 2 bank file"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size (RIFF)",
+      "variable": "riffSize",
+      "description": "Total RIFF data size in bytes (file_size - 8)"
+    },
+    {
+      "type": "metadata",
+      "name": "First LIST Type",
+      "variable": "listType",
+      "description": "First LIST chunk type: 'INFO' for metadata section (standard SoundFont order)"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "RIFF magic must be 'RIFF'",
+      "expression": "riffMagic == 'RIFF'",
+      "severity": "error",
+      "message": "SoundFont file must start with ASCII 'RIFF' (52 49 46 46) — not a valid RIFF-based file"
+    },
+    {
+      "name": "RIFF form type must be 'sfbk'",
+      "expression": "sfbkId == 'sfbk'",
+      "severity": "error",
+      "message": "RIFF form type at offset 8 must be ASCII 'sfbk' — not a valid SoundFont 2 file"
+    },
+    {
+      "name": "First LIST type must be INFO",
+      "expression": "listType == 'INFO' || listType == 'sdta' || listType == 'pdta'",
+      "severity": "warning",
+      "message": "First LIST chunk type should be INFO, sdta, or pdta — unexpected LIST type indicates non-standard SoundFont organization"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      { "name": "RIFF Header", "offset": 0, "icon": "\uE71B", "color": "#FF6B6B" },
+      { "name": "sfbk Form Type", "offset": 8, "icon": "\uE8A5", "color": "#FFEAA7" },
+      { "name": "First LIST Chunk", "offset": 12, "icon": "\uE9D9", "color": "#95E1D3" }
+    ]
+  },
+  "inspector": {
+    "badge": "sfbkId",
+    "primaryField": "riffSize",
+    "showQualityScore": true,
+    "groups": [
+      {
+        "title": "RIFF Container",
+        "icon": "\uE71B",
+        "fields": ["riffMagic", "riffSize", "sfbkId"]
+      },
+      {
+        "title": "INFO Section",
+        "icon": "\uE8A5",
+        "fields": ["listMagic", "listSize", "listType"]
+      }
+    ]
+  },
+  "exportTemplates": [
+    {
+      "name": "SF2 RIFF Header (JSON)",
+      "format": "json",
+      "fields": ["riffMagic", "riffSize", "sfbkId", "listMagic", "listSize", "listType"]
+    },
+    {
+      "name": "sf2_riff_header_t (C struct)",
+      "format": "c-struct",
+      "structName": "sf2_riff_header",
+      "fields": ["riffMagic", "riffSize", "sfbkId", "listMagic", "listSize", "listType"]
+    }
+  ],
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [
+      {
+        "name": "Invalid RIFF magic",
+        "condition": "riffMagic != 'RIFF'",
+        "severity": "error",
+        "description": "File does not start with 'RIFF'. Not a valid SoundFont 2 file or has been corrupted at the beginning."
+      },
+      {
+        "name": "Invalid sfbk form type",
+        "condition": "sfbkId != 'sfbk'",
+        "severity": "error",
+        "description": "RIFF form type at offset 8 is not 'sfbk'. File may be another RIFF format (WAV, AVI) or a corrupted SoundFont."
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "SF2 structure: RIFF:sfbk [ LIST:INFO [ IFIL(ver) ISNG INAM IROM IVER ICRD IENG IPRD ICMT ISFT ] LIST:sdta [ smpl(PCM audio samples) sm24(optional 24-bit bytes) ] LIST:pdta [ phdr pbag pmod pgen inst ibag imod igen shdr ] ]. The pdta contains fixed-size tables: phdr=38B*N (preset headers), shdr=46B*N (sample headers). Sample pointers in shdr reference byte offsets into the smpl chunk.",
+    "suggestedInspections": [
+      "Verify 'RIFF' at offset 0 and 'sfbk' at offset 8",
+      "Parse RIFF chunk size at offset 4 — should match file_size - 8",
+      "Navigate to LIST:INFO to read INAM (bank name) and ISFT (software) sub-chunks",
+      "Find LIST:pdta and parse phdr table (38 bytes per preset) for preset names",
+      "Find LIST:sdta smpl sub-chunk — size / 2 = total number of 16-bit PCM samples"
+    ]
+  },
+  "software": [
+    "FluidSynth (cross-platform synthesizer)",
+    "BASSMIDI (Windows, Ian Luck)",
+    "SForzando (Plogue Art et Technologie)",
+    "MuseScore (built-in SF2 support)",
+    "LMMS (Linux MultiMedia Studio)",
+    "Vienna Symphonic Library",
+    "Creative Audigy/SoundBlaster hardware"
+  ],
+  "formatRelationships": {
+    "category": "Audio",
+    "extensions": [".sf2", ".sf3"],
+    "relatedFormats": ["WAV", "MIDI"],
+    "containerVariant": "SF3 = SoundFont 3 with OGG Vorbis-compressed samples instead of raw PCM"
+  },
+  "MimeTypes": [
+    "audio/x-soundfont",
+    "application/x-sf2"
+  ],
+  "UseCases": [
+    "Software MIDI synthesis (FluidSynth, BASSMIDI)",
+    "Video game music production and playback",
+    "Music notation software instruments (MuseScore, Sibelius)",
+    "Virtual instrument plugin banks"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 92,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 6,
+    "ValidationRules": 3,
+    "LastUpdated": "2026-04-15",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ContainerFormat": "RIFF (Resource Interchange File Format)",
+    "FormType": "sfbk (SoundFont BanK)",
+    "Endianness": "little-endian (RIFF standard)",
+    "SampleFormat": "16-bit signed PCM (smpl) + optional 24-bit extension (sm24)",
+    "SF3Variant": "OGG Vorbis-compressed samples in smpl chunk",
+    "VersionRecord": "IFIL sub-chunk in INFO LIST (major.minor uint16 LE)"
+  }
+}
