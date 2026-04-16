@@ -281,9 +281,16 @@ internal sealed class TextViewport : FrameworkElement
     /// Returns the absolute X position of the caret at <paramref name="col"/>
     /// (before horizontal offset is subtracted). Word-wrap-aware.
     /// </summary>
-    public double GetCaretAbsoluteX(int col) => _isWordWrapEnabled && _charsPerRow > 0
-        ? LineNumberColumnWidth + LeftMargin + (col % _charsPerRow) * CharWidth
-        : LineNumberColumnWidth + LeftMargin + col * CharWidth;
+    public double GetCaretAbsoluteX(int col)
+    {
+        if (_isWordWrapEnabled && _charsPerRow > 0 && _vm is not null)
+        {
+            string line    = _vm.GetLine(_vm.CaretLine);
+            int visCol     = CharIndexToVisualCol(line, col) % _charsPerRow;
+            return LineNumberColumnWidth + LeftMargin + visCol * CharWidth;
+        }
+        return LineNumberColumnWidth + LeftMargin + col * CharWidth;
+    }
 
     public void ScrollIntoView(int lineIndex)
     {
@@ -370,7 +377,8 @@ internal sealed class TextViewport : FrameworkElement
             return;
         }
 
-        double availW = ActualWidth - LineNumberColumnWidth - LeftMargin;
+        double baseW  = _lastArrangedWidth > 0 ? _lastArrangedWidth : ActualWidth;
+        double availW = baseW - LineNumberColumnWidth - LeftMargin;
         _charsPerRow  = Math.Max(1, (int)(availW / _charWidth));
 
         var lines = _vm.Lines;
@@ -381,7 +389,7 @@ internal sealed class TextViewport : FrameworkElement
         for (int i = 0; i < n; i++)
         {
             _wrapOffsets[i] = total;
-            int len          = lines[i].Length;
+            int len          = VisualLength(lines[i]);
             int h            = len == 0 ? 1 : (int)Math.Ceiling((double)len / _charsPerRow);
             _wrapHeights[i]  = h;
             total           += h;
@@ -408,6 +416,48 @@ internal sealed class TextViewport : FrameworkElement
     }
 
     /// <summary>
+    /// Returns the visual column count of <paramref name="line"/>, expanding each
+    /// tab character to <c>TabVisualWidth</c> (4) columns.
+    /// </summary>
+    private static int VisualLength(string line)
+    {
+        const int TabVisualWidth = 4;
+        int len = 0;
+        foreach (char c in line)
+            len += c == '\t' ? TabVisualWidth : 1;
+        return len;
+    }
+
+    /// <summary>
+    /// Maps a visual column offset to the corresponding character index in
+    /// <paramref name="line"/>, accounting for tab expansion.
+    /// </summary>
+    private static int VisualColToCharIndex(string line, int visualCol)
+    {
+        const int TabVisualWidth = 4;
+        int vc = 0;
+        for (int i = 0; i < line.Length; i++)
+        {
+            if (vc >= visualCol) return i;
+            vc += line[i] == '\t' ? TabVisualWidth : 1;
+        }
+        return line.Length;
+    }
+
+    /// <summary>
+    /// Maps a character index to its visual column offset, accounting for tab expansion.
+    /// </summary>
+    private static int CharIndexToVisualCol(string line, int charIndex)
+    {
+        const int TabVisualWidth = 4;
+        int vc = 0;
+        int end = Math.Min(charIndex, line.Length);
+        for (int i = 0; i < end; i++)
+            vc += line[i] == '\t' ? TabVisualWidth : 1;
+        return vc;
+    }
+
+    /// <summary>
     /// Converts a pixel position inside the viewport to a logical (line, col) pair.
     /// Handles both normal and word-wrap modes.
     /// </summary>
@@ -423,7 +473,8 @@ internal sealed class TextViewport : FrameworkElement
         var (logLine, sub) = VisualRowToLogical(visRow);
         logLine            = Math.Clamp(logLine, 0, _vm.LineCount - 1);
         int visualCol      = Math.Clamp((int)((pos.X - LineNumberColumnWidth - LeftMargin) / _charWidth), 0, _charsPerRow);
-        int logCol         = Math.Clamp(sub * _charsPerRow + visualCol, 0, _vm.GetLine(logLine).Length);
+        string hitLine     = _vm.GetLine(logLine);
+        int logCol         = Math.Clamp(VisualColToCharIndex(hitLine, sub * _charsPerRow + visualCol), 0, hitLine.Length);
         return (logLine, logCol);
     }
 
@@ -633,15 +684,17 @@ internal sealed class TextViewport : FrameworkElement
                 if (vr > lastVisRow) break;
                 if (vr < firstVisRow) continue;
 
-                int rowStartCol = sr * _charsPerRow;
-                int rowEndCol   = Math.Min(rowStartCol + _charsPerRow, Math.Max(lineLen, rowStartCol + 1));
-                int visSelStart = Math.Max(selStart, rowStartCol) - rowStartCol;
-                int visSelEnd   = Math.Min(selEnd,   rowEndCol)   - rowStartCol;
-                if (visSelStart >= visSelEnd) continue;
+                string lineText     = _vm.GetLine(li);
+                int rowStartChar    = VisualColToCharIndex(lineText, sr * _charsPerRow);
+                int rowEndChar      = VisualColToCharIndex(lineText, (sr + 1) * _charsPerRow);
+                if (rowEndChar <= rowStartChar) rowEndChar = Math.Min(rowStartChar + 1, lineLen);
+                int clampedSelStart = Math.Max(selStart, rowStartChar);
+                int clampedSelEnd   = Math.Min(selEnd,   rowEndChar);
+                if (clampedSelStart >= clampedSelEnd) continue;
 
                 double y  = (vr - firstVisRow) * _lineHeight;
-                double x1 = codeX + visSelStart * _charWidth;
-                double x2 = codeX + visSelEnd   * _charWidth;
+                double x1 = codeX + (CharIndexToVisualCol(lineText, clampedSelStart) - sr * _charsPerRow) * _charWidth;
+                double x2 = codeX + (CharIndexToVisualCol(lineText, clampedSelEnd)   - sr * _charsPerRow) * _charWidth;
                 dc.DrawRoundedRectangle(selBrush, null,
                     new Rect(x1, y, Math.Max(x2 - x1, _charWidth), _lineHeight),
                     SelectionCornerRadius, SelectionCornerRadius);
@@ -745,13 +798,13 @@ internal sealed class TextViewport : FrameworkElement
 
                     if (string.IsNullOrEmpty(line)) continue;
 
-                    int startCol = sr * _charsPerRow;
-                    if (startCol >= line.Length) continue;
-                    int endCol  = Math.Min(startCol + _charsPerRow, line.Length);
-                    var subLine = line.Substring(startCol, endCol - startCol);
+                    int startChar = VisualColToCharIndex(line, sr * _charsPerRow);
+                    if (startChar >= line.Length) continue;
+                    int endChar = VisualColToCharIndex(line, (sr + 1) * _charsPerRow);
+                    var subLine = line.Substring(startChar, endChar - startChar);
 
                     if (spans.Count > 0)
-                        RenderSubLineHighlighted(dc, spans, subLine, startCol, endCol, codeX, y);
+                        RenderSubLineHighlighted(dc, spans, subLine, startChar, endChar, codeX, y);
                     else
                     {
                         var ft = BuildFormattedText(subLine, GetBrush("TE_Foreground"));
@@ -1028,8 +1081,10 @@ internal sealed class TextViewport : FrameworkElement
         double x, y;
         if (_isWordWrapEnabled && _wrapOffsets.Length > caretLine && _charsPerRow > 0)
         {
-            int caretVisRow = _wrapOffsets[caretLine] + caretCol / _charsPerRow;
-            int caretVisCol = caretCol % _charsPerRow;
+            string caretLineText = _vm.GetLine(caretLine);
+            int caretVisColAbs   = CharIndexToVisualCol(caretLineText, caretCol);
+            int caretVisRow      = _wrapOffsets[caretLine] + caretVisColAbs / _charsPerRow;
+            int caretVisCol      = caretVisColAbs % _charsPerRow;
             if (caretVisRow < _firstVisibleLine || caretVisRow > _firstVisibleLine + _visibleLineCount)
                 return;
             y = (caretVisRow - _firstVisibleLine) * _lineHeight;
