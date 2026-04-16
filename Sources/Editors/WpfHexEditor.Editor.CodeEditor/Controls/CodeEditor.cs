@@ -2542,6 +2542,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         public CodeEditor()
         {
+            // Prevent child visuals (LSP layers, caret DrawingVisual) from rendering
+            // outside the control bounds when scroll / InlineHints push Y values past
+            // the viewport.  The docking host does not clip its content presenter.
+            ClipToBounds = true;
+
             // Initialize document
             _document = new CodeDocument();
             _selection = new TextSelection();

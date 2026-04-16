@@ -3866,8 +3866,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Release the FileStream before File.Move (FileProvider opens with FileShare.Read)
         await CloseHexStreamIfOpenAsync(e.Item);
 
-        _ = _solutionManager.RenameItemAsync(e.Project, e.Item, newName);
-        // Reopen + log are handled in OnProjectItemRenamed via the ItemRenamed event
+        try
+        {
+            SuppressFileWatcherForSave(e.Item.AbsolutePath);
+            await _solutionManager.RenameItemAsync(e.Project, e.Item, newName);
+            // Reopen + log are handled in OnProjectItemRenamed via the ItemRenamed event
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to rename item: {ex.Message}");
+        }
     }
 
     private void OnSolutionExplorerItemDeleteRequested(object? sender, ProjectItemEventArgs e)
@@ -3967,10 +3975,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info($"Folder created in '{project.Name}'{(physical ? " (physical)" : "")}");
     }
 
-    private void OnSEFolderRenameRequested(object? sender, FolderRenameEventArgs e)
+    private async void OnSEFolderRenameRequested(object? sender, FolderRenameEventArgs e)
     {
-        _ = _solutionManager.RenameFolderAsync(e.Project, e.Folder, e.NewName);
-        OutputLogger.Info($"Folder renamed to '{e.NewName}'");
+        try
+        {
+            await _solutionManager.RenameFolderAsync(e.Project, e.Folder, e.NewName);
+            _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+            OutputLogger.Info($"Folder renamed to '{e.NewName}'");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to rename folder: {ex.Message}");
+        }
     }
 
     private void OnProjectItemRenamed(object? sender, ProjectItemRenamedEventArgs e)
@@ -4026,11 +4042,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info($"Solution folder created in '{solution.Name}'");
     }
 
-    private void OnSESolutionFolderRenameRequested(object? sender, SolutionFolderRenameRequestedEventArgs e)
+    private async void OnSESolutionFolderRenameRequested(object? sender, SolutionFolderRenameRequestedEventArgs e)
     {
-        _ = _solutionManager.RenameSolutionFolderAsync(e.Solution, e.Folder, e.NewName);
-        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
-        OutputLogger.Info($"Solution folder renamed to '{e.NewName}'");
+        try
+        {
+            await _solutionManager.RenameSolutionFolderAsync(e.Solution, e.Folder, e.NewName);
+            _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+            OutputLogger.Info($"Solution folder renamed to '{e.NewName}'");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to rename solution folder: {ex.Message}");
+        }
     }
 
     private void OnSESolutionFolderDeleteRequested(object? sender, SolutionFolderDeleteRequestedEventArgs e)
@@ -4078,11 +4101,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info($"Imported folder '{Path.GetFileName(physicalPath)}' into '{project.Name}'");
     }
 
-    private void OnSESolutionRenameRequested(object? sender, SolutionRenameRequestedEventArgs e)
-        => _ = _solutionManager.RenameSolutionAsync(e.Solution, e.NewName);
+    private async void OnSESolutionRenameRequested(object? sender, SolutionRenameRequestedEventArgs e)
+    {
+        try
+        {
+            SuppressFileWatcherForSave(e.Solution.FilePath);
+            await _solutionManager.RenameSolutionAsync(e.Solution, e.NewName);
+            _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+            OutputLogger.Info($"Solution renamed to '{e.NewName}'");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to rename solution: {ex.Message}");
+        }
+    }
 
-    private void OnSEProjectRenameRequested(object? sender, ProjectRenameRequestedEventArgs e)
-        => _ = _solutionManager.RenameProjectAsync(e.Project, e.NewName);
+    private async void OnSEProjectRenameRequested(object? sender, ProjectRenameRequestedEventArgs e)
+    {
+        try
+        {
+            SuppressFileWatcherForSave(e.Project.ProjectFilePath);
+            await _solutionManager.RenameProjectAsync(e.Project, e.NewName);
+            _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+            OutputLogger.Info($"Project renamed to '{e.NewName}'");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to rename project: {ex.Message}");
+        }
+    }
 
     private void OnSECloseSolutionRequested(object? sender, EventArgs e)
         => _ = CloseSolutionAsync();

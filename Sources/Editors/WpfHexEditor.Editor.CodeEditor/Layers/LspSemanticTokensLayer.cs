@@ -84,6 +84,7 @@ public sealed class LspSemanticTokensLayer : FrameworkElement
     public LspSemanticTokensLayer()
     {
         IsHitTestVisible = false;
+        ClipToBounds     = true;
         AddVisualChild(_visual);
         AddLogicalChild(_visual);
 

@@ -50,6 +50,7 @@ public sealed class LspInlayHintsLayer : FrameworkElement
     public LspInlayHintsLayer()
     {
         IsHitTestVisible = false;   // hints are display-only
+        ClipToBounds     = true;
         AddVisualChild(_visual);
         AddLogicalChild(_visual);
 

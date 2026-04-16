@@ -65,6 +65,7 @@ public sealed class LspDeclarationHintsLayer : FrameworkElement
     public LspDeclarationHintsLayer()
     {
         IsHitTestVisible = false;   // display-only; interactive clicks not wired here
+        ClipToBounds     = true;
         AddVisualChild(_visual);
         AddLogicalChild(_visual);
 

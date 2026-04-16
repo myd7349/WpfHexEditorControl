@@ -859,6 +859,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // -- Clip to content area (prevent drawing over scrollbars) --
             dc.PushClip(new RectangleGeometry(new Rect(0, 0, contentW, contentH)));
 
+            // Sticky scroll header height: content drawn below this Y is hidden
+            // behind the opaque header overlay.  Exclude that zone from the text-area
+            // clip so highlights / text / LSP tokens don't bleed through.
+            double stickyH = (_stickyScrollEnabled && _stickyScrollHeader?.Visibility == Visibility.Visible)
+                ? _stickyScrollHeader.RequiredHeight
+                : 0;
+
             // 1. Editor background
             dc.DrawRectangle(EditorBackground, null, new Rect(0, 0, contentW, contentH));
 
@@ -867,10 +874,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 dc.DrawRectangle(LineNumberBackground, null, new Rect(0, 0, LineNumberWidth, contentH));
 
             // 3. Current line highlight (spans visible text area, no H offset)
+            //    Clip below sticky header so the highlight doesn't bleed through.
+            if (stickyH > 0)
+                dc.PushClip(new RectangleGeometry(new Rect(0, stickyH, contentW, Math.Max(0, contentH - stickyH))));
             RenderCurrentLineHighlight(dc, contentW, contentH);
+            if (stickyH > 0)
+                dc.Pop();
 
             // -- Text area clip + horizontal translate -------------------
-            dc.PushClip(new RectangleGeometry(new Rect(textLeft, 0, Math.Max(0, contentW - textLeft), contentH)));
+            dc.PushClip(new RectangleGeometry(new Rect(textLeft, stickyH, Math.Max(0, contentW - textLeft), Math.Max(0, contentH - stickyH))));
 
             // 3b. InlineHints hints — drawn inside the text-area clip but WITHOUT the
             //     H-scroll transform so they stay anchored at the left edge.
@@ -1068,8 +1080,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             dc.Pop(); // text area clip
 
             // 10. Line numbers (no H offset — drawn on top of gutter background)
+            //     Clip below sticky header so numbers don't bleed through.
             if (ShowLineNumbers)
+            {
+                if (stickyH > 0)
+                    dc.PushClip(new RectangleGeometry(new Rect(0, stickyH, LineNumberWidth, Math.Max(0, contentH - stickyH))));
                 RenderLineNumbers(dc);
+                if (stickyH > 0)
+                    dc.Pop();
+            }
 
             dc.Pop(); // content clip
 
@@ -1280,9 +1299,23 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // corresponds to where the first character of the first visible line is drawn.
             double hintLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             double hintTop  = TopMargin;
-            _lspInlayHintsLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
-            _lspDeclarationHintsLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
-            _semanticTokensLayer.Arrange(new Rect(hintLeft, hintTop, Math.Max(0, contentW - hintLeft), Math.Max(0, contentH - hintTop)));
+            double layerW   = Math.Max(0, contentW - hintLeft);
+            double layerH   = Math.Max(0, contentH - hintTop);
+            _lspInlayHintsLayer.Arrange(new Rect(hintLeft, hintTop, layerW, layerH));
+            _lspDeclarationHintsLayer.Arrange(new Rect(hintLeft, hintTop, layerW, layerH));
+            _semanticTokensLayer.Arrange(new Rect(hintLeft, hintTop, layerW, layerH));
+
+            // Clip LSP layers below the sticky scroll header so tokens don't bleed
+            // through the opaque header overlay.  Coordinates are layer-local.
+            double stickyClipH = (_stickyScrollEnabled && _stickyScrollHeader?.Visibility == Visibility.Visible)
+                ? Math.Max(0, _stickyScrollHeader.RequiredHeight - hintTop)
+                : 0;
+            var layerClip = stickyClipH > 0
+                ? new RectangleGeometry(new Rect(0, stickyClipH, layerW, Math.Max(0, layerH - stickyClipH)))
+                : null;
+            _lspInlayHintsLayer.Clip       = layerClip;
+            _lspDeclarationHintsLayer.Clip  = layerClip;
+            _semanticTokensLayer.Clip       = layerClip;
 
             UpdateScrollBars(contentW, contentH);
             return finalSize;
@@ -1493,6 +1526,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     i++;
                 }
                 _lastVisibleLine = Math.Min(_document.Lines.Count - 1, i);
+            }
+
+            // Shrink _lastVisibleLine when InlineHints zones consume viewport space.
+            // The calculations above assume uniform _lineHeight; each hint zone adds
+            // HintLineHeight, so fewer logical lines actually fit the viewport.
+            if (ShowInlineHints && _lineHeight > 0)
+            {
+                double budget = viewportH + (RenderBuffer + 1) * _lineHeight;
+                double used   = 0;
+                for (int i = _firstVisibleLine; i <= _lastVisibleLine && i < _document.Lines.Count; i++)
+                {
+                    if (_foldingEngine?.IsLineHidden(i) == true) continue;
+                    used += _lineHeight;
+                    if (IsHintEntryVisible(i))
+                        used += HintLineHeight;
+                    if (used > budget)
+                    {
+                        _lastVisibleLine = Math.Max(_firstVisibleLine, i - 1);
+                        break;
+                    }
+                }
             }
 
             // Rebuild visible-region cache for RenderScopeGuides (OPT-PERF-03).

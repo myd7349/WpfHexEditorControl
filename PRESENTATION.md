@@ -47,7 +47,7 @@ mindmap
       EntropyViewer Shannon
       DisassemblyViewer multi-arch
       StructureEditor .whfmt visuel
-      BinaryAnalysis 460+ signatures
+      BinaryAnalysis 690 signatures
     Inspection & Comparaison
       DiffViewer binaire
       ImageViewer pixel inspector
@@ -72,13 +72,13 @@ mindmap
 
 ```
 Version actuelle        : 0.6.4.75
-Projets de production   : 89  (107 total — 18 samples/tests exclus)
+Projets de production   : 91  (104 total — 13 samples/tests exclus)
   dont Editors          : 24 projets
-  dont Plugins          : 31 projets
-Définitions .whfmt      : 460+  (formats binaires, langages, images, ROMs, documents)
+  dont Plugins          : 32 projets
+Définitions .whfmt      : 690  (formats binaires, langages, images, ROMs, documents)
 Plugins intégrés        : 28
 Langages de code        : 55+  (C#, Rust, Go, Python, Lua, F#, VB.NET, Assembly…)
-Formats binaires        : 460+ détectés via magic bytes + confidence scoring
+Formats binaires        : 690 détectés via magic bytes + confidence scoring
 Thèmes UI               : 16  (Dark, Light, Dracula, Nord, Tokyo Night, Catppuccin…)
 Cible                   : .NET 8.0 / WPF / Windows
 ```
@@ -112,16 +112,16 @@ flowchart TD
     WHFMT --> E
 ```
 
-**460+ définitions intégrées** couvrent les formats binaires courants, les formats d'images,
+**690 définitions intégrées** couvrent les formats binaires courants, les formats d'images,
 les ROMs de consoles, les formats de documents, et 55+ langages de programmation.
 
 ```mermaid
-pie title Répartition des 460+ définitions .whfmt
-    "Formats binaires & protocoles" : 180
-    "Langages de programmation" : 55
-    "Formats d'images & médias" : 80
-    "ROMs & formats retro/jeux" : 70
-    "Documents & données" : 75
+pie title Répartition des 690 définitions .whfmt
+    "Formats binaires & protocoles" : 270
+    "Langages de programmation" : 80
+    "Formats d'images & médias" : 120
+    "ROMs & formats retro/jeux" : 105
+    "Documents & données" : 115
 ```
 
 ### Pourquoi c'est unique
@@ -182,7 +182,7 @@ L'IDE est structurée en couches strictement séparées, sans couplage entre mod
 
 ```mermaid
 graph TD
-    WHFMT["❤️ .whfmt\nDéclaration-Driven Engine\n460+ définitions intégrées"]
+    WHFMT["❤️ .whfmt\nDéclaration-Driven Engine\n690 définitions intégrées"]
 
     App["🖥️ App — Shell\nMainWindow · CommandPalette · StatusBar · Menu"]
 
@@ -218,7 +218,7 @@ Il a subi plusieurs générations de refactoring pour atteindre des performances
 - **Rendu** : DrawingContext natif — 99% plus rapide qu'un ItemsControl WPF standard
 - **Mémoire** : fichier de 10 Mo = 85 Mo RAM (contre 950 Mo en v1) via memory-mapped I/O
 - **Recherche** : 5 modes — Hex, Texte, Regex, TBL, Wildcard — 100× plus rapide
-- **Formats** : 460+ définitions `.whfmt` avec coloration syntaxique overlay
+- **Formats** : 690 définitions `.whfmt` avec coloration syntaxique overlay
 - **Navigation** : bookmarks persistants, Data Inspector 40+ types au curseur, undo/redo illimité
 - **Encodages** : UTF-8, Latin-1, Shift-JIS, tables TBL custom
 
@@ -228,7 +228,7 @@ graph LR
     MMI["Memory-Mapped I/O\n85 Mo / 10 Mo fichier"]
     BP["ByteProvider"]
     Render["DrawingContext\nRenderer"]
-    Overlay["Format Overlay\n460+ .whfmt"]
+    Overlay["Format Overlay\n690 .whfmt"]
     Inspector["Data Inspector\n40+ types"]
     Search["Search Engine\nHex·Text·Regex·TBL·Wildcard"]
 
@@ -372,7 +372,7 @@ flowchart TB
 ## 10. Ce que ce projet m'a appris
 
 - **`.whfmt` data-driven** : externaliser l'intelligence du format dans des données plutôt que dans le code
-  transforme radicalement la maintenabilité — ajouter 460 formats sans toucher au C# de l'éditeur
+  transforme radicalement la maintenabilité — ajouter 690 formats sans toucher au C# de l'éditeur
 - **Docking maison** : construire un moteur de layout arborescent est un problème de
   composition récursive de nœuds — plus proche d'un compilateur que d'un TabControl
 - **Performance WPF** : DrawingContext vs ItemsControl = différence de 99%. Le framework
@@ -384,7 +384,47 @@ flowchart TB
 
 ---
 
-## 11. Roadmap
+## 11. Statistiques de développement
+
+> **3 145 commits · 10 ans · 79 000 lignes C# actives · 278 plans · 1 909 prompts Claude**
+
+```mermaid
+xychart-beta
+    title "Commits par année (2026 = phase IDE avec Claude)"
+    x-axis ["2016", "2017", "2018", "2019", "2020", "2021", "2022–25", "2026"]
+    y-axis "Commits" 0 --> 2000
+    bar [143, 477, 165, 244, 111, 62, 14, 1929]
+```
+
+```mermaid
+pie title 1 909 commits co-authored avec Claude
+    "Sonnet 4.6" : 1146
+    "Sonnet 4.5" : 576
+    "Opus 4.6" : 187
+```
+
+```mermaid
+pie title 1 655 commits conventionnels
+    "feat" : 670
+    "fix" : 631
+    "docs" : 161
+    "refactor" : 80
+    "chore" : 71
+    "perf / test / ci" : 42
+```
+
+| Métrique | Valeur |
+|---|---|
+| **Code C# actif** | ~79 000 lignes · 2 150 fichiers |
+| **XAML** | 284 fichiers |
+| **Définitions .whfmt** | 690 |
+| **Commits totaux** | 3 145 sur 449 jours actifs |
+| **Plans d'architecture** | 278 (23 manuels + 255 Claude) |
+| **Prompts Claude** | 1 909 commits co-authored |
+
+---
+
+## 12. Roadmap
 
 ```mermaid
 gantt
@@ -408,4 +448,5 @@ gantt
 ---
 
 *WpfHexEditor Studio — v0.6.4.75 — .NET 8.0 / WPF / Windows*  
-*Développé par abbaye avec Claude, ChatGPT, GitHub Copilot*
+*Développé par abbaye avec Claude, ChatGPT, GitHub Copilot*  
+*Statistiques extraites automatiquement du dépôt git le 2026-04-16*
