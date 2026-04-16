@@ -12,6 +12,7 @@ using System;
 using System.Linq;
 using System.Windows.Input;
 using WpfHexEditor.Core.Interfaces;
+using WpfHexEditor.Core.Contracts;
 using WpfHexEditor.Core.ViewModels;
 using WpfHexEditor.Editor.Core;
 

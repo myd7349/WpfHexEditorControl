@@ -26,6 +26,7 @@ using WpfHexEditor.App.Controls;
 using WpfHexEditor.App.Dialogs;
 using WpfHexEditor.App.Models;
 using WpfHexEditor.App.Services;
+using WpfHexEditor.Core.Contracts;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Core;
 using WpfHexEditor.Core.CharacterTable;

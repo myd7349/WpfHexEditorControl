@@ -12,5 +12,11 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- PrivateAssets=none — EmbeddedFormatEntry/IEmbeddedFormatCatalog flow transitively to all consumers of Editor.Core -->
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.Contracts\WpfHexEditor.Core.Contracts.csproj">
+      <PrivateAssets>none</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
 
 </Project>
