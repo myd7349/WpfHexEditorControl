@@ -186,12 +186,27 @@ public static class OoXmlSchemaEngine
             ? primary
             : XNamespace.None;
 
-        var root = new XElement(ns + GetBodyElementName(schema));
+        XElement contentParent;
+        XElement root;
+
+        if (schema.Engine == "ooxml")
+        {
+            // OOXML structure: <w:document><w:body>...blocks...</w:body></w:document>
+            root = new XElement(ns + "document",
+                new XAttribute(XNamespace.Xmlns + (string.IsNullOrEmpty(schema.NamespacePrefix) ? "w" : schema.NamespacePrefix), ns.NamespaceName));
+            contentParent = new XElement(ns + "body");
+            root.Add(contentParent);
+        }
+        else
+        {
+            root          = new XElement(ns + GetBodyElementName(schema));
+            contentParent = root;
+        }
 
         foreach (var block in blocks)
         {
             var element = SerializeBlock(block, schema, ns, nsMap);
-            if (element is not null) root.Add(element);
+            if (element is not null) contentParent.Add(element);
         }
 
         return new XDocument(new XDeclaration("1.0", "UTF-8", "yes"), root);
@@ -211,7 +226,7 @@ public static class OoXmlSchemaEngine
         SerializeAttributes(block, schema, element, ns, nsMap);
 
         // Text content — only when no children own the text (children serialize their own text)
-        if (block.Children.Count == 0)
+        if (block.Children.Count == 0 && !string.IsNullOrEmpty(block.Text))
         {
             if (!string.IsNullOrEmpty(rule.TextElement))
             {
@@ -220,6 +235,12 @@ public static class OoXmlSchemaEngine
                 foreach (var step in textPath.SkipLast(1))
                     textParent = GetOrAddChild(textParent, ns + LocalName(step));
                 textParent.Add(new XElement(ns + LocalName(textPath.Last()), block.Text));
+            }
+            else if (schema.Engine == "ooxml" && block.Kind == "paragraph")
+            {
+                // OOXML requires text to be wrapped: <w:p><w:r><w:t>text</w:t></w:r></w:p>
+                element.Add(new XElement(ns + "r",
+                    new XElement(ns + "t", block.Text)));
             }
             else
             {

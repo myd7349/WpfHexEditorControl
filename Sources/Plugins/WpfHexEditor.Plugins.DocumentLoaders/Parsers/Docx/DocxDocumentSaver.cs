@@ -11,6 +11,7 @@
 
 using System.IO.Compression;
 using System.Xml.Linq;
+using WpfHexEditor.Core.Definitions;
 using WpfHexEditor.Editor.DocumentEditor.Core;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
 using WpfHexEditor.Editor.DocumentEditor.Core.Schema;
@@ -32,8 +33,7 @@ public sealed class DocxDocumentSaver : IDocumentSaver
 
     public async Task SaveAsync(DocumentModel model, Stream output, CancellationToken ct = default)
     {
-        // Load schema from DOCX.whfmt
-        var schema = DocumentSchemaReader.ReadFromWhfmt("DOCX.whfmt");
+        var schema = LoadSchema("DOCX.whfmt");
 
         // Read original file as ZIP
         if (!File.Exists(model.FilePath))
@@ -73,6 +73,18 @@ public sealed class DocxDocumentSaver : IDocumentSaver
 
         outputMs.Position = 0;
         await outputMs.CopyToAsync(output, ct);
+    }
+
+    private static DocumentSchemaDefinition? LoadSchema(string fileName)
+    {
+        var catalog = EmbeddedFormatCatalog.Instance;
+        var key = catalog.GetAll()
+            .Select(e => e.ResourceKey)
+            .FirstOrDefault(k => k is not null &&
+                k.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
+        if (key is null) return null;
+        try { return DocumentSchemaReader.ReadFromJson(catalog.GetJson(key), fileName); }
+        catch { return null; }
     }
 
     private static string FallbackSerialize(DocumentModel model)
