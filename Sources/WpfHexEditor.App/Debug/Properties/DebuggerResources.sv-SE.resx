@@ -219,4 +219,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Minne</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Register</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Parallell granskning</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Uppdatera</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Lägg till</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Ta bort</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Rensa</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Rensa alla</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Kopiera</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Redigera värde</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Filtrera…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Lägg till i bevakning</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Kopiera värde</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Kopiera namn</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Kopiera uttryck</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Kopiera ram</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Kopiera anropsstack</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Gå till källa</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Växla hex/decimal</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Visa som hex</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Kör till markören</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Ange nästa instruktion</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Växla till tråd</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Frys</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Tina</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Kopiera trådinfo</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Kopiera uppgiftsinfo</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Kopiera adress</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Kopiera hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Kopiera ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Kopiera rad</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Kopiera rad</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Uppdatera (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Filtrera variabler efter namn</value></data>
 </root>

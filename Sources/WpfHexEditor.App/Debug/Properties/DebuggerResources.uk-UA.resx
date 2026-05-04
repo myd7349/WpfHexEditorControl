@@ -96,4 +96,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Пам'ять</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Регістри</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Паралельне спостереження</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Оновити</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Додати</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Видалити</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Очистити</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Очистити все</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Копіювати</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Редагувати значення</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Фільтр…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Додати до спостереження</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Копіювати значення</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Копіювати ім'я</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Копіювати вираз</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Копіювати кадр</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Копіювати стек викликів</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Перейти до джерела</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Hex/десяткове</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Показати як hex</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Виконати до курсора</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Встановити наступну інструкцію</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Перемкнутися на потік</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Заморозити</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Розморозити</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Копіювати інфо потоку</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Копіювати інфо завдання</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Копіювати адресу</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Копіювати hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Копіювати ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Копіювати рядок</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Копіювати рядок</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Оновити (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Фільтрувати за іменем</value></data>
 </root>

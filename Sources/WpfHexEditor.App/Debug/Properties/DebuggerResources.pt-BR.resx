@@ -219,4 +219,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Memória</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Registros</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Inspeção paralela</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Atualizar</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Adicionar</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Remover</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Limpar</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Limpar tudo</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Copiar</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Editar valor</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Filtrar…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Adicionar à inspeção</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Copiar valor</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Copiar nome</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Copiar expressão</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Copiar quadro</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Copiar pilha de chamadas</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Ir para o código-fonte</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Alternar hex/decimal</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Mostrar valores em hex</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Executar até o cursor</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Definir próxima instrução</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Alternar para thread</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Congelar</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Descongelar</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Copiar info do thread</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Copiar info da tarefa</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Copiar endereço</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Copiar hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Copiar ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Copiar linha</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Copiar linha</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Atualizar (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Filtrar variáveis por nome</value></data>
 </root>

@@ -312,4 +312,37 @@
   <data name="DBG_ColFile" xml:space="preserve">
     <value>File</value>
   </data>
+
+  <!-- Generic panel actions (used by Locals/Autos/Watches/CallStack/Registers/Threads/Disassembly/Memory/Tasks context menus and toolbars) -->
+  <data name="DBG_Refresh"            xml:space="preserve"><value>Refresh</value></data>
+  <data name="DBG_Add"                xml:space="preserve"><value>Add</value></data>
+  <data name="DBG_Remove"             xml:space="preserve"><value>Remove</value></data>
+  <data name="DBG_Clear"              xml:space="preserve"><value>Clear</value></data>
+  <data name="DBG_ClearAll"           xml:space="preserve"><value>Clear All</value></data>
+  <data name="DBG_Copy"               xml:space="preserve"><value>Copy</value></data>
+  <data name="DBG_EditValue"          xml:space="preserve"><value>Edit Value</value></data>
+  <data name="DBG_FilterPlaceholder"  xml:space="preserve"><value>Filter…</value></data>
+  <data name="DBG_AddToWatch"         xml:space="preserve"><value>Add to Watch</value></data>
+  <data name="DBG_CopyValue"          xml:space="preserve"><value>Copy Value</value></data>
+  <data name="DBG_CopyName"           xml:space="preserve"><value>Copy Name</value></data>
+  <data name="DBG_CopyExpression"     xml:space="preserve"><value>Copy Expression</value></data>
+  <data name="DBG_CopyFrame"          xml:space="preserve"><value>Copy Frame</value></data>
+  <data name="DBG_CopyCallStack"      xml:space="preserve"><value>Copy Call Stack</value></data>
+  <data name="DBG_GoToSource"         xml:space="preserve"><value>Go to Source</value></data>
+  <data name="DBG_ToggleHexDecimal"   xml:space="preserve"><value>Toggle Hex/Decimal</value></data>
+  <data name="DBG_ShowAsHex"          xml:space="preserve"><value>Show values as hexadecimal</value></data>
+  <data name="DBG_RunToCursor"        xml:space="preserve"><value>Run to Cursor</value></data>
+  <data name="DBG_SetNextStatement"   xml:space="preserve"><value>Set Next Statement</value></data>
+  <data name="DBG_SwitchToThread"     xml:space="preserve"><value>Switch To Thread</value></data>
+  <data name="DBG_Freeze"             xml:space="preserve"><value>Freeze</value></data>
+  <data name="DBG_Thaw"               xml:space="preserve"><value>Thaw</value></data>
+  <data name="DBG_CopyThreadInfo"     xml:space="preserve"><value>Copy Thread Info</value></data>
+  <data name="DBG_CopyTaskInfo"       xml:space="preserve"><value>Copy Task Info</value></data>
+  <data name="DBG_CopyAddress"        xml:space="preserve"><value>Copy Address</value></data>
+  <data name="DBG_CopyHex"            xml:space="preserve"><value>Copy Hex</value></data>
+  <data name="DBG_CopyAscii"          xml:space="preserve"><value>Copy ASCII</value></data>
+  <data name="DBG_CopyRow"            xml:space="preserve"><value>Copy Row</value></data>
+  <data name="DBG_CopyLine"           xml:space="preserve"><value>Copy Line</value></data>
+  <data name="DBG_RefreshTooltip"     xml:space="preserve"><value>Refresh (F5)</value></data>
+  <data name="DBG_FilterTooltip"      xml:space="preserve"><value>Filter variables by name</value></data>
 </root>

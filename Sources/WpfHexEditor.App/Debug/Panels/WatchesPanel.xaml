@@ -18,35 +18,43 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ToolBar Grid.Row="0" Background="{DynamicResource DB_ToolbarBackgroundBrush}">
-            <Button Command="{Binding AddCommand}"   Content="&#xE710;" FontFamily="Segoe MDL2 Assets" ToolTip="{DynamicResource DBG_AddWatch}" />
-            <Button Command="{Binding ClearCommand}" Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" ToolTip="Clear All Watches" />
-        </ToolBar>
+        <Border Grid.Row="0" Style="{DynamicResource PanelToolbarStyle}">
+            <StackPanel Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <Button Command="{Binding AddCommand}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE710;"
+                        ToolTip="{DynamicResource DBG_AddWatch}"/>
+                <Button Command="{Binding ClearCommand}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE74D;"
+                        ToolTip="{DynamicResource DBG_ClearAll}"/>
+            </StackPanel>
+        </Border>
 
         <DataGrid Grid.Row="1" ItemsSource="{Binding Rows}"
                   AutoGenerateColumns="False" CanUserAddRows="False"
-                  Background="{DynamicResource PanelBackground}"
-                  Foreground="{DynamicResource PanelForeground}"
+                  Background="{DynamicResource DockBackgroundBrush}"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
                   GridLinesVisibility="Horizontal"
                   BorderThickness="0">
             <DataGrid.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="_Add Watch"   InputGestureText="Insert"
-                              Command="{Binding PlacementTarget.DataContext.AddCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="_Remove"      InputGestureText="Delete"
+                    <MenuItem Header="{DynamicResource DBG_AddWatch}"   InputGestureText="Insert"
+                              Command="{Binding PlacementTarget.DataContext.AddCommand,    RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="{DynamicResource DBG_Remove}"     InputGestureText="Delete"
                               Command="{Binding PlacementTarget.DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                              CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                              CommandParameter="{Binding PlacementTarget.SelectedItem,     RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <Separator/>
-                    <MenuItem Header="_Copy Value"  InputGestureText="Ctrl+C"
-                              Command="{Binding PlacementTarget.DataContext.CopyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                              CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="{DynamicResource DBG_CopyValue}"  InputGestureText="Ctrl+C"
+                              Command="{Binding PlacementTarget.DataContext.CopyCommand,   RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.SelectedItem,     RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <Separator/>
-                    <MenuItem Header="C_lear All"
-                              Command="{Binding PlacementTarget.DataContext.ClearCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="{DynamicResource DBG_ClearAll}"
+                              Command="{Binding PlacementTarget.DataContext.ClearCommand,  RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Expression" Width="*"
+                <DataGridTextColumn Header="{DynamicResource DBG_ColName}" Width="*"
                                     Binding="{Binding Expression, UpdateSourceTrigger=LostFocus}" />
                 <DataGridTextColumn Header="{DynamicResource DBG_ColValue}" Width="200"
                                     Binding="{Binding Value}" IsReadOnly="True">

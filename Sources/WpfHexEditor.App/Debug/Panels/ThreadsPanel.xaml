@@ -12,52 +12,52 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <DockPanel>
-        <!-- Toolbar -->
-        <ToolBar DockPanel.Dock="Top" Background="{DynamicResource ToolbarBackground}">
-            <Button Command="{Binding RefreshCommand}"
-                    ToolTip="{DynamicResource DBG_ThreadsRefreshTooltip}"
-                    Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-            </Button>
-            <Separator/>
-            <Button Command="{Binding FreezeCommand}"
-                    CommandParameter="{Binding SelectedThread}"
-                    ToolTip="Freeze Thread"
-                    Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="&#xE769;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-            </Button>
-            <Button Command="{Binding ThawCommand}"
-                    CommandParameter="{Binding SelectedThread}"
-                    ToolTip="Thaw Thread"
-                    Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-            </Button>
-        </ToolBar>
+    <DockPanel Background="{DynamicResource DockBackgroundBrush}">
 
-        <!-- Thread list -->
+        <Border DockPanel.Dock="Top" Style="{DynamicResource PanelToolbarStyle}">
+            <StackPanel Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <Button Command="{Binding RefreshCommand}"
+                        ToolTip="{DynamicResource DBG_ThreadsRefreshTooltip}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE72C;"/>
+                <Rectangle Width="1" Height="16" Margin="6,0"
+                           Fill="{DynamicResource Panel_ToolbarBorderBrush}"/>
+                <Button Command="{Binding FreezeCommand}"
+                        CommandParameter="{Binding SelectedThread}"
+                        ToolTip="{DynamicResource DBG_Freeze}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE769;"/>
+                <Button Command="{Binding ThawCommand}"
+                        CommandParameter="{Binding SelectedThread}"
+                        ToolTip="{DynamicResource DBG_Thaw}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE768;"/>
+            </StackPanel>
+        </Border>
+
         <ListView ItemsSource="{Binding Threads}"
                   SelectedItem="{Binding SelectedThread, Mode=TwoWay}"
-                  Background="{DynamicResource PanelBackground}"
-                  Foreground="{DynamicResource PanelForeground}"
+                  Background="{DynamicResource DockBackgroundBrush}"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  BorderThickness="0"
                   VirtualizingPanel.IsVirtualizing="True">
             <ListView.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="_Switch To Thread"
-                              Command="{Binding PlacementTarget.DataContext.SwitchToCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                              CommandParameter="{Binding PlacementTarget.SelectedItem,       RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="{DynamicResource DBG_SwitchToThread}"
+                              Command="{Binding PlacementTarget.DataContext.SwitchToCommand,   RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.SelectedItem,         RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <Separator/>
-                    <MenuItem Header="_Freeze"
-                              Command="{Binding PlacementTarget.DataContext.FreezeCommand,   RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                              CommandParameter="{Binding PlacementTarget.SelectedItem,       RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="_Thaw"
-                              Command="{Binding PlacementTarget.DataContext.ThawCommand,     RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                              CommandParameter="{Binding PlacementTarget.SelectedItem,       RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="{DynamicResource DBG_Freeze}"
+                              Command="{Binding PlacementTarget.DataContext.FreezeCommand,     RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.SelectedItem,         RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="{DynamicResource DBG_Thaw}"
+                              Command="{Binding PlacementTarget.DataContext.ThawCommand,       RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.SelectedItem,         RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <Separator/>
-                    <MenuItem Header="_Copy Thread Info" InputGestureText="Ctrl+C"
+                    <MenuItem Header="{DynamicResource DBG_CopyThreadInfo}" InputGestureText="Ctrl+C"
                               Command="{Binding PlacementTarget.DataContext.CopyThreadCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding PlacementTarget.SelectedItem,         RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="_Refresh" InputGestureText="F5"
+                    <MenuItem Header="{DynamicResource DBG_Refresh}" InputGestureText="F5"
                               Command="{Binding PlacementTarget.DataContext.RefreshCommand,    RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 </ContextMenu>
             </ListView.ContextMenu>
@@ -68,7 +68,7 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="&#x2744;" Visibility="{Binding IsFrozen, Converter={StaticResource BoolToVis}}"
-                                           HorizontalAlignment="Center" Foreground="{DynamicResource DebuggerValueForeground}"/>
+                                           HorizontalAlignment="Center" Foreground="{DynamicResource DB_AsyncBoundaryBrush}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

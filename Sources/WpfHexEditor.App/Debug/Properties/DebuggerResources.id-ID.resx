@@ -186,4 +186,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Memori</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Register</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Pantauan Paralel</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Segarkan</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Tambah</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Hapus</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Bersihkan</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Bersihkan Semua</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Salin</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Edit Nilai</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Filter…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Tambahkan ke Watch</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Salin Nilai</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Salin Nama</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Salin Ekspresi</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Salin Bingkai</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Salin Tumpukan Panggilan</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Buka Sumber</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Beralih Hex/Desimal</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Tampilkan nilai sebagai hex</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Jalankan ke Kursor</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Atur Pernyataan Berikutnya</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Beralih ke Thread</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Bekukan</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Cairkan</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Salin Info Thread</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Salin Info Task</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Salin Alamat</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Salin Hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Salin ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Salin Baris</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Salin Baris</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Segarkan (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Filter variabel berdasarkan nama</value></data>
 </root>

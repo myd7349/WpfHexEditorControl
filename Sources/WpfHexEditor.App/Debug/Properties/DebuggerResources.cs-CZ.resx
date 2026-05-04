@@ -186,4 +186,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Paměť</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Registry</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Paralelní sledování</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Aktualizovat</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Přidat</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Odebrat</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Vymazat</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Vymazat vše</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Upravit hodnotu</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Filtr…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Přidat ke sledování</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Kopírovat hodnotu</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Kopírovat název</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Kopírovat výraz</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Kopírovat rámec</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Kopírovat zásobník volání</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Přejít ke zdroji</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Přepnout hex/desítkový</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Zobrazit hodnoty hexadecimálně</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Spustit ke kurzoru</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Nastavit další příkaz</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Přepnout na vlákno</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Zmrazit</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Rozmrazit</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Kopírovat info o vlákně</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Kopírovat info o úloze</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Kopírovat adresu</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Kopírovat hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Kopírovat ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Kopírovat řádek</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Kopírovat řádek</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Aktualizovat (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Filtrovat proměnné podle názvu</value></data>
 </root>

@@ -186,4 +186,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Μνήμη</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Καταχωρητές</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Παράλληλη παρακολούθηση</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Ανανέωση</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Προσθήκη</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Κατάργηση</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Εκκαθάριση</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Εκκαθάριση όλων</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Αντιγραφή</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Επεξεργασία τιμής</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Φίλτρο…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Προσθήκη στην παρακολούθηση</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Αντιγραφή τιμής</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Αντιγραφή ονόματος</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Αντιγραφή έκφρασης</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Αντιγραφή πλαισίου</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Αντιγραφή στοίβας κλήσεων</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Μετάβαση στην πηγή</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Εναλλαγή Hex/Δεκαδικού</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Εμφάνιση τιμών σε hex</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Εκτέλεση έως δρομέα</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Ορισμός επόμενης πρότασης</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Εναλλαγή στο νήμα</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Πάγωμα</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Ξεπάγωμα</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Αντιγραφή πληροφοριών νήματος</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Αντιγραφή πληροφοριών εργασίας</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Αντιγραφή διεύθυνσης</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Αντιγραφή Hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Αντιγραφή ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Αντιγραφή γραμμής</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Αντιγραφή γραμμής</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Ανανέωση (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Φιλτράρισμα μεταβλητών</value></data>
 </root>

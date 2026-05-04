@@ -219,4 +219,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>메모리</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>레지스터</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>병렬 조사식</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>새로 고침</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>추가</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>제거</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>지우기</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>모두 지우기</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>복사</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>값 편집</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>필터…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>조사식에 추가</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>값 복사</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>이름 복사</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>식 복사</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>프레임 복사</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>호출 스택 복사</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>소스로 이동</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>16진/10진 전환</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>16진수로 표시</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>커서까지 실행</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>다음 문 설정</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>스레드로 전환</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>고정</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>해제</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>스레드 정보 복사</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>작업 정보 복사</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>주소 복사</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>16진수 복사</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>ASCII 복사</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>행 복사</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>행 복사</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>새로 고침 (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>이름으로 변수 필터링</value></data>
 </root>

@@ -15,19 +15,20 @@
 
     <ListView ItemsSource="{Binding Frames}"
               SelectedItem="{Binding SelectedFrame, Mode=TwoWay}"
-              Background="{DynamicResource PanelBackground}"
-              Foreground="{DynamicResource PanelForeground}"
+              Background="{DynamicResource DockBackgroundBrush}"
+              Foreground="{DynamicResource DockMenuForegroundBrush}"
+              BorderThickness="0"
               VirtualizingPanel.IsVirtualizing="True">
         <ListView.ContextMenu>
             <ContextMenu>
-                <MenuItem Header="_Go to Source"  InputGestureText="Enter"
+                <MenuItem Header="{DynamicResource DBG_GoToSource}"     InputGestureText="Enter"
                           Command="{Binding PlacementTarget.DataContext.GoToSourceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                           CommandParameter="{Binding PlacementTarget.SelectedItem,         RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 <Separator/>
-                <MenuItem Header="_Copy Frame"    InputGestureText="Ctrl+C"
+                <MenuItem Header="{DynamicResource DBG_CopyFrame}"      InputGestureText="Ctrl+C"
                           Command="{Binding PlacementTarget.DataContext.CopyFrameCommand,  RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                           CommandParameter="{Binding PlacementTarget.SelectedItem,         RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="Copy Call _Stack"
+                <MenuItem Header="{DynamicResource DBG_CopyCallStack}"
                           Command="{Binding PlacementTarget.DataContext.CopyAllCommand,    RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             </ContextMenu>
         </ListView.ContextMenu>

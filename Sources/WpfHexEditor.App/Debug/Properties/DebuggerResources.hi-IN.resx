@@ -219,4 +219,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>मेमोरी</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>रजिस्टर</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>समानांतर वॉच</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>रीफ्रेश</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>जोड़ें</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>हटाएं</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>साफ़ करें</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>सभी साफ़ करें</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>कॉपी करें</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>मान संपादित करें</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>फ़िल्टर…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>वॉच में जोड़ें</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>मान कॉपी करें</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>नाम कॉपी करें</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>एक्सप्रेशन कॉपी करें</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>फ़्रेम कॉपी करें</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>कॉल स्टैक कॉपी करें</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>स्रोत पर जाएं</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>हेक्स/दशमलव टॉगल करें</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>मानों को हेक्साडेसिमल में दिखाएं</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>कर्सर तक चलाएं</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>अगला कथन सेट करें</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>थ्रेड पर स्विच करें</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>फ़्रीज़</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>अनफ़्रीज़</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>थ्रेड जानकारी कॉपी करें</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>टास्क जानकारी कॉपी करें</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>पता कॉपी करें</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>हेक्स कॉपी करें</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>ASCII कॉपी करें</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>पंक्ति कॉपी करें</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>पंक्ति कॉपी करें</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>रीफ्रेश (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>नाम से वेरिएबल फ़िल्टर करें</value></data>
 </root>

@@ -1,56 +1,68 @@
 <UserControl x:Class="WpfHexEditor.App.Debug.Panels.RegistersPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.App.Debug.ViewModels">
+             xmlns:vm="clr-namespace:WpfHexEditor.App.Debug.ViewModels"
+             xmlns:dbgSvc="clr-namespace:WpfHexEditor.App.Debug.Services">
 
-    <DockPanel Background="{DynamicResource PanelBackground}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <dbgSvc:DebuggerLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
-        <ToolBar DockPanel.Dock="Top" Background="{DynamicResource ToolbarBackground}">
-            <Button Command="{Binding RefreshCommand}"
-                    ToolTip="Refresh registers (F5)"
-                    Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-            </Button>
-            <Separator/>
-            <ToggleButton IsChecked="{Binding HexDisplay}"
-                          ToolTip="Show values as hexadecimal"
-                          Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="0x" FontWeight="SemiBold"/>
-            </ToggleButton>
-        </ToolBar>
+    <DockPanel Background="{DynamicResource DockBackgroundBrush}">
+
+        <Border DockPanel.Dock="Top" Style="{DynamicResource PanelToolbarStyle}">
+            <StackPanel Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <Button Command="{Binding RefreshCommand}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE72C;"
+                        ToolTip="{DynamicResource DBG_RefreshTooltip}"/>
+                <Rectangle Width="1" Height="16" Margin="6,0"
+                           Fill="{DynamicResource Panel_ToolbarBorderBrush}"/>
+                <ToggleButton IsChecked="{Binding HexDisplay}"
+                              Style="{DynamicResource PanelIconToggleStyle}"
+                              ToolTip="{DynamicResource DBG_ShowAsHex}">
+                    <TextBlock Text="0x" FontWeight="SemiBold" FontSize="11"
+                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </ToggleButton>
+            </StackPanel>
+        </Border>
 
         <ListView ItemsSource="{Binding Registers}"
-                  Background="{DynamicResource PanelBackground}"
-                  Foreground="{DynamicResource PanelForeground}"
+                  Background="{DynamicResource DockBackgroundBrush}"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
                   FontFamily="Cascadia Code, Consolas, Courier New"
                   FontSize="12"
                   BorderThickness="0"
                   VirtualizingPanel.IsVirtualizing="True">
             <ListView.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Copy _Value"  InputGestureText="Ctrl+C"
+                    <MenuItem Header="{DynamicResource DBG_CopyValue}"        InputGestureText="Ctrl+C"
                               Command="{Binding PlacementTarget.DataContext.CopyValueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding PlacementTarget.SelectedItem,        RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="Copy _Name"
+                    <MenuItem Header="{DynamicResource DBG_CopyName}"
                               Command="{Binding PlacementTarget.DataContext.CopyNameCommand,  RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding PlacementTarget.SelectedItem,        RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <Separator/>
-                    <MenuItem Header="Toggle _Hex/Decimal"
+                    <MenuItem Header="{DynamicResource DBG_ToggleHexDecimal}"
                               Command="{Binding PlacementTarget.DataContext.ToggleHexCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="_Refresh" InputGestureText="F5"
+                    <MenuItem Header="{DynamicResource DBG_Refresh}"          InputGestureText="F5"
                               Command="{Binding PlacementTarget.DataContext.RefreshCommand,   RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 </ContextMenu>
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Register" Width="120" DisplayMemberBinding="{Binding Name}"/>
-                    <GridViewColumn Header="Value"    Width="200">
+                    <GridViewColumn Header="{DynamicResource DBG_ColName}"  Width="120" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColValue}" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate DataType="{x:Type vm:RegisterItem}">
                                 <TextBlock Text="{Binding Value}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{DynamicResource PanelForeground}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsChanged}" Value="True">
                                                     <Setter Property="Foreground" Value="{DynamicResource DB_LocalChangedBrush}"/>
@@ -63,7 +75,8 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="Type"     Width="80"  DisplayMemberBinding="{Binding Type}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColType}" Width="80"
+                                    DisplayMemberBinding="{Binding Type}"/>
                 </GridView>
             </ListView.View>
         </ListView>

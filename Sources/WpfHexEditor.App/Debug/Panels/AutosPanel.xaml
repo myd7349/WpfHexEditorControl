@@ -1,47 +1,52 @@
 <UserControl x:Class="WpfHexEditor.App.Debug.Panels.AutosPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.App.Debug.ViewModels">
+             xmlns:vm="clr-namespace:WpfHexEditor.App.Debug.ViewModels"
+             xmlns:dbgSvc="clr-namespace:WpfHexEditor.App.Debug.Services">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <dbgSvc:DebuggerLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
-    <DockPanel Background="{DynamicResource PanelBackground}">
+    <DockPanel Background="{DynamicResource DockBackgroundBrush}">
 
-        <ToolBar DockPanel.Dock="Top" Background="{DynamicResource ToolbarBackground}">
-            <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
-                       VerticalAlignment="Center" Margin="2,0,4,0"
-                       Foreground="{DynamicResource PanelForeground}"/>
-            <TextBox x:Name="SearchBox" Width="180"
-                     Background="{DynamicResource PanelBackground}"
-                     Foreground="{DynamicResource PanelForeground}"
-                     BorderBrush="{DynamicResource PopupBorder}"
-                     ToolTip="Filter variables by name"
-                     TextChanged="OnSearchTextChanged"/>
-        </ToolBar>
+        <Border DockPanel.Dock="Top" Style="{DynamicResource PanelToolbarStyle}">
+            <StackPanel Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <TextBox x:Name="SearchBox" Width="180"
+                         Style="{DynamicResource PanelSearchBoxStyle}"
+                         Tag="{DynamicResource DBG_FilterPlaceholder}"
+                         ToolTip="{DynamicResource DBG_FilterTooltip}"
+                         TextChanged="OnSearchTextChanged"/>
+            </StackPanel>
+        </Border>
 
         <TreeView x:Name="VarTree"
                   ItemsSource="{Binding Variables}"
-                  Background="{DynamicResource PanelBackground}"
-                  Foreground="{DynamicResource PanelForeground}">
+                  Background="{DynamicResource DockBackgroundBrush}"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  BorderThickness="0">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type vm:VariableNode}"
                                           ItemsSource="{Binding Children}">
                     <Grid Tag="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType=TreeView}}">
                         <Grid.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="_Edit Value" InputGestureText="F2"
-                                          Command="{Binding PlacementTarget.Tag.EditValueCommand,    RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                <MenuItem Header="{DynamicResource DBG_EditValue}" InputGestureText="F2"
+                                          Command="{Binding PlacementTarget.Tag.EditValueCommand,      RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding}"/>
-                                <MenuItem Header="Add to _Watch"
-                                          Command="{Binding PlacementTarget.Tag.AddToWatchCommand,   RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                <MenuItem Header="{DynamicResource DBG_AddToWatch}"
+                                          Command="{Binding PlacementTarget.Tag.AddToWatchCommand,     RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding}"/>
                                 <Separator/>
-                                <MenuItem Header="Copy _Value" InputGestureText="Ctrl+C"
-                                          Command="{Binding PlacementTarget.Tag.CopyValueCommand,    RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                <MenuItem Header="{DynamicResource DBG_CopyValue}" InputGestureText="Ctrl+C"
+                                          Command="{Binding PlacementTarget.Tag.CopyValueCommand,      RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding}"/>
-                                <MenuItem Header="Copy E_xpression"
+                                <MenuItem Header="{DynamicResource DBG_CopyExpression}"
                                           Command="{Binding PlacementTarget.Tag.CopyExpressionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding}"/>
                             </ContextMenu>
@@ -57,7 +62,7 @@
                                    MouseLeftButtonDown="OnValueClick">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource PanelForeground}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsChanged}" Value="True">
                                             <Setter Property="Foreground" Value="{DynamicResource DB_LocalChangedBrush}"/>
@@ -73,8 +78,8 @@
                                  KeyDown="OnEditKeyDown"
                                  LostFocus="OnEditLostFocus"
                                  IsVisibleChanged="OnEditVisibleChanged"
-                                 Background="{DynamicResource PanelBackground}"
-                                 Foreground="{DynamicResource PanelForeground}"
+                                 Background="{DynamicResource DockBackgroundBrush}"
+                                 Foreground="{DynamicResource DockMenuForegroundBrush}"
                                  BorderThickness="0">
                             <TextBox.Style>
                                 <Style TargetType="TextBox">
@@ -90,7 +95,7 @@
                         </TextBox>
 
                         <TextBlock Grid.Column="2" Text="{Binding Type}"
-                                   Foreground="{DynamicResource PanelForeground}" Opacity="0.6" />
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.6" />
                     </Grid>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

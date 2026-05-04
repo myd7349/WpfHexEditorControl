@@ -219,4 +219,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>الذاكرة</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>السجلات</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>مراقبة متوازية</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>إضافة</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>إزالة</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>مسح</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>مسح الكل</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>نسخ</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>تحرير القيمة</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>تصفية…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>إضافة إلى المراقبة</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>نسخ القيمة</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>نسخ الاسم</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>نسخ التعبير</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>نسخ الإطار</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>نسخ مكدس الاستدعاءات</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>الانتقال إلى المصدر</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>تبديل سداسي/عشري</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>عرض القيم بالنظام السداسي</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>تشغيل حتى المؤشر</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>تعيين العبارة التالية</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>التبديل إلى مؤشر الترابط</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>تجميد</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>إذابة</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>نسخ معلومات مؤشر الترابط</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>نسخ معلومات المهمة</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>نسخ العنوان</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>نسخ سداسي</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>نسخ ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>نسخ الصف</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>نسخ السطر</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>تحديث (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>تصفية المتغيرات حسب الاسم</value></data>
 </root>

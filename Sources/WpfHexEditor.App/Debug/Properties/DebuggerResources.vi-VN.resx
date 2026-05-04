@@ -186,4 +186,35 @@
   <data name="Debugger_MemoryPanelTitle" xml:space="preserve"><value>Bộ nhớ</value></data>
   <data name="Debugger_RegistersPanelTitle" xml:space="preserve"><value>Thanh ghi</value></data>
   <data name="Debugger_ParallelWatchPanelTitle" xml:space="preserve"><value>Xem song song</value></data>
+  <data name="DBG_Refresh" xml:space="preserve"><value>Làm mới</value></data>
+  <data name="DBG_Add" xml:space="preserve"><value>Thêm</value></data>
+  <data name="DBG_Remove" xml:space="preserve"><value>Xóa</value></data>
+  <data name="DBG_Clear" xml:space="preserve"><value>Xóa hết</value></data>
+  <data name="DBG_ClearAll" xml:space="preserve"><value>Xóa tất cả</value></data>
+  <data name="DBG_Copy" xml:space="preserve"><value>Sao chép</value></data>
+  <data name="DBG_EditValue" xml:space="preserve"><value>Sửa giá trị</value></data>
+  <data name="DBG_FilterPlaceholder" xml:space="preserve"><value>Lọc…</value></data>
+  <data name="DBG_AddToWatch" xml:space="preserve"><value>Thêm vào Watch</value></data>
+  <data name="DBG_CopyValue" xml:space="preserve"><value>Sao chép giá trị</value></data>
+  <data name="DBG_CopyName" xml:space="preserve"><value>Sao chép tên</value></data>
+  <data name="DBG_CopyExpression" xml:space="preserve"><value>Sao chép biểu thức</value></data>
+  <data name="DBG_CopyFrame" xml:space="preserve"><value>Sao chép khung</value></data>
+  <data name="DBG_CopyCallStack" xml:space="preserve"><value>Sao chép Call Stack</value></data>
+  <data name="DBG_GoToSource" xml:space="preserve"><value>Đi đến mã nguồn</value></data>
+  <data name="DBG_ToggleHexDecimal" xml:space="preserve"><value>Đổi Hex/Thập phân</value></data>
+  <data name="DBG_ShowAsHex" xml:space="preserve"><value>Hiển thị dạng hex</value></data>
+  <data name="DBG_RunToCursor" xml:space="preserve"><value>Chạy đến con trỏ</value></data>
+  <data name="DBG_SetNextStatement" xml:space="preserve"><value>Đặt câu lệnh kế</value></data>
+  <data name="DBG_SwitchToThread" xml:space="preserve"><value>Chuyển sang Thread</value></data>
+  <data name="DBG_Freeze" xml:space="preserve"><value>Đóng băng</value></data>
+  <data name="DBG_Thaw" xml:space="preserve"><value>Rã đông</value></data>
+  <data name="DBG_CopyThreadInfo" xml:space="preserve"><value>Sao chép thông tin Thread</value></data>
+  <data name="DBG_CopyTaskInfo" xml:space="preserve"><value>Sao chép thông tin Task</value></data>
+  <data name="DBG_CopyAddress" xml:space="preserve"><value>Sao chép địa chỉ</value></data>
+  <data name="DBG_CopyHex" xml:space="preserve"><value>Sao chép Hex</value></data>
+  <data name="DBG_CopyAscii" xml:space="preserve"><value>Sao chép ASCII</value></data>
+  <data name="DBG_CopyRow" xml:space="preserve"><value>Sao chép hàng</value></data>
+  <data name="DBG_CopyLine" xml:space="preserve"><value>Sao chép dòng</value></data>
+  <data name="DBG_RefreshTooltip" xml:space="preserve"><value>Làm mới (F5)</value></data>
+  <data name="DBG_FilterTooltip" xml:space="preserve"><value>Lọc biến theo tên</value></data>
 </root>
