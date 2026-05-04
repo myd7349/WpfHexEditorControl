@@ -10,7 +10,6 @@
 
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
@@ -29,9 +28,26 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
     private double         _scrollExtent;    // total document canvas height
     private double         _viewportHeight;  // visible area height
 
+    // ── Static frozen brushes (same pattern as CodeEditor MinimapControl) ─────
+    private static readonly Brush ViewportBrush;
+    private static readonly Pen   ViewportPen;
+    private static readonly Brush HoverBandBrush;
+
+    static DocumentMiniMap()
+    {
+        ViewportBrush  = Freeze(new SolidColorBrush(Color.FromArgb(50, 255, 255, 255)));
+        ViewportPen    = FreezePen(new Pen(Freeze(new SolidColorBrush(Color.FromArgb(120, 255, 255, 255))), 1.0));
+        HoverBandBrush = Freeze(new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)));
+    }
+
+    private static Brush   Freeze(SolidColorBrush b)  { b.Freeze(); return b; }
+    private static Pen     FreezePen(Pen p)            { p.Freeze(); return p; }
+
     // ── Context-menu state ────────────────────────────────────────────────────
     private bool _renderBlocks = true;   // show block-type colored strips vs uniform dots
     private bool _sliderAlways = true;   // viewport rect always visible vs mouse-over only
+    private bool _isMouseOver;
+    private double _hoverY = -1;
 
     /// <summary>Raised when the user clicks/drags to request a scroll offset (0–1 normalised).</summary>
     public event EventHandler<double>? ScrollRequested;
@@ -39,12 +55,12 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
     public DocumentMiniMap()
     {
         InitializeComponent();
-        Loaded            += (_, _) => UpdateViewportRect();
-        SizeChanged       += (_, _) => { Redraw(); UpdateViewportRect(); };
+        Loaded            += (_, _) => Redraw();
+        SizeChanged       += (_, _) => Redraw();
         MouseDown         += OnMouseDown;
         MouseMove         += OnMouseMove;
-        MouseEnter        += (_, _) => { if (!_sliderAlways) PART_Viewport.Visibility = Visibility.Visible; };
-        MouseLeave        += (_, _) => { if (!_sliderAlways) PART_Viewport.Visibility = Visibility.Hidden; };
+        MouseEnter        += (_, _) => { _isMouseOver = true;  Redraw(); };
+        MouseLeave        += (_, _) => { _isMouseOver = false; _hoverY = -1; Redraw(); };
         MouseLeftButtonUp += (_, _) => ReleaseMouseCapture();
         MouseRightButtonUp+= OnRightClick;
         InitializeContextMenu();
@@ -74,15 +90,15 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
         {
             _sliderAlways = true;
             _miSliderAlways.IsChecked = true;
-            _miSliderHover!.IsChecked  = false;
-            UpdateViewportRect();
+            _miSliderHover!.IsChecked = false;
+            Redraw();
         };
         _miSliderHover.Click += (_, _) =>
         {
             _sliderAlways = false;
-            _miSliderHover.IsChecked  = true;
+            _miSliderHover.IsChecked   = true;
             _miSliderAlways!.IsChecked = false;
-            PART_Viewport.Visibility = IsMouseOver ? Visibility.Visible : Visibility.Hidden;
+            Redraw();
         };
 
         cm.Items.Add(_miShow);
@@ -128,7 +144,7 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
         _scrollOffset   = scrollOffset;
         _scrollExtent   = scrollExtent;
         _viewportHeight = viewportHeight;
-        UpdateViewportRect();
+        Redraw();
     }
 
     // ── Drawing ──────────────────────────────────────────────────────────────
@@ -138,8 +154,8 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
         PART_Canvas.Children.Clear();
         if (_model is null || ActualWidth < 4 || ActualHeight < 4) return;
 
-        var blocks  = _model.Blocks.ToList();
-        int count   = blocks.Count;
+        var blocks = _model.Blocks.ToList();
+        int count  = blocks.Count;
         if (count == 0) return;
 
         double w = ActualWidth;
@@ -152,9 +168,9 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
                           ?? new SolidColorBrush(Color.FromRgb(22, 22, 22));
             dc.DrawRectangle(bgBrush, null, new Rect(0, 0, w, h));
 
-            double lineH   = Math.Max(1.0, h / Math.Max(count, 1));
-            double lineH2  = Math.Max(lineH * 0.6, 0.8);
-            double indent  = 4;
+            double lineH  = Math.Max(1.0, h / Math.Max(count, 1));
+            double lineH2 = Math.Max(lineH * 0.6, 0.8);
+            double indent = 4;
 
             for (int i = 0; i < count; i++)
             {
@@ -162,14 +178,28 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
                 if (block.Kind is "page-break") continue;
 
                 double y = i * lineH;
-
-                // Width proportional to text length (capped at full width)
                 double textFrac = Math.Min(GetFlatLength(block) / 80.0, 1.0);
                 double lineW    = Math.Max(2, (w - indent * 2) * textFrac);
 
-                var brush = GetKindBrush(block);
-                dc.DrawRectangle(brush, null,
+                dc.DrawRectangle(GetKindBrush(block), null,
                     new Rect(indent, y + (lineH - lineH2) / 2, lineW, lineH2));
+            }
+
+            // ── Viewport rectangle (always drawn in DC — same pattern as CodeEditor MinimapControl) ──
+            if (_scrollExtent > 0 && (_sliderAlways || _isMouseOver))
+            {
+                double scale = h / _scrollExtent;
+                double vpH   = Math.Max(8, _viewportHeight * scale);
+                double top   = Math.Clamp(_scrollOffset * scale, 0, h - vpH);
+
+                // Hover band (mouse-over position preview)
+                if (_isMouseOver && _hoverY >= 0)
+                {
+                    double bandTop = Math.Clamp(_hoverY - vpH / 2, 0, h - vpH);
+                    dc.DrawRectangle(HoverBandBrush, null, new Rect(0, bandTop, w, vpH));
+                }
+
+                dc.DrawRectangle(ViewportBrush, ViewportPen, new Rect(0, top, w, vpH));
             }
         }
 
@@ -181,28 +211,6 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
             Height  = h
         };
         PART_Canvas.Children.Add(img);
-
-        UpdateViewportRect();
-    }
-
-    private void UpdateViewportRect()
-    {
-        if (ActualHeight < 4 || _scrollExtent <= 0)
-        {
-            PART_Viewport.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        double scale = ActualHeight / _scrollExtent;
-        double top   = _scrollOffset * scale;
-        double vpH   = Math.Max(4, _viewportHeight * scale);
-
-        top = Math.Clamp(top, 0, ActualHeight - vpH);
-
-        bool show = _sliderAlways || IsMouseOver;
-        PART_Viewport.Visibility = show ? Visibility.Visible : Visibility.Hidden;
-        PART_Viewport.Margin     = new Thickness(0, top, 0, 0);
-        PART_Viewport.Height     = vpH;
     }
 
     // ── Interaction ──────────────────────────────────────────────────────────
@@ -216,8 +224,16 @@ public partial class DocumentMiniMap : System.Windows.Controls.UserControl
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || !IsMouseCaptured) return;
-        ScrollTo(e.GetPosition(this).Y);
+        var pos = e.GetPosition(this);
+        if (e.LeftButton == MouseButtonState.Pressed && IsMouseCaptured)
+        {
+            ScrollTo(pos.Y);
+        }
+        else
+        {
+            _hoverY = pos.Y;
+            Redraw();
+        }
     }
 
     private void ScrollTo(double mouseY)

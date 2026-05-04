@@ -17,12 +17,6 @@
     <Grid>
         <Canvas x:Name="PART_Canvas" ClipToBounds="True"/>
 
-        <!-- Viewport highlight rectangle (current visible area indicator) -->
-        <Rectangle x:Name="PART_Viewport"
-                   HorizontalAlignment="Stretch"
-                   VerticalAlignment="Top"
-                   IsHitTestVisible="False"
-                   Opacity="0.25"
-                   Fill="{DynamicResource DE_SelectionBrush}"/>
+        <!-- Viewport overlay is drawn directly in DrawingContext (see DocumentMiniMap.xaml.cs) -->
     </Grid>
 </UserControl>
