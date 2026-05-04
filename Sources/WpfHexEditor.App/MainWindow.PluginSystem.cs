@@ -70,6 +70,7 @@ public partial class MainWindow
     private readonly WpfHexEditor.App.Services.DialogServiceImpl   _dialogService = new();
     private WpfHexEditor.App.Services.LspFirstRunService?          _lspFirstRunService;
     private WpfHexEditor.App.Services.DebuggerServiceImpl?      _debuggerService;
+    private WpfHexEditor.App.Debug.DebugModule?                 _debugModule;
     private WpfHexEditor.App.Services.ScriptingServiceImpl?     _scriptingService;
     private readonly FocusContextService _focusContextService = new();
 
@@ -467,6 +468,13 @@ public partial class MainWindow
             }
 
             InitDebugIntegration();
+
+            // Debug module — formerly WpfHexEditor.Plugins.Debugger plugin (ADR-010).
+            // Registered before plugin loader so its panels/menus participate in the
+            // initial layout build alongside core IDE panels.
+            _debugModule = new WpfHexEditor.App.Debug.DebugModule();
+            _debugModule.Initialize(hostContext);
+
             _pluginHost = new WpfPluginHost(hostContext, uiRegistry, permissionService, Dispatcher,
                 logger:      msg => OutputLogger.PluginInfo(msg),
                 errorLogger: msg => OutputLogger.PluginError(msg));
@@ -1276,6 +1284,8 @@ public partial class MainWindow
         _roslynLoadCts = null;
         _lspBridgeService?.Dispose();
         _lspBridgeService = null;
+        _debugModule?.Shutdown();
+        _debugModule = null;
         if (_debuggerService is not null)
         {
             await _debuggerService.DisposeAsync().ConfigureAwait(false);

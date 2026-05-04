@@ -145,6 +145,9 @@ public interface IDebuggerService
     /// <summary>Launch a new debug session using the given configuration.</summary>
     Task LaunchAsync(WpfHexEditor.Core.Debugger.Models.DebugLaunchConfig config);
 
+    /// <summary>Attach to a running local process by PID.</summary>
+    Task AttachAsync(int pid) => Task.CompletedTask;
+
     /// <summary>
     /// Attach to a remote debug adapter over TCP or SSH tunnel.
     /// Creates a <c>TcpDapClient</c> or <c>SshTunnelDapClient</c> per

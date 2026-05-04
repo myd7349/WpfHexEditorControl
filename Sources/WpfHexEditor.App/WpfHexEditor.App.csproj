@@ -172,4 +172,19 @@
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>
+
+  <!-- Debug module (formerly WpfHexEditor.Plugins.Debugger) — see ADR-010 -->
+  <ItemGroup>
+    <Compile Update="Debug\Properties\DebuggerResources.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DebuggerResources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Update="Debug\Properties\DebuggerResources.resx">
+      <SubType>Designer</SubType>
+      <LastGenOutput>DebuggerResources.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
