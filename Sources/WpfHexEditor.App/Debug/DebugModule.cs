@@ -84,25 +84,12 @@ internal sealed class DebugModule
     private ThreadsPanelViewModel?           _threadsVm;
     private ParallelStacksPanelViewModel?    _parallelStacksVm;
 
-    // Lazy-built panels (instantiated on first GetPanel(contentId) call from
-    // MainWindow.BuildContentForItem — never up front).
-    private BreakpointExplorerPanel?     _bpPanel;
-    private CallStackPanel?              _csPanel;
-    private LocalsPanel?                 _locPanel;
-    private AutosPanel?                  _autosPanel;
-    private ExceptionSettingsPanel?      _exceptionPanel;
-    private ImmediateWindowPanel?        _immediatePanel;
-    private ModulesPanel?                _modulesPanel;
-    private TasksPanel?                  _tasksPanel;
-    private DisassemblyPanel?            _disassemblyPanel;
-    private MemoryWindowPanel?           _memoryPanel;
-    private RegistersPanel?              _registersPanel;
-    private ParallelWatchPanel?          _parallelWatchPanel;
-    private WatchesPanel?                _watchPanel;
-    private DebugConsolePanel?           _consolePanel;
-    private ThreadsPanel?                _threadsPanel;
-    private ParallelStacksPanel?         _parallelStacksPanel;
-    private LaunchConfigEditorPanel?     _launchConfigPanel;
+    // Panels are NOT cached: every GetPanel(contentId) call returns a fresh
+    // UIElement bound to the persistent ViewModel. Caching the panel breaks
+    // undock/redock — WPF refuses to re-parent an element that still has a
+    // logical parent in another visual tree (e.g. the FloatingWindow it was
+    // just floated into). The ViewModel keeps the user-visible state (selected
+    // item, watches, breakpoints, …); the panel is just a thin XAML shell.
 
     public bool IsEnabled => _debugger is not null;
 
@@ -181,23 +168,23 @@ internal sealed class DebugModule
 
         return contentId switch
         {
-            ContentIdBreakpoints    => _bpPanel ??= BuildBreakpointsPanel(),
-            ContentIdCallStack      => _csPanel ??= new CallStackPanel { DataContext = _csVm },
-            ContentIdLocals         => _locPanel ??= new LocalsPanel { DataContext = _locVm },
-            ContentIdAutos          => _autosPanel ??= new AutosPanel { DataContext = _autosVm },
-            ContentIdExceptions     => _exceptionPanel ??= new ExceptionSettingsPanel { DataContext = _exceptionVm },
-            ContentIdImmediate      => _immediatePanel ??= new ImmediateWindowPanel { DataContext = _immediateVm },
-            ContentIdModules        => _modulesPanel ??= new ModulesPanel { DataContext = _modulesVm },
-            ContentIdTasks          => _tasksPanel ??= new TasksPanel { DataContext = _tasksVm },
-            ContentIdDisassembly    => _disassemblyPanel ??= new DisassemblyPanel { DataContext = _disassemblyVm },
-            ContentIdMemory         => _memoryPanel ??= new MemoryWindowPanel { DataContext = _memoryVm },
-            ContentIdRegisters      => _registersPanel ??= new RegistersPanel { DataContext = _registersVm },
-            ContentIdParallelWatch  => _parallelWatchPanel ??= new ParallelWatchPanel { DataContext = _parallelWatchVm },
-            ContentIdWatch          => _watchPanel ??= new WatchesPanel { DataContext = _watchVm },
-            ContentIdConsole        => _consolePanel ??= BuildConsolePanel(),
-            ContentIdThreads        => _threadsPanel ??= new ThreadsPanel { DataContext = _threadsVm },
-            ContentIdParallelStacks => _parallelStacksPanel ??= new ParallelStacksPanel { DataContext = _parallelStacksVm },
-            ContentIdLaunchConfig   => _launchConfigPanel ??= new LaunchConfigEditorPanel(_context.DocumentHost, _debugger),
+            ContentIdBreakpoints    => BuildBreakpointsPanel(),
+            ContentIdCallStack      => new CallStackPanel { DataContext = _csVm },
+            ContentIdLocals         => new LocalsPanel { DataContext = _locVm },
+            ContentIdAutos          => new AutosPanel { DataContext = _autosVm },
+            ContentIdExceptions     => new ExceptionSettingsPanel { DataContext = _exceptionVm },
+            ContentIdImmediate      => new ImmediateWindowPanel { DataContext = _immediateVm },
+            ContentIdModules        => new ModulesPanel { DataContext = _modulesVm },
+            ContentIdTasks          => new TasksPanel { DataContext = _tasksVm },
+            ContentIdDisassembly    => new DisassemblyPanel { DataContext = _disassemblyVm },
+            ContentIdMemory         => new MemoryWindowPanel { DataContext = _memoryVm },
+            ContentIdRegisters      => new RegistersPanel { DataContext = _registersVm },
+            ContentIdParallelWatch  => new ParallelWatchPanel { DataContext = _parallelWatchVm },
+            ContentIdWatch          => new WatchesPanel { DataContext = _watchVm },
+            ContentIdConsole        => BuildConsolePanel(),
+            ContentIdThreads        => new ThreadsPanel { DataContext = _threadsVm },
+            ContentIdParallelStacks => new ParallelStacksPanel { DataContext = _parallelStacksVm },
+            ContentIdLaunchConfig   => new LaunchConfigEditorPanel(_context.DocumentHost, _debugger),
             _ => null
         };
     }

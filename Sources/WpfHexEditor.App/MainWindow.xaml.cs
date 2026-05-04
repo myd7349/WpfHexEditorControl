@@ -1482,6 +1482,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private object CreateContentForItem(DockItem item)
     {
+        // Module-owned panels (Debug + AssemblyExplorer) build a fresh UIElement
+        // bound to the persistent ViewModel on every call so they survive
+        // undock/redock — caching the WPF element would re-parent it while it
+        // still has a logical parent in another visual tree, which freezes WPF.
+        if (item.ContentId.StartsWith("panel-dbg-", StringComparison.Ordinal)
+            || (_assemblyExplorerModule is not null && _assemblyExplorerModule.IsKnownContentId(item.ContentId)))
+        {
+            return BuildContentForItem(item);
+        }
+
         if (_displayContent.TryGetValue(item.ContentId, out var cachedDisplay))
             return cachedDisplay;
         var display = BuildContentForItem(item);

@@ -97,22 +97,60 @@ internal sealed class AssemblyExplorerModule
     }
 
     /// <summary>
-    /// Returns the panel for an AssemblyExplorer ContentId, building the
-    /// shared explorer state (decompiler backend, panels, ViewModels, hex
-    /// sync) on the first call. Used by MainWindow.BuildContentForItem.
+    /// Returns the panel for an AssemblyExplorer ContentId. The shared explorer
+    /// state (decompiler backend, root ViewModel, hex sync) is built on the
+    /// first call via <see cref="EnsureActivated"/> and cached. The WPF panels
+    /// themselves however are built fresh on every call so they survive
+    /// undock/redock — caching the panel would re-parent it while it still has
+    /// a logical parent in another visual tree, which freezes WPF.
     /// </summary>
     public UIElement? GetPanel(string contentId)
     {
         EnsureActivated();
-        if (_isShutdown) return null;
+        if (_isShutdown || _panel is null) return null;
 
         return contentId switch
         {
-            ContentIdMain   => _panel,
-            ContentIdSearch => _searchPanel,
-            ContentIdDiff   => _diffPanel,
+            // Main panel: shared singleton because its tree state (expanded
+            // nodes, selection, scroll, decompile cache) lives on the panel
+            // itself. Re-parenting is detached from any current parent first.
+            ContentIdMain   => DetachAndReturn(_panel),
+            ContentIdSearch => new AssemblySearchPanel(_panel.ViewModel),
+            ContentIdDiff   => BuildDiffPanel(),
             _               => null
         };
+    }
+
+    private AssemblyDiffPanel BuildDiffPanel()
+    {
+        var p = new AssemblyDiffPanel(_panel!.ViewModel);
+        if (_context is not null) p.SetContext(_context);
+        return p;
+    }
+
+    /// <summary>
+    /// Detaches an element from its current logical parent before returning
+    /// it for re-docking. Lets the same panel instance be reused after the
+    /// user undocks and redocks it (otherwise WPF refuses to re-parent).
+    /// </summary>
+    private static UIElement DetachAndReturn(UIElement panel)
+    {
+        if (panel is FrameworkElement fe && fe.Parent is { } parent)
+        {
+            switch (parent)
+            {
+                case ContentControl cc when ReferenceEquals(cc.Content, panel):
+                    cc.Content = null;
+                    break;
+                case System.Windows.Controls.Decorator dec when ReferenceEquals(dec.Child, panel):
+                    dec.Child = null;
+                    break;
+                case Panel pnl:
+                    pnl.Children.Remove(panel);
+                    break;
+            }
+        }
+        return panel;
     }
 
     /// <summary>
