@@ -1550,6 +1550,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             MarkdownOutlinePanelContentId  => CreateMarkdownOutlinePanelContent(),
             FormatBrowserContentId         => CreateFormatBrowserContent(),
             FormatCatalogDocContentId      => CreateFormatCatalogContent(),
+            _ when item.ContentId.StartsWith("panel-dbg-")          => _debugModule?.GetPanel(item.ContentId) ?? CreateDocumentContent(item),
+            _ when _assemblyExplorerModule is not null && _assemblyExplorerModule.IsKnownContentId(item.ContentId)
+                                                                    => _assemblyExplorerModule.GetPanel(item.ContentId) ?? CreateDocumentContent(item),
             _ when item.ContentId.StartsWith("doc-class-diagram-") => CreateClassDiagramGhostContent(item),
             _ when item.ContentId.StartsWith("doc-new-text-")   => CreateEmptyTextEditorContent(item),
             _ when item.ContentId.StartsWith("doc-new-code-")  => CreateEmptyCodeEditorContent(item),

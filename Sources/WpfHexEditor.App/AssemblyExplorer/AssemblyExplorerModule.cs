@@ -3,26 +3,29 @@
 // File: AssemblyExplorer/AssemblyExplorerModule.cs
 // Description:
 //     Internal module that wires the Assembly Explorer into the IDE.
-//     Registers 3 panels (Main, Search, Diff), 4 menu items, 4 terminal
-//     commands, and subscribes to HexEditor + IDEEvents for auto-analysis
-//     of managed assemblies.
+//     Subscribes to HexEditor + IDE events for auto-analysis of managed
+//     assemblies, registers terminal commands, and exposes the 3 panels
+//     (Main, Search, Diff) lazily via GetPanel(contentId) for the
+//     MainWindow.BuildContentForItem switch.
 //
 //     Replaces the former WpfHexEditor.Plugins.AssemblyExplorer plugin
-//     (ADR-011). Hosted directly by MainWindow.PluginSystem after the
-//     core services are ready and before the plugin loader runs.
+//     (ADR-011). Menu items live in MainWindow.AssemblyExplorerMenu.cs;
+//     this module no longer touches IUIRegistry/RegisterPanel/RegisterMenuItem.
 // Architecture:
-//     App layer — consumes IIDEHostContext like a plugin would, so the
-//     module remains portable if it is ever re-extracted into a plugin.
-//     IDecompilationLanguage registry stays open for third-party langs.
+//     App layer — consumes the SDK contract types it needs (IHexEditorService,
+//     IDocumentHostService, …) but does not register UI elements through the
+//     SDK plugin path. The SDK is a communication contract for plugins; core
+//     modules dock their panels through MainWindow's BuildContentForItem like
+//     SolutionExplorer does.
 // ==========================================================
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
 using WpfHexEditor.Core.AssemblyAnalysis.Languages;
 using WpfHexEditor.Core.AssemblyAnalysis.Services;
 using WpfHexEditor.Core.Events.IDEEvents;
@@ -32,21 +35,19 @@ using WpfHexEditor.App.AssemblyExplorer.Languages;
 using WpfHexEditor.App.AssemblyExplorer.Options;
 using WpfHexEditor.App.AssemblyExplorer.Services;
 using WpfHexEditor.App.AssemblyExplorer.Views;
-using WpfHexEditor.App.AssemblyExplorer.Properties;
-using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
-using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Events;
-using WpfHexEditor.Editor.Core.Dialogs;
 
 namespace WpfHexEditor.App.AssemblyExplorer;
 
 internal sealed class AssemblyExplorerModule
 {
-    private const string ModuleId       = "WpfHexEditor.App.AssemblyExplorer";
-    private const string PanelUiId      = "WpfHexEditor.App.AssemblyExplorer.Panel.Main";
-    private const string SearchPanelUiId = "WpfHexEditor.App.AssemblyExplorer.Panel.Search";
-    private const string DiffPanelUiId  = "WpfHexEditor.App.AssemblyExplorer.Panel.Diff";
+    public const string ContentIdMain   = "WpfHexEditor.App.AssemblyExplorer.Panel.Main";
+    public const string ContentIdSearch = "WpfHexEditor.App.AssemblyExplorer.Panel.Search";
+    public const string ContentIdDiff   = "WpfHexEditor.App.AssemblyExplorer.Panel.Diff";
+
+    // Module identity for ViewModel constructors (originally a plugin id).
+    private const string ModuleId = "WpfHexEditor.App.AssemblyExplorer";
 
     private static readonly HashSet<string> ManagedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -65,12 +66,12 @@ internal sealed class AssemblyExplorerModule
     private bool                     _activated;
 
     /// <summary>
-    /// Light-weight registration. Mirrors a Dormant plugin: only menu items,
-    /// terminal commands, and a few event subscriptions are wired so the user
-    /// can trigger activation. The expensive bits (DecompilerBackend ctor,
-    /// 3 XAML panels, ViewModels, session restore) run lazily in
-    /// <see cref="EnsureActivated"/> — this matches the behaviour the plugin
-    /// had with PluginActivationOnStartup=false (ADR-011 follow-up).
+    /// Light-weight initialisation. Wires HexEditor + IDE event subscriptions
+    /// and terminal commands. Does NOT instantiate any panel — panels are
+    /// built lazily by <see cref="GetPanel"/> when MainWindow's docking
+    /// layout asks for the corresponding ContentId. The first heavy
+    /// activation (decompiler backend, panel ViewModels) happens on the
+    /// first GetPanel call.
     /// </summary>
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
     {
@@ -84,8 +85,8 @@ internal sealed class AssemblyExplorerModule
         // auto-analyse handlers below have it available before EnsureActivated.
         _analysisEngine = new AssemblyAnalysisEngine();
 
-        RegisterMenuItems(context);
-        RegisterTerminalCommands(context);
+        // Terminal command that does not need the panel.
+        context.Terminal.RegisterCommand(new AsmSearchCommand());
 
         _subOpenAssembly = context.EventBus.Subscribe<OpenAssemblyInExplorerEvent>(OnOpenAssemblyRequested);
         context.HexEditor.FileOpened          += OnFileOpened;
@@ -96,96 +97,65 @@ internal sealed class AssemblyExplorerModule
     }
 
     /// <summary>
-    /// First-use activation. Builds the decompiler backend, the 3 panels and
-    /// their ViewModels, and registers them with the docking adapter. Also
-    /// schedules the session restore in the background. Idempotent.
-    ///
-    /// Async-with-pump-yield pattern: the original WpfPluginHost called the
-    /// plugin's InitializeAsync via <c>await dispatcher.InvokeAsync(...)</c>
-    /// from a Task.Run continuation, which let the WPF message pump keep
-    /// painting between expensive WPF/XAML allocations. Calling EnsureActivated
-    /// synchronously from a RelayCommand instead blocks the pump for the full
-    /// 3-panel build (~hundreds of ms on slow startups + a possible JIT spike
-    /// for ICSharpCode.Decompiler), so the IDE looks frozen. Dispatcher yields
-    /// between heavy steps mirror the plugin-host pump dance and unblock paint.
+    /// Returns the panel for an AssemblyExplorer ContentId, building the
+    /// shared explorer state (decompiler backend, panels, ViewModels, hex
+    /// sync) on the first call. Used by MainWindow.BuildContentForItem.
     /// </summary>
-    private async void EnsureActivated()
+    public UIElement? GetPanel(string contentId)
+    {
+        EnsureActivated();
+        if (_isShutdown) return null;
+
+        return contentId switch
+        {
+            ContentIdMain   => _panel,
+            ContentIdSearch => _searchPanel,
+            ContentIdDiff   => _diffPanel,
+            _               => null
+        };
+    }
+
+    /// <summary>
+    /// Returns true if the AssemblyExplorer panel should be brought up
+    /// (e.g. View > Assembly Explorer menu click) for the given ContentId.
+    /// </summary>
+    public bool IsKnownContentId(string contentId)
+        => contentId == ContentIdMain || contentId == ContentIdSearch || contentId == ContentIdDiff;
+
+    /// <summary>
+    /// First-use activation. Builds the decompiler backend, the 3 panels
+    /// and their ViewModels, and wires the persistence + hex sync. Idempotent.
+    /// Synchronous but only runs once. Called from GetPanel(contentId) so the
+    /// panel materialisation happens just-in-time when MainWindow asks for it.
+    /// </summary>
+    private void EnsureActivated()
     {
         if (_activated || _context is null || _analysisEngine is null || _isShutdown) return;
         _activated = true;
 
         var context = _context;
-        var dispatcher = System.Windows.Application.Current.Dispatcher;
-
-        // Decompiler backend ctor can JIT a sizeable Roslyn graph the first time.
-        // Move it off the UI thread so the pump keeps painting.
         var decompiler = new DecompilerService(_analysisEngine);
-        var backend = await Task.Run(() => BuildDecompilerBackend(decompiler)).ConfigureAwait(true);
+        var backend    = BuildDecompilerBackend(decompiler);
 
-        // Wrap the 3 RegisterPanel calls so the docking adapter coalesces three
-        // RebuildVisualTree() calls into a single one — registering panels one
-        // at a time would otherwise rebuild the entire dock tree (incl. open
-        // editors) three times in a row, causing a multi-second freeze on the
-        // UI thread. Mirrors the SuspendRebuild()/ResumeRebuild() dance the
-        // plugin host does around LoadAllAsync (MainWindow.PluginSystem:548).
-        context.UIRegistry.BeginBulkRegistration();
-        try
-        {
-            _panel = new AssemblyExplorerPanel(
-                _analysisEngine, backend, decompiler,
-                context.HexEditor, context.DocumentHost, context.Output,
-                context.EventBus, context.UIRegistry, ModuleId);
-            _panel.SetContext(context);
+        _panel = new AssemblyExplorerPanel(
+            _analysisEngine, backend, decompiler,
+            context.HexEditor, context.DocumentHost, context.Output,
+            context.EventBus, context.UIRegistry, ModuleId);
+        _panel.SetContext(context);
 
-            context.UIRegistry.RegisterPanel(
-                PanelUiId, _panel, ModuleId,
-                new PanelDescriptor
-                {
-                    Title           = AssemblyExplorerResources.AsmExplorer_PanelTitle,
-                    DefaultDockSide = "Left",
-                    DefaultAutoHide = false,
-                    CanClose        = true,
-                    PreferredWidth  = 280
-                });
+        _searchPanel = new AssemblySearchPanel(_panel.ViewModel);
+        _searchPanel.SetContext(context);
 
-            _searchPanel = new AssemblySearchPanel(_panel.ViewModel);
-            _searchPanel.SetContext(context);
-            context.UIRegistry.RegisterPanel(
-                SearchPanelUiId, _searchPanel, ModuleId,
-                new PanelDescriptor
-                {
-                    Title           = AssemblyExplorerResources.AsmExplorer_SearchPanelTitle,
-                    DefaultDockSide = "Bottom",
-                    DefaultAutoHide = true,
-                    CanClose        = true,
-                    PreferredHeight = 200
-                });
+        _diffPanel = new AssemblyDiffPanel(_panel.ViewModel);
+        _diffPanel.SetContext(context);
 
-            _diffPanel = new AssemblyDiffPanel(_panel.ViewModel);
-            _diffPanel.SetContext(context);
-            context.UIRegistry.RegisterPanel(
-                DiffPanelUiId, _diffPanel, ModuleId,
-                new PanelDescriptor
-                {
-                    Title           = AssemblyExplorerResources.AsmExplorer_DiffPanelTitle,
-                    DefaultDockSide = "Bottom",
-                    DefaultAutoHide = true,
-                    CanClose        = true,
-                    PreferredHeight = 250
-                });
-        }
-        finally
-        {
-            context.UIRegistry.EndBulkRegistration();
-        }
-        await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-
-        _panel.SetDiffPanel(_diffPanel, () => context.UIRegistry.ShowPanel(DiffPanelUiId));
+        _panel.SetDiffPanel(_diffPanel, () => context.UIRegistry.ShowPanel(ContentIdDiff));
         _panel.SetSolutionManager(context.SolutionManager);
 
-        // Re-register terminal commands now that the panel exists (the menu-only
-        // ones registered in InitializeAsync used a null panel reference).
-        UpgradeTerminalCommands(context);
+        // Panel-aware terminal commands (the search-only one was registered in InitializeAsync).
+        context.Terminal.RegisterCommand(new AsmLoadCommand(_panel));
+        context.Terminal.RegisterCommand(new AsmListCommand(_panel));
+        context.Terminal.RegisterCommand(new AsmCloseCommand(_panel));
 
         _panel.ViewModel.AssemblyLoaded   += OnAssemblyLoaded;
         _panel.ViewModel.AssemblyUnloaded += OnAssemblyUnloaded;
@@ -194,8 +164,7 @@ internal sealed class AssemblyExplorerModule
         _hexSyncService = new AssemblyHexSyncService(context.HexEditor, _panel.ViewModel);
 
         // Restore previous workspace in the background. Faults are logged, not
-        // propagated. The _isShutdown guard prevents touching a torn-down module
-        // if the user quits before the restore finishes.
+        // propagated.
         _ = Task.Run(async () =>
         {
             try { await RestoreLastSessionAsync().ConfigureAwait(false); }
@@ -204,22 +173,6 @@ internal sealed class AssemblyExplorerModule
                 context.Output.Write("AssemblyExplorer", $"Session restore failed: {ex.Message}");
             }
         });
-    }
-
-    private void RegisterTerminalCommands(IIDEHostContext context)
-    {
-        // Until EnsureActivated runs there is no panel, so the load/list/close
-        // commands need a panel-aware implementation. Register a minimal stub
-        // that activates on first call.
-        context.Terminal.RegisterCommand(new AsmSearchCommand());
-    }
-
-    private void UpgradeTerminalCommands(IIDEHostContext context)
-    {
-        if (_panel is null) return;
-        context.Terminal.RegisterCommand(new AsmLoadCommand(_panel));
-        context.Terminal.RegisterCommand(new AsmListCommand(_panel));
-        context.Terminal.RegisterCommand(new AsmCloseCommand(_panel));
     }
 
     public void Shutdown()
@@ -290,12 +243,9 @@ internal sealed class AssemblyExplorerModule
         await Task.WhenAll(tasks);
     }
 
-    // ADR-011 follow-up: never auto-analyse the IDE's own binaries on session
-    // restore. Loading WpfHexEditor.App.dll (or any sibling DLL in the host's
-    // bin folder) builds a tens-of-thousands-of-types tree synchronously on
-    // the UI thread, which freezes the IDE for several seconds at best and
-    // hangs it at worst. The user can still drag the DLL onto the panel
-    // explicitly if they really want to inspect it.
+    // ADR-011 follow-up: never auto-analyse the IDE's own binaries on
+    // session restore. Loading WpfHexEditor.App.dll itself builds a
+    // tens-of-thousands-of-types tree synchronously on the UI thread.
     private static readonly string _hostBinDirectory =
         AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
@@ -326,7 +276,7 @@ internal sealed class AssemblyExplorerModule
         EnsureActivated();
         _ = _panel?.ViewModel.LoadAssemblyAsync(evt.FilePath);
         if (evt.BringToFront)
-            _context?.UIRegistry.ShowPanel(PanelUiId);
+            _context?.UIRegistry.ShowPanel(ContentIdMain);
     }
 
     private void OnProjectItemAdded(ProjectItemAddedEvent evt)
@@ -385,81 +335,4 @@ internal sealed class AssemblyExplorerModule
         if (_panel is not null)
             PersistCurrentSession(_panel.ViewModel.GetWorkspaceFilePaths());
     }
-
-    private void RegisterMenuItems(IIDEHostContext context)
-    {
-        context.UIRegistry.RegisterMenuItem(
-            $"{ModuleId}.Menu.TogglePanel", ModuleId,
-            new MenuItemDescriptor
-            {
-                Header     = "_Assembly Explorer",
-                ParentPath = "View",
-                Group      = "Core IDE",
-                Category   = "Core IDE",
-                IconGlyph  = "",
-                ToolTip    = "Show or hide the Assembly Explorer panel",
-                Command    = new RelayCommand(_ =>
-                {
-                    EnsureActivated();
-                    context.UIRegistry.TogglePanel(PanelUiId);
-                })
-            });
-
-        context.UIRegistry.RegisterMenuItem(
-            $"{ModuleId}.Menu.AnalyzeAssembly", ModuleId,
-            new MenuItemDescriptor
-            {
-                Header      = "_Analyze Assembly",
-                ParentPath  = "Tools",
-                Group       = "AssemblyExplorer",
-                IconGlyph   = "",
-                GestureText = "Ctrl+Shift+A",
-                ToolTip     = "Analyze the currently open file in the Assembly Explorer",
-                Command     = new RelayCommand(
-                    _ =>
-                    {
-                        EnsureActivated();
-                        var path = context.HexEditor.CurrentFilePath;
-                        if (!string.IsNullOrEmpty(path))
-                            _ = _panel?.ViewModel.LoadAssemblyAsync(path);
-                        context.UIRegistry.ShowPanel(PanelUiId);
-                    },
-                    _ => context.HexEditor.IsActive)
-            });
-
-        context.UIRegistry.RegisterMenuItem(
-            $"{ModuleId}.Menu.SearchAssemblies", ModuleId,
-            new MenuItemDescriptor
-            {
-                Header      = "_Search in Assemblies…",
-                ParentPath  = "Tools",
-                Group       = "AssemblyExplorer",
-                IconGlyph   = "",
-                GestureText = "Ctrl+Shift+F",
-                ToolTip     = "Search types and members across all loaded assemblies",
-                Command     = new RelayCommand(_ =>
-                {
-                    EnsureActivated();
-                    context.UIRegistry.ShowPanel(SearchPanelUiId);
-                })
-            });
-
-        context.UIRegistry.RegisterMenuItem(
-            $"{ModuleId}.Menu.GoToToken", ModuleId,
-            new MenuItemDescriptor
-            {
-                Header     = "Go to _Metadata Token…",
-                ParentPath = "Edit",
-                Group      = "AssemblyExplorer",
-                IconGlyph  = "",
-                ToolTip    = "Navigate to a metadata token — coming in a future release",
-                Command    = new RelayCommand(
-                    _ => IdeMessageBox.Show(
-                        "Go to Metadata Token — Coming in a future release.",
-                        AssemblyExplorerResources.AsmExplorer_PluginName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information))
-            });
-    }
-
 }
