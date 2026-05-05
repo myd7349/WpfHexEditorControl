@@ -251,6 +251,10 @@ namespace WpfHexEditor.HexEditor.Controls
             _secondaryEditor.ClearCustomBackgroundBlock();
             foreach (var block in _primaryEditor.CustomBackgroundService.GetAllBlocks())
                 _secondaryEditor.AddCustomBackgroundBlock(block);
+            // Invalidate the secondary's breadcrumb section index so it rebuilds
+            // from the newly synced blocks, then force an immediate repaint.
+            _secondaryEditor.ResetBreadcrumbCache();
+            _secondaryEditor.UpdateBreadcrumb();
         }
 
         private void OnPrimaryBlocksChanged(object sender, Core.Events.CustomBackgroundBlockEventArgs e)
