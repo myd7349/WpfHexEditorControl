@@ -3362,9 +3362,18 @@ internal static class CaretNavHelper
     internal static double GetCaretX(FormattedText ft, int charOffset, int textLen)
     {
         if (charOffset <= 0 || textLen == 0) return 0;
-        int probe = Math.Clamp(charOffset - 1, 0, textLen - 1);
-        var geo   = ft.BuildHighlightGeometry(new Point(0, 0), probe, 1);
-        return geo is not null && !geo.Bounds.IsEmpty ? geo.Bounds.Right : 0;
+        // ft may have been rebuilt with fewer chars than textLen (e.g. after a drag-move delete),
+        // so clamp probe against both textLen and ft's actual text length.
+        int ftLen = ft.Text?.Length ?? 0;
+        int safe  = Math.Min(textLen, ftLen);
+        if (safe <= 0) return 0;
+        int probe = Math.Clamp(charOffset - 1, 0, safe - 1);
+        try
+        {
+            var geo = ft.BuildHighlightGeometry(new Point(0, 0), probe, 1);
+            return geo is not null && !geo.Bounds.IsEmpty ? geo.Bounds.Right : 0;
+        }
+        catch (ArgumentOutOfRangeException) { return 0; }
     }
 }
 
