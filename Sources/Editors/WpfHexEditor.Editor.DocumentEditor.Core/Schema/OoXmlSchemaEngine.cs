@@ -169,6 +169,8 @@ public static class OoXmlSchemaEngine
         transform switch
         {
             "halfPointsToPoints" when int.TryParse(value, out var hp) => (object)(hp / 2.0),
+            // 1 point = 20 twips; OOXML stores indent / margin / right / firstLine values in twips
+            "twipsToPoints"      when int.TryParse(value, out var tw) => (object)(tw / 20.0),
             _ => value
         };
 
@@ -271,7 +273,8 @@ public static class OoXmlSchemaEngine
             if (!string.IsNullOrEmpty(rule.Parent) && !string.IsNullOrEmpty(rule.XmlElement))
             {
                 var parentEl = GetOrAddChild(element, ns + LocalName(rule.Parent));
-                var attrEl   = new XElement(ns + LocalName(rule.XmlElement));
+                // Fuse attrs on the same target element (e.g. w:ind hosts left/right/firstLine).
+                var attrEl   = GetOrAddChild(parentEl, ns + LocalName(rule.XmlElement));
 
                 if (!string.IsNullOrEmpty(rule.Attr))
                 {
@@ -281,8 +284,6 @@ public static class OoXmlSchemaEngine
 
                 foreach (var extra in rule.Attrs)
                     attrEl.SetAttributeValue(ns + LocalName(extra.Key), extra.Value);
-
-                parentEl.Add(attrEl);
             }
         }
     }
@@ -290,8 +291,10 @@ public static class OoXmlSchemaEngine
     private static string ApplySerializeTransform(string value, string transform) =>
         transform switch
         {
-            "pointsToHalfPoints" when double.TryParse(value, out var pt) =>
-                ((int)(pt * 2)).ToString(),
+            "pointsToHalfPoints" when double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pt) =>
+                ((int)(pt * 2)).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "pointsToTwips" when double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pt2) =>
+                ((int)Math.Round(pt2 * 20)).ToString(System.Globalization.CultureInfo.InvariantCulture),
             _ => value
         };
 

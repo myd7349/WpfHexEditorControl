@@ -655,4 +655,16 @@
   <data name="DocStats_BlockCount"        xml:space="preserve"><value>Blocks (paragraphs)</value></data>
   <data name="DocStats_LineCount"         xml:space="preserve"><value>Lines</value></data>
   <data name="DocStats_Close"             xml:space="preserve"><value>Close</value></data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE RULERS (horizontal + vertical)
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="Ruler_FirstLineIndent" xml:space="preserve"><value>First-line indent — drag to set</value></data>
+  <data name="Ruler_HangingIndent"   xml:space="preserve"><value>Hanging indent — drag to set</value></data>
+  <data name="Ruler_LeftIndent"      xml:space="preserve"><value>Left indent — drag to set</value></data>
+  <data name="Ruler_RightIndent"     xml:space="preserve"><value>Right indent — drag to set</value></data>
+  <data name="Ruler_MarginLeft"      xml:space="preserve"><value>Left margin — drag to adjust</value></data>
+  <data name="Ruler_MarginRight"     xml:space="preserve"><value>Right margin — drag to adjust</value></data>
+  <data name="Ruler_MarginTop"       xml:space="preserve"><value>Top margin — drag to adjust</value></data>
+  <data name="Ruler_MarginBottom"    xml:space="preserve"><value>Bottom margin — drag to adjust</value></data>
 </root>

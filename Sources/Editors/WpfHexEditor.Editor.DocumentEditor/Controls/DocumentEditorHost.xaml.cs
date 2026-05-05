@@ -486,6 +486,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
                 renderer.PageMargin      = new Thickness(40);
                 // Restore text pane if coming from Outline
                 SetPaneVisibility(text: true, structure: false);
+                PART_TextPane.SetRulersVisible(true);
                 break;
 
             case DocumentRenderMode.Draft:
@@ -493,11 +494,13 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
                 renderer.PageMargin      = new Thickness(8, 4, 8, 4);
                 // Restore text pane if coming from Outline
                 SetPaneVisibility(text: true, structure: false);
+                PART_TextPane.SetRulersVisible(false);
                 break;
 
             case DocumentRenderMode.Outline:
                 // Show text pane (renderer draws outline mode inline, structure pane is optional)
                 SetPaneVisibility(text: true, structure: false);
+                PART_TextPane.SetRulersVisible(false);
                 break;
         }
 
@@ -1030,8 +1033,9 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         PART_MiniMap.BindModel(model);
         PART_StatusBar.BindModel(model, _currentFileExtension);
 
-        // Pass mutator to renderer (Phase 12+)
+        // Pass mutator to renderer (Phase 12+) and to the page rulers.
         PART_TextPane.PART_Renderer.SetMutator(_mutator);
+        PART_TextPane.SetMutator(_mutator);
 
         // Apply page settings declared by the document (overrides A4 default)
         if (model.PageSettings is { } ps)
@@ -1123,7 +1127,11 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     private void OnMiniMapScrollRequested(object? sender, double normalised)
     {
         var r = PART_TextPane.PART_Renderer;
-        r.SetVerticalOffset(normalised * Math.Max(0, r.ExtentHeight - r.ViewportHeight));
+        // Center the viewport around the click so the user lands on the
+        // cursor position rather than scrolling it to the top edge.
+        double scrollable = Math.Max(0, r.ExtentHeight - r.ViewportHeight);
+        double target     = normalised * r.ExtentHeight - r.ViewportHeight / 2.0;
+        r.SetVerticalOffset(Math.Clamp(target, 0, scrollable));
     }
 
     // ── Scroll marker update helpers ─────────────────────────────────────────

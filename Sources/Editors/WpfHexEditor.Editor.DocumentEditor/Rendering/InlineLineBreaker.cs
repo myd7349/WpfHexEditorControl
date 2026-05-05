@@ -137,10 +137,14 @@ internal static class InlineLineBreaker
                     continue;
                 }
 
-                // If the token alone is wider than maxWidth we must force-break mid-token
-                if (tokenW > maxWidth && pending.Count == 0)
+                // If adding this token would overflow, flush the current line first
+                // (so a long token always starts on its own line and we can force-split it).
+                if (lineX + tokenW > maxWidth && pending.Count > 0)
+                    FlushLine();
+
+                // If the token alone is wider than maxWidth we must force-break mid-token.
+                if (tokenW > maxWidth)
                 {
-                    // Force-split: chunk glyph-by-glyph
                     var splitLines = ForceSplit(seg, glyphs, advances, maxWidth, pixelsPerDip,
                                                 ref lineX, ref lineAscent, ref lineDescent, ref lineLeading,
                                                 pending, ref lineCharStart, tokenCharStart);
@@ -148,10 +152,6 @@ internal static class InlineLineBreaker
                         lines.Add(sl);
                     continue;
                 }
-
-                // If adding this token would overflow, flush the current line first
-                if (lineX + tokenW > maxWidth && pending.Count > 0)
-                    FlushLine();
 
                 // Accumulate token onto current line
                 UpdateLineMetrics(seg);

@@ -200,6 +200,44 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     /// <summary>0-based index of the block currently hosting the caret (-1 when no caret).</summary>
     public int CaretBlockIndex => _caret.BlockIndex;
 
+    /// <summary>The block currently hosting the caret (or selected block in fallback). Null when none.</summary>
+    public DocumentBlock? CurrentBlock
+    {
+        get
+        {
+            int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : _selectedIndex;
+            if (bi < 0 || _model is null || bi >= _model.Blocks.Count) return null;
+            return _model.Blocks[bi];
+        }
+    }
+
+    /// <summary>Raised when the caret moves to a different block. Rulers listen to refresh markers.</summary>
+    public event EventHandler? CaretBlockChanged;
+
+    /// <summary>Page card width in canvas DIPs (pre-zoom).</summary>
+    public double PageWidth => _pageWidth;
+
+    /// <summary>Horizontal canvas offset of the left edge of the page card (pre-zoom).</summary>
+    public double PageLeftOffset => _pageLeft;
+
+    /// <summary>Current zoom factor applied by the parent ScaleTransform (1.0 = 100%).</summary>
+    public double ZoomFactor => _zoom;
+
+    /// <summary>
+    /// Raised when page geometry changes (page size, margins, zoom). The horizontal /
+    /// vertical rulers listen so they can recompute markers.
+    /// </summary>
+    public event EventHandler? PageGeometryChanged;
+
+    private int _lastNotifiedCaretBlock = -1;
+    private void NotifyCaretBlockChangedIfNeeded()
+    {
+        int bi = _caret.BlockIndex;
+        if (bi == _lastNotifiedCaretBlock) return;
+        _lastNotifiedCaretBlock = bi;
+        CaretBlockChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>Block indices modified since the last <see cref="ClearDirtyBlocks"/> call.</summary>
     public IReadOnlyCollection<int> DirtyBlockIndices => _dirtyBlockIndices;
 
@@ -272,7 +310,11 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     }
 
     /// <summary>Sets the zoom level (0.5–2.0). Applied via LayoutTransform by the parent.</summary>
-    public void SetZoom(double zoom) => _zoom = Math.Clamp(zoom, 0.5, 2.0);
+    public void SetZoom(double zoom)
+    {
+        _zoom = Math.Clamp(zoom, 0.5, 2.0);
+        PageGeometryChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>
     /// Switches the render mode (Page / Draft / Outline) and triggers a full layout rebuild.
@@ -332,6 +374,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             _pageSettings = value;
             InvalidateBrushCache();
             RebuildLayout();
+            PageGeometryChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -479,11 +522,39 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
             if (_pageSettings.BorderStyle != DocumentPageBorderStyle.None)
                 DrawPageBorder(dc, pageRect);
+
+            DrawMarginChevrons(dc, pageRect);
         }
 
         DrawBlocksInViewport(dc, vw, vh,
             contentX: _pageLeft + _pageSettings.MarginLeft,
             contentW: Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight));
+    }
+
+    /// <summary>
+    /// Draws the four small grey corner brackets that frame the printable
+    /// content rectangle of a page. Pure cosmetic — independent of the
+    /// page border feature.
+    /// </summary>
+    private void DrawMarginChevrons(DrawingContext dc, Rect pageRect)
+    {
+        const double Len = 12.0;
+        var pen = _pageBreakPen;
+        if (pen is null) return;
+
+        double cl = pageRect.Left  + _pageSettings.MarginLeft;
+        double cr = pageRect.Right - _pageSettings.MarginRight;
+        double ct = pageRect.Top    + _pageSettings.MarginTop;
+        double cb = pageRect.Bottom - _pageSettings.MarginBottom;
+
+        dc.DrawLine(pen, new Point(cl, ct), new Point(cl + Len, ct));
+        dc.DrawLine(pen, new Point(cl, ct), new Point(cl,        ct + Len));
+        dc.DrawLine(pen, new Point(cr, ct), new Point(cr - Len, ct));
+        dc.DrawLine(pen, new Point(cr, ct), new Point(cr,        ct + Len));
+        dc.DrawLine(pen, new Point(cl, cb), new Point(cl + Len, cb));
+        dc.DrawLine(pen, new Point(cl, cb), new Point(cl,        cb - Len));
+        dc.DrawLine(pen, new Point(cr, cb), new Point(cr - Len, cb));
+        dc.DrawLine(pen, new Point(cr, cb), new Point(cr,        cb - Len));
     }
 
     /// <summary>
@@ -707,6 +778,12 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             x    += indentOffset;
             maxW -= indentOffset;
         }
+
+        // ── Continuous indents (whfmt-driven: w:ind/@left|right|firstLine) ──
+        // BuildRenderBlock already reduced maxW to fit the wrap; offset x so
+        // glyphs sit at the indented position.
+        if (rb.IndentLeft > 0)  { x += rb.IndentLeft;  maxW -= rb.IndentLeft;  }
+        if (rb.IndentRight > 0) {                       maxW -= rb.IndentRight; }
 
         // ── Style-based rendering (quote / code) ──────────────────────────
         var style = rb.Block.Attributes.GetValueOrDefault("style") as string ?? string.Empty;
@@ -995,6 +1072,27 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         double.TryParse(s, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0;
 
+    /// <summary>1 point = 96/72 device-independent pixels at 96 DPI.</summary>
+    private const double PtToDip = 96.0 / 72.0;
+
+    /// <summary>
+    /// Reads a numeric attribute that may have been stored as <see cref="double"/>,
+    /// <see cref="int"/>, or invariant-culture <see cref="string"/> after a whfmt
+    /// transform. Returns 0 when the attribute is absent or unparseable.
+    /// </summary>
+    private static double ReadIndentAttribute(DocumentBlock block, string key)
+    {
+        if (!block.Attributes.TryGetValue(key, out var v) || v is null) return 0;
+        return v switch
+        {
+            double d => d,
+            int    i => i,
+            string s2 when double.TryParse(s2, System.Globalization.NumberStyles.Float,
+                                           System.Globalization.CultureInfo.InvariantCulture, out var d2) => d2,
+            _ => 0
+        };
+    }
+
     private void DrawImagePlaceholder(DrawingContext dc, RenderBlock rb, double x, double y, double maxW)
     {
         var rect = new Rect(x, y, Math.Min(maxW, 260), 48);
@@ -1157,6 +1255,13 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             {
                 // Style attribute may promote a paragraph to heading-like rendering
                 var pStyle = block.Attributes.GetValueOrDefault("style") as string ?? string.Empty;
+
+                // Indent attributes are stored in points; convert to DIPs (96/72).
+                double indL  = ReadIndentAttribute(block, "indent")          * PtToDip;
+                double indR  = ReadIndentAttribute(block, "indentRight")     * PtToDip;
+                double indFL = ReadIndentAttribute(block, "indentFirstLine") * PtToDip;
+                double effW  = Math.Max(40, maxW - indL - indR);
+
                 if (pStyle == "heading")
                 {
                     int level  = int.TryParse(
@@ -1164,21 +1269,23 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
                     double fs     = level == 1 ? 22 : level == 2 ? 18 : 15;
                     double spaceB = level == 1 ? 18 : level == 2 ? 14 : 10;
                     double spaceA = level == 1 ?  8 : level == 2 ?  6 :  4;
-                    var hGlyphLines = BuildGlyphLines(block, maxW);
+                    var hGlyphLines = BuildGlyphLines(block, effW);
                     double hh = hGlyphLines.Count > 0 ? hGlyphLines.Sum(vl => vl.LineHeight) : fs + 4;
                     if (level == 1) hh += 6;
                     if (level == 2) hh += 4;
-                    var hFtLines = WrapText(block.Text, _bodyBoldFace!, fs, maxW, _fgBrush!);
-                    return new RenderBlock(block, y, hh, spaceB, spaceA, hFtLines, false, 0, severity, hGlyphLines);
+                    var hFtLines = WrapText(block.Text, _bodyBoldFace!, fs, effW, _fgBrush!);
+                    return new RenderBlock(block, y, hh, spaceB, spaceA, hFtLines, false, 0, severity,
+                        hGlyphLines, indL, indR, indFL);
                 }
 
                 double spaceAfter = pStyle == "quote" ? 6 : pStyle == "code" ? 6 : 4;
-                var glyphLines = BuildGlyphLines(block, maxW);
+                var glyphLines = BuildGlyphLines(block, effW);
                 double h  = glyphLines.Count > 0
                     ? glyphLines.Sum(vl => vl.LineHeight)
                     : _baseFontSize + 4;
-                var ftLines = BuildInlineFormattedText(block, maxW);
-                return new RenderBlock(block, y, h, 0, spaceAfter, ftLines, false, 0, severity, glyphLines);
+                var ftLines = BuildInlineFormattedText(block, effW);
+                return new RenderBlock(block, y, h, 0, spaceAfter, ftLines, false, 0, severity,
+                    glyphLines, indL, indR, indFL);
             }
 
             case "table":
@@ -1978,6 +2085,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         EnsureCaretVisible();
         InvalidateVisual();
         RefreshCaretVisual();
+        NotifyCaretBlockChangedIfNeeded();
     }
 
     /// <summary>Scrolls the viewport to make the caret's visual line visible (± 16px).</summary>
@@ -2083,6 +2191,17 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     {
         if (_textSelBrush is null || _selection.IsEmpty) return;
 
+        // Clip the selection to the page content column so any overflow caused
+        // by imperfect wrap or stale layout never bleeds onto the dark canvas.
+        var clip = new RectangleGeometry(new Rect(contentX, 0, contentW, ActualHeight));
+        clip.Freeze();
+        dc.PushClip(clip);
+        try { DrawTextSelectionCore(dc, contentX, contentW); }
+        finally { dc.Pop(); }
+    }
+
+    private void DrawTextSelectionCore(DrawingContext dc, double contentX, double contentW)
+    {
         var (start, end) = _selection.Ordered;
         for (int bi = start.BlockIndex; bi <= end.BlockIndex && bi < _blocks.Count; bi++)
         {
@@ -2811,7 +2930,10 @@ internal sealed record RenderBlock(
     bool                       IsPageBreak,
     int                        PageNumber,
     ForensicSeverity?          ForensicSeverity,
-    IReadOnlyList<InlineVisualLine>? GlyphLines = null);
+    IReadOnlyList<InlineVisualLine>? GlyphLines = null,
+    double                     IndentLeft       = 0,
+    double                     IndentRight      = 0,
+    double                     IndentFirstLine  = 0);
 
 // ── Visual-line navigation types ──────────────────────────────────────────────
 

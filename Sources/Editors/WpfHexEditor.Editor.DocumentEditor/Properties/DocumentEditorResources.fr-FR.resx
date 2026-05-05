@@ -218,4 +218,14 @@
   <data name="DocStats_BlockCount"        xml:space="preserve"><value>Blocs (paragraphes)</value></data>
   <data name="DocStats_LineCount"         xml:space="preserve"><value>Lignes</value></data>
   <data name="DocStats_Close"             xml:space="preserve"><value>Fermer</value></data>
+
+  <!-- Page rulers -->
+  <data name="Ruler_FirstLineIndent" xml:space="preserve"><value>Retrait de première ligne — glisser pour ajuster</value></data>
+  <data name="Ruler_HangingIndent"   xml:space="preserve"><value>Retrait suspendu — glisser pour ajuster</value></data>
+  <data name="Ruler_LeftIndent"      xml:space="preserve"><value>Retrait gauche — glisser pour ajuster</value></data>
+  <data name="Ruler_RightIndent"     xml:space="preserve"><value>Retrait droit — glisser pour ajuster</value></data>
+  <data name="Ruler_MarginLeft"      xml:space="preserve"><value>Marge gauche — glisser pour ajuster</value></data>
+  <data name="Ruler_MarginRight"     xml:space="preserve"><value>Marge droite — glisser pour ajuster</value></data>
+  <data name="Ruler_MarginTop"       xml:space="preserve"><value>Marge supérieure — glisser pour ajuster</value></data>
+  <data name="Ruler_MarginBottom"    xml:space="preserve"><value>Marge inférieure — glisser pour ajuster</value></data>
 </root>

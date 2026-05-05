@@ -47,6 +47,29 @@ public partial class DocumentTextPane : UserControl
             if (PART_Renderer is System.Windows.Controls.Primitives.IScrollInfo si)
                 si.ScrollOwner = PART_ScrollViewer;
         };
+
+        // Wire rulers
+        Loaded += (_, _) =>
+        {
+            PART_HRuler.Attach(PART_Renderer, _mutator);
+            PART_VRuler.Attach(PART_Renderer);
+        };
+    }
+
+    private WpfHexEditor.Editor.DocumentEditor.Core.Editing.DocumentMutator? _mutator;
+
+    /// <summary>Allows the host to inject the mutator that the rulers use to commit indent edits.</summary>
+    public void SetMutator(WpfHexEditor.Editor.DocumentEditor.Core.Editing.DocumentMutator mutator)
+    {
+        _mutator = mutator;
+        PART_HRuler.Attach(PART_Renderer, _mutator);
+    }
+
+    /// <summary>Hides both rulers (for Draft / Outline modes which have no page concept).</summary>
+    public void SetRulersVisible(bool visible)
+    {
+        PART_RulerRow.Height  = visible ? new System.Windows.GridLength(22) : new System.Windows.GridLength(0);
+        PART_VRulerCol.Width  = visible ? new System.Windows.GridLength(18) : new System.Windows.GridLength(0);
     }
 
     // ── Public Properties ────────────────────────────────────────────────────
