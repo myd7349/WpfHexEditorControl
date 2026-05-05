@@ -673,6 +673,72 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     private void OnAlignLeftClicked(object sender, RoutedEventArgs e)     => ApplyBlockAttribute("align", "left");
     private void OnAlignCenterClicked(object sender, RoutedEventArgs e)   => ApplyBlockAttribute("align", "center");
     private void OnAlignRightClicked(object sender, RoutedEventArgs e)    => ApplyBlockAttribute("align", "right");
+    private void OnAlignJustifyClicked(object sender, RoutedEventArgs e)  => ApplyBlockAttribute("align", "justify");
+
+    private void OnBulletListClicked(object sender, RoutedEventArgs e)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        PART_TextPane.PART_Renderer.ToggleBulletList();
+        UpdateListButtons();
+    }
+
+    private void OnNumberedListClicked(object sender, RoutedEventArgs e)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        PART_TextPane.PART_Renderer.ToggleNumberedList();
+        UpdateListButtons();
+    }
+
+    private void OnIndentMoreClicked(object sender, RoutedEventArgs e) => PART_TextPane.IncreaseIndent();
+    private void OnIndentLessClicked(object sender, RoutedEventArgs e) => PART_TextPane.DecreaseIndent();
+
+    private void OnInsertTableClicked(object sender, RoutedEventArgs e)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        var dlg = new Dialogs.InsertTableDialog { Owner = Window.GetWindow(this) };
+        if (dlg.ShowDialog() != true) return;
+        PART_TextPane.InsertTable(dlg.Rows, dlg.Columns);
+    }
+
+    private void OnInsertHyperlinkClicked(object sender, RoutedEventArgs e)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        var selectedText = PART_TextPane.GetSelectedText();
+        var dlg = new Dialogs.HyperlinkInsertDialog(selectedText) { Owner = Window.GetWindow(this) };
+        if (dlg.ShowDialog() != true) return;
+        PART_TextPane.InsertHyperlink(dlg.DisplayText, dlg.Url);
+    }
+
+    private void OnInsertPageBreakClicked(object sender, RoutedEventArgs e)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        PART_TextPane.InsertPageBreak();
+    }
+
+    private void OnPageStyleClicked(object sender, RoutedEventArgs e)
+    {
+        var settings = PART_TextPane.PART_Renderer.PageSettings;
+        var dlg = new Dialogs.PageStyleDialog(settings) { Owner = Window.GetWindow(this) };
+        dlg.SettingsApplied += (_, newSettings) =>
+        {
+            PART_TextPane.PART_Renderer.PageSettings = newSettings;
+            PART_TextPane.PART_Renderer.InvalidateVisual();
+        };
+        dlg.ShowDialog();
+    }
+
+    private void UpdateListButtons()
+    {
+        var block = PART_TextPane.PART_Renderer.SelectedBlock;
+        if (PART_BulletListBtn is not null)
+            PART_BulletListBtn.IsChecked = block?.Kind == "list-item" &&
+                                           block.Attributes.TryGetValue("listStyle", out var s) &&
+                                           s?.ToString() == "bullet";
+        if (PART_NumberedListBtn is not null)
+            PART_NumberedListBtn.IsChecked = block?.Kind == "list-item" &&
+                                             block.Attributes.TryGetValue("listStyle", out var s2) &&
+                                             s2?.ToString() == "numbered";
+    }
 
     private void OnStyleDropdownChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -753,6 +819,15 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             { OpenStatisticsDialog(); e.Handled = true; }
         if (e.Key == Key.OemCloseBrackets) { PART_TextPane.IncreaseIndent(); e.Handled = true; }
         if (e.Key == Key.OemOpenBrackets)  { PART_TextPane.DecreaseIndent(); e.Handled = true; }
+        if (e.Key == Key.J)                { OnAlignJustifyClicked(this, new RoutedEventArgs()); e.Handled = true; }
+        if (e.Key == Key.K)                { OnInsertHyperlinkClicked(this, new RoutedEventArgs()); e.Handled = true; }
+
+        // Ctrl+Shift+8 = bullet list, Ctrl+Shift+7 = numbered list
+        if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            if (e.Key == Key.D8) { OnBulletListClicked(PART_BulletListBtn, new RoutedEventArgs()); e.Handled = true; }
+            if (e.Key == Key.D7) { OnNumberedListClicked(PART_NumberedListBtn, new RoutedEventArgs()); e.Handled = true; }
+        }
 
         int blockCount = PART_TextPane.BlockCount;
         if (blockCount > 0)

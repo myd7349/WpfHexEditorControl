@@ -484,6 +484,18 @@ public sealed class DocumentMutator(DocumentModel model)
 
     // ── Table editing ────────────────────────────────────────────────────────
 
+    /// <summary>Inserts a new empty row before <paramref name="rowIndex"/> in the table block.</summary>
+    public void InsertTableRowBefore(DocumentBlock tableBlock, int rowIndex)
+    {
+        var rows = tableBlock.Children.Where(c => c.Kind == "table-row").ToList();
+        int colCount = rows.Count > 0 ? rows.Max(r => r.Children.Count(c => c.Kind == "table-cell")) : 1;
+        var newRow = DocumentBlockFactory.NewTableRow(Math.Max(1, colCount));
+        int insertAt = Math.Max(0, Math.Min(rowIndex, tableBlock.Children.Count));
+        tableBlock.Children.Insert(insertAt, newRow);
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(tableBlock, BlockMutationKind.Inserted));
+        model.NotifyBlocksChanged();
+    }
+
     /// <summary>Inserts a new empty row after <paramref name="rowIndex"/> in the table block.</summary>
     public void InsertTableRowAfter(DocumentBlock tableBlock, int rowIndex)
     {
@@ -503,6 +515,19 @@ public sealed class DocumentMutator(DocumentModel model)
         if (rowIndex < 0 || rowIndex >= rows.Count) return;
         tableBlock.Children.Remove(rows[rowIndex]);
         BlockMutated?.Invoke(this, new BlockMutatedArgs(tableBlock, BlockMutationKind.Deleted));
+        model.NotifyBlocksChanged();
+    }
+
+    /// <summary>Inserts a new empty column before <paramref name="colIndex"/> in every row of the table.</summary>
+    public void InsertTableColumnBefore(DocumentBlock tableBlock, int colIndex)
+    {
+        foreach (var row in tableBlock.Children.Where(c => c.Kind == "table-row"))
+        {
+            var cells = row.Children.Where(c => c.Kind == "table-cell").ToList();
+            int insertAt = Math.Max(0, Math.Min(colIndex, cells.Count));
+            row.Children.Insert(insertAt, DocumentBlockFactory.NewTableCell());
+        }
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(tableBlock, BlockMutationKind.Inserted));
         model.NotifyBlocksChanged();
     }
 
@@ -529,6 +554,34 @@ public sealed class DocumentMutator(DocumentModel model)
                 row.Children.Remove(cells[colIndex]);
         }
         BlockMutated?.Invoke(this, new BlockMutatedArgs(tableBlock, BlockMutationKind.Deleted));
+        model.NotifyBlocksChanged();
+    }
+
+    // ── Hyperlink insert ─────────────────────────────────────────────────────
+
+    /// <summary>Inserts a hyperlink block after <paramref name="blockIndex"/>.</summary>
+    public void InsertHyperlinkBlock(int blockIndex, string displayText, string url)
+    {
+        if (blockIndex < 0) blockIndex = Math.Max(0, model.Blocks.Count - 1);
+        var hl = DocumentBlockFactory.NewHyperlink(displayText, url);
+        int insertAt = Math.Min(blockIndex + 1, model.Blocks.Count);
+        model.Blocks.Insert(insertAt, hl);
+        model.UndoEngine.Push(new BlockInsertUndoEntry { Model = model, Block = hl, BlockIndex = insertAt });
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(hl, BlockMutationKind.Inserted));
+        model.NotifyBlocksChanged();
+    }
+
+    // ── Table insert ─────────────────────────────────────────────────────────
+
+    /// <summary>Inserts a new table with the given dimensions after <paramref name="blockIndex"/>.</summary>
+    public void InsertTableBlock(int blockIndex, int rows, int columns)
+    {
+        if (blockIndex < 0) blockIndex = Math.Max(0, model.Blocks.Count - 1);
+        var table = DocumentBlockFactory.NewTable(rows, columns);
+        int insertAt = Math.Min(blockIndex + 1, model.Blocks.Count);
+        model.Blocks.Insert(insertAt, table);
+        model.UndoEngine.Push(new BlockInsertUndoEntry { Model = model, Block = table, BlockIndex = insertAt });
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(table, BlockMutationKind.Inserted));
         model.NotifyBlocksChanged();
     }
 

@@ -74,6 +74,11 @@ public sealed class DocumentPageSettings
     public bool   FooterDifferentFirstPage { get; init; } = false;
     public bool   FooterSameLeftRight      { get; init; } = true;
 
+    // ── Background ────────────────────────────────────────────────────────────
+
+    /// <summary>Page background color as hex string (e.g. "#FFFFFF"). Null = transparent/default.</summary>
+    public string? BackgroundColor { get; init; } = null;
+
     // ── Page Border ───────────────────────────────────────────────────────────
 
     public DocumentPageBorderStyle BorderStyle     { get; init; } = DocumentPageBorderStyle.None;
@@ -172,9 +177,69 @@ public sealed class DocumentPageSettings
         FooterMarginPx           = FooterMarginPx,
         FooterDifferentFirstPage = FooterDifferentFirstPage,
         FooterSameLeftRight      = FooterSameLeftRight,
+        BackgroundColor          = BackgroundColor,
         BorderStyle              = BorderStyle,
         BorderColor              = BorderColor,
         BorderWidthPx            = BorderWidthPx,
+        BorderPaddingPx          = BorderPaddingPx
+    };
+
+    /// <summary>Returns a copy with all dialog-editable fields overridden.</summary>
+    public DocumentPageSettings WithAll(
+        DocumentPageSize?        pageSize                = null,
+        DocumentPageOrientation? orientation             = null,
+        double?                  customWidth             = null,
+        double?                  customHeight            = null,
+        double?                  marginTop               = null,
+        double?                  marginBottom            = null,
+        double?                  marginLeft              = null,
+        double?                  marginRight             = null,
+        string?                  backgroundColor         = null,
+        bool?                    headerEnabled           = null,
+        double?                  headerHeightPx          = null,
+        double?                  headerMarginPx          = null,
+        bool?                    headerDifferentFirstPage = null,
+        bool?                    headerSameLeftRight     = null,
+        bool?                    footerEnabled           = null,
+        double?                  footerHeightPx          = null,
+        double?                  footerMarginPx          = null,
+        bool?                    footerDifferentFirstPage = null,
+        bool?                    footerSameLeftRight     = null,
+        DocumentPageBorderStyle? borderStyle             = null,
+        string?                  borderColor             = null,
+        double?                  borderWidthPx           = null,
+        int?                     columnCount             = null,
+        double?                  columnGapPx             = null,
+        bool?                    showColumnSeparatorLine = null) => new()
+    {
+        PageSize                 = pageSize                ?? PageSize,
+        Orientation              = orientation             ?? Orientation,
+        CustomWidth              = customWidth             ?? CustomWidth,
+        CustomHeight             = customHeight            ?? CustomHeight,
+        MarginTop                = marginTop               ?? MarginTop,
+        MarginBottom             = marginBottom            ?? MarginBottom,
+        MarginLeft               = marginLeft              ?? MarginLeft,
+        MarginRight              = marginRight             ?? MarginRight,
+        MarginGutter             = MarginGutter,
+        MirrorMargins            = MirrorMargins,
+        BackgroundColor          = backgroundColor         ?? BackgroundColor,
+        HeaderEnabled            = headerEnabled           ?? HeaderEnabled,
+        HeaderHeightPx           = headerHeightPx          ?? HeaderHeightPx,
+        HeaderMarginPx           = headerMarginPx          ?? HeaderMarginPx,
+        HeaderDifferentFirstPage = headerDifferentFirstPage ?? HeaderDifferentFirstPage,
+        HeaderSameLeftRight      = headerSameLeftRight     ?? HeaderSameLeftRight,
+        FooterEnabled            = footerEnabled           ?? FooterEnabled,
+        FooterHeightPx           = footerHeightPx          ?? FooterHeightPx,
+        FooterMarginPx           = footerMarginPx          ?? FooterMarginPx,
+        FooterDifferentFirstPage = footerDifferentFirstPage ?? FooterDifferentFirstPage,
+        FooterSameLeftRight      = footerSameLeftRight     ?? FooterSameLeftRight,
+        ColumnCount              = columnCount             ?? ColumnCount,
+        EqualColumnWidths        = EqualColumnWidths,
+        ColumnGapPx              = columnGapPx             ?? ColumnGapPx,
+        ShowColumnSeparatorLine  = showColumnSeparatorLine ?? ShowColumnSeparatorLine,
+        BorderStyle              = borderStyle             ?? BorderStyle,
+        BorderColor              = borderColor             ?? BorderColor,
+        BorderWidthPx            = borderWidthPx           ?? BorderWidthPx,
         BorderPaddingPx          = BorderPaddingPx
     };
 

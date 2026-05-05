@@ -128,6 +128,22 @@ public static class DocumentBlockFactory
         Attributes = { ["pageScope"] = pageScope }
     };
 
+    /// <summary>Creates a new table block with <paramref name="rows"/> rows and <paramref name="columns"/> columns.</summary>
+    public static DocumentBlock NewTable(int rows, int columns)
+    {
+        rows    = Math.Max(1, rows);
+        columns = Math.Max(1, columns);
+        var table = new DocumentBlock { Kind = "table", Text = "[table]", RawOffset = -1, RawLength = 0 };
+        for (var r = 0; r < rows; r++)
+        {
+            var row = new DocumentBlock { Kind = "table-row", Text = string.Empty, RawOffset = -1, RawLength = 0 };
+            for (var c = 0; c < columns; c++)
+                row.Children.Add(NewTableCell());
+            table.Children.Add(row);
+        }
+        return table;
+    }
+
     /// <summary>
     /// Clones an existing block's text and attributes into a new block with
     /// <c>RawOffset = -1</c>. Used by SplitBlock to produce the second half.

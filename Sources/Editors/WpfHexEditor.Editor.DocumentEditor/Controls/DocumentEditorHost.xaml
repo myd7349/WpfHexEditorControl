@@ -378,6 +378,104 @@
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E2;" FontSize="13"/>
                 </Button>
 
+                <Button x:Name="PART_AlignJustifyBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_AlignJustifyToolTip}"
+                        Click="OnAlignJustifyClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E5;" FontSize="13"/>
+                </Button>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
+                <!-- Group 6b — Lists and indentation -->
+                <ToggleButton x:Name="PART_BulletListBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              Focusable="False"
+                              ToolTip="{DynamicResource DocEditorHost_BulletListToolTip}"
+                              Click="OnBulletListClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8FD;" FontSize="13"/>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_NumberedListBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              Focusable="False"
+                              ToolTip="{DynamicResource DocEditorHost_NumberedListToolTip}"
+                              Click="OnNumberedListClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8FE;" FontSize="13"/>
+                </ToggleButton>
+
+                <Button x:Name="PART_IndentLessBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_IndentLessToolTip}"
+                        Click="OnIndentLessClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8FF;" FontSize="13"/>
+                </Button>
+
+                <Button x:Name="PART_IndentMoreBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_IndentMoreToolTip}"
+                        Click="OnIndentMoreClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE900;" FontSize="13"/>
+                </Button>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
+                <!-- Group 6c — Insert operations -->
+                <Button x:Name="PART_InsertTableBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_InsertTableToolTip}"
+                        Click="OnInsertTableClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE9D2;" FontSize="13"/>
+                </Button>
+
+                <Button x:Name="PART_InsertHyperlinkBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_InsertHyperlinkToolTip}"
+                        Click="OnInsertHyperlinkClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE71B;" FontSize="13"/>
+                </Button>
+
+                <Button x:Name="PART_InsertPageBreakBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_InsertPageBreakToolTip}"
+                        Click="OnInsertPageBreakClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77B;" FontSize="13"/>
+                </Button>
+
+                <Button x:Name="PART_PageStyleBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        Focusable="False"
+                        ToolTip="{DynamicResource DocEditorHost_PageStyleToolTip}"
+                        Click="OnPageStyleClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7C3;" FontSize="13"/>
+                </Button>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
                 <!-- Group 7 — Styles panel (Phase 18) -->
                 <Button x:Name="PART_StylesBtn"
                         Style="{StaticResource DocActionButtonStyle}"

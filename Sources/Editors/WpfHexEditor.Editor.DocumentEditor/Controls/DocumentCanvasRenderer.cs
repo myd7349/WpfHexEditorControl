@@ -198,49 +198,62 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
     // ── Context menu ─────────────────────────────────────────────────────────
     private System.Windows.Controls.MenuItem? _miCut, _miCopy, _miPaste, _miDelete, _miSelectAll, _miUndo, _miRedo;
-    private System.Windows.Controls.MenuItem? _miFormat, _miBold, _miItalic, _miUnderline, _miStrike;
-    private System.Windows.Controls.MenuItem? _miTableInsertRow, _miTableDeleteRow, _miTableInsertCol, _miTableDeleteCol, _miTable;
+    private System.Windows.Controls.MenuItem? _miUnderline, _miStrike;
+    private System.Windows.Controls.MenuItem? _miParagraph, _miList;
+    private System.Windows.Controls.MenuItem? _miSelectBlock, _miInsertPageBreak, _miInsertHyperlink, _miInsertTable;
+    private System.Windows.Controls.MenuItem? _miTableInsertRowAbove, _miTableInsertRow, _miTableDeleteRow;
+    private System.Windows.Controls.MenuItem? _miTableInsertColLeft, _miTableInsertCol, _miTableDeleteCol, _miTable;
 
     private System.Windows.Controls.ContextMenu BuildContextMenu()
     {
         var cm = new System.Windows.Controls.ContextMenu();
 
-        _miUndo      = MakeMenuItem("DocCanvas_Undo",      "Undo",        () => _mutator?.TryUndo(),                "Ctrl+Z");
-        _miRedo      = MakeMenuItem("DocCanvas_Redo",      "Redo",        () => _mutator?.TryRedo(),                "Ctrl+Y");
-        _miCut       = MakeMenuItem("DocCanvas_Cut",       "Cut",         CutSelection,                              "Ctrl+X");
-        _miCopy      = MakeMenuItem("DocCanvas_Copy",      "Copy",        CopySelection,                             "Ctrl+C");
-        _miPaste     = MakeMenuItem("DocCanvas_Paste",     "Paste",       PasteAtCaret,                              "Ctrl+V");
-        _miDelete    = MakeMenuItem("DocCanvas_Delete",    "Delete",      () => DeleteAtCaret(forward: true),        "Del");
-        _miSelectAll = MakeMenuItem("DocCanvas_SelectAll", "Select All",  SelectAll,                                  "Ctrl+A");
+        _miUndo      = MakeMenuItem("DocCanvas_Undo",      "Undo",       () => _mutator?.TryUndo(),         "Ctrl+Z");
+        _miRedo      = MakeMenuItem("DocCanvas_Redo",      "Redo",       () => _mutator?.TryRedo(),         "Ctrl+Y");
+        _miCut       = MakeMenuItem("DocCanvas_Cut",       "Cut",        CutSelection,                       "Ctrl+X");
+        _miCopy      = MakeMenuItem("DocCanvas_Copy",      "Copy",       CopySelection,                      "Ctrl+C");
+        _miPaste     = MakeMenuItem("DocCanvas_Paste",     "Paste",      PasteAtCaret,                       "Ctrl+V");
+        _miDelete    = MakeMenuItem("DocCanvas_Delete",    "Delete",     () => DeleteAtCaret(forward: true), "Del");
+        _miSelectAll = MakeMenuItem("DocCanvas_SelectAll", "Select All", SelectAll,                           "Ctrl+A");
+        _miSelectBlock = MakeMenuItem("DocCanvas_SelectBlock", "Select Block", SelectCurrentBlock,            "");
 
-        _miBold      = MakeMenuItem("DocCanvas_Bold",      "Bold",          () => ToggleFormatOnSelection("bold"),          "Ctrl+B");
-        _miItalic    = MakeMenuItem("DocCanvas_Italic",    "Italic",        () => ToggleFormatOnSelection("italic"),        "Ctrl+I");
-        _miUnderline = MakeMenuItem("DocCanvas_Underline", "Underline",     () => ToggleFormatOnSelection("underline"),     "Ctrl+U");
-        _miStrike    = MakeMenuItem("DocCanvas_Strike",    "Strikethrough", () => ToggleFormatOnSelection("strikethrough"), "");
+        // Paragraph submenu
+        _miParagraph = MakeSubmenu("DocCanvas_Paragraph", "Paragraph",
+            MakeMenuItem("DocCanvas_Para_Normal",   "Normal",   () => SetBlockStyleFromMenu(null,      null),  ""),
+            MakeMenuItem("DocCanvas_Para_Heading1", "Heading 1",() => SetBlockStyleFromMenu("heading", 1),     ""),
+            MakeMenuItem("DocCanvas_Para_Heading2", "Heading 2",() => SetBlockStyleFromMenu("heading", 2),     ""),
+            MakeMenuItem("DocCanvas_Para_Heading3", "Heading 3",() => SetBlockStyleFromMenu("heading", 3),     ""),
+            null,
+            MakeMenuItem("DocCanvas_Para_Quote",    "Quote",    () => SetBlockStyleFromMenu("quote",   null),  ""),
+            MakeMenuItem("DocCanvas_Para_Code",     "Code block",() => SetBlockStyleFromMenu("code",   null),  ""));
 
-        _miFormat = new System.Windows.Controls.MenuItem
-        {
-            Header = TryFindResource("DocCanvas_Format") as string ?? "Format"
-        };
-        _miFormat.Items.Add(_miBold);
-        _miFormat.Items.Add(_miItalic);
-        _miFormat.Items.Add(_miUnderline);
-        _miFormat.Items.Add(_miStrike);
+        // List submenu
+        _miList = MakeSubmenu("DocCanvas_List", "List",
+            MakeMenuItem("DocCanvas_List_Bullet",     "Bullet list  •",       () => ToggleListStyle("bullet"),      ""),
+            MakeMenuItem("DocCanvas_List_Numbered",   "Numbered list  1,2,3", () => ToggleListStyle("numbered"),    ""),
+            MakeMenuItem("DocCanvas_List_UpperAlpha", "Alphabetical  A,B,C",  () => ToggleListStyle("upper-alpha"), ""),
+            MakeMenuItem("DocCanvas_List_LowerAlpha", "Alphabetical  a,b,c",  () => ToggleListStyle("lower-alpha"), ""),
+            MakeMenuItem("DocCanvas_List_UpperRoman", "Roman  I,II,III",      () => ToggleListStyle("upper-roman"), ""),
+            MakeMenuItem("DocCanvas_List_LowerRoman", "Roman  i,ii,iii",      () => ToggleListStyle("lower-roman"), ""),
+            null,
+            MakeMenuItem("DocCanvas_List_None",       "No list",              () => ConvertToNonList(),              ""));
 
-        // Table submenu (shown only when caret is on a table)
-        _miTableInsertRow = MakeMenuItem("DocCanvas_TableInsertRow", "Insert Row Below",  () => TableEditAtCaret(TableEditAction.InsertRow),   "");
-        _miTableDeleteRow = MakeMenuItem("DocCanvas_TableDeleteRow", "Delete Row",         () => TableEditAtCaret(TableEditAction.DeleteRow),   "");
-        _miTableInsertCol = MakeMenuItem("DocCanvas_TableInsertCol", "Insert Column Right",() => TableEditAtCaret(TableEditAction.InsertColumn),"");
-        _miTableDeleteCol = MakeMenuItem("DocCanvas_TableDeleteCol", "Delete Column",      () => TableEditAtCaret(TableEditAction.DeleteColumn),"");
-        _miTable = new System.Windows.Controls.MenuItem
-        {
-            Header = TryFindResource("DocCanvas_Table") as string ?? "Table"
-        };
-        _miTable.Items.Add(_miTableInsertRow);
-        _miTable.Items.Add(_miTableDeleteRow);
-        _miTable.Items.Add(new System.Windows.Controls.Separator());
-        _miTable.Items.Add(_miTableInsertCol);
-        _miTable.Items.Add(_miTableDeleteCol);
+        // Table submenu
+        _miTableInsertRowAbove = MakeMenuItem("DocCanvas_TableInsertRowAbove", "Insert Row Above",   () => TableEditAtCaret(TableEditAction.InsertRowAbove), "");
+        _miTableInsertRow      = MakeMenuItem("DocCanvas_TableInsertRow",      "Insert Row Below",   () => TableEditAtCaret(TableEditAction.InsertRow),      "");
+        _miTableDeleteRow      = MakeMenuItem("DocCanvas_TableDeleteRow",      "Delete Row",         () => TableEditAtCaret(TableEditAction.DeleteRow),      "");
+        _miTableInsertColLeft  = MakeMenuItem("DocCanvas_TableInsertColLeft",  "Insert Column Left", () => TableEditAtCaret(TableEditAction.InsertColumnLeft),"");
+        _miTableInsertCol      = MakeMenuItem("DocCanvas_TableInsertCol",      "Insert Column Right",() => TableEditAtCaret(TableEditAction.InsertColumn),   "");
+        _miTableDeleteCol      = MakeMenuItem("DocCanvas_TableDeleteCol",      "Delete Column",      () => TableEditAtCaret(TableEditAction.DeleteColumn),   "");
+        _miTable = MakeSubmenu("DocCanvas_Table", "Table",
+            _miTableInsertRowAbove, _miTableInsertRow, _miTableDeleteRow,
+            null,
+            _miTableInsertColLeft, _miTableInsertCol, _miTableDeleteCol);
+
+        // Insert operations
+        _miInsertPageBreak  = MakeMenuItem("DocCanvas_InsertPageBreak",  "Insert Page Break",  InsertPageBreak,       "Ctrl+Enter");
+        _miInsertHyperlink  = MakeMenuItem("DocCanvas_InsertHyperlink",  "Insert Hyperlink…",  InsertHyperlinkViaMenu,"Ctrl+K");
+        _miInsertTable      = MakeMenuItem("DocCanvas_InsertTable",      "Insert Table…",      InsertTableViaMenu,    "");
 
         cm.Items.Add(_miUndo);
         cm.Items.Add(_miRedo);
@@ -250,11 +263,97 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         cm.Items.Add(_miPaste);
         cm.Items.Add(_miDelete);
         cm.Items.Add(new System.Windows.Controls.Separator());
-        cm.Items.Add(_miFormat);
+        cm.Items.Add(_miParagraph);
+        cm.Items.Add(_miList);
         cm.Items.Add(_miTable);
         cm.Items.Add(new System.Windows.Controls.Separator());
+        cm.Items.Add(_miInsertPageBreak);
+        cm.Items.Add(_miInsertHyperlink);
+        cm.Items.Add(_miInsertTable);
+        cm.Items.Add(new System.Windows.Controls.Separator());
+        cm.Items.Add(_miSelectBlock);
         cm.Items.Add(_miSelectAll);
         return cm;
+    }
+
+    private System.Windows.Controls.MenuItem MakeSubmenu(string headerKey, string fallback, params System.Windows.Controls.MenuItem?[] items)
+    {
+        var mi = new System.Windows.Controls.MenuItem
+        {
+            Header = TryFindResource(headerKey) as string ?? fallback
+        };
+        foreach (var item in items)
+        {
+            if (item is null)
+                mi.Items.Add(new System.Windows.Controls.Separator());
+            else
+                mi.Items.Add(item);
+        }
+        return mi;
+    }
+
+    private void SetBlockStyleFromMenu(string? style, int? level)
+    {
+        if (_mutator is null || _blocks.Count == 0) return;
+        int bi    = _caret.BlockIndex >= 0 ? _caret.BlockIndex : (_selectedIndex >= 0 ? _selectedIndex : 0);
+        var block = _blocks[bi].Block;
+        _mutator.SetBlockAttribute(block, "style", style);
+        _mutator.SetBlockAttribute(block, "level", level);
+        MarkBlockDirty(bi);
+        RebuildLayout();
+        InvalidateVisual();
+        Focus(); Keyboard.Focus(this);
+    }
+
+    private void ToggleListStyle(string style)
+    {
+        if (_mutator is null || _blocks.Count == 0) return;
+        int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : (_selectedIndex >= 0 ? _selectedIndex : 0);
+        _mutator.ToggleListStyle(bi, style);
+        MarkBlockDirty(bi);
+        RebuildLayout();
+        InvalidateVisual();
+        NotifyCaretBlockChangedIfNeeded();
+        Focus(); Keyboard.Focus(this);
+    }
+
+    private void ConvertToNonList()
+    {
+        if (_mutator is null || _blocks.Count == 0) return;
+        int bi    = _caret.BlockIndex >= 0 ? _caret.BlockIndex : (_selectedIndex >= 0 ? _selectedIndex : 0);
+        var block = _blocks[bi].Block;
+        if (block.Kind == "list-item")
+        {
+            _mutator.SetBlockAttribute(block, "listStyle", null);
+            MarkBlockDirty(bi);
+            RebuildLayout();
+            InvalidateVisual();
+        }
+        Focus(); Keyboard.Focus(this);
+    }
+
+    private void SelectCurrentBlock()
+    {
+        if (_blocks.Count == 0) return;
+        int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : (_selectedIndex >= 0 ? _selectedIndex : 0);
+        _selectedIndex = bi;
+        InvalidateVisual();
+    }
+
+    private void InsertHyperlinkViaMenu()
+    {
+        var win = Window.GetWindow(this);
+        var dlg = new Dialogs.HyperlinkInsertDialog(GetSelectedText()) { Owner = win };
+        if (dlg.ShowDialog() != true) return;
+        InsertHyperlink(dlg.DisplayText, dlg.Url);
+    }
+
+    private void InsertTableViaMenu()
+    {
+        var win = Window.GetWindow(this);
+        var dlg = new Dialogs.InsertTableDialog { Owner = win };
+        if (dlg.ShowDialog() != true) return;
+        InsertTable(dlg.Rows, dlg.Columns);
     }
 
     private void ToggleFormatOnSelection(string attr)
@@ -280,29 +379,31 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         bool hasCaret     = _caret.BlockIndex >= 0;
         bool editable     = !_isReadOnly && _mutator is not null;
 
-        if (_miUndo      is not null) _miUndo.IsEnabled      = _model?.UndoEngine.CanUndo == true;
-        if (_miRedo      is not null) _miRedo.IsEnabled      = _model?.UndoEngine.CanRedo == true;
-        if (_miCut       is not null) _miCut.IsEnabled       = hasSelection && editable;
-        if (_miCopy      is not null) _miCopy.IsEnabled      = hasSelection;
-        if (_miPaste     is not null) _miPaste.IsEnabled     = hasCaret && editable && System.Windows.Clipboard.ContainsText();
-        if (_miDelete    is not null) _miDelete.IsEnabled    = (hasSelection || hasCaret) && editable;
-        if (_miSelectAll is not null) _miSelectAll.IsEnabled = _model is not null && _model.Blocks.Count > 0;
+        if (_miUndo        is not null) _miUndo.IsEnabled        = _model?.UndoEngine.CanUndo == true;
+        if (_miRedo        is not null) _miRedo.IsEnabled        = _model?.UndoEngine.CanRedo == true;
+        if (_miCut         is not null) _miCut.IsEnabled         = hasSelection && editable;
+        if (_miCopy        is not null) _miCopy.IsEnabled        = hasSelection;
+        if (_miPaste       is not null) _miPaste.IsEnabled       = hasCaret && editable && System.Windows.Clipboard.ContainsText();
+        if (_miDelete      is not null) _miDelete.IsEnabled      = (hasSelection || hasCaret) && editable;
+        if (_miSelectAll   is not null) _miSelectAll.IsEnabled   = _model is not null && _model.Blocks.Count > 0;
+        if (_miSelectBlock is not null) _miSelectBlock.IsEnabled = hasCaret;
+        if (_miParagraph   is not null) _miParagraph.IsEnabled   = hasCaret && editable;
+        if (_miList        is not null) _miList.IsEnabled        = hasCaret && editable;
 
-        bool canFormat = hasSelection && editable;
-        if (_miFormat    is not null) _miFormat.IsEnabled    = canFormat;
-        if (_miBold      is not null) _miBold.IsEnabled      = canFormat;
-        if (_miItalic    is not null) _miItalic.IsEnabled    = canFormat;
-        if (_miUnderline is not null) _miUnderline.IsEnabled = canFormat;
-        if (_miStrike    is not null) _miStrike.IsEnabled    = canFormat;
+        if (_miInsertPageBreak is not null) _miInsertPageBreak.IsEnabled = hasCaret && editable;
+        if (_miInsertHyperlink is not null) _miInsertHyperlink.IsEnabled = hasCaret && editable;
+        if (_miInsertTable     is not null) _miInsertTable.IsEnabled     = hasCaret && editable;
 
         bool isOnTable = hasCaret && _caret.BlockIndex < _blocks.Count &&
                          _blocks[_caret.BlockIndex].Block.Kind == "table";
         bool canEditTable = isOnTable && editable;
-        if (_miTable          is not null) _miTable.Visibility          = isOnTable ? Visibility.Visible : Visibility.Collapsed;
-        if (_miTableInsertRow is not null) _miTableInsertRow.IsEnabled  = canEditTable;
-        if (_miTableDeleteRow is not null) _miTableDeleteRow.IsEnabled  = canEditTable;
-        if (_miTableInsertCol is not null) _miTableInsertCol.IsEnabled  = canEditTable;
-        if (_miTableDeleteCol is not null) _miTableDeleteCol.IsEnabled  = canEditTable;
+        if (_miTable             is not null) _miTable.Visibility             = isOnTable ? Visibility.Visible : Visibility.Collapsed;
+        if (_miTableInsertRowAbove is not null) _miTableInsertRowAbove.IsEnabled = canEditTable;
+        if (_miTableInsertRow    is not null) _miTableInsertRow.IsEnabled    = canEditTable;
+        if (_miTableDeleteRow    is not null) _miTableDeleteRow.IsEnabled    = canEditTable;
+        if (_miTableInsertColLeft  is not null) _miTableInsertColLeft.IsEnabled  = canEditTable;
+        if (_miTableInsertCol    is not null) _miTableInsertCol.IsEnabled    = canEditTable;
+        if (_miTableDeleteCol    is not null) _miTableDeleteCol.IsEnabled    = canEditTable;
 
         Focus();
         Keyboard.Focus(this);
@@ -2478,8 +2579,86 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     {
         if (_isReadOnly || string.IsNullOrEmpty(e.Text) || _mutator is null) return;
         DeleteSelectionIfAny();
+
+        // Auto-list/heading detection: when a space is typed after a known trigger prefix
+        // at the very start of an otherwise-empty paragraph block.
+        if (e.Text == " " && TryAutoListDetect())
+        {
+            e.Handled = true;
+            return;
+        }
+
         InsertTextAtCaret(e.Text);
         e.Handled = true;
+    }
+
+    private bool TryAutoListDetect()
+    {
+        if (_blocks.Count == 0 || _mutator is null) return false;
+        int bi    = _caret.BlockIndex;
+        var block = _blocks[bi].Block;
+        if (block.Kind != "paragraph") return false;
+
+        string text = block.Text;
+        int caretAt = _caret.CharOffset;
+        if (caretAt != text.Length) return false; // only at end of prefix
+
+        return text switch
+        {
+            "-"   => ApplyAutoList(bi, block, "bullet"),
+            "*"   => ApplyAutoList(bi, block, "bullet"),
+            ">"   => ApplyAutoStyle(bi, block, "quote"),
+            "#"   => ApplyAutoHeading(bi, block, 1),
+            "##"  => ApplyAutoHeading(bi, block, 2),
+            "###" => ApplyAutoHeading(bi, block, 3),
+            "1."  => ApplyAutoList(bi, block, "numbered"),
+            "1)"  => ApplyAutoList(bi, block, "numbered"),
+            _     => false
+        };
+    }
+
+    private bool ApplyAutoList(int bi, DocumentBlock block, string listStyle)
+    {
+        // Remove the trigger prefix text, then convert the block to a list item.
+        int prefixLen = block.Text.Length;
+        if (prefixLen > 0) _mutator!.DeleteText(block, 0, prefixLen);
+        _mutator!.ToggleListStyle(bi, listStyle);
+        _caret = new TextCaret(bi, 0, 0);
+        _selection.Anchor = _caret;
+        _selection.Focus  = _caret;
+        _rebuildPending = false;
+        RebuildLayout();
+        _caretVisible = true;
+        RefreshCaretVisual();
+        NotifyCaretBlockChangedIfNeeded();
+        return true;
+    }
+
+    private bool ApplyAutoStyle(int bi, DocumentBlock block, string style)
+    {
+        _mutator!.DeleteText(block, 0, block.Text.Length);
+        _mutator.SetBlockAttribute(block, "style", style);
+        _caret = new TextCaret(bi, 0, 0);
+        _selection.Anchor = _caret;
+        _selection.Focus  = _caret;
+        _rebuildPending = false;
+        RebuildLayout();
+        RefreshCaretVisual();
+        return true;
+    }
+
+    private bool ApplyAutoHeading(int bi, DocumentBlock block, int level)
+    {
+        _mutator!.DeleteText(block, 0, block.Text.Length);
+        _mutator.SetBlockAttribute(block, "style", "heading");
+        _mutator.SetBlockAttribute(block, "level", level);
+        _caret = new TextCaret(bi, 0, 0);
+        _selection.Anchor = _caret;
+        _selection.Focus  = _caret;
+        _rebuildPending = false;
+        RebuildLayout();
+        RefreshCaretVisual();
+        return true;
     }
 
     private int HitTestBlock(Point pt)
@@ -3615,7 +3794,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         Focus(); Keyboard.Focus(this);
     }
 
-    private enum TableEditAction { InsertRow, DeleteRow, InsertColumn, DeleteColumn }
+    private enum TableEditAction { InsertRowAbove, InsertRow, DeleteRow, InsertColumnLeft, InsertColumn, DeleteColumn }
 
     private void TableEditAtCaret(TableEditAction action)
     {
@@ -3627,11 +3806,17 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
         switch (action)
         {
+            case TableEditAction.InsertRowAbove:
+                _mutator.InsertTableRowBefore(tableBlock, 0);
+                break;
             case TableEditAction.InsertRow:
                 _mutator.InsertTableRowAfter(tableBlock, 0);
                 break;
             case TableEditAction.DeleteRow:
                 _mutator.DeleteTableRow(tableBlock, 0);
+                break;
+            case TableEditAction.InsertColumnLeft:
+                _mutator.InsertTableColumnBefore(tableBlock, 0);
                 break;
             case TableEditAction.InsertColumn:
                 _mutator.InsertTableColumnAfter(tableBlock, 0);
@@ -3649,6 +3834,46 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
     /// <summary>Decreases the indent level of the caret block by 1 (min 0).</summary>
     public void DecreaseIndent() => AdjustIndent(-1);
+
+    /// <summary>Inserts a page-break block after the caret block.</summary>
+    public void InsertPageBreak()
+    {
+        if (_mutator is null) return;
+        int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : Math.Max(0, _blocks.Count - 1);
+        _mutator.InsertPageBreak(bi);
+        RebuildLayout();
+        InvalidateVisual();
+        Focus(); Keyboard.Focus(this);
+    }
+
+    /// <summary>Inserts a hyperlink block after the caret block.</summary>
+    public void InsertHyperlink(string displayText, string url)
+    {
+        if (_mutator is null) return;
+        int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : Math.Max(0, _blocks.Count - 1);
+        _mutator.InsertHyperlinkBlock(bi, displayText, url);
+        RebuildLayout();
+        InvalidateVisual();
+        Focus(); Keyboard.Focus(this);
+    }
+
+    /// <summary>Inserts a new table block after the caret block.</summary>
+    public void InsertTable(int rows, int columns)
+    {
+        if (_mutator is null) return;
+        int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : Math.Max(0, _blocks.Count - 1);
+        _mutator.InsertTableBlock(bi, rows, columns);
+        RebuildLayout();
+        InvalidateVisual();
+        Focus(); Keyboard.Focus(this);
+    }
+
+    /// <summary>Returns the text of the currently selected block, or empty string.</summary>
+    public string GetSelectedText()
+    {
+        int bi = _selectedIndex >= 0 ? _selectedIndex : (_caret.BlockIndex >= 0 ? _caret.BlockIndex : -1);
+        return bi >= 0 && bi < _blocks.Count ? _blocks[bi].Block.Text : string.Empty;
+    }
 
     private void AdjustIndent(int delta)
     {

@@ -105,9 +105,13 @@ public partial class DocumentTextPane : UserControl
 
     public void ScrollToOffset(long offset)          => PART_Renderer.ScrollToOffset(offset);
     public void ScrollToBlock(DocumentBlock block)   => PART_Renderer.ScrollToBlock(block);
-    public void IncreaseIndent()                     => PART_Renderer.IncreaseIndent();
-    public void DecreaseIndent()                     => PART_Renderer.DecreaseIndent();
-    public void NavigateToBlockIndex(int blockIndex) => PART_Renderer.NavigateToBlockIndex(blockIndex);
+    public void IncreaseIndent()                                          => PART_Renderer.IncreaseIndent();
+    public void DecreaseIndent()                                          => PART_Renderer.DecreaseIndent();
+    public void NavigateToBlockIndex(int blockIndex)                      => PART_Renderer.NavigateToBlockIndex(blockIndex);
+    public void InsertPageBreak()                                         => PART_Renderer.InsertPageBreak();
+    public void InsertHyperlink(string displayText, string url)           => PART_Renderer.InsertHyperlink(displayText, url);
+    public void InsertTable(int rows, int columns)                        => PART_Renderer.InsertTable(rows, columns);
+    public string GetSelectedText()                                       => PART_Renderer.GetSelectedText();
 
     public void SetForensicMode(bool enabled)
     {

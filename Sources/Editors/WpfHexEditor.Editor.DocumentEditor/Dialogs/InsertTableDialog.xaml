@@ -1,0 +1,48 @@
+<Window x:Class="WpfHexEditor.Editor.DocumentEditor.Dialogs.InsertTableDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:docSvc="clr-namespace:WpfHexEditor.Editor.DocumentEditor.Services"
+        Title="{DynamicResource InsertTableDlg_Title}"
+        Width="260" SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <docSvc:DocumentEditorLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="8"/>
+            <ColumnDefinition Width="80"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource InsertTableDlg_Rows}"
+                   VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="0" Grid.Column="2" x:Name="PART_Rows" Text="3"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource InsertTableDlg_Columns}"
+                   VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="2" Grid.Column="2" x:Name="PART_Columns" Text="3"/>
+
+        <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="{DynamicResource InsertTableDlg_Cancel}"
+                    Width="80" Margin="0,0,8,0"
+                    IsCancel="True" Click="OnCancelClicked"/>
+            <Button Content="{DynamicResource InsertTableDlg_OK}"
+                    Width="80" IsDefault="True" Click="OnOkClicked"/>
+        </StackPanel>
+    </Grid>
+</Window>
