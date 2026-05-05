@@ -1205,7 +1205,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return getPanel() ?? CreateDocumentContent(item);
 
         // Mark the item so the next RebuildVisualTree calls ContentFactory even for non-active tabs.
-        item.Metadata[WpfHexEditor.Docking.Wpf.DockTabControl.EagerContentKey] = "1";
+        item.Metadata[WpfHexEditor.Shell.DockTabControl.EagerContentKey] = "1";
         return new System.Windows.Controls.Border { Background = System.Windows.Media.Brushes.Transparent };
     }
 
