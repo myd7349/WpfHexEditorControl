@@ -298,9 +298,13 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     {
         get
         {
+            // _caret.BlockIndex / _selectedIndex are indices into the
+            // RenderBlock list (_blocks), not into _model.Blocks. Resolve
+            // through the RenderBlock so we always return the right block,
+            // even in Outline mode where non-headings are skipped.
             int bi = _caret.BlockIndex >= 0 ? _caret.BlockIndex : _selectedIndex;
-            if (bi < 0 || _model is null || bi >= _model.Blocks.Count) return null;
-            return _model.Blocks[bi];
+            if (bi < 0 || bi >= _blocks.Count) return null;
+            return _blocks[bi].Block;
         }
     }
 
@@ -406,7 +410,11 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     public void SetZoom(double zoom)
     {
         _zoom = Math.Clamp(zoom, 0.5, 2.0);
-        PageGeometryChanged?.Invoke(this, EventArgs.Empty);
+        // Defer the geometry-changed notification until after WPF has
+        // re-laid out the renderer at the new zoom — otherwise rulers
+        // read stale _pageWidth / _pageLeft values.
+        Dispatcher.BeginInvoke(() => PageGeometryChanged?.Invoke(this, EventArgs.Empty),
+            System.Windows.Threading.DispatcherPriority.Render);
     }
 
     /// <summary>
@@ -1672,8 +1680,13 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     {
         double available  = viewWidth - PageCanvasPad * 2;
         double nominalW   = _pageSettings.EffectivePageWidth;
-        _pageWidth = Math.Clamp(available, 400, Math.Max(400, nominalW));
-        _pageLeft  = (viewWidth - _pageWidth) / 2;
+        double newWidth   = Math.Clamp(available, 400, Math.Max(400, nominalW));
+        double newLeft    = (viewWidth - newWidth) / 2;
+        bool changed = Math.Abs(newWidth - _pageWidth) > 0.5 || Math.Abs(newLeft - _pageLeft) > 0.5;
+        _pageWidth = newWidth;
+        _pageLeft  = newLeft;
+        if (changed)
+            PageGeometryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void UpdateScrollExtent()

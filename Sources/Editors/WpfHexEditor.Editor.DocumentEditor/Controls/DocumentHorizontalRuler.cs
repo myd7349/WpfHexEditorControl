@@ -57,6 +57,11 @@ internal sealed class DocumentHorizontalRuler : FrameworkElement
         ToolTipService.SetBetweenShowDelay(this, 200);
         ToolTipService.SetShowDuration(this, 8000);
         ToolTipOpening += OnToolTipOpening;
+        // The ruler lives outside the renderer's ScaleTransform, so its own
+        // Width changes when the editor is resized or zoomed (zoom changes
+        // the renderer's effective size). Force a redraw on every layout
+        // pass so graduations / markers always track the page geometry.
+        SizeChanged += (_, _) => InvalidateVisual();
     }
 
     private void OnToolTipOpening(object sender, System.Windows.Controls.ToolTipEventArgs e)
