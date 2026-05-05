@@ -1104,6 +1104,11 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             intervalSeconds: 60);
         _autoSave.Start();
 
+        // Ensure the document starts clean regardless of any undo entries that
+        // may have been pushed during loading or initial layout.
+        model.UndoEngine.MarkSaved();
+        model.IsDirty = false;
+
         TitleChanged?.Invoke(this, Title);
     }
 

@@ -3010,11 +3010,14 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         InvalidateBrushCache();
         if (_rebuildPending) return;
         _rebuildPending = true;
+        // Use Render priority so RebuildLayout fires before OnRender — otherwise
+        // InvalidateVisual (also Render priority, posted slightly after) would
+        // draw stale FormattedLines from the pre-edit layout pass.
         Dispatcher.InvokeAsync(() =>
         {
             _rebuildPending = false;
             RebuildLayout();
-        }, System.Windows.Threading.DispatcherPriority.Background);
+        }, System.Windows.Threading.DispatcherPriority.Render);
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
