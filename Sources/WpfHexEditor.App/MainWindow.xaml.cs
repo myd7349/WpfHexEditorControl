@@ -1183,41 +1183,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_layout is null) return;
 
-        var moduleItems = _layout.GetAllItems()
-            .Where(item => item.ContentId.StartsWith("panel-dbg-") ||
-                           WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule.IsKnownContentIdStatic(item.ContentId))
-            .ToList();
+        bool hasPlaceholders = _layout.GetAllItems().Any(item =>
+            item.ContentId.StartsWith("panel-dbg-") ||
+            WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule.IsKnownContentIdStatic(item.ContentId));
 
-        if (moduleItems.Count == 0) return;
+        if (!hasPlaceholders) return;
 
-        // RebuildVisualTree re-invokes ContentFactory — modules are ready this time.
+        // EagerContentKey was set on each deferred item by GetOrDeferModulePanel.
+        // RebuildVisualTree now calls ContentFactory for all items — active or not.
         DockHost.RebuildVisualTree();
-
-        // Non-active tabs receive LazyContentPlaceholder and only resolve on first selection.
-        // Cycle SelectedIndex on each DockTabControl that owns a module item so
-        // OnSelectionChanged fires for every placeholder tab without visible flicker.
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, (Action)(() =>
-        {
-            foreach (var tabControl in FindVisualChildren<WpfHexEditor.Docking.Wpf.DockTabControl>(DockHost))
-            {
-                var items = tabControl.Items.OfType<System.Windows.Controls.TabItem>().ToList();
-                int originalIndex = tabControl.SelectedIndex;
-
-                for (int i = 0; i < items.Count; i++)
-                {
-                    if (items[i].Tag is not DockItem di) continue;
-                    if (!moduleItems.Contains(di)) continue;
-                    // Content is either a LazyContentPlaceholder (private) or our transparent Border.
-                    if (items[i].Content is System.Windows.Controls.UserControl) continue; // already real
-
-                    // Select the module tab to trigger OnSelectionChanged → ContentFactory.
-                    tabControl.SelectedIndex = i;
-                }
-
-                // Restore original selection.
-                tabControl.SelectedIndex = originalIndex;
-            }
-        }));
     }
 
     /// <summary>
@@ -1230,6 +1204,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (moduleReady())
             return getPanel() ?? CreateDocumentContent(item);
 
+        // Mark the item so the next RebuildVisualTree calls ContentFactory even for non-active tabs.
+        item.Metadata[WpfHexEditor.Docking.Wpf.DockTabControl.EagerContentKey] = "1";
         return new System.Windows.Controls.Border { Background = System.Windows.Media.Brushes.Transparent };
     }
 
