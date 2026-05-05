@@ -1131,7 +1131,12 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     {
         PART_StatusBar.UpdateCurrentPage(e.Current, e.Total);
         var r = PART_TextPane.PART_Renderer;
-        PART_MiniMap.UpdateScroll(r.VerticalOffset, r.ExtentHeight, r.ViewportHeight);
+        // Use post-zoom ScrollViewer measurements so the viewport rect is correctly
+        // sized at any zoom level (renderer values are pre-zoom canvas DIPs).
+        PART_MiniMap.UpdateScroll(
+            PART_TextPane.ScrollViewerVerticalOffset,
+            PART_TextPane.ScrollViewerExtentHeight,
+            PART_TextPane.ScrollViewerViewportHeight);
         _scrollMarker?.UpdateCaretMarker(r.CaretBlockIndex, r.BlockCount);
     }
 

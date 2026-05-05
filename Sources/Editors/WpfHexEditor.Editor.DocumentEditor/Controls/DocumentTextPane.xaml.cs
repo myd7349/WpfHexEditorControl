@@ -81,6 +81,14 @@ public partial class DocumentTextPane : UserControl
     /// <summary>Direct access to the renderer for PageSettings wiring.</summary>
     public DocumentCanvasRenderer  Renderer         => PART_Renderer;
 
+    /// <summary>
+    /// Post-zoom scroll values from the ScrollViewer (screen pixels, zoom-adjusted).
+    /// Use these for the minimap viewport rect so its size is correct at any zoom level.
+    /// </summary>
+    public double ScrollViewerVerticalOffset  => PART_ScrollViewer.VerticalOffset;
+    public double ScrollViewerExtentHeight    => PART_ScrollViewer.ExtentHeight;
+    public double ScrollViewerViewportHeight  => PART_ScrollViewer.ViewportHeight;
+
     public DocumentPageSettings PageSettings
     {
         get => PART_Renderer.PageSettings;
