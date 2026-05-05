@@ -1183,17 +1183,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_layout is null) return;
 
-        var deferredIds = _layout.GetAllItems()
-            .Where(item => item.ContentId.StartsWith("panel-dbg-") ||
-                           WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule.IsKnownContentIdStatic(item.ContentId))
+        // Only invalidate items that were deferred (EagerContentKey set by GetOrDeferModulePanel).
+        // Items that already have real content in cache (e.g. active tab on startup) must NOT
+        // be evicted — doing so would destroy their cached panel instance.
+        var placeholderIds = _layout.GetAllItems()
+            .Where(item => item.Metadata.ContainsKey(WpfHexEditor.Shell.DockTabControl.EagerContentKey))
             .Select(item => item.ContentId)
             .ToList();
 
-        if (deferredIds.Count == 0) return;
+        if (placeholderIds.Count == 0) return;
 
-        // Evict the placeholder Border from the content cache so ContentFactory
-        // runs again for each deferred item on the next RebuildVisualTree.
-        foreach (var id in deferredIds)
+        foreach (var id in placeholderIds)
             DockHost.InvalidateContent(id);
 
         DockHost.RebuildVisualTree();
