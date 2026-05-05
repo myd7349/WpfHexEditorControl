@@ -12,32 +12,32 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <DockPanel>
-        <!-- Toolbar -->
-        <ToolBar DockPanel.Dock="Top" Background="{DynamicResource ToolbarBackground}">
-            <Button Command="{Binding RefreshCommand}"
-                    ToolTip="{DynamicResource DBG_ParallelStacksRefreshTooltip}"
-                    Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-            </Button>
-            <Separator/>
-            <TextBlock VerticalAlignment="Center"
-                       Foreground="{DynamicResource PanelForeground}"
-                       FontSize="11"
-                       Text="{DynamicResource DBG_ParallelStacksHint}"
-                       Margin="4,0"/>
-        </ToolBar>
+    <DockPanel Background="{DynamicResource DockBackgroundBrush}">
 
-        <!-- Busy indicator -->
+        <Border DockPanel.Dock="Top" Style="{DynamicResource PanelToolbarStyle}">
+            <StackPanel Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <Button Command="{Binding RefreshCommand}"
+                        ToolTip="{DynamicResource DBG_ParallelStacksRefreshTooltip}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE72C;"/>
+                <Rectangle Width="1" Height="16" Margin="6,0"
+                           Fill="{DynamicResource Panel_ToolbarBorderBrush}"/>
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                           FontSize="11"
+                           Text="{DynamicResource DBG_ParallelStacksHint}"
+                           Margin="4,0"/>
+            </StackPanel>
+        </Border>
+
         <ProgressBar DockPanel.Dock="Top"
                      IsIndeterminate="True"
                      Height="2"
                      Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-        <!-- Scrollable canvas drawn by code-behind -->
         <ScrollViewer HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
-                      Background="{DynamicResource PanelBackground}">
+                      Background="{DynamicResource DockBackgroundBrush}">
             <Canvas x:Name="StacksCanvas"
                     Background="Transparent"
                     MinWidth="400" MinHeight="300"/>

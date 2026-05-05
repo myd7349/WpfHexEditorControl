@@ -1346,5 +1346,101 @@ namespace WpfHexEditor.App.Debug.Properties {
                 return ResourceManager.GetString("Debugger_WatchPanelTitle", resourceCulture);
             }
         }
+
+        internal static string DBG_ApplyTooltip {
+            get { return ResourceManager.GetString("DBG_ApplyTooltip", resourceCulture); }
+        }
+
+        internal static string DBG_ColException {
+            get { return ResourceManager.GetString("DBG_ColException", resourceCulture); }
+        }
+
+        internal static string DBG_ColCondition {
+            get { return ResourceManager.GetString("DBG_ColCondition", resourceCulture); }
+        }
+
+        internal static string DBG_EXC_SearchPlaceholder {
+            get { return ResourceManager.GetString("DBG_EXC_SearchPlaceholder", resourceCulture); }
+        }
+
+        internal static string DBG_ClearTooltip {
+            get { return ResourceManager.GetString("DBG_ClearTooltip", resourceCulture); }
+        }
+
+        internal static string DBG_RunButton {
+            get { return ResourceManager.GetString("DBG_RunButton", resourceCulture); }
+        }
+
+        internal static string DBG_MOD_SearchPlaceholder {
+            get { return ResourceManager.GetString("DBG_MOD_SearchPlaceholder", resourceCulture); }
+        }
+
+        internal static string DBG_ColVersion {
+            get { return ResourceManager.GetString("DBG_ColVersion", resourceCulture); }
+        }
+
+        internal static string DBG_ColSymbolStatus {
+            get { return ResourceManager.GetString("DBG_ColSymbolStatus", resourceCulture); }
+        }
+
+        internal static string DBG_ColOptimized {
+            get { return ResourceManager.GetString("DBG_ColOptimized", resourceCulture); }
+        }
+
+        internal static string DBG_ColUserCode {
+            get { return ResourceManager.GetString("DBG_ColUserCode", resourceCulture); }
+        }
+
+        internal static string DBG_ColPath {
+            get { return ResourceManager.GetString("DBG_ColPath", resourceCulture); }
+        }
+
+        internal static string DBG_ColAddress {
+            get { return ResourceManager.GetString("DBG_ColAddress", resourceCulture); }
+        }
+
+        internal static string DBG_ColBytes {
+            get { return ResourceManager.GetString("DBG_ColBytes", resourceCulture); }
+        }
+
+        internal static string DBG_ColSymbol {
+            get { return ResourceManager.GetString("DBG_ColSymbol", resourceCulture); }
+        }
+
+        internal static string DBG_ColInstruction {
+            get { return ResourceManager.GetString("DBG_ColInstruction", resourceCulture); }
+        }
+
+        internal static string DBG_ColSource {
+            get { return ResourceManager.GetString("DBG_ColSource", resourceCulture); }
+        }
+
+        internal static string DBG_ColHex {
+            get { return ResourceManager.GetString("DBG_ColHex", resourceCulture); }
+        }
+
+        internal static string DBG_ColAscii {
+            get { return ResourceManager.GetString("DBG_ColAscii", resourceCulture); }
+        }
+
+        internal static string DBG_ColStatus {
+            get { return ResourceManager.GetString("DBG_ColStatus", resourceCulture); }
+        }
+
+        internal static string DBG_ColId {
+            get { return ResourceManager.GetString("DBG_ColId", resourceCulture); }
+        }
+
+        internal static string DBG_ColFrozen {
+            get { return ResourceManager.GetString("DBG_ColFrozen", resourceCulture); }
+        }
+
+        internal static string DBG_AddExpression {
+            get { return ResourceManager.GetString("DBG_AddExpression", resourceCulture); }
+        }
+
+        internal static string DBG_ColExpression {
+            get { return ResourceManager.GetString("DBG_ColExpression", resourceCulture); }
+        }
     }
 }

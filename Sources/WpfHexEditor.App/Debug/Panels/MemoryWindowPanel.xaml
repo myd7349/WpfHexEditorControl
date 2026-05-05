@@ -65,9 +65,9 @@
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Address" Width="110" DisplayMemberBinding="{Binding Address}"/>
-                    <GridViewColumn Header="Hex"     Width="380" DisplayMemberBinding="{Binding Hex}"/>
-                    <GridViewColumn Header="ASCII"   Width="130" DisplayMemberBinding="{Binding Ascii}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColAddress}" Width="110" DisplayMemberBinding="{Binding Address}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColHex}"     Width="380" DisplayMemberBinding="{Binding Hex}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColAscii}"   Width="130" DisplayMemberBinding="{Binding Ascii}"/>
                 </GridView>
             </ListView.View>
         </ListView>

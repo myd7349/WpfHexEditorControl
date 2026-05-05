@@ -63,8 +63,8 @@
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="ID"   Width="40"  DisplayMemberBinding="{Binding Id}" />
-                    <GridViewColumn Header="&#x2744;" Width="24">
+                    <GridViewColumn Header="{DynamicResource DBG_ColId}"     Width="40"  DisplayMemberBinding="{Binding Id}" />
+                    <GridViewColumn Header="{DynamicResource DBG_ColFrozen}" Width="24">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="&#x2744;" Visibility="{Binding IsFrozen, Converter={StaticResource BoolToVis}}"

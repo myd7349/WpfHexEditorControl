@@ -1,22 +1,39 @@
 <UserControl x:Class="WpfHexEditor.App.Debug.Panels.ExceptionSettingsPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.App.Debug.ViewModels">
+             xmlns:vm="clr-namespace:WpfHexEditor.App.Debug.ViewModels"
+             xmlns:dbgSvc="clr-namespace:WpfHexEditor.App.Debug.Services">
 
-    <DockPanel>
-        <!-- Toolbar -->
-        <ToolBar DockPanel.Dock="Top" Background="{DynamicResource ToolbarBackground}">
-            <Button Command="{Binding ApplyCommand}"
-                    ToolTip="Apply exception filter changes"
-                    Style="{DynamicResource ToolbarButtonStyle}">
-                <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-            </Button>
-        </ToolBar>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <dbgSvc:DebuggerLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
-        <!-- Filter list -->
+    <DockPanel Background="{DynamicResource DockBackgroundBrush}">
+
+        <Border DockPanel.Dock="Top" Style="{DynamicResource PanelToolbarStyle}">
+            <StackPanel Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <TextBox Width="160"
+                         Style="{DynamicResource PanelSearchBoxStyle}"
+                         Tag="{DynamicResource DBG_EXC_SearchPlaceholder}"
+                         ToolTip="{DynamicResource DBG_EXC_SearchPlaceholder}"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                <Rectangle Width="1" Height="16" Margin="6,0"
+                           Fill="{DynamicResource Panel_ToolbarBorderBrush}"/>
+                <Button Command="{Binding ApplyCommand}"
+                        ToolTip="{DynamicResource DBG_ApplyTooltip}"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        Content="&#xE74E;"/>
+            </StackPanel>
+        </Border>
+
         <ListView ItemsSource="{Binding Filters}"
-                  Background="{DynamicResource PanelBackground}"
-                  Foreground="{DynamicResource PanelForeground}">
+                  Background="{DynamicResource DockBackgroundBrush}"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  BorderThickness="0">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Width="28">
@@ -27,15 +44,14 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="Exception" Width="220"
+                    <GridViewColumn Header="{DynamicResource DBG_ColException}" Width="220"
                                     DisplayMemberBinding="{Binding Label}"/>
-                    <GridViewColumn Header="Condition" Width="400">
+                    <GridViewColumn Header="{DynamicResource DBG_ColCondition}" Width="400">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate DataType="{x:Type vm:ExceptionFilterItem}">
                                 <TextBox Text="{Binding Condition, UpdateSourceTrigger=LostFocus}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         Foreground="{DynamicResource PanelForeground}"/>
+                                         Background="Transparent" BorderThickness="0"
+                                         Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

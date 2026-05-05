@@ -64,11 +64,11 @@
             </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Address"  Width="120" DisplayMemberBinding="{Binding Address}"/>
-                    <GridViewColumn Header="Bytes"    Width="120" DisplayMemberBinding="{Binding InstructionBytes}"/>
-                    <GridViewColumn Header="Symbol"   Width="140" DisplayMemberBinding="{Binding Symbol}"/>
-                    <GridViewColumn Header="Instruction" Width="300" DisplayMemberBinding="{Binding Instruction}"/>
-                    <GridViewColumn Header="Source"   Width="180">
+                    <GridViewColumn Header="{DynamicResource DBG_ColAddress}"     Width="120" DisplayMemberBinding="{Binding Address}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColBytes}"       Width="120" DisplayMemberBinding="{Binding InstructionBytes}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColSymbol}"      Width="140" DisplayMemberBinding="{Binding Symbol}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColInstruction}" Width="300" DisplayMemberBinding="{Binding Instruction}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColSource}"      Width="180">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock>

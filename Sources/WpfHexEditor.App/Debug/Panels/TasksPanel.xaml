@@ -39,7 +39,7 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="{DynamicResource DBG_ColName}"  Width="200" DisplayMemberBinding="{Binding Name}"/>
-                    <GridViewColumn Header="Status"                          Width="140" DisplayMemberBinding="{Binding Status}"/>
+                    <GridViewColumn Header="{DynamicResource DBG_ColStatus}"  Width="140" DisplayMemberBinding="{Binding Status}"/>
                     <GridViewColumn Header="{DynamicResource DBG_ColType}"  Width="200" DisplayMemberBinding="{Binding Type}"/>
                 </GridView>
             </ListView.View>

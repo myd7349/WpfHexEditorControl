@@ -353,4 +353,44 @@
   <data name="DBG_CS_ColLang"            xml:space="preserve"><value>Lang</value></data>
   <data name="DBG_CS_RunToFrame"         xml:space="preserve"><value>Run to Frame</value></data>
   <data name="DBG_CS_SwitchToFrame"      xml:space="preserve"><value>Switch to Frame</value></data>
+
+  <!-- ExceptionSettingsPanel -->
+  <data name="DBG_ApplyTooltip"          xml:space="preserve"><value>Apply exception filter changes</value></data>
+  <data name="DBG_ColException"          xml:space="preserve"><value>Exception</value></data>
+  <data name="DBG_ColCondition"          xml:space="preserve"><value>Condition</value></data>
+  <data name="DBG_EXC_SearchPlaceholder" xml:space="preserve"><value>Search exceptions...</value></data>
+
+  <!-- ImmediateWindowPanel -->
+  <data name="DBG_ClearTooltip"          xml:space="preserve"><value>Clear transcript</value></data>
+  <data name="DBG_RunButton"             xml:space="preserve"><value>Run</value></data>
+
+  <!-- ModulesPanel -->
+  <data name="DBG_MOD_SearchPlaceholder" xml:space="preserve"><value>Search modules...</value></data>
+  <data name="DBG_ColVersion"            xml:space="preserve"><value>Version</value></data>
+  <data name="DBG_ColSymbolStatus"       xml:space="preserve"><value>Symbol Status</value></data>
+  <data name="DBG_ColOptimized"          xml:space="preserve"><value>Optimized</value></data>
+  <data name="DBG_ColUserCode"           xml:space="preserve"><value>User Code</value></data>
+  <data name="DBG_ColPath"               xml:space="preserve"><value>Path</value></data>
+
+  <!-- DisassemblyPanel -->
+  <data name="DBG_ColAddress"            xml:space="preserve"><value>Address</value></data>
+  <data name="DBG_ColBytes"              xml:space="preserve"><value>Bytes</value></data>
+  <data name="DBG_ColSymbol"             xml:space="preserve"><value>Symbol</value></data>
+  <data name="DBG_ColInstruction"        xml:space="preserve"><value>Instruction</value></data>
+  <data name="DBG_ColSource"             xml:space="preserve"><value>Source</value></data>
+
+  <!-- MemoryWindowPanel -->
+  <data name="DBG_ColHex"               xml:space="preserve"><value>Hex</value></data>
+  <data name="DBG_ColAscii"             xml:space="preserve"><value>ASCII</value></data>
+
+  <!-- TasksPanel -->
+  <data name="DBG_ColStatus"            xml:space="preserve"><value>Status</value></data>
+
+  <!-- ThreadsPanel -->
+  <data name="DBG_ColId"                xml:space="preserve"><value>ID</value></data>
+  <data name="DBG_ColFrozen"            xml:space="preserve"><value>&#x2744;</value></data>
+
+  <!-- ParallelWatchPanel -->
+  <data name="DBG_AddExpression"        xml:space="preserve"><value>Add expression row</value></data>
+  <data name="DBG_ColExpression"        xml:space="preserve"><value>Expression</value></data>
 </root>
