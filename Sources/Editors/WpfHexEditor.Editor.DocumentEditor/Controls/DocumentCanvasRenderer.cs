@@ -2938,13 +2938,13 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         _caret = _caret with { CharOffset = off + text.Length };
         _selection.Anchor = _caret;
         _selection.Focus  = _caret;
-        // Force the caret-position FormattedText cache to rebuild from the
-        // current block.Text on next RefreshCaretVisual; otherwise the caret
-        // tracks stale text under fast key-repeat.
-        _caretFtDirty = true;
+        // Rebuild layout synchronously so FormattedLines and GlyphLines reflect the
+        // new text before RefreshCaretVisual computes the caret X and before OnRender
+        // draws the block — eliminates the one-frame lag where stale text is visible.
+        _rebuildPending = false;
+        RebuildLayout();
         _caretVisible = true;
         RefreshCaretVisual();
-        InvalidateVisual();
     }
 
     private void SplitBlockAtCaret()
@@ -2958,7 +2958,9 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         _caret = new TextCaret(bi + 1, 0, 0);
         _selection.Anchor = _caret;
         _selection.Focus  = _caret;
-        InvalidateVisual();
+        _rebuildPending = false;
+        RebuildLayout();
+        RefreshCaretVisual();
     }
 
     // ── Phase 12 public clipboard (Phase 13 fills in DeleteSelectionIfAny) ────
@@ -3222,7 +3224,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     public void DeleteAtCaret(bool forward)
     {
         if (_isReadOnly || _mutator is null || _blocks.Count == 0) return;
-        if (!_selection.IsEmpty) { DeleteSelectionIfAny(); return; }
+        if (!_selection.IsEmpty) { DeleteSelectionIfAny(); _rebuildPending = false; RebuildLayout(); RefreshCaretVisual(); return; }
 
         int bi   = _caret.BlockIndex;
         int off  = _caret.CharOffset;
@@ -3241,6 +3243,9 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         }
         _selection.Anchor = _caret;
         _selection.Focus  = _caret;
+        _rebuildPending = false;
+        RebuildLayout();
+        RefreshCaretVisual();
     }
 
     /// <summary>Selects all text in the document.</summary>
