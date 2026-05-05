@@ -1206,7 +1206,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (asmIds.Count == 0) return;
 
         foreach (var id in asmIds)
-            DockHost.InvalidateContent(id);
+        {
+            _displayContent.Remove(id);   // MainWindow's own cache — must clear so CreateContentForItem re-invokes BuildContentForItem
+            DockHost.InvalidateContent(id); // DockControl's internal cache
+        }
 
         DockHost.RebuildVisualTree();
     }
