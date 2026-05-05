@@ -1173,71 +1173,36 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// was initialized). Called once from InitializePluginSystemAsync after the module is ready.
     /// </summary>
     /// <summary>
-    /// Replaces any transparent placeholder tabs that were created during layout restore
-    /// (before DebugModule / AssemblyExplorerModule were initialised) with the real panels.
-    /// Called once from InitializePluginSystemAsync after both modules are ready.
+    /// Called once from InitializePluginSystemAsync after both DebugModule and
+    /// AssemblyExplorerModule are ready. If the saved layout contained any of their
+    /// panels they were rendered as transparent placeholders (modules were null at
+    /// layout-restore time). A single RebuildVisualTree re-invokes ContentFactory
+    /// for every item — this time the modules are ready and return the real panels.
     /// </summary>
     private void RefreshModulePanels()
     {
         if (_layout is null) return;
 
-        foreach (var item in _layout.GetAllItems())
-        {
-            if (_debugModule is not null && item.ContentId.StartsWith("panel-dbg-"))
-                ReplaceTabContent(item, _debugModule.GetPanel(item.ContentId));
-            else if (_assemblyExplorerModule is not null
-                  && WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule.IsKnownContentIdStatic(item.ContentId))
-                ReplaceTabContent(item, _assemblyExplorerModule.GetPanel(item.ContentId));
-        }
+        bool hasPlaceholders = _layout.GetAllItems().Any(item =>
+            item.ContentId.StartsWith("panel-dbg-") ||
+            WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule.IsKnownContentIdStatic(item.ContentId));
+
+        if (hasPlaceholders)
+            DockHost.RebuildVisualTree();
     }
 
     /// <summary>
-    /// Returns the real AssemblyExplorer panel if the module is ready, otherwise returns a
-    /// transparent placeholder and re-renders the tab once the module is initialised.
-    /// This handles the race where BuildContentForItem is called during layout restore
-    /// before InitializePluginSystemAsync has wired _assemblyExplorerModule.
-    /// </summary>
-    /// <summary>
-    /// Returns the real panel if the module is ready (moduleReady() == true), otherwise
-    /// returns a transparent placeholder and schedules a Dispatcher callback that replaces
-    /// the tab content once the module becomes available. Covers both DebugModule and
-    /// AssemblyExplorerModule, which are initialised after the layout restore.
+    /// Returns the real panel if the module is ready, otherwise a transparent placeholder.
+    /// RefreshModulePanels() is called after both modules initialise and triggers a full
+    /// RebuildVisualTree so all placeholders are replaced atomically.
     /// </summary>
     private UIElement GetOrDeferModulePanel(DockItem item, Func<UIElement?> getPanel, Func<bool> moduleReady)
     {
         if (moduleReady())
             return getPanel() ?? CreateDocumentContent(item);
 
-        var placeholder = new System.Windows.Controls.Border { Background = System.Windows.Media.Brushes.Transparent };
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (Action)(() =>
-        {
-            if (!moduleReady()) return;
-            ReplaceTabContent(item, getPanel());
-        }));
-        return placeholder;
+        return new System.Windows.Controls.Border { Background = System.Windows.Media.Brushes.Transparent };
     }
-
-    /// <summary>
-    /// Walks the visual tree of DockHost to find the TabItem whose Tag == item
-    /// and replaces its Content with the new element.
-    /// </summary>
-    private void ReplaceTabContent(DockItem item, UIElement? content)
-    {
-        if (content is null) return;
-        foreach (var tabControl in FindVisualChildren<System.Windows.Controls.TabControl>(DockHost))
-        {
-            foreach (var tab in tabControl.Items.OfType<System.Windows.Controls.TabItem>())
-            {
-                if (tab.Tag == item)
-                {
-                    tab.Content = content;
-                    return;
-                }
-            }
-        }
-    }
-
-
 
     // Layout pruning logic moved to Services.LayoutPersistenceService (Phase 4 refactoring)
 
