@@ -70,11 +70,29 @@ namespace WpfHexEditor.App.Debug.Properties {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Add.
+        /// </summary>
+        internal static string DBG_Add {
+            get {
+                return ResourceManager.GetString("DBG_Add", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à + Add a condition.
         /// </summary>
         internal static string DBG_AddCondition {
             get {
                 return ResourceManager.GetString("DBG_AddCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Add to Watch.
+        /// </summary>
+        internal static string DBG_AddToWatch {
+            get {
+                return ResourceManager.GetString("DBG_AddToWatch", resourceCulture);
             }
         }
         
@@ -93,6 +111,24 @@ namespace WpfHexEditor.App.Debug.Properties {
         internal static string DBG_BreakpointSettings {
             get {
                 return ResourceManager.GetString("DBG_BreakpointSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Clear.
+        /// </summary>
+        internal static string DBG_Clear {
+            get {
+                return ResourceManager.GetString("DBG_Clear", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Clear All.
+        /// </summary>
+        internal static string DBG_ClearAll {
+            get {
+                return ResourceManager.GetString("DBG_ClearAll", resourceCulture);
             }
         }
         
@@ -187,11 +223,200 @@ namespace WpfHexEditor.App.Debug.Properties {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy.
+        /// </summary>
+        internal static string DBG_Copy {
+            get {
+                return ResourceManager.GetString("DBG_Copy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Address.
+        /// </summary>
+        internal static string DBG_CopyAddress {
+            get {
+                return ResourceManager.GetString("DBG_CopyAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy ASCII.
+        /// </summary>
+        internal static string DBG_CopyAscii {
+            get {
+                return ResourceManager.GetString("DBG_CopyAscii", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Call Stack.
+        /// </summary>
+        internal static string DBG_CopyCallStack {
+            get {
+                return ResourceManager.GetString("DBG_CopyCallStack", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Expression.
+        /// </summary>
+        internal static string DBG_CopyExpression {
+            get {
+                return ResourceManager.GetString("DBG_CopyExpression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Frame.
+        /// </summary>
+        internal static string DBG_CopyFrame {
+            get {
+                return ResourceManager.GetString("DBG_CopyFrame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Hex.
+        /// </summary>
+        internal static string DBG_CopyHex {
+            get {
+                return ResourceManager.GetString("DBG_CopyHex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Line.
+        /// </summary>
+        internal static string DBG_CopyLine {
+            get {
+                return ResourceManager.GetString("DBG_CopyLine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Copy Location.
         /// </summary>
         internal static string DBG_CopyLocationMenu {
             get {
                 return ResourceManager.GetString("DBG_CopyLocationMenu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Name.
+        /// </summary>
+        internal static string DBG_CopyName {
+            get {
+                return ResourceManager.GetString("DBG_CopyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Row.
+        /// </summary>
+        internal static string DBG_CopyRow {
+            get {
+                return ResourceManager.GetString("DBG_CopyRow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Task Info.
+        /// </summary>
+        internal static string DBG_CopyTaskInfo {
+            get {
+                return ResourceManager.GetString("DBG_CopyTaskInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Thread Info.
+        /// </summary>
+        internal static string DBG_CopyThreadInfo {
+            get {
+                return ResourceManager.GetString("DBG_CopyThreadInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy Value.
+        /// </summary>
+        internal static string DBG_CopyValue {
+            get {
+                return ResourceManager.GetString("DBG_CopyValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Lang.
+        /// </summary>
+        internal static string DBG_CS_ColLang {
+            get {
+                return ResourceManager.GetString("DBG_CS_ColLang", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Navigate Back.
+        /// </summary>
+        internal static string DBG_CS_NavBack {
+            get {
+                return ResourceManager.GetString("DBG_CS_NavBack", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Navigate Forward.
+        /// </summary>
+        internal static string DBG_CS_NavForward {
+            get {
+                return ResourceManager.GetString("DBG_CS_NavForward", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Run to Frame.
+        /// </summary>
+        internal static string DBG_CS_RunToFrame {
+            get {
+                return ResourceManager.GetString("DBG_CS_RunToFrame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Search (Ctrl+E).
+        /// </summary>
+        internal static string DBG_CS_SearchPlaceholder {
+            get {
+                return ResourceManager.GetString("DBG_CS_SearchPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Show All Threads.
+        /// </summary>
+        internal static string DBG_CS_ShowAllThreads {
+            get {
+                return ResourceManager.GetString("DBG_CS_ShowAllThreads", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Show External Code.
+        /// </summary>
+        internal static string DBG_CS_ShowExternalCode {
+            get {
+                return ResourceManager.GetString("DBG_CS_ShowExternalCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Switch to Frame.
+        /// </summary>
+        internal static string DBG_CS_SwitchToFrame {
+            get {
+                return ResourceManager.GetString("DBG_CS_SwitchToFrame", resourceCulture);
             }
         }
         
@@ -358,6 +583,15 @@ namespace WpfHexEditor.App.Debug.Properties {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Edit Value.
+        /// </summary>
+        internal static string DBG_EditValue {
+            get {
+                return ResourceManager.GetString("DBG_EditValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enable All.
         /// </summary>
         internal static string DBG_EnableAll {
@@ -408,6 +642,42 @@ namespace WpfHexEditor.App.Debug.Properties {
         internal static string DBG_ExportTooltip {
             get {
                 return ResourceManager.GetString("DBG_ExportTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Filter….
+        /// </summary>
+        internal static string DBG_FilterPlaceholder {
+            get {
+                return ResourceManager.GetString("DBG_FilterPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Filter variables by name.
+        /// </summary>
+        internal static string DBG_FilterTooltip {
+            get {
+                return ResourceManager.GetString("DBG_FilterTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Freeze.
+        /// </summary>
+        internal static string DBG_Freeze {
+            get {
+                return ResourceManager.GetString("DBG_Freeze", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Go to Source.
+        /// </summary>
+        internal static string DBG_GoToSource {
+            get {
+                return ResourceManager.GetString("DBG_GoToSource", resourceCulture);
             }
         }
         
@@ -655,11 +925,47 @@ namespace WpfHexEditor.App.Debug.Properties {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Refresh.
+        /// </summary>
+        internal static string DBG_Refresh {
+            get {
+                return ResourceManager.GetString("DBG_Refresh", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Refresh (F5).
+        /// </summary>
+        internal static string DBG_RefreshTooltip {
+            get {
+                return ResourceManager.GetString("DBG_RefreshTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Remove.
+        /// </summary>
+        internal static string DBG_Remove {
+            get {
+                return ResourceManager.GetString("DBG_Remove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Reset.
         /// </summary>
         internal static string DBG_ResetButton {
             get {
                 return ResourceManager.GetString("DBG_ResetButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Run to Cursor.
+        /// </summary>
+        internal static string DBG_RunToCursor {
+            get {
+                return ResourceManager.GetString("DBG_RunToCursor", resourceCulture);
             }
         }
         
@@ -691,6 +997,42 @@ namespace WpfHexEditor.App.Debug.Properties {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Set Next Statement.
+        /// </summary>
+        internal static string DBG_SetNextStatement {
+            get {
+                return ResourceManager.GetString("DBG_SetNextStatement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Show values as hexadecimal.
+        /// </summary>
+        internal static string DBG_ShowAsHex {
+            get {
+                return ResourceManager.GetString("DBG_ShowAsHex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Switch To Thread.
+        /// </summary>
+        internal static string DBG_SwitchToThread {
+            get {
+                return ResourceManager.GetString("DBG_SwitchToThread", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Thaw.
+        /// </summary>
+        internal static string DBG_Thaw {
+            get {
+                return ResourceManager.GetString("DBG_Thaw", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Refresh thread list.
         /// </summary>
         internal static string DBG_ThreadsRefreshTooltip {
@@ -705,6 +1047,15 @@ namespace WpfHexEditor.App.Debug.Properties {
         internal static string DBG_ToggleEnabledMenu {
             get {
                 return ResourceManager.GetString("DBG_ToggleEnabledMenu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Toggle Hex/Decimal.
+        /// </summary>
+        internal static string DBG_ToggleHexDecimal {
+            get {
+                return ResourceManager.GetString("DBG_ToggleHexDecimal", resourceCulture);
             }
         }
         
