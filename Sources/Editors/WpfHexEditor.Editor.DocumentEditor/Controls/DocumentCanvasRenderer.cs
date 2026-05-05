@@ -335,8 +335,12 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             if (_caret.BlockIndex < 0 || _caret.BlockIndex >= _blocks.Count) return -1;
             var text = GetFlatText(_caret.BlockIndex);
             if (string.IsNullOrEmpty(text) || _caret.CharOffset <= 0) return 0;
-            var ft = GetCurrentFt(_caret.BlockIndex);
-            if (ft is null) return 0;
+            var rb = _blocks[_caret.BlockIndex];
+            double contentW = Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight);
+            var ft = (rb.FormattedLines is { Count: > 0 })
+                ? rb.FormattedLines[0]
+                : MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
+                                    _fgBrush ?? Brushes.Gray, contentW);
             return CaretNavHelper.GetCaretX(ft, _caret.CharOffset, text.Length);
         }
     }
@@ -2249,36 +2253,15 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             : b.Text;
     }
 
-    /// <summary>
-    /// Returns a FormattedText for <paramref name="blockIdx"/> built from the live block text.
-    /// When the block is dirty (text mutated since last layout), <c>FormattedLines[0]</c> holds
-    /// stale pre-edit text whose glyph positions no longer match the model. In that case we
-    /// build a fresh one-shot FormattedText from the current text so hit-testing and caret
-    /// navigation stay accurate before the next full layout pass.
-    /// </summary>
-    private FormattedText? GetCurrentFt(int blockIdx)
-    {
-        if (blockIdx < 0 || blockIdx >= _blocks.Count) return null;
-        var rb   = _blocks[blockIdx];
-        var text = GetFlatText(blockIdx);
-        if (string.IsNullOrEmpty(text)) return null;
-
-        bool isDirty = _dirtyBlockIndices.Contains(blockIdx);
-        if (!isDirty && rb.FormattedLines is { Count: > 0 })
-            return rb.FormattedLines[0];
-
-        double contentW = Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight);
-        return MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
-                                 _fgBrush ?? Brushes.Gray, contentW);
-    }
-
     /// <summary>Returns (cached) visual-line list for a block. Empty list if block has no FormattedText.</summary>
     private IReadOnlyList<VisualLine> GetVisualLines(int blockIdx)
     {
         if (_visualLineCache.TryGetValue(blockIdx, out var cached)) return cached;
-        var ft   = GetCurrentFt(blockIdx);
-        var text = GetFlatText(blockIdx);
-        if (ft is null) return _visualLineCache[blockIdx] = [];
+        var rb = _blocks[blockIdx];
+        if (rb.FormattedLines is not { Count: > 0 })
+            return _visualLineCache[blockIdx] = [];
+        var ft    = rb.FormattedLines[0];
+        var text  = GetFlatText(blockIdx);
         var lines = CaretNavHelper.GetLines(ft, text.Length);
         return _visualLineCache[blockIdx] = lines;
     }
@@ -2287,10 +2270,9 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     private double ComputePreferredX(int blockIdx, int charOffset)
     {
         if (blockIdx < 0 || blockIdx >= _blocks.Count) return 0;
-        var ft   = GetCurrentFt(blockIdx);
-        var text = GetFlatText(blockIdx);
-        if (ft is null) return 0;
-        return CaretNavHelper.GetCaretX(ft, charOffset, text.Length);
+        var rb = _blocks[blockIdx];
+        if (rb.FormattedLines is not { Count: > 0 }) return 0;
+        return CaretNavHelper.GetCaretX(rb.FormattedLines[0], charOffset, GetFlatText(blockIdx).Length);
     }
 
     /// <summary>
@@ -2357,12 +2339,11 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         double originY = PageCanvasPad + rb.Y - _offset.Y;
         double relX    = canvasPt.X - originX;
 
-        // Use GetCurrentFt so that when the block is dirty (text mutated since last
-        // layout) we get a fresh FormattedText from the live text, not the stale cached one.
-        var ft = GetCurrentFt(blockIdx)
-                 ?? MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
-                                      _fgBrush ?? Brushes.Gray,
-                                      Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight));
+        var ft = rb.FormattedLines is { Count: > 0 }
+            ? rb.FormattedLines[0]
+            : MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
+                                _fgBrush ?? Brushes.Gray,
+                                Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight));
 
         // For wrapped text, chars on later visual lines have Bounds.Left ≈ 0 again, so a
         // simple Left-based binary search gives wrong results across line breaks.
@@ -2572,9 +2553,10 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         var text = GetFlatText(_caret.BlockIndex);
         if (!string.IsNullOrEmpty(text))
         {
-            var ft = GetCurrentFt(_caret.BlockIndex)
-                     ?? MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
-                                          _fgBrush ?? Brushes.Gray, contentW);
+            var ft = (!_caretFtDirty && rb.FormattedLines is { Count: > 0 })
+                ? rb.FormattedLines[0]
+                : MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
+                                    _fgBrush ?? Brushes.Gray, contentW);
 
             int probeChar = Math.Clamp(
                 _caret.CharOffset > 0 ? _caret.CharOffset - 1 : 0,
@@ -2998,11 +2980,6 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
     private void MarkBlockDirty(int blockIndex)
     {
-        // Evict the visual-line cache so navigation helpers rebuild on next access.
-        // Do NOT clear FormattedLines here — OnRender uses them to draw text and
-        // clearing them would blank the block until the next layout pass.
-        _visualLineCache.Remove(blockIndex);
-
         if (_dirtyBlockIndices.Add(blockIndex))
             DirtyBlocksChanged?.Invoke(this, EventArgs.Empty);
     }
