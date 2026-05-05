@@ -453,6 +453,27 @@
                                              IsHitTestVisible="False"
                                              Panel.ZIndex="2"/>
 
+            <!-- Split-view toggle — sits at the top of the scrollbar column.
+                 Visibility wired by HostWantsSplitToggle DP; click raises SplitRequested. -->
+            <ToggleButton x:Name="SplitToggleButton"
+                          Grid.Column="1"
+                          Width="18" Height="18"
+                          Margin="0,0,0,0"
+                          Padding="0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Center"
+                          FontFamily="Segoe MDL2 Assets"
+                          FontSize="10"
+                          Content="&#xE7F4;"
+                          ToolTip="{DynamicResource HexEditor_SplitView_Tooltip}"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Cursor="Hand"
+                          Panel.ZIndex="3"
+                          Foreground="{DynamicResource HeaderTextBrush}"
+                          Visibility="Collapsed"
+                          Click="SplitToggleButton_Click"/>
+
             <!-- Canvas overlay — allows the QuickSearchBar to be dragged anywhere.
                  No Background (null) so empty areas let clicks through; the bar
                  itself captures clicks via its explicit Background. -->
