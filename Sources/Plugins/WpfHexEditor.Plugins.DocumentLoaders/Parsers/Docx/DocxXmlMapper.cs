@@ -93,9 +93,19 @@ internal sealed class DocxXmlMapper
             isList    = numId > 0;
         }
 
+        // Detect OOXML heading style before block creation (Kind is init-only)
+        int headingLevel = 0;
+        var rawStyle = pPr?.Element(W + "pStyle")?.Attribute(W + "val")?.Value;
+        if (!isList && rawStyle is not null &&
+            rawStyle.StartsWith("Heading", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(rawStyle["Heading".Length..], out int hl))
+        {
+            headingLevel = hl;
+        }
+
         var para = new DocumentBlock
         {
-            Kind      = isList ? "list-item" : "paragraph",
+            Kind      = isList ? "list-item" : headingLevel > 0 ? "heading" : "paragraph",
             RawOffset = off,
             RawLength = len,
             Text      = string.Empty
@@ -107,6 +117,8 @@ internal sealed class DocxXmlMapper
             para.Attributes["listStyle"] = "bullet";
             para.Attributes["numId"]     = numId;
         }
+        if (headingLevel > 0)
+            para.Attributes["level"] = headingLevel;
 
         if (pPr is not null) ExtractParagraphProps(pPr, para);
 
@@ -252,7 +264,13 @@ internal sealed class DocxXmlMapper
     private static void ExtractParagraphProps(XElement pPr, DocumentBlock para)
     {
         var style = pPr.Element(W + "pStyle")?.Attribute(W + "val")?.Value;
-        if (style is not null) para.Attributes["style"] = style;
+        if (style is not null)
+        {
+            // Heading normalization is handled in MapParagraph (Kind is init-only).
+            // Store raw style for non-heading paragraphs.
+            if (!style.StartsWith("Heading", StringComparison.OrdinalIgnoreCase))
+                para.Attributes["style"] = style;
+        }
 
         var jc = pPr.Element(W + "jc")?.Attribute(W + "val")?.Value;
         if (jc is not null) para.Attributes["alignment"] = jc;
@@ -268,17 +286,85 @@ internal sealed class DocxXmlMapper
             if (right     is not null && int.TryParse(right,     out int r)) para.Attributes["indentRight"]     = DocumentPageSettings.TwipsToPx(r);
             if (firstLine is not null && int.TryParse(firstLine, out int f)) para.Attributes["indentFirstLine"] = DocumentPageSettings.TwipsToPx(f);
         }
+
+        // Paragraph spacing
+        var spacing = pPr.Element(W + "spacing");
+        if (spacing is not null)
+        {
+            var before   = spacing.Attribute(W + "before")?.Value;
+            var after    = spacing.Attribute(W + "after")?.Value;
+            var line     = spacing.Attribute(W + "line")?.Value;
+            var lineRule = spacing.Attribute(W + "lineRule")?.Value;
+            if (before   is not null && int.TryParse(before,   out int b)) para.Attributes["spaceBefore"]   = DocumentPageSettings.TwipsToPx(b);
+            if (after    is not null && int.TryParse(after,    out int a)) para.Attributes["spaceAfter"]    = DocumentPageSettings.TwipsToPx(a);
+            if (line     is not null && int.TryParse(line,     out int l)) para.Attributes["lineSpacing"]   = l;
+            if (lineRule is not null) para.Attributes["lineSpacingRule"] = lineRule;
+        }
+
+        // Paragraph-level run props (w:pPr/w:rPr): only inherit font/color defaults,
+        // NOT bold/italic/underline — those are paragraph-mark props, not run defaults.
+        var pRpr = pPr.Element(W + "rPr");
+        if (pRpr is not null) ExtractRunPropsAsParaDefaults(pRpr, para);
+
+        // Tab stops
+        var tabs = pPr.Element(W + "tabs");
+        if (tabs is not null)
+        {
+            var tabList = tabs.Elements(W + "tab")
+                .Select(t => new {
+                    Pos = t.Attribute(W + "pos")?.Value,
+                    Val = t.Attribute(W + "val")?.Value ?? "left"
+                })
+                .Where(t => t.Pos is not null && int.TryParse(t.Pos, out _))
+                .Select(t => $"{t.Val}:{DocumentPageSettings.TwipsToPx(int.Parse(t.Pos!)):F1}")
+                .ToList();
+            if (tabList.Count > 0) para.Attributes["tabStops"] = string.Join(";", tabList);
+        }
+
+        // Paragraph border — bottom rule line (e.g. section headings in résumés)
+        var pBdr   = pPr.Element(W + "pBdr");
+        var bottom = pBdr?.Element(W + "bottom");
+        if (bottom is not null)
+        {
+            var bVal = bottom.Attribute(W + "val")?.Value ?? "single";
+            if (bVal != "none" && bVal != "nil")
+            {
+                var bColor = bottom.Attribute(W + "color")?.Value;
+                para.Attributes["borderBottom"] = bColor is not null && bColor != "auto"
+                    ? "#" + bColor
+                    : "auto";
+                var bSzStr = bottom.Attribute(W + "sz")?.Value;
+                if (bSzStr is not null && int.TryParse(bSzStr, out int bSz))
+                    para.Attributes["borderBottomPt"] = bSz / 8.0;  // eighths of a point
+            }
+        }
     }
 
     private static void ExtractRunProps(XElement rPr, DocumentBlock run)
     {
-        if (rPr.Element(W + "b") is not null) run.Attributes["bold"]      = true;
-        if (rPr.Element(W + "i") is not null) run.Attributes["italic"]    = true;
-        if (rPr.Element(W + "u") is not null) run.Attributes["underline"] = true;
+        // w:val="0" or w:val="false" means explicit off (override inherited); absent means inherit
+        if (rPr.Element(W + "b") is { } bElem)
+        {
+            var bVal = bElem.Attribute(W + "val")?.Value;
+            if (bVal is not ("0" or "false")) run.Attributes["bold"] = true;
+        }
+        if (rPr.Element(W + "i") is { } iElem)
+        {
+            var iVal = iElem.Attribute(W + "val")?.Value;
+            if (iVal is not ("0" or "false")) run.Attributes["italic"] = true;
+        }
+        // w:u w:val="none" explicitly disables underline; any other value enables it
+        if (rPr.Element(W + "u") is { } uElem)
+        {
+            var uVal = uElem.Attribute(W + "val")?.Value ?? "single";
+            if (uVal != "none") run.Attributes["underline"] = true;
+        }
 
-        var szCs = rPr.Element(W + "szCs")?.Attribute(W + "val")?.Value;
-        if (szCs is not null && int.TryParse(szCs, out int hpt))
-            run.Attributes["fontSize"] = hpt / 2;
+        // w:sz is the primary size (half-points); w:szCs is for complex scripts — prefer w:sz
+        var szVal = rPr.Element(W + "sz")?.Attribute(W + "val")?.Value
+                 ?? rPr.Element(W + "szCs")?.Attribute(W + "val")?.Value;
+        if (szVal is not null && int.TryParse(szVal, out int hpt))
+            run.Attributes["fontSize"] = hpt / 2.0;
 
         // Font family from w:rFonts (ascii/hAnsi preferred; theme fonts fallback)
         var fonts = rPr.Element(W + "rFonts");
@@ -291,6 +377,46 @@ internal sealed class DocxXmlMapper
 
         var rStyle = rPr.Element(W + "rStyle")?.Attribute(W + "val")?.Value;
         if (rStyle is not null) run.Attributes["style"] = rStyle;
+
+        // Font color — OOXML stores as 6-digit hex without #; prefix it for WPF ColorConverter
+        var color = rPr.Element(W + "color")?.Attribute(W + "val")?.Value;
+        if (color is not null && color != "auto")
+            run.Attributes["color"] = color.StartsWith('#') ? color : $"#{color}";
+
+        // Highlight / shading
+        var highlight = rPr.Element(W + "highlight")?.Attribute(W + "val")?.Value;
+        if (highlight is not null) run.Attributes["highlight"] = highlight;
+
+        // Strikethrough
+        if (rPr.Element(W + "strike") is not null) run.Attributes["strikethrough"] = true;
+
+        // Vertical alignment (superscript / subscript)
+        var vertAlign = rPr.Element(W + "vertAlign")?.Attribute(W + "val")?.Value;
+        if (vertAlign is not null) run.Attributes["vertAlign"] = vertAlign;
+    }
+
+    /// <summary>
+    /// Like <see cref="ExtractRunProps"/> but only propagates font/color/size — not
+    /// bold/italic/underline/strikethrough, which in pPr/w:rPr describe the paragraph
+    /// mark style, not a default for child runs.
+    /// </summary>
+    private static void ExtractRunPropsAsParaDefaults(XElement rPr, DocumentBlock para)
+    {
+        var szVal = rPr.Element(W + "sz")?.Attribute(W + "val")?.Value
+                 ?? rPr.Element(W + "szCs")?.Attribute(W + "val")?.Value;
+        if (szVal is not null && int.TryParse(szVal, out int hpt))
+            para.Attributes["fontSize"] = hpt / 2.0;
+
+        var fonts = rPr.Element(W + "rFonts");
+        if (fonts is not null)
+        {
+            var ff = fonts.Attribute(W + "ascii")?.Value ?? fonts.Attribute(W + "hAnsi")?.Value;
+            if (ff is not null) para.Attributes["fontFamily"] = ff;
+        }
+
+        var color = rPr.Element(W + "color")?.Attribute(W + "val")?.Value;
+        if (color is not null && color != "auto")
+            para.Attributes["color"] = color.StartsWith('#') ? color : $"#{color}";
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

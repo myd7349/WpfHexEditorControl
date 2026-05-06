@@ -225,6 +225,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.SDK.Terminal.A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Core.Localization", "Core\WpfHexEditor.Core.Localization\WpfHexEditor.Core.Localization.csproj", "{1A77C8B7-A7E6-43B9-80A2-02A6E13E54AD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Core.SpellCheck", "Core\WpfHexEditor.Core.SpellCheck\WpfHexEditor.Core.SpellCheck.csproj", "{50A60FE4-AA00-469F-B598-7CAD47E7D014}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1435,6 +1437,18 @@ Global
 		{1A77C8B7-A7E6-43B9-80A2-02A6E13E54AD}.Release|x64.Build.0 = Release|Any CPU
 		{1A77C8B7-A7E6-43B9-80A2-02A6E13E54AD}.Release|x86.ActiveCfg = Release|Any CPU
 		{1A77C8B7-A7E6-43B9-80A2-02A6E13E54AD}.Release|x86.Build.0 = Release|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Debug|x64.Build.0 = Debug|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Debug|x86.Build.0 = Debug|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Release|x64.ActiveCfg = Release|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Release|x64.Build.0 = Release|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Release|x86.ActiveCfg = Release|Any CPU
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1542,6 +1556,7 @@ Global
 		{BE045BD0-4B2F-4A07-A1A1-287919F25E28} = {97E00D62-D6F1-44E5-881F-3727FE8CDD1E}
 		{AA1F47A9-E8F2-4D92-A63F-CBC2A4C555E1} = {AD6546B8-31D6-4732-8E50-4490C2C5E889}
 		{1A77C8B7-A7E6-43B9-80A2-02A6E13E54AD} = {250FC96D-F272-4DA2-9454-5817440CB125}
+		{50A60FE4-AA00-469F-B598-7CAD47E7D014} = {250FC96D-F272-4DA2-9454-5817440CB125}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5B382CAE-4846-466E-A3D3-0842043B4012}

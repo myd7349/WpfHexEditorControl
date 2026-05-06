@@ -32,6 +32,7 @@
         <SolidColorBrush x:Key="ModifiedBrush" Color="#FFA500"/>
         <SolidColorBrush x:Key="AddedBrush" Color="#4CAF50"/>
         <SolidColorBrush x:Key="DeletedBrush" Color="#F44336"/>
+        <!-- These brushes are fallback defaults; themes override them via App.Resources DynamicResource -->
         <SolidColorBrush x:Key="HeaderBrush" Color="#F5F5F5"/>
         <SolidColorBrush x:Key="HeaderTextBrush" Color="#424242"/>
         <SolidColorBrush x:Key="OffsetBrush" Color="#757575"/>

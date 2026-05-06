@@ -282,4 +282,28 @@
   <data name="PageStyleDlg_Apply" xml:space="preserve"><value>ใช้งาน</value></data>
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>ตกลง</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>ยกเลิก</value></data>
+
+  <!-- SPELL CHECKER -->
+  <data name="SpellCheck_Enable"              xml:space="preserve"><value>เปิดใช้การตรวจสอบการสะกด</value></data>
+  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>พจนานุกรม</value></data>
+  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>ภาษา</value></data>
+  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>สถานะ</value></data>
+  <data name="SpellCheck_Download"            xml:space="preserve"><value>ดาวน์โหลด</value></data>
+  <data name="SpellCheck_Browse"              xml:space="preserve"><value>เรียกดู...</value></data>
+  <data name="SpellCheck_Remove"              xml:space="preserve"><value>ลบออก</value></data>
+  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>พจนานุกรมผู้ใช้</value></data>
+  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>แก้ไขพจนานุกรมผู้ใช้</value></data>
+  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>ติดตั้งแล้ว</value></data>
+  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>ยังไม่ได้ติดตั้ง</value></data>
+  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>ละเว้น</value></data>
+  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>เพิ่มในพจนานุกรม</value></data>
+  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>เลือกไฟล์พจนานุกรม</value></data>
+  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>เลือกไฟล์ affix</value></data>
+  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>ไม่สามารถดาวน์โหลดพจนานุกรมได้</value></data>
+  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>ข้อผิดพลาดในการดาวน์โหลด</value></data>
+  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>พจนานุกรมการสะกด</value></data>
+  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>ไม่พบพจนานุกรมการสะกด ดาวน์โหลดตอนนี้เลยหรือไม่?</value></data>
+  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>ติดตั้ง</value></data>
+  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>ภายหลัง</value></data>
+  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>ไม่แสดงอีก</value></data>
 </root>

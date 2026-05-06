@@ -122,11 +122,21 @@ public static class OptionsPageRegistry
     /// <param name="searchKeywords">Optional extra keywords the search bar matches against (e.g. ["font", "color"]).</param>
     public static void RegisterDynamic(string category, string pageName, Func<UserControl> factory,
         string? categoryIcon = null, string[]? searchKeywords = null)
+        => RegisterDynamic(() => category, () => pageName, factory, categoryIcon, searchKeywords);
+
+    /// <summary>
+    /// Lambda overload — category and pageName are resolved live so the page groups
+    /// correctly with statically-registered pages under the same localized category.
+    /// </summary>
+    public static void RegisterDynamic(Func<string> categoryFn, Func<string> pageNameFn,
+        Func<UserControl> factory, string? categoryIcon = null, string[]? searchKeywords = null)
     {
+        var category = categoryFn();
+        var pageName = pageNameFn();
         var existing = _pages.FindIndex(p =>
             p.Category == category && p.PageName == pageName);
 
-        var descriptor = new OptionsPageDescriptor(category, pageName, factory,
+        var descriptor = new OptionsPageDescriptor(categoryFn, pageNameFn, factory,
             categoryIcon ?? "📂", searchKeywords);
         if (existing >= 0)
         {
@@ -137,7 +147,6 @@ public static class OptionsPageRegistry
             _pages.Add(descriptor);
         }
 
-        // Notify listeners that a new page was registered
         PageRegistered?.Invoke(null, descriptor);
     }
 

@@ -32,10 +32,16 @@ internal static class InlineLineBreaker
     /// <param name="segments">Ordered inline segments for one paragraph/block.</param>
     /// <param name="maxWidth">Available content width in WPF DIPs.</param>
     /// <param name="pixelsPerDip">DPI scaling factor (use <c>VisualTreeHelper.GetDpi</c>).</param>
+    /// <param name="tabStops">
+    /// Optional sorted tab-stops with alignment. When a <c>\t</c> is encountered the pen
+    /// advances to the next stop &gt; current X using the stop's alignment (Left/Right/Center).
+    /// Falls back to <see cref="TabStopWidth"/> if null or exhausted.
+    /// </param>
     public static IReadOnlyList<InlineVisualLine> Break(
         IReadOnlyList<InlineSegment> segments,
         double maxWidth,
-        double pixelsPerDip = 1.0)
+        double pixelsPerDip = 1.0,
+        IReadOnlyList<TabStop>? tabStops = null)
     {
         if (segments.Count == 0 || maxWidth <= 0)
             return [];
@@ -82,7 +88,8 @@ internal static class InlineLineBreaker
                     strikethrough:       ps.Seg.Strikethrough,
                     underlineOffset:     uOff,
                     strikethroughOffset: sOff,
-                    charStart:           ps.CharStart));
+                    charStart:           ps.CharStart,
+                    verticalOffset:      ps.Seg.VerticalOffset));
 
                 x += ps.TotalWidth;
                 lineCharEnd = ps.CharStart + ps.CharCount;
@@ -110,8 +117,9 @@ internal static class InlineLineBreaker
 
         // ── main loop — iterate segments ─────────────────────────────────────
 
-        foreach (var seg in segments)
+        for (int segIdx = 0; segIdx < segments.Count; segIdx++)
         {
+            var seg = segments[segIdx];
             if (seg.IsEmpty) continue;
 
             var gt     = seg.GlyphTypeface;
@@ -125,7 +133,9 @@ internal static class InlineLineBreaker
                 int tokenCharStart = blockCharPos + i;
 
                 // Collect a "word" token (non-space run) + optional trailing spaces
-                var (glyphs, advances, tokenW, nextI) = MeasureToken(seg, i, gt, size);
+                // Pass remaining segments for cross-segment right-tab look-ahead
+                var (glyphs, advances, tokenW, nextI) = MeasureToken(
+                    seg, i, gt, size, lineX, tabStops, segments, segIdx);
                 int tokenCharCount = nextI - i;
                 i = nextI;
 
@@ -176,7 +186,9 @@ internal static class InlineLineBreaker
     /// Returns sentinel (empty, empty, -1, start+1) for an explicit newline character.
     /// </summary>
     private static (List<ushort> Glyphs, List<double> Advances, double Width, int NextIndex)
-        MeasureToken(InlineSegment seg, int start, GlyphTypeface gt, double size)
+        MeasureToken(InlineSegment seg, int start, GlyphTypeface gt, double size,
+                     double currentX = 0, IReadOnlyList<TabStop>? tabStops = null,
+                     IReadOnlyList<InlineSegment>? allSegments = null, int segIdx = 0)
     {
         var   text    = seg.Text;
         var   glyphs  = new List<ushort>();
@@ -189,9 +201,34 @@ internal static class InlineLineBreaker
 
         if (text[i] == '\t')
         {
-            // Tab → advance to next tab stop (relative to a 0-origin line — caller owns tab stop logic)
             ushort spaceGlyph = GetGlyphIndex(gt, ' ');
             double adv        = TabStopWidth;
+            TabAlign align    = TabAlign.Left;
+
+            if (tabStops is { Count: > 0 })
+            {
+                foreach (var stop in tabStops)
+                {
+                    if (stop.Pos > currentX + 1.0)
+                    {
+                        adv   = stop.Pos - currentX;
+                        align = stop.Align;
+                        break;
+                    }
+                }
+            }
+
+            // For right/center tabs: measure text after this tab across segment boundaries.
+            if ((align == TabAlign.Right || align == TabAlign.Center) && tabStops is { Count: > 0 })
+            {
+                double textAfterW = MeasureTextUntilNextTab(seg, i + 1, gt, size, allSegments, segIdx);
+                double stopPos    = currentX + adv;
+                double newAdv     = align == TabAlign.Right
+                    ? Math.Max(2.0, stopPos - textAfterW - currentX)
+                    : Math.Max(2.0, stopPos - textAfterW / 2.0 - currentX);
+                adv = newAdv;
+            }
+
             glyphs.Add(spaceGlyph);
             advances.Add(adv);
             return (glyphs, advances, adv, i + 1);
@@ -218,6 +255,45 @@ internal static class InlineLineBreaker
         }
 
         return (glyphs, advances, width, i);
+    }
+
+    /// <summary>
+    /// Measures text width from <paramref name="charStart"/> in <paramref name="seg"/> to the
+    /// next tab/newline, continuing into subsequent segments if the current one is exhausted.
+    /// Used for right/center tab look-ahead across run boundaries.
+    /// </summary>
+    private static double MeasureTextUntilNextTab(
+        InlineSegment seg, int charStart, GlyphTypeface gt, double size,
+        IReadOnlyList<InlineSegment>? allSegments, int segIdx)
+    {
+        double w = 0;
+
+        // Measure within the current segment first
+        for (int j = charStart; j < seg.Text.Length; j++)
+        {
+            char c = seg.Text[j];
+            if (c == '\t' || c == '\n') return w;
+            var tgt = seg.GlyphTypeface;
+            ushort gi = GetGlyphIndex(tgt, c);
+            w += tgt.AdvanceWidths[gi] * seg.Size;
+        }
+
+        // Continue into subsequent segments
+        if (allSegments is not null)
+        {
+            for (int si = segIdx + 1; si < allSegments.Count; si++)
+            {
+                var ns = allSegments[si];
+                var ngt = ns.GlyphTypeface;
+                foreach (char c in ns.Text)
+                {
+                    if (c == '\t' || c == '\n') return w;
+                    ushort gi = GetGlyphIndex(ngt, c);
+                    w += ngt.AdvanceWidths[gi] * ns.Size;
+                }
+            }
+        }
+        return w;
     }
 
     private static (ushort GlyphIndex, double Advance) MeasureChar(GlyphTypeface gt, char c, double size)

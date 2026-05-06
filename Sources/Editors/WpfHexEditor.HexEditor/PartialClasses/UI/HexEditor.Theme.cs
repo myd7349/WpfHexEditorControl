@@ -65,6 +65,15 @@ namespace WpfHexEditor.HexEditor
             if (app.TryFindResource("ScrollBarThumbDragBrush") is System.Windows.Media.Brush dragBrush)
                 Resources["ScrollBarThumbDragBrush"] = dragBrush;
 
+            // Force-write XAML-level brush keys into local Resources so DynamicResource
+            // references inside HexEditor.xaml resolve to theme colors even when DP value
+            // equals the registered default (no PropertyChanged fires in that case).
+            ForceLocalBrush(app, "HeaderBrush",          "HexEditor_HeaderBackgroundColor");
+            ForceLocalBrush(app, "HeaderTextBrush",       "HexEditor_HeaderForegroundColor");
+            ForceLocalBrush(app, "ColumnSeparatorBrush",  "HexEditor_ColumnSeparatorColor");
+            ForceLocalBrush(app, "StatusBarBrush",        "HexEditor_StatusBarBackgroundColor");
+            ForceLocalBrush(app, "StatusBarTextBrush",    "HexEditor_StatusBarForegroundColor");
+
             // Foreground colors
             ForegroundFirstColor = GetThemeColor(app, "HexEditor_ForegroundFirstColor", ForegroundFirstColor);
             ForegroundSecondColor = GetThemeColor(app, "HexEditor_ForegroundSecondColor", ForegroundSecondColor);
@@ -102,6 +111,14 @@ namespace WpfHexEditor.HexEditor
         {
             var resource = app.TryFindResource(key);
             return resource is Color color ? color : fallback;
+        }
+
+        private void ForceLocalBrush(Application app, string brushKey, string colorKey)
+        {
+            if (app.TryFindResource(colorKey) is Color color)
+                Resources[brushKey] = new SolidColorBrush(color);
+            else if (app.TryFindResource(brushKey) is SolidColorBrush brush)
+                Resources[brushKey] = brush;
         }
     }
 }
