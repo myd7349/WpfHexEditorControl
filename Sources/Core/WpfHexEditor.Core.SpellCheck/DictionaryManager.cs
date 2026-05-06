@@ -26,7 +26,7 @@ public sealed class DictionaryManager
         ["es-ES"]  = ("Español (España)",        "es",    "es_ES"),
         ["es-419"] = ("Español (Latinoamérica)", "es_ANY","es_ANY"),
         ["fi-FI"]  = ("Suomi",                   "fi_FI", "fi_FI"),
-        ["fr-CA"]  = ("Français (Canada)",       "fr_CA", "fr_CA"),
+        ["fr-CA"]  = ("Français (Canada)",       "fr_FR", "fr_CA"),   // LibreOffice stores fr-CA inside fr_FR folder
         ["fr-FR"]  = ("Français (France)",       "fr_FR", "fr_FR"),
         ["hi-IN"]  = ("हिन्दी",                  "hi_IN", "hi_IN"),
         ["hu-HU"]  = ("Magyar",                  "hu_HU", "hu_HU"),

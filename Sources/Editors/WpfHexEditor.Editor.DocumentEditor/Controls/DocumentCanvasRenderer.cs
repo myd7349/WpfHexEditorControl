@@ -661,9 +661,9 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         Dispatcher.BeginInvoke(() =>
         {
             PageGeometryChanged?.Invoke(this, EventArgs.Empty);
-            // Spell squiggles use canvas-space coordinates — invalidate so they
-            // are recomputed at the new zoom's glyph positions.
-            SpellCheckService?.InvalidateAll();
+            // Clear squiggles immediately so stale markers don't linger at old positions,
+            // then schedule re-analysis at the new zoom's glyph positions.
+            SpellCheckService?.ClearAndSchedule();
         }, System.Windows.Threading.DispatcherPriority.Render);
     }
 

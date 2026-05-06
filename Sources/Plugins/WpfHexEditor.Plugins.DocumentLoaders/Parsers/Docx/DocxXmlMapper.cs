@@ -306,9 +306,23 @@ internal sealed class DocxXmlMapper
 
     private static void ExtractRunProps(XElement rPr, DocumentBlock run)
     {
-        if (rPr.Element(W + "b") is not null) run.Attributes["bold"]      = true;
-        if (rPr.Element(W + "i") is not null) run.Attributes["italic"]    = true;
-        if (rPr.Element(W + "u") is not null) run.Attributes["underline"] = true;
+        // w:val="0" or w:val="false" means explicit off (override inherited); absent means inherit
+        if (rPr.Element(W + "b") is { } bElem)
+        {
+            var bVal = bElem.Attribute(W + "val")?.Value;
+            if (bVal is not ("0" or "false")) run.Attributes["bold"] = true;
+        }
+        if (rPr.Element(W + "i") is { } iElem)
+        {
+            var iVal = iElem.Attribute(W + "val")?.Value;
+            if (iVal is not ("0" or "false")) run.Attributes["italic"] = true;
+        }
+        // w:u w:val="none" explicitly disables underline; any other value enables it
+        if (rPr.Element(W + "u") is { } uElem)
+        {
+            var uVal = uElem.Attribute(W + "val")?.Value ?? "single";
+            if (uVal != "none") run.Attributes["underline"] = true;
+        }
 
         // w:sz is the primary size (half-points); w:szCs is for complex scripts — prefer w:sz
         var szVal = rPr.Element(W + "sz")?.Attribute(W + "val")?.Value

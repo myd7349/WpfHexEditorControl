@@ -94,6 +94,17 @@ internal sealed class SpellCheckService : IDisposable
         ScheduleAnalysis();
     }
 
+    /// <summary>
+    /// Clears visible squiggles immediately (no stale markers during zoom/resize),
+    /// then schedules re-analysis via the normal debounce.
+    /// </summary>
+    public void ClearAndSchedule()
+    {
+        _layer.Clear();
+        _cache.Clear();
+        ScheduleAnalysis();
+    }
+
     /// <summary>Returns the misspelled word at canvas point <paramref name="pt"/>, or null.</summary>
     public SpellCheckError? HitTest(Point pt)
     {

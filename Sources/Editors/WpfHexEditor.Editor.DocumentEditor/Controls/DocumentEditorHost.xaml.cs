@@ -1234,7 +1234,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             {
                 var page = new WpfHexEditor.Editor.DocumentEditor.Options.SpellCheckerOptionsPage();
                 var (s, dm, ch) = GetSpellCheckerComponents();
-                page.Initialize(s, dm, ch);
+                page.Initialize(s, dm, ch, _ideContext?.DocumentHost);
                 return page;
             },
             "📄",

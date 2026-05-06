@@ -4,12 +4,13 @@
 // Description: Code-behind for SpellCheckerOptionsPage.
 // ==========================================================
 
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using WpfHexEditor.Core.SpellCheck;
+using WpfHexEditor.Editor.Core.Dialogs;
+using WpfHexEditor.SDK.Contracts;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Options;
 
@@ -18,11 +19,11 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
     private SpellCheckerOptionsViewModel? _vm;
     private DictionaryManager?            _dictManager;
     private HunspellSpellChecker?         _checker;
+    private IDocumentHostService?         _documentHost;
 
     public SpellCheckerOptionsPage()
     {
         InitializeComponent();
-        Loaded += OnLoaded;
     }
 
     public event EventHandler? Changed;
@@ -32,19 +33,19 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
     internal void Initialize(
         SpellCheckerSettings  settings,
         DictionaryManager     dictManager,
-        HunspellSpellChecker  checker)
+        HunspellSpellChecker  checker,
+        IDocumentHostService? documentHost = null)
     {
-        _dictManager = dictManager;
-        _checker     = checker;
-        _vm          = new SpellCheckerOptionsViewModel(settings, dictManager);
-        DataContext  = _vm;
+        _dictManager  = dictManager;
+        _checker      = checker;
+        _documentHost = documentHost;
+        _vm           = new SpellCheckerOptionsViewModel(settings, dictManager);
+        DataContext   = _vm;
 
         DictGrid.ItemsSource = _vm.Languages;
         ChkEnabled.IsChecked = _vm.IsEnabled;
         TxtUserDictPath.Text = _vm.UserDictPath;
     }
-
-    private void OnLoaded(object sender, RoutedEventArgs e) { /* no-op: Initialize called externally */ }
 
     private void OnEnabledChanged(object sender, RoutedEventArgs e)
     {
@@ -68,12 +69,13 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
         catch (Exception ex)
         {
             row.RefreshInstalled(false);
-            MessageBox.Show(
-                Window.GetWindow(this),
+            IdeMessageBox.Show(
                 (TryFindResource("SpellCheck_DownloadError") as string ?? "Download failed: {0}")
                     .Replace("{0}", ex.Message),
-                (TryFindResource("SpellCheck_DownloadErrorTitle") as string ?? "Error"),
-                MessageBoxButton.OK, MessageBoxImage.Error);
+                TryFindResource("SpellCheck_DownloadErrorTitle") as string ?? "Dictionary download error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error,
+                Window.GetWindow(this));
         }
     }
 
@@ -95,8 +97,8 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
         {
             var affDlg = new OpenFileDialog
             {
-                Title  = TryFindResource("SpellCheck_BrowseAffTitle") as string ?? "Select .aff file",
-                Filter = "Hunspell affix (*.aff)|*.aff",
+                Title            = TryFindResource("SpellCheck_BrowseAffTitle") as string ?? "Select .aff file",
+                Filter           = "Hunspell affix (*.aff)|*.aff",
                 InitialDirectory = Path.GetDirectoryName(dicPath)
             };
             if (affDlg.ShowDialog(Window.GetWindow(this)) != true) return;
@@ -111,7 +113,7 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Window.GetWindow(this), ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            IdeMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error, Window.GetWindow(this));
         }
     }
 
@@ -135,11 +137,19 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 File.WriteAllText(path, string.Empty);
             }
-            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+
+            // Open in IDE text editor if available; fall back to shell open (Notepad etc.)
+            if (_documentHost is not null)
+                _documentHost.OpenDocument(path, preferredEditorId: "text-editor");
+            else
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true };
+                System.Diagnostics.Process.Start(psi);
+            }
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Window.GetWindow(this), ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            IdeMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error, Window.GetWindow(this));
         }
     }
 }
