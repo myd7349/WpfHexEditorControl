@@ -282,4 +282,28 @@
   <data name="PageStyleDlg_Apply"          xml:space="preserve"><value>Toepassen</value></data>
   <data name="PageStyleDlg_OK"             xml:space="preserve"><value>OK</value></data>
   <data name="PageStyleDlg_Cancel"         xml:space="preserve"><value>Annuleren</value></data>
+
+  <!-- SPELL CHECKER -->
+  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Spellingcontrole inschakelen</value></data>
+  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Woordenboeken</value></data>
+  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Taal</value></data>
+  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Status</value></data>
+  <data name="SpellCheck_Download"            xml:space="preserve"><value>Downloaden</value></data>
+  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Bladeren...</value></data>
+  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Verwijderen</value></data>
+  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Gebruikerswoordenboek</value></data>
+  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Gebruikerswoordenboek bewerken</value></data>
+  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Geïnstalleerd</value></data>
+  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Niet geïnstalleerd</value></data>
+  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Negeren</value></data>
+  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Toevoegen aan woordenboek</value></data>
+  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Selecteer woordenboekbestand</value></data>
+  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Selecteer affixbestand</value></data>
+  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Het woordenboek kon niet worden gedownload.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>Downloadfout</value></data>
+  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Spellingwoordenboek</value></data>
+  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Er is geen spellingwoordenboek gevonden. Nu downloaden?</value></data>
+  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Installeren</value></data>
+  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Later</value></data>
+  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Nooit meer weergeven</value></data>
 </root>

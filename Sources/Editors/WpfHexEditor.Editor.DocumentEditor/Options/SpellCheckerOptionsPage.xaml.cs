@@ -9,7 +9,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using WpfHexEditor.Editor.DocumentEditor.SpellCheck;
+using WpfHexEditor.Core.SpellCheck;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Options;
 

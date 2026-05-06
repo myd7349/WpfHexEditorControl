@@ -12,7 +12,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexEditor.Editor.DocumentEditor.SpellCheck;
+using WpfHexEditor.Core.SpellCheck;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Options;
 

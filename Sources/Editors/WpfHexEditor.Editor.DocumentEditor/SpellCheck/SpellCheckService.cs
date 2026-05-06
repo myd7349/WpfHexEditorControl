@@ -15,7 +15,7 @@
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Threading;
-using WpfHexEditor.Editor.Core.SpellCheck;
+using WpfHexEditor.Core.SpellCheck;
 using WpfHexEditor.Editor.DocumentEditor.Controls;
 using WpfHexEditor.Editor.DocumentEditor.Layers;
 using WpfHexEditor.Editor.DocumentEditor.Rendering;
@@ -158,7 +158,7 @@ internal sealed class SpellCheckService : IDisposable
             if (text.Length > 5000) text = text[..5000]; // guard
 
             // Cache hit
-            var blockId = rb.Block.Id ?? rb.Y.ToString("F0");
+            var blockId = rb.Y.ToString("F0");
             if (_cache.TryGetValue(blockId, out var cached) && cached.Text == text)
             {
                 allErrors.AddRange(cached.Errors);

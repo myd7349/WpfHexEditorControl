@@ -1,13 +1,13 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.Core
-// File: SpellCheck/ISpellChecker.cs
+// Project: WpfHexEditor.Core.SpellCheck
+// File: ISpellChecker.cs
 // Description:
 //     SDK-level contract for spell checking.
-//     Implementations are provided by DocumentEditor (Hunspell)
-//     and accessed via DocumentEditorHost.SpellChecker.
+//     Implementations (HunspellSpellChecker) live in this same assembly.
+//     Consumers reference WpfHexEditor.Core.SpellCheck via ProjectReference.
 // ==========================================================
 
-namespace WpfHexEditor.Editor.Core.SpellCheck;
+namespace WpfHexEditor.Core.SpellCheck;
 
 /// <summary>
 /// Spell checking contract. Implementations must be thread-safe

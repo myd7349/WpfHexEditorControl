@@ -1,12 +1,12 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.DocumentEditor
-// File: SpellCheck/DictionaryInfo.cs
+// Project: WpfHexEditor.Core.SpellCheck
+// File: DictionaryInfo.cs
 // Description: Metadata for a spell-check dictionary entry.
 // ==========================================================
 
-namespace WpfHexEditor.Editor.DocumentEditor.SpellCheck;
+namespace WpfHexEditor.Core.SpellCheck;
 
-internal sealed record DictionaryInfo(
+public sealed record DictionaryInfo(
     string LanguageCode,
     string DisplayName,
     bool   IsInstalled,

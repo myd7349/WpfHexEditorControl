@@ -1,6 +1,6 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.DocumentEditor
-// File: SpellCheck/SpellCheckerSettings.cs
+// Project: WpfHexEditor.Core.SpellCheck
+// File: SpellCheckerSettings.cs
 // Description:
 //     Persistent settings for the spell checker feature.
 //     Serialized to %APPDATA%\WpfHexEditor\spellcheck-settings.json.
@@ -10,9 +10,9 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WpfHexEditor.Editor.DocumentEditor.SpellCheck;
+namespace WpfHexEditor.Core.SpellCheck;
 
-internal sealed class SpellCheckerSettings
+public sealed class SpellCheckerSettings
 {
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -20,12 +20,10 @@ internal sealed class SpellCheckerSettings
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
-        WriteIndented              = true,
-        DefaultIgnoreCondition     = JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented               = true,
+        DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
         PropertyNameCaseInsensitive = true
     };
-
-    // ── Persisted properties ──────────────────────────────────────────────
 
     [JsonPropertyName("isEnabled")]
     public bool IsEnabled { get; set; } = true;
@@ -42,11 +40,8 @@ internal sealed class SpellCheckerSettings
     public string MirrorUrl { get; set; } =
         "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/";
 
-    /// <summary>Language codes for which the "install dictionary?" prompt is permanently suppressed.</summary>
     [JsonPropertyName("suppressedLanguagePrompts")]
     public HashSet<string> SuppressedLanguagePrompts { get; set; } = [];
-
-    // ── Load / Save ───────────────────────────────────────────────────────
 
     public static SpellCheckerSettings Load()
     {
@@ -59,7 +54,7 @@ internal sealed class SpellCheckerSettings
                        ?? new SpellCheckerSettings();
             }
         }
-        catch { /* corrupt file — fall back to defaults */ }
+        catch { }
         return new SpellCheckerSettings();
     }
 
@@ -70,7 +65,7 @@ internal sealed class SpellCheckerSettings
             Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
             File.WriteAllText(SettingsPath, JsonSerializer.Serialize(this, JsonOpts));
         }
-        catch { /* non-critical */ }
+        catch { }
     }
 
     public bool IsLanguagePromptSuppressed(string languageCode) =>

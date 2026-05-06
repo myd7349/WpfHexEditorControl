@@ -282,4 +282,28 @@
   <data name="PageStyleDlg_Apply" xml:space="preserve"><value>应用</value></data>
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>确定</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>取消</value></data>
+
+  <!-- SPELL CHECKER -->
+  <data name="SpellCheck_Enable"              xml:space="preserve"><value>启用拼写检查</value></data>
+  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>词典</value></data>
+  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>语言</value></data>
+  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>状态</value></data>
+  <data name="SpellCheck_Download"            xml:space="preserve"><value>下载</value></data>
+  <data name="SpellCheck_Browse"              xml:space="preserve"><value>浏览...</value></data>
+  <data name="SpellCheck_Remove"              xml:space="preserve"><value>删除</value></data>
+  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>用户词典</value></data>
+  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>编辑用户词典</value></data>
+  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>已安装</value></data>
+  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>未安装</value></data>
+  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>忽略</value></data>
+  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>添加到词典</value></data>
+  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>选择词典文件</value></data>
+  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>选择词缀文件</value></data>
+  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>词典下载失败。</value></data>
+  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>下载错误</value></data>
+  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>拼写检查词典</value></data>
+  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>未找到拼写检查词典。立即下载？</value></data>
+  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>安装</value></data>
+  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>稍后</value></data>
+  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>不再显示</value></data>
 </root>

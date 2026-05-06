@@ -730,7 +730,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     public static double PageGapPublic     => PageGapPx;
 
     /// <summary>All laid-out render blocks (text + geometry) after the last layout pass.</summary>
-    public IReadOnlyList<RenderBlock> LayoutBlocks => _blocks;
+    internal IReadOnlyList<RenderBlock> LayoutBlocks => _blocks;
 
     /// <summary>Canvas-space X origin of the page content area.</summary>
     public double ContentOriginX => _pageLeft + _pageSettings.MarginLeft;
@@ -3918,7 +3918,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
     /// <summary>Inserts a page-break block after the caret block.</summary>
     /// <summary>Replaces the misspelled word span in the caret block with <paramref name="replacement"/>.</summary>
-    private void ReplaceSpellingError(Core.SpellCheck.SpellCheckResult err, string replacement)
+    private void ReplaceSpellingError(WpfHexEditor.Core.SpellCheck.SpellCheckResult err, string replacement)
     {
         if (_caret.BlockIndex < 0 || _caret.BlockIndex >= _blocks.Count || _mutator is null) return;
         var rb    = _blocks[_caret.BlockIndex];

@@ -282,4 +282,28 @@
   <data name="PageStyleDlg_Apply"          xml:space="preserve"><value>Zastosuj</value></data>
   <data name="PageStyleDlg_OK"             xml:space="preserve"><value>OK</value></data>
   <data name="PageStyleDlg_Cancel"         xml:space="preserve"><value>Anuluj</value></data>
+
+  <!-- SPELL CHECKER -->
+  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Włącz sprawdzanie pisowni</value></data>
+  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Słowniki</value></data>
+  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Język</value></data>
+  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Stan</value></data>
+  <data name="SpellCheck_Download"            xml:space="preserve"><value>Pobierz</value></data>
+  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Przeglądaj...</value></data>
+  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Usuń</value></data>
+  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Słownik użytkownika</value></data>
+  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Edytuj słownik użytkownika</value></data>
+  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Zainstalowany</value></data>
+  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Niezainstalowany</value></data>
+  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Ignoruj</value></data>
+  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Dodaj do słownika</value></data>
+  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Wybierz plik słownika</value></data>
+  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Wybierz plik afiksów</value></data>
+  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Nie udało się pobrać słownika.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>Błąd pobierania</value></data>
+  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Słownik sprawdzania pisowni</value></data>
+  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Nie znaleziono słownika sprawdzania pisowni. Pobrać teraz?</value></data>
+  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Zainstaluj</value></data>
+  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Później</value></data>
+  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Nie pokazuj ponownie</value></data>
 </root>

@@ -282,4 +282,28 @@
   <data name="PageStyleDlg_Apply" xml:space="preserve"><value>Uygula</value></data>
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>Tamam</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>İptal</value></data>
+
+  <!-- SPELL CHECKER -->
+  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Yazım denetimini etkinleştir</value></data>
+  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Sözlükler</value></data>
+  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Dil</value></data>
+  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Durum</value></data>
+  <data name="SpellCheck_Download"            xml:space="preserve"><value>İndir</value></data>
+  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Gözat...</value></data>
+  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Kaldır</value></data>
+  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Kullanıcı sözlüğü</value></data>
+  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Kullanıcı sözlüğünü düzenle</value></data>
+  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Yüklü</value></data>
+  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Yüklü değil</value></data>
+  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Yoksay</value></data>
+  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Sözlüğe ekle</value></data>
+  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Sözlük dosyasını seçin</value></data>
+  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Ek dosyasını seçin</value></data>
+  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Sözlük indirilemedi.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>İndirme hatası</value></data>
+  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Yazım denetimi sözlüğü</value></data>
+  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Yazım denetimi sözlüğü bulunamadı. Şimdi indirilsin mi?</value></data>
+  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Yükle</value></data>
+  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Daha sonra</value></data>
+  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Bir daha gösterme</value></data>
 </root>

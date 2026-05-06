@@ -1,11 +1,10 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.Core
-// File: SpellCheck/SpellCheckResult.cs
-// Description:
-//     Value types produced by ISpellChecker analysis of a text run.
+// Project: WpfHexEditor.Core.SpellCheck
+// File: SpellCheckResult.cs
+// Description: Value types produced by ISpellChecker analysis of a text run.
 // ==========================================================
 
-namespace WpfHexEditor.Editor.Core.SpellCheck;
+namespace WpfHexEditor.Core.SpellCheck;
 
 /// <summary>
 /// A single misspelled word found within a text block.

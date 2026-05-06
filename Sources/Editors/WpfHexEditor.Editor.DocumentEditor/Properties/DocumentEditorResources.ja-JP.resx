@@ -282,4 +282,28 @@
   <data name="PageStyleDlg_Apply" xml:space="preserve"><value>適用</value></data>
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>キャンセル</value></data>
+
+  <!-- SPELL CHECKER -->
+  <data name="SpellCheck_Enable"              xml:space="preserve"><value>スペルチェックを有効にする</value></data>
+  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>辞書</value></data>
+  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>言語</value></data>
+  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>状態</value></data>
+  <data name="SpellCheck_Download"            xml:space="preserve"><value>ダウンロード</value></data>
+  <data name="SpellCheck_Browse"              xml:space="preserve"><value>参照...</value></data>
+  <data name="SpellCheck_Remove"              xml:space="preserve"><value>削除</value></data>
+  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>ユーザー辞書</value></data>
+  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>ユーザー辞書を編集</value></data>
+  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>インストール済み</value></data>
+  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>未インストール</value></data>
+  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>無視する</value></data>
+  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>辞書に追加</value></data>
+  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>辞書ファイルを選択</value></data>
+  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>アフィックスファイルを選択</value></data>
+  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>辞書のダウンロードに失敗しました。</value></data>
+  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>ダウンロードエラー</value></data>
+  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>スペルチェック辞書</value></data>
+  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>スペルチェック辞書が見つかりませんでした。今すぐダウンロードしますか？</value></data>
+  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>インストール</value></data>
+  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>後で</value></data>
+  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>表示しない</value></data>
 </root>

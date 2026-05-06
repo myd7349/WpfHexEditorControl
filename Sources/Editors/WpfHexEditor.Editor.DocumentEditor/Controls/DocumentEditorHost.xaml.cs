@@ -30,6 +30,7 @@ using WpfHexEditor.Editor.DocumentEditor.ViewModels;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.Editor.DocumentEditor.Properties;
 using WpfHexEditor.Core.Events.IDEEvents;
+using WpfHexEditor.Core.SpellCheck;
 using WpfHexEditor.Editor.DocumentEditor.SpellCheck;
 using WpfHexEditor.Editor.DocumentEditor.Layers;
 

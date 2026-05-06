@@ -1,24 +1,19 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.DocumentEditor
-// File: SpellCheck/HunspellSpellChecker.cs
+// Project: WpfHexEditor.Core.SpellCheck
+// File: HunspellSpellChecker.cs
 // Description:
 //     ISpellChecker implementation backed by WeCantSpell.Hunspell.
-//     WordList is immutable after load — thread-safe for concurrent CheckWord/Suggest calls.
-//     User dictionary is a plain text file; words appended on AddToUserDictionary.
-// Architecture:
-//     LoadAsync replaces the active WordList; old instance is disposed.
-//     User words are loaded at startup and merged into an in-memory HashSet
-//     so they survive without rebuilding the full Hunspell index.
+//     WordList is immutable after load — thread-safe for CheckWord/Suggest.
+//     User dictionary words are merged into an in-memory HashSet and
+//     appended to userdict.txt on AddToUserDictionary.
 // ==========================================================
 
 using System.IO;
-using System.Text.RegularExpressions;
 using WeCantSpell.Hunspell;
-using WpfHexEditor.Editor.Core.SpellCheck;
 
-namespace WpfHexEditor.Editor.DocumentEditor.SpellCheck;
+namespace WpfHexEditor.Core.SpellCheck;
 
-internal sealed class HunspellSpellChecker : ISpellChecker, IDisposable
+public sealed class HunspellSpellChecker : ISpellChecker
 {
     private readonly SpellCheckerSettings _settings;
     private readonly DictionaryManager    _dictManager;
@@ -27,8 +22,8 @@ internal sealed class HunspellSpellChecker : ISpellChecker, IDisposable
     private string?                       _activeLanguage;
     private readonly SemaphoreSlim        _loadLock = new(1, 1);
 
-    public bool    IsLoaded        => _wordList is not null;
-    public string? ActiveLanguage  => _activeLanguage;
+    public bool    IsLoaded       => _wordList is not null;
+    public string? ActiveLanguage => _activeLanguage;
 
     public event EventHandler? DictionaryChanged;
 
@@ -47,21 +42,17 @@ internal sealed class HunspellSpellChecker : ISpellChecker, IDisposable
         await _loadLock.WaitAsync(ct);
         try
         {
-            var old  = _wordList;
             _wordList = await WordList.CreateFromFilesAsync(info.DicPath, info.AffPath, ct);
             _activeLanguage = languageCode;
-            old?.Dispose();
         }
-        finally
-        {
-            _loadLock.Release();
-        }
+        finally { _loadLock.Release(); }
+
         DictionaryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public bool CheckWord(string word)
     {
-        if (_wordList is null) return true; // no dict loaded — don't mark anything wrong
+        if (_wordList is null) return true;
         if (_userWords.Contains(word)) return true;
         return _wordList.Check(word);
     }
@@ -78,16 +69,7 @@ internal sealed class HunspellSpellChecker : ISpellChecker, IDisposable
             AppendToUserDictFile(word);
     }
 
-    public void Dispose()
-    {
-        _wordList?.Dispose();
-        _loadLock.Dispose();
-    }
-
-    // ── User dictionary persistence ───────────────────────────────────────
-
-    private string UserDictPath => Path.Combine(
-        _settings.DictionariesPath, "userdict.txt");
+    private string UserDictPath => Path.Combine(_settings.DictionariesPath, "userdict.txt");
 
     private void LoadUserWords()
     {
@@ -100,7 +82,7 @@ internal sealed class HunspellSpellChecker : ISpellChecker, IDisposable
                 if (w.Length > 0) _userWords.Add(w);
             }
         }
-        catch { /* non-critical */ }
+        catch { }
     }
 
     private void AppendToUserDictFile(string word)
@@ -110,6 +92,6 @@ internal sealed class HunspellSpellChecker : ISpellChecker, IDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(UserDictPath)!);
             File.AppendAllText(UserDictPath, word + Environment.NewLine);
         }
-        catch { /* non-critical */ }
+        catch { }
     }
 }
