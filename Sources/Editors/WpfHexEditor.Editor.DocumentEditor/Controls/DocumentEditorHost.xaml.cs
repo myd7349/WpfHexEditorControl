@@ -1223,40 +1223,45 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         _dictManager   = new DictionaryManager(_spellSettings);
         _spellChecker  = new HunspellSpellChecker(_spellSettings, _dictManager);
 
-        if (_spellSettings.IsEnabled && _dictManager.IsInstalled(_spellSettings.ActiveLanguage))
+        if (!_spellSettings.IsEnabled) return;
+
+        if (_dictManager.IsInstalled(_spellSettings.ActiveLanguage))
         {
             _ = _spellChecker.LoadAsync(_spellSettings.ActiveLanguage);
-            var layer    = new SpellCheckLayer();
-            _spellService = new SpellCheckService(_spellChecker, layer);
-            _spellService.Attach(PART_TextPane.PART_Renderer);
-            PART_TextPane.PART_Renderer.SpellCheckService = _spellService;
+            AttachSpellCheckLayer();
+        }
+        else
+        {
+            // No dictionary yet — offer to download, same as language-change prompt
+            PostDictionaryInstallNotification(_spellSettings.ActiveLanguage);
         }
     }
 
-    /// <summary>
-    /// Called by the IDE when the UI language changes.
-    /// If a dictionary for the new language is not installed, posts a notification offering to install it.
-    /// </summary>
-    internal void OnUILanguageChanged(string newLanguageCode)
+    private void AttachSpellCheckLayer()
+    {
+        if (_spellService is not null) return;
+        var layer = new SpellCheckLayer();
+        _spellService = new SpellCheckService(_spellChecker!, layer);
+        _spellService.Attach(PART_TextPane.PART_Renderer);
+        PART_TextPane.PART_Renderer.SpellCheckService = _spellService;
+    }
+
+    private void PostDictionaryInstallNotification(string languageCode)
     {
         if (_spellSettings is null || _dictManager is null || _ideContext is null) return;
-        if (!_spellSettings.IsEnabled) return;
-        if (_dictManager.IsInstalled(newLanguageCode)) return;
-        if (_spellSettings.IsLanguagePromptSuppressed(newLanguageCode)) return;
+        if (_spellSettings.IsLanguagePromptSuppressed(languageCode)) return;
 
-        var langName = DictionaryManager.GetDisplayName(newLanguageCode) ?? newLanguageCode;
-        var notifTitle = TryFindResource("SpellCheck_NotifTitle") as string
-                         ?? "Spell checker dictionary available";
-        var notifMsg = (TryFindResource("SpellCheck_NotifMessage") as string
-                        ?? "Install the {0} dictionary for spell checking? (~2 MB)")
-                       .Replace("{0}", langName);
+        var langName     = DictionaryManager.GetDisplayName(languageCode) ?? languageCode;
+        var notifTitle   = TryFindResource("SpellCheck_NotifTitle")   as string ?? "Spell checker dictionary available";
+        var notifMsg     = ((TryFindResource("SpellCheck_NotifMessage") as string) ?? "Install the {0} dictionary for spell checking? (~2 MB)").Replace("{0}", langName);
         var installLabel = TryFindResource("SpellCheck_NotifInstall") as string ?? "Install";
         var laterLabel   = TryFindResource("SpellCheck_NotifLater")   as string ?? "Not now";
         var neverLabel   = TryFindResource("SpellCheck_NotifNever")   as string ?? "Don't ask again";
+        var notifId      = $"spellcheck-install-{languageCode}";
 
         _ideContext.Notifications.Post(new WpfHexEditor.Editor.Core.Notifications.NotificationItem
         {
-            Id       = $"spellcheck-install-{newLanguageCode}",
+            Id       = notifId,
             Title    = notifTitle,
             Message  = notifMsg,
             Severity = WpfHexEditor.Editor.Core.Notifications.NotificationSeverity.Info,
@@ -1266,22 +1271,35 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
                     installLabel,
                     async () =>
                     {
-                        await _dictManager.InstallFromUrlAsync(newLanguageCode);
-                        await _spellChecker!.LoadAsync(newLanguageCode);
-                        _spellSettings.ActiveLanguage = newLanguageCode;
+                        await _dictManager.InstallFromUrlAsync(languageCode);
+                        await _spellChecker!.LoadAsync(languageCode);
+                        _spellSettings.ActiveLanguage = languageCode;
                         _spellSettings.Save();
+                        AttachSpellCheckLayer();
                         _spellService?.InvalidateAll();
-                        _ideContext.Notifications.Dismiss($"spellcheck-install-{newLanguageCode}");
+                        _ideContext.Notifications.Dismiss(notifId);
                     },
                     IsDefault: true),
                 new WpfHexEditor.Editor.Core.Notifications.NotificationAction(
                     laterLabel,
-                    () => { _ideContext.Notifications.Dismiss($"spellcheck-install-{newLanguageCode}"); return Task.CompletedTask; }),
+                    () => { _ideContext.Notifications.Dismiss(notifId); return Task.CompletedTask; }),
                 new WpfHexEditor.Editor.Core.Notifications.NotificationAction(
                     neverLabel,
-                    () => { _spellSettings.SuppressLanguagePrompt(newLanguageCode); _ideContext.Notifications.Dismiss($"spellcheck-install-{newLanguageCode}"); return Task.CompletedTask; })
+                    () => { _spellSettings.SuppressLanguagePrompt(languageCode); _ideContext.Notifications.Dismiss(notifId); return Task.CompletedTask; })
             ]
         });
+    }
+
+    /// <summary>
+    /// Called by the IDE when the UI language changes.
+    /// If a dictionary for the new language is not installed, posts a notification offering to install it.
+    /// </summary>
+    internal void OnUILanguageChanged(string newLanguageCode)
+    {
+        if (_spellSettings is null || _dictManager is null) return;
+        if (!_spellSettings.IsEnabled) return;
+        if (_dictManager.IsInstalled(newLanguageCode)) return;
+        PostDictionaryInstallNotification(newLanguageCode);
     }
 
     /// <summary>Exposes spell checker settings and components for the Options page.</summary>
