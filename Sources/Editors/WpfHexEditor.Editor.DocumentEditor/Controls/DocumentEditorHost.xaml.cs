@@ -87,6 +87,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     private bool                     _isFocusMode          = false;
     private DocumentScrollMarkerPanel? _scrollMarker;
     private Services.AutoSaveService?  _autoSave;
+    private static bool                _spellCheckerPageRegistered = false;
     private SpellCheckerSettings?      _spellSettings;
     private DictionaryManager?         _dictManager;
     private HunspellSpellChecker?      _spellChecker;
@@ -1222,6 +1223,18 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         _spellSettings = SpellCheckerSettings.Load();
         _dictManager   = new DictionaryManager(_spellSettings);
         _spellChecker  = new HunspellSpellChecker(_spellSettings, _dictManager);
+
+        // Register the SpellChecker options page once per process lifetime.
+        if (!_spellCheckerPageRegistered)
+        {
+            _spellCheckerPageRegistered = true;
+            WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
+                WpfHexEditor.Core.Options.OptionsPageStrings.CategoryDocumentEditor,
+                WpfHexEditor.Core.Options.OptionsPageStrings.PageSpellChecker,
+                () => new WpfHexEditor.Editor.DocumentEditor.Options.SpellCheckerOptionsPage(),
+                "📄",
+                ["spell", "check", "dictionary", "language", "hunspell", "correction", "squiggle"]);
+        }
 
         if (!_spellSettings.IsEnabled) return;
 

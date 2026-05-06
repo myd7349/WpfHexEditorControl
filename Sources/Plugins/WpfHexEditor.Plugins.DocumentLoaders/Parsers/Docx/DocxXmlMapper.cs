@@ -268,6 +268,35 @@ internal sealed class DocxXmlMapper
             if (right     is not null && int.TryParse(right,     out int r)) para.Attributes["indentRight"]     = DocumentPageSettings.TwipsToPx(r);
             if (firstLine is not null && int.TryParse(firstLine, out int f)) para.Attributes["indentFirstLine"] = DocumentPageSettings.TwipsToPx(f);
         }
+
+        // Paragraph spacing
+        var spacing = pPr.Element(W + "spacing");
+        if (spacing is not null)
+        {
+            var before   = spacing.Attribute(W + "before")?.Value;
+            var after    = spacing.Attribute(W + "after")?.Value;
+            var line     = spacing.Attribute(W + "line")?.Value;
+            var lineRule = spacing.Attribute(W + "lineRule")?.Value;
+            if (before   is not null && int.TryParse(before,   out int b)) para.Attributes["spaceBefore"]   = DocumentPageSettings.TwipsToPx(b);
+            if (after    is not null && int.TryParse(after,    out int a)) para.Attributes["spaceAfter"]    = DocumentPageSettings.TwipsToPx(a);
+            if (line     is not null && int.TryParse(line,     out int l)) para.Attributes["lineSpacing"]   = l;
+            if (lineRule is not null) para.Attributes["lineSpacingRule"] = lineRule;
+        }
+
+        // Tab stops
+        var tabs = pPr.Element(W + "tabs");
+        if (tabs is not null)
+        {
+            var tabList = tabs.Elements(W + "tab")
+                .Select(t => new {
+                    Pos = t.Attribute(W + "pos")?.Value,
+                    Val = t.Attribute(W + "val")?.Value ?? "left"
+                })
+                .Where(t => t.Pos is not null && int.TryParse(t.Pos, out _))
+                .Select(t => $"{t.Val}:{DocumentPageSettings.TwipsToPx(int.Parse(t.Pos!)):F1}")
+                .ToList();
+            if (tabList.Count > 0) para.Attributes["tabStops"] = string.Join(";", tabList);
+        }
     }
 
     private static void ExtractRunProps(XElement rPr, DocumentBlock run)
@@ -291,6 +320,21 @@ internal sealed class DocxXmlMapper
 
         var rStyle = rPr.Element(W + "rStyle")?.Attribute(W + "val")?.Value;
         if (rStyle is not null) run.Attributes["style"] = rStyle;
+
+        // Font color
+        var color = rPr.Element(W + "color")?.Attribute(W + "val")?.Value;
+        if (color is not null && color != "auto") run.Attributes["color"] = color;
+
+        // Highlight / shading
+        var highlight = rPr.Element(W + "highlight")?.Attribute(W + "val")?.Value;
+        if (highlight is not null) run.Attributes["highlight"] = highlight;
+
+        // Strikethrough
+        if (rPr.Element(W + "strike") is not null) run.Attributes["strikethrough"] = true;
+
+        // Vertical alignment (superscript / subscript)
+        var vertAlign = rPr.Element(W + "vertAlign")?.Attribute(W + "val")?.Value;
+        if (vertAlign is not null) run.Attributes["vertAlign"] = vertAlign;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -68,4 +68,5 @@ public static class OptionsPageStrings
     public static string PageCompareFiles       => OptionsResources.Opt_Page_CompareFiles;
     public static string PageCommandPalette     => OptionsResources.Opt_Page_CommandPalette;
     public static string PageErrorList          => OptionsResources.Opt_Page_ErrorList;
+    public static string PageSpellChecker       => OptionsResources.Opt_Page_SpellChecker;
 }

@@ -430,6 +430,7 @@
   <data name="Opt_Page_CompareFiles"       xml:space="preserve"><value>Compare Files</value></data>
   <data name="Opt_Page_CommandPalette"     xml:space="preserve"><value>Command Palette</value></data>
   <data name="Opt_Page_ErrorList"          xml:space="preserve"><value>Error List</value></data>
+  <data name="Opt_Page_SpellChecker"      xml:space="preserve"><value>Spell Checker</value></data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        PLUGIN SYSTEM OPTIONS PAGE — folder picker dialog

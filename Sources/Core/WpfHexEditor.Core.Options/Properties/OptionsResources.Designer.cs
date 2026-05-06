@@ -1815,6 +1815,12 @@ namespace WpfHexEditor.Core.Options.Properties {
             }
         }
 
+        internal static string Opt_Page_SpellChecker {
+            get {
+                return ResourceManager.GetString("Opt_Page_SpellChecker", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à Event Bus.
         /// </summary>

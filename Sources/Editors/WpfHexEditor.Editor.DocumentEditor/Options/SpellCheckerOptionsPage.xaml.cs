@@ -13,7 +13,7 @@ using WpfHexEditor.Core.SpellCheck;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Options;
 
-public sealed partial class SpellCheckerOptionsPage : UserControl
+public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.Core.Options.IOptionsPage
 {
     private SpellCheckerOptionsViewModel? _vm;
     private DictionaryManager?            _dictManager;
@@ -24,6 +24,10 @@ public sealed partial class SpellCheckerOptionsPage : UserControl
         InitializeComponent();
         Loaded += OnLoaded;
     }
+
+    public event EventHandler? Changed;
+    public void Load(WpfHexEditor.Core.Options.AppSettings settings) { }
+    public void Flush(WpfHexEditor.Core.Options.AppSettings settings) { }
 
     internal void Initialize(
         SpellCheckerSettings  settings,
