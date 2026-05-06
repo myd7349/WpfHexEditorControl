@@ -24,11 +24,21 @@ namespace WpfHexEditor.Editor.DocumentEditor.SpellCheck;
 
 internal sealed class SpellCheckService : IDisposable
 {
-    private readonly ISpellChecker       _checker;
-    private readonly SpellCheckLayer     _layer;
-    private readonly DispatcherTimer     _debounce;
-    private DocumentCanvasRenderer?      _renderer;
-    private CancellationTokenSource      _cts = new();
+    private readonly ISpellChecker        _checker;
+    private readonly DictionaryManager    _dictManager;
+    private readonly SpellCheckLayer      _layer;
+    private readonly DispatcherTimer      _debounce;
+    private DocumentCanvasRenderer?       _renderer;
+    private CancellationTokenSource       _cts = new();
+
+    // Tracks languages already proposed to avoid repeated event raises
+    private readonly HashSet<string> _proposedLanguages = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Raised (on background thread) when language detection finds a language that is
+    /// not installed. DocumentEditorHost subscribes and calls PostDictionaryInstallNotification.
+    /// </summary>
+    internal event Action<string>? UninstalledLanguageDetected;
 
     // Cache: blockId → (text snapshot, errors)
     private readonly Dictionary<string, (string Text, List<SpellCheckError> Errors)> _cache = [];
@@ -56,10 +66,11 @@ internal sealed class SpellCheckService : IDisposable
         @"|^(.)\1{3,}$",                                   // repeated single char artefacts (wwwww)
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    public SpellCheckService(ISpellChecker checker, SpellCheckLayer layer)
+    public SpellCheckService(ISpellChecker checker, DictionaryManager dictManager, SpellCheckLayer layer)
     {
-        _checker = checker;
-        _layer   = layer;
+        _checker     = checker;
+        _dictManager = dictManager;
+        _layer       = layer;
 
         _debounce = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -163,6 +174,33 @@ internal sealed class SpellCheckService : IDisposable
         double zoom,
         CancellationToken ct)
     {
+        // Detect dominant language; raise event if a matching dict is not installed
+        if (UninstalledLanguageDetected is not null)
+        {
+            var sample = string.Concat(
+                blocks.Where(b => b.Block.Kind is "paragraph" or "heading")
+                      .Take(12)
+                      .Select(b => b.Block.Text ?? ""));
+
+            if (sample.Length > 0)
+            {
+                var installedCodes = _dictManager.GetAllLanguages()
+                    .Where(l => l.IsInstalled)
+                    .Select(l => l.LanguageCode);
+
+                // If the detected language is not among installed ones, raise the event
+                var detectedAny = LanguageDetector.Detect(
+                    sample, LanguageCatalog.Languages.Select(l => l.Code), minConfidence: 0.04);
+
+                if (detectedAny is not null
+                    && !installedCodes.Contains(detectedAny, StringComparer.OrdinalIgnoreCase)
+                    && _proposedLanguages.Add(detectedAny))
+                {
+                    UninstalledLanguageDetected.Invoke(detectedAny);
+                }
+            }
+        }
+
         var allErrors = new List<SpellCheckError>();
 
         foreach (var rb in blocks)
