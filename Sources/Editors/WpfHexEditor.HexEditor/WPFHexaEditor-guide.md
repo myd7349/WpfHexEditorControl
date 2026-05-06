@@ -8,7 +8,10 @@
 4. [Integration Guide — Level 2: Editing & Undo](#level-2-editing--undo)
 5. [Integration Guide — Level 3: Format Detection & Overlay](#level-3-format-detection--overlay)
 6. [Integration Guide — Level 4: Search & Export](#level-4-search--export)
-7. [Settings Reference](#settings-reference)
+7. [Integration Guide — Level 5: Split View](#level-5-split-view)
+8. [Integration Guide — Level 6: Settings Panel](#level-6-settings-panel)
+9. [Integration Guide — Level 7: Parsed Fields Panel](#level-7-parsed-fields-panel)
+10. [Settings Reference](#settings-reference)
 
 ---
 
@@ -37,8 +40,13 @@ Zero external NuGet dependencies. All assemblies are bundled inside the package.
 | Type | Assembly | Purpose |
 |---|---|---|
 | `HexEditor` | HexEditor | Main `UserControl` — all rendering, editing, search, format overlay |
+| `HexEditorSplitHost` | HexEditor | Split-view host (`Grid`-derived); wraps primary + optional secondary `HexEditor` |
+| `HexEditorSettings` | HexEditor | Auto-generated settings panel with live binding and JSON persistence |
 | `HexBreadcrumbBar` | HexEditor | Visual structure navigator over detected format fields |
 | `HexScrollMarkerPanel` | HexEditor | Overview panel — bookmarks, search hits, changes |
+| `IParsedFieldsPanel` | Core | Bridge interface: format-detection engine → custom parsed-fields panel |
+| `ParsedFieldViewModel` | Core | Single parsed binary field — Offset, Length, Name, FormattedValue, Color |
+| `FormatInfo` | Core | Format detection result — Name, Category, Bookmarks, Candidates |
 | `ByteProvider` | Core | Pluggable data source (file, stream, memory) |
 | `UndoEngine` | Editor.Core | Undo/redo engine — `UndoGroup` transactions and coalescence |
 | `EmbeddedFormatCatalog` | Core.Definitions | Lazy-loaded 790+ format definitions, thread-safe singleton |
@@ -389,6 +397,143 @@ double float64   = result.Double;
 string utfStr    = result.Utf8String;
 string guidStr   = result.Guid;
 string ipAddr    = result.IPv4Address;
+```
+
+---
+
+---
+
+## Level 5: Split View
+
+`HexEditorSplitHost` is a standalone-safe `Grid`-derived host that wraps a primary `HexEditor` and optionally a synchronized secondary pane. It implements `IDocumentEditor` but does **not** inherit `HexEditor` — composition, not inheritance.
+
+### XAML
+
+```xml
+xmlns:hexControls="clr-namespace:WpfHexEditor.HexEditor.Controls;assembly=WpfHexEditor.HexEditor"
+
+<hexControls:HexEditorSplitHost x:Name="HexEditorHost" />
+```
+
+### Access the primary editor
+
+```csharp
+HexEditor primary = HexEditorHost.PrimaryEditor;
+primary.FileName = @"C:\file.bin";
+```
+
+### Open / close a file
+
+```csharp
+HexEditorHost.OpenFile(@"C:\file.bin");
+HexEditorHost.OpenStream(stream, readOnly: true);
+```
+
+### Split-view control
+
+The split button is built into the primary pane's toolbar — click it or call:
+
+```csharp
+// The split is user-driven via the built-in toggle button.
+// Secondary editor is accessible after the user opens the split:
+HexEditor? secondary = HexEditorHost.SecondaryEditor; // null if split closed
+bool isOpen = HexEditorHost.IsSplitOpen;
+```
+
+### Events
+
+```csharp
+HexEditorHost.FileOpened  += (s, e) => { /* file loaded */ };
+HexEditorHost.FileClosed  += (s, e) => { /* file closed */ };
+HexEditorHost.TitleChanged += (s, title) => Title = title;
+```
+
+### Standalone setup
+
+`HexEditorSplitHost` requires no IDE host. Merge the same `Generic.xaml` dictionary as `HexEditor`:
+
+```xml
+<ResourceDictionary Source="pack://application:,,,/WpfHexEditor.HexEditor;component/Resources/Dictionary/Generic.xaml" />
+```
+
+---
+
+## Level 6: Settings Panel
+
+`HexEditorSettings` is a `UserControl` that auto-generates a grouped settings UI for every `HexEditor` `DependencyProperty`. It includes a color picker, JSON export/import, and live two-way binding.
+
+### XAML
+
+```xml
+xmlns:hexControls="clr-namespace:WpfHexEditor.HexEditor.Controls;assembly=WpfHexEditor.HexEditor"
+
+<hexControls:HexEditorSettings x:Name="SettingsPanel" />
+```
+
+### Wire to a HexEditor
+
+```csharp
+// In code-behind (after Loaded):
+SettingsPanel.HexEditorControl = HexEditorHost.PrimaryEditor;
+```
+
+### Persist settings
+
+```csharp
+// Save on window close
+string json = SettingsPanel.GetSettingsJson();
+File.WriteAllText("settings.json", json);
+
+// Restore on startup
+SettingsPanel.LoadSettingsJson(File.ReadAllText("settings.json"));
+```
+
+---
+
+## Level 7: Parsed Fields Panel
+
+`IParsedFieldsPanel` is the bridge between the `HexEditor` format-detection engine and a custom side panel. The interface lives in `WpfHexEditor.Core`.
+
+### Connect / disconnect
+
+```csharp
+// After file is loaded, the panel reference is available:
+IParsedFieldsPanel panel = HexEditorHost.PrimaryEditor.ParsedFieldsPanel;
+
+// Connect your own implementation or bind to an existing panel:
+HexEditorHost.PrimaryEditor.ConnectParsedFieldsPanel(myPanel);
+
+// Disconnect:
+HexEditorHost.PrimaryEditor.DisconnectParsedFieldsPanel();
+```
+
+### Read parsed fields
+
+```csharp
+// IParsedFieldsPanel exposes:
+ObservableCollection<ParsedFieldViewModel> fields = panel.ParsedFields;
+FormatInfo info = panel.FormatInfo; // Name, Category, Bookmarks, etc.
+```
+
+### React to events
+
+```csharp
+panel.FieldSelected    += (s, field) => ScrollToOffset(field.Offset);
+panel.RefreshRequested += (s, e)     => RebuildFieldList();
+```
+
+### Navigate to a search match
+
+```csharp
+// After a search, jump to and select a byte range:
+HexEditorHost.PrimaryEditor.FindSelect(matchPosition, matchLength);
+```
+
+### Get byte provider for custom search
+
+```csharp
+ByteProvider provider = HexEditorHost.PrimaryEditor.GetByteProvider();
+// Use provider.ReadBytes() / provider.Length for custom binary analysis
 ```
 
 ---

@@ -111,9 +111,16 @@ Context menus use opaque backgrounds by default. No extra theming is needed.
 - ParsedFields export templates
 
 ### UI Controls
+- `HexEditorSplitHost` — synchronized split-view host; standalone-safe, no IDE dependency
+- `HexEditorSettings` — auto-generated settings panel with live binding and JSON persistence
 - `HexBreadcrumbBar` — visual structure navigator
 - `HexScrollMarkerPanel` — overview of bookmarks, search hits, and changes
-- Settings panel with auto-generated UI and ColorPicker
+
+### Parsed Fields Integration
+- `IParsedFieldsPanel` — bridge interface for custom parsed-fields side panels
+- `ConnectParsedFieldsPanel()` / `DisconnectParsedFieldsPanel()` — attach/detach at runtime
+- `GetByteProvider()` — access the raw byte provider for custom analysis
+- `FindSelect(position, length)` — jump to and select any byte range
 
 ### Settings
 - Full `DependencyProperty` API for programmatic control
@@ -121,6 +128,16 @@ Context menus use opaque backgrounds by default. No extra theming is needed.
 - `ByteToolTipDisplayMode`, `ByteToolTipDetailLevel`, `MouseWheelSpeed`, `FontSize`, `BytePerLine`, and 30+ more
 
 ---
+
+## What's New in 3.3.0
+
+- **New**: `HexEditorSplitHost` — drop-in split-view host wrapping a primary + optional secondary `HexEditor`; synchronized scrolling, mutations, and breadcrumb; standalone-safe (no IDE dependency).
+- **New**: `HexEditorSettings` — auto-generated settings panel `UserControl`; exposes every `HexEditor` `DependencyProperty` with live binding, color picker, JSON export/import.
+- **New**: `IParsedFieldsPanel` integration API — `ConnectParsedFieldsPanel()` / `DisconnectParsedFieldsPanel()`, `GetByteProvider()`, `FindSelect(position, length)`.
+- **New**: Themed `IdeMessageBox` / `IDialogService` — replaces `MessageBox.Show` with a themed, injectable dialog service.
+- **New**: +10 localizations — uk-UA, cs-CZ, vi-VN, hu-HU, ro-RO, id-ID, th-TH, el-GR, da-DK, fi-FI (now 28 languages total).
+- **Fix**: Split-view secondary pane — breadcrumb bar now syncs correctly; all mutation types (insert, delete, replace) propagated to secondary.
+- **Fix**: Focus border hidden when split panel is closed.
 
 ## What's New in 3.2.0
 
@@ -197,7 +214,7 @@ All bundled inside the package — zero external NuGet dependencies:
 | WpfHexEditor.HexBox | Hex display rendering control |
 | WpfHexEditor.ProgressBar | Progress bar control |
 
-**Localizations**: ar-SA, de-DE, es-419, es-ES, fr-CA, fr-FR, hi-IN, it-IT, ja-JP, ko-KR, nl-NL, pl-PL, pt-BR, pt-PT, ru-RU, sv-SE, tr-TR, zh-CN
+**Localizations** (28): ar-SA, cs-CZ, da-DK, de-DE, el-GR, es-419, es-ES, fi-FI, fr-CA, fr-FR, hi-IN, hu-HU, id-ID, it-IT, ja-JP, ko-KR, nl-NL, pl-PL, pt-BR, pt-PT, ro-RO, ru-RU, sv-SE, th-TH, tr-TR, uk-UA, vi-VN, zh-CN
 
 ---
 

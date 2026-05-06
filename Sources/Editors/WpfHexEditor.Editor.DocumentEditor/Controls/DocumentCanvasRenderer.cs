@@ -665,6 +665,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     public double HorizontalOffset => _offset.X;
     public double VerticalOffset     => _offset.Y;
     public static double PageCanvasPadding => PageCanvasPad;
+    public static double PageGapPublic     => PageGapPx;
     public ScrollViewer? ScrollOwner { get => _scrollOwner; set => _scrollOwner = value; }
 
     public void LineUp()      => SetVerticalOffset(_offset.Y - 20);
@@ -3101,7 +3102,14 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         double contentW    = Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight);
         var rb             = _blocks[_caret.BlockIndex];
         double blockScreenY = PageCanvasPad + rb.Y - _offset.Y;
-        double caretX      = contentX;
+
+        // For list-items, text is rendered at x + indentW (same as DrawListItem).
+        double listIndentOffset = rb.Block.Kind == "list-item"
+            ? (rb.Block.Attributes.TryGetValue("listLevel", out var lv) && lv is int li ? li + 1 : 1)
+              * ListIndentPerLevel
+            : 0.0;
+
+        double caretX      = contentX + listIndentOffset;
         double caretY      = blockScreenY;
         double caretH      = _baseFontSize + 2;
 
@@ -3112,7 +3120,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             if (rb.GlyphLines is { Count: > 0 })
             {
                 var (gx, gy, gh) = GetCaretXYFromGlyphLines(rb.GlyphLines, _caret.CharOffset);
-                caretX = contentX + rb.IndentLeft + gx;
+                caretX = contentX + rb.IndentLeft + listIndentOffset + gx;
                 caretY = blockScreenY + gy;
                 caretH = gh > 0 ? gh : caretH;
             }

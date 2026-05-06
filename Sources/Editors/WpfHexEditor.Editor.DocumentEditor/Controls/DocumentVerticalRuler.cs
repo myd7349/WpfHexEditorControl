@@ -84,44 +84,58 @@ internal sealed class DocumentVerticalRuler : FrameworkElement
 
         dc.DrawRectangle(_bg, null, new Rect(0, 0, w, h));
 
-        // Page content starts at PageCanvasPad in renderer canvas space.
-        // Ruler Y = 0 corresponds to renderer viewport top = scrollOffset.
-        // So page top in ruler space = PageCanvasPad - scrollOffset (may be negative when scrolled).
-        double scrollY   = _renderer.VerticalOffset * Zoom;
-        double pageTopY  = DocumentCanvasRenderer.PageCanvasPadding * Zoom - scrollY;
-        double mTop      = PS.MarginTop    * Zoom;
-        double mBottom   = PS.MarginBottom * Zoom;
-        double pageH     = (PS.MarginTop + PS.ContentHeight + PS.MarginBottom) * Zoom;
+        double scrollY  = _renderer.VerticalOffset * Zoom;
+        double mTop     = PS.MarginTop    * Zoom;
+        double mBottom  = PS.MarginBottom * Zoom;
+        double pageH    = (PS.MarginTop + PS.ContentHeight + PS.MarginBottom) * Zoom;
+        double pageGap  = DocumentCanvasRenderer.PageGapPublic * Zoom;
+        double pageStep = pageH + pageGap;
 
-        // Top margin zone (header band)
-        double topMarginRulerY = pageTopY;
-        if (topMarginRulerY < h && topMarginRulerY + mTop > 0)
-            dc.DrawRectangle(_marginZone, null, new Rect(0, Math.Max(0, topMarginRulerY),
-                w, Math.Min(mTop, h - Math.Max(0, topMarginRulerY))));
+        // First page top in ruler-local space
+        double firstPageTopY = DocumentCanvasRenderer.PageCanvasPadding * Zoom - scrollY;
 
-        // Bottom margin zone (footer band)
-        double botMarginRulerY = pageTopY + pageH - mBottom;
-        if (botMarginRulerY < h && botMarginRulerY + mBottom > 0)
-            dc.DrawRectangle(_marginZone, null, new Rect(0, Math.Max(0, botMarginRulerY),
-                w, Math.Min(mBottom, h - Math.Max(0, botMarginRulerY))));
+        // Determine which pages are visible and draw each independently
+        if (pageStep <= 0) return;
+        int firstPage = (int)Math.Floor(-firstPageTopY / pageStep);
+        firstPage = Math.Max(0, firstPage);
 
-        DrawGraduations(dc, w, h, pageTopY + mTop);
+        for (int p = firstPage; ; p++)
+        {
+            double pageTopY = firstPageTopY + p * pageStep;
+            if (pageTopY > h) break;
+
+            // Top margin zone
+            if (pageTopY < h && pageTopY + mTop > 0)
+                dc.DrawRectangle(_marginZone, null, new Rect(0, Math.Max(0, pageTopY),
+                    w, Math.Min(mTop, h - Math.Max(0, pageTopY))));
+
+            // Bottom margin zone
+            double botY = pageTopY + pageH - mBottom;
+            if (botY < h && botY + mBottom > 0)
+                dc.DrawRectangle(_marginZone, null, new Rect(0, Math.Max(0, botY),
+                    w, Math.Min(mBottom, h - Math.Max(0, botY))));
+
+            // Graduations reset to 0 at each page content start
+            DrawGraduations(dc, w, h, pageTopY + mTop);
+        }
     }
 
-    // pageContentY0: ruler-local Y where page content (unit 0) begins.
+    // pageContentY0: ruler-local Y where THIS page's content (unit 0) begins.
+    // Graduations are always relative to the page — they reset per page.
     private void DrawGraduations(DrawingContext dc, double w, double h, double pageContentY0)
     {
         double pxPerUnit  = (UseMetric ? PxPerCm : PxPerInch) * Zoom;
         double minorEvery = UseMetric ? 0.5 : 0.125;
+        double contentH   = PS.ContentHeight * Zoom;
 
-        // Start from the first unit that is visible (may be negative offset).
-        int startUnit = (int)Math.Floor(-pageContentY0 / pxPerUnit);
-        startUnit     = Math.Max(0, startUnit);
+        // Only iterate within this page's content band
+        int startUnit = (int)Math.Floor(Math.Max(0, -pageContentY0) / pxPerUnit);
 
         for (int i = startUnit; ; i++)
         {
             double y = pageContentY0 + i * pxPerUnit;
-            if (y > h) break;
+            // Stop at the bottom of this page's content area or viewport
+            if (y > pageContentY0 + contentH || y > h) break;
             if (y >= 0)
             {
                 dc.DrawLine(_tickPen, new Point(w - TickHeightMajor, y), new Point(w, y));
@@ -137,7 +151,7 @@ internal sealed class DocumentVerticalRuler : FrameworkElement
             for (double m = minorEvery; m < 1.0; m += minorEvery)
             {
                 double ym = y + m * pxPerUnit;
-                if (ym > h) break;
+                if (ym > pageContentY0 + contentH || ym > h) break;
                 if (ym >= 0)
                     dc.DrawLine(_tickPen, new Point(w - TickHeightMinor, ym), new Point(w, ym));
             }
