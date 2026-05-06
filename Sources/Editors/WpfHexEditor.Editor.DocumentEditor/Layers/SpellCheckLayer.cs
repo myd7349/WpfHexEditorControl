@@ -55,14 +55,14 @@ internal sealed class SpellCheckLayer : DrawingVisual
     private static void DrawSquiggle(DrawingContext dc, SpellCheckError err)
     {
         // Baseline: 2px above the bottom of the line so it sits just under the text
-        double baseline = err.CanvasY + err.LineHeight - 1.5;
+        double baseline = err.CanvasY + err.LineHeight - 1.0;
         double x        = err.CanvasX;
         double endX     = err.CanvasX + err.CanvasWidth;
 
-        const double amplitude = 0.9;   // subtle — barely lifts off baseline
-        const double period    = 4.0;   // tight wave, ~Word style
+        const double amplitude = 0.6;   // barely visible — Word/VS Code style
+        const double period    = 3.0;
         const double half      = period / 2.0;
-        const double cp        = half * 0.4;
+        const double cp        = half * 0.45;
 
         var geo = new StreamGeometry();
         using (var ctx = geo.Open())
