@@ -46,6 +46,9 @@
                 <MenuItem Header="Settings Panel"      IsCheckable="True"
                           IsChecked="{Binding ShowSettingsPanel}"/>
                 <Separator/>
+                <MenuItem Header="Dark Theme"  x:Name="ThemeDarkItem"  IsCheckable="True" IsChecked="True"  Click="ThemeDark_Click"/>
+                <MenuItem Header="Light Theme" x:Name="ThemeLightItem" IsCheckable="True" IsChecked="False" Click="ThemeLight_Click"/>
+                <Separator/>
                 <MenuItem Header="8 Bytes/Line"  Tag="8"  Click="BytesPerLine_Click" x:Name="Bpl8"/>
                 <MenuItem Header="16 Bytes/Line" Tag="16" Click="BytesPerLine_Click" x:Name="Bpl16" IsChecked="True"/>
                 <MenuItem Header="32 Bytes/Line" Tag="32" Click="BytesPerLine_Click" x:Name="Bpl32"/>

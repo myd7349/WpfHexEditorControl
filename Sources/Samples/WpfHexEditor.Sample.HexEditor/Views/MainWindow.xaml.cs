@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using WpfHexEditor.Core.Models;
+using WpfHexEditor.Sample.HexEditor.Services;
 using WpfHexEditor.Sample.HexEditor.ViewModels;
 
 namespace WpfHexEditor.Sample.HexEditor.Views
@@ -31,6 +32,10 @@ namespace WpfHexEditor.Sample.HexEditor.Views
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            // Apply active theme to HexEditor and register for future swaps
+            HexEditor.ApplyThemeFromResources();
+            ThemeManager.RegisterHexEditor(HexEditor.ApplyThemeFromResources);
+
             // Wire HexEditor to ViewModel
             _vm.SetHexEditor(HexEditor);
 
@@ -108,6 +113,20 @@ namespace WpfHexEditor.Sample.HexEditor.Views
         {
             HexEditor.CloseTBL();
             CloseTblItem.IsEnabled = false;
+        }
+
+        private void ThemeDark_Click(object sender, RoutedEventArgs e)
+        {
+            ThemeManager.Apply(AppTheme.Dark);
+            ThemeDarkItem.IsChecked  = true;
+            ThemeLightItem.IsChecked = false;
+        }
+
+        private void ThemeLight_Click(object sender, RoutedEventArgs e)
+        {
+            ThemeManager.Apply(AppTheme.Light);
+            ThemeDarkItem.IsChecked  = false;
+            ThemeLightItem.IsChecked = true;
         }
 
         protected override void OnClosed(EventArgs e)
