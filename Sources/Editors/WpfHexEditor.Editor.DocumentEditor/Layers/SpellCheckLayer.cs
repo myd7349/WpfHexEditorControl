@@ -55,7 +55,7 @@ internal sealed class SpellCheckLayer : DrawingVisual
     private static void DrawSquiggle(DrawingContext dc, SpellCheckError err)
     {
         // Baseline: 2px above the bottom of the line so it sits just under the text
-        double baseline = err.CanvasY + err.LineHeight - 1.0;
+        double baseline = err.CanvasY + err.LineHeight + 1.0;
         double x        = err.CanvasX;
         double endX     = err.CanvasX + err.CanvasWidth;
 
