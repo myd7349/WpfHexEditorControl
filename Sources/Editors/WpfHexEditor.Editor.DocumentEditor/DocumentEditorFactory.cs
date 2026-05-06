@@ -89,9 +89,11 @@ public sealed class DocumentEditorFactory : IEditorFactory
 
     private static void RegisterSpellCheckerOptionsPage(IIDEHostContext context)
     {
+        // Use lambda overload so Category/PageName resolve live from resources —
+        // this ensures GroupBy in BuildTree matches the static DocumentEditor pages.
         OptionsPageRegistry.RegisterDynamic(
-            OptionsPageStrings.CategoryDocumentEditor,
-            OptionsPageStrings.PageSpellChecker,
+            () => OptionsPageStrings.CategoryDocumentEditor,
+            () => OptionsPageStrings.PageSpellChecker,
             () =>
             {
                 var settings    = SpellCheckerSettings.Load();

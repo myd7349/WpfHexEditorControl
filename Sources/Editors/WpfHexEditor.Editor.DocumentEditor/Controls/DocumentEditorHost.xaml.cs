@@ -1227,8 +1227,8 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         // Re-register with live components so the page uses this host's spell checker
         // (overrides the standalone instance registered by DocumentEditorFactory at startup).
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
-            WpfHexEditor.Core.Options.OptionsPageStrings.CategoryDocumentEditor,
-            WpfHexEditor.Core.Options.OptionsPageStrings.PageSpellChecker,
+            () => WpfHexEditor.Core.Options.OptionsPageStrings.CategoryDocumentEditor,
+            () => WpfHexEditor.Core.Options.OptionsPageStrings.PageSpellChecker,
             () =>
             {
                 var page = new WpfHexEditor.Editor.DocumentEditor.Options.SpellCheckerOptionsPage();
