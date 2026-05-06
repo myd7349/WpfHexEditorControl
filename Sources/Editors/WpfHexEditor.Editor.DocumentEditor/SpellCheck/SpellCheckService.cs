@@ -53,10 +53,11 @@ internal sealed class SpellCheckService : IDisposable
 
     // Tokens to erase from text before word-tokenizing (URLs, emails, domains)
     private static readonly Regex EraseRx = new(
-        @"https?://\S+"               +  // full URLs
+        @"https?://\S+"               +  // full URLs with scheme
         @"|www\.\S+"                  +  // www. domains
         @"|[\w.+-]+@[\w.-]+\.\w{2,}" +  // email addresses
-        @"|\S*\.\S*\.\S*",               // multi-dot tokens (a.b.c paths / domains)
+        @"|\S+\.\S+[/\\]\S*"         +  // path-like tokens: github.com/abbaye, C:\foo\bar
+        @"|\S*\.\S*\.\S*",               // multi-dot tokens: a.b.c
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     // Per-word skip patterns applied after tokenization
