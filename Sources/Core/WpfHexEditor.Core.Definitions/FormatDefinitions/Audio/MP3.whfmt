@@ -442,5 +442,53 @@
     "FrameHeaderSize": 4,
     "ID3v2HeaderSize": 10,
     "SynchsafeIntegers": true
-  }
+  },
+
+  "diff": {
+    "keyFields": ["mpeg_version", "layer", "bitrate", "sample_rate", "channel_mode", "id3_title", "id3_artist", "id3_album", "frame_count"],
+    "ignoreFields": ["id3_encoding_time", "id3_tagging_time", "padding_bytes"],
+    "groupBy": "frame_index",
+    "note": "Compare audio parameters and ID3 metadata. Ignore encoding/tagging timestamps."
+  },
+
+  "repair": [
+    {
+      "name": "FixID3Size",
+      "trigger": "ID3SizeMismatch",
+      "action": "set_value",
+      "target": "id3_size_offset",
+      "description": "Rewrite ID3v2 synchsafe integer tag size to match actual tag content."
+    },
+    {
+      "name": "StripTruncatedFrame",
+      "trigger": "TruncatedFrame",
+      "action": "truncate",
+      "target": "last_valid_frame_end",
+      "description": "Truncate file at end of last complete MPEG frame to remove partial trailing frame."
+    }
+  ],
+
+  "fuzz": {
+    "preserveChecksums": false,
+    "maxMutationsPerFile": 1,
+    "strategies": [
+      { "field": "frame_sync",     "mutation": "corrupt_signature", "description": "Corrupt 0xFFE0 frame sync bits." },
+      { "field": "bitrate_index",  "mutation": "enum_sweep",        "description": "Sweep all bitrate indices including free (0) and bad (15)." },
+      { "field": "sample_rate_idx","mutation": "enum_sweep",        "description": "Sweep reserved sample rate index (3) — should be rejected." },
+      { "field": "id3_size",       "mutation": "overflow",          "description": "ID3 size larger than file — seeks past EOF." },
+      { "field": "frame_data",     "mutation": "bit_flip", "rate": 0.001, "description": "Bit flips in audio frame data for decoder coverage." }
+    ]
+  },
+
+  "migration": [
+    {
+      "from": "id3v1",
+      "to": "id3v2.3",
+      "description": "Upgrade ID3v1 (128-byte trailer) to ID3v2.3 header tag.",
+      "changes": [
+        { "field": "id3v2_header", "changeType": "insert", "length": 10, "atOffset": "file_start", "description": "Prepend ID3v2.3 header at start of file." },
+        { "field": "id3v1_trailer","changeType": "delete",              "description": "Remove 128-byte ID3v1 tag from file end." }
+      ]
+    }
+  ]
 }

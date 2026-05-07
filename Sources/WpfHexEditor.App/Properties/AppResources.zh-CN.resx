@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>关闭所有文档</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>关闭解决方案</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>保存</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>另存为(_A)…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>全部保存</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>写入磁盘</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>工作区</value></data>

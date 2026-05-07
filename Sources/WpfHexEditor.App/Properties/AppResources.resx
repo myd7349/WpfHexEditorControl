@@ -122,6 +122,9 @@
   <data name="App_Menu_Save" xml:space="preserve">
     <value>_Save</value>
   </data>
+  <data name="App_Menu_SaveAs" xml:space="preserve">
+    <value>Save _As…</value>
+  </data>
   <data name="App_Menu_SaveAll" xml:space="preserve">
     <value>Save _All</value>
   </data>

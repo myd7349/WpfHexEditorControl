@@ -26,6 +26,7 @@ public static class CommandIds
         public const string CloseAll         = "File.CloseAll";
         public const string CloseSolution    = "File.CloseSolution";
         public const string Save             = "File.Save";
+        public const string SaveAs           = "File.SaveAs";
         public const string SaveAll          = "File.SaveAll";
         public const string WriteToDisk      = "File.WriteToDisk";
         public const string Exit             = "File.Exit";

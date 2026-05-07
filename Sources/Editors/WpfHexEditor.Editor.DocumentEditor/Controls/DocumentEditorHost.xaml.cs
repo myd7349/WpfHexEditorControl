@@ -1070,6 +1070,11 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    private void OnRendererCaretBlockChanged(object? sender, EventArgs e)
+    {
+        PART_Breadcrumb.SetPath(PART_TextPane.PART_Renderer.CurrentBlock, _vm?.Model);
+    }
+
     private void OnBreadcrumbBlockSelected(object? sender, DocumentBlock block)
     {
         PART_TextPane.ScrollToBlock(block);
@@ -1237,6 +1242,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         PART_TextPane.PART_Renderer.InspectBlockRequested += (_, b) => BlockHexInspectRequested?.Invoke(this, b);
         PART_TextPane.BlockInspectRequested               += (_, b) => BlockHexInspectRequested?.Invoke(this, b);
         PART_TextPane.PART_Renderer.PageSetupRequested    += (_, _) => OnPageSetupBtnClick(this, new RoutedEventArgs());
+        PART_TextPane.PART_Renderer.CaretBlockChanged     += OnRendererCaretBlockChanged;
 
         PART_StatusBar.ViewModeChangeRequested    += (_, m) => ViewMode   = m;
         PART_StatusBar.RenderModeChangeRequested  += (_, m) => RenderMode = m;

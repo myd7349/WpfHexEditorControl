@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "$id": "https://wpfhexeditor.dev/schemas/whfmt/v2.4",
-  "schemaVersion": "2.4",
+  "$id": "https://wpfhexeditor.dev/schemas/whfmt/v2.5",
+  "schemaVersion": "2.5",
   "title": "WpfHexEditor Format Definition (.whfmt)",
   "description": "Schema for .whfmt format definition files used by WpfHexEditor to parse, colorize, and analyze binary file structures.",
   "type": "object",
@@ -121,6 +121,26 @@
       "description": "Export templates for extracting structured data"
     },
     "aiHints": { "$ref": "#/$defs/AiHints" },
+
+    "diff": {
+      "$ref": "#/$defs/DiffDefinition",
+      "description": "v2.5: Semantic diff configuration — declares key fields, ignored fields, and grouping for field-level diffing between two files of this format."
+    },
+    "repair": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/RepairRule" },
+      "description": "v2.5: Repair rules — each rule describes how to fix a known corruption triggered by a failed assertion or checksum."
+    },
+    "fuzz": {
+      "$ref": "#/$defs/FuzzDefinition",
+      "description": "v2.5: Fuzzing strategy — declares field-level mutation strategies and checksum preservation for format-aware fuzzing."
+    },
+    "migration": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/MigrationDefinition" },
+      "description": "v2.5: Migration rules — describes how to convert files between format versions."
+    },
+
     "imports": {
       "type": "array",
       "items": {
@@ -793,6 +813,226 @@
             }
           },
           "description": "Method parameters (only for kind: method)"
+        }
+      }
+    },
+
+    "DiffDefinition": {
+      "type": "object",
+      "description": "v2.5: Semantic diff configuration for field-level comparison between two files of this format.",
+      "properties": {
+        "keyFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Variable names of fields that are semantically significant — included in diff output."
+        },
+        "ignoreFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Variable names to exclude from diff (e.g. timestamps, padding, checksums that will differ by design)."
+        },
+        "groupBy": {
+          "type": "string",
+          "description": "Variable name used to group repeating entries (e.g. 'entry_name' for ZIP entries, 'chunk_type' for PNG chunks)."
+        },
+        "orderBy": {
+          "type": "string",
+          "description": "Variable name used to sort entries before comparison (for stable ordering of unordered collections)."
+        },
+        "note": {
+          "type": "string",
+          "description": "Human-readable note about the diff strategy for this format."
+        }
+      }
+    },
+
+    "RepairRule": {
+      "type": "object",
+      "required": ["name", "trigger", "action"],
+      "description": "v2.5: A single repair rule that describes how to fix a known corruption in a file of this format.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable rule name (e.g. 'FixCRC32', 'RebuildCentralDir')."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "Name of the assertion or checksum that, when it fails, activates this rule."
+        },
+        "action": {
+          "type": "string",
+          "enum": ["recompute_checksum", "zero_field", "truncate", "pad", "set_value", "rebuild_index"],
+          "description": "Action to apply: recompute_checksum=recalculate and write back; zero_field=fill with zeros; truncate=clip file at offset; pad=add zero bytes to reach expected size; set_value=write a fixed value; rebuild_index=re-derive an index structure."
+        },
+        "target": {
+          "type": "string",
+          "description": "Variable name pointing to the byte offset to write the repaired value."
+        },
+        "algorithm": {
+          "type": "string",
+          "enum": ["crc32", "crc16", "md5", "sha1", "sha256", "adler32"],
+          "description": "Checksum algorithm (only for action=recompute_checksum)."
+        },
+        "dataRange": {
+          "type": "object",
+          "properties": {
+            "offsetVar":   { "type": "string" },
+            "lengthVar":   { "type": "string" },
+            "fixedOffset": { "type": "integer" },
+            "fixedLength": { "type": "integer" }
+          },
+          "description": "Byte range to compute the checksum over (only for action=recompute_checksum)."
+        },
+        "value": {
+          "description": "Fixed value to write (only for action=set_value). Can be integer or hex string.",
+          "oneOf": [{ "type": "integer" }, { "type": "string" }]
+        },
+        "length": {
+          "type": "integer",
+          "description": "Number of bytes to write for zero_field, pad, or set_value actions."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["error", "warning", "info"],
+          "default": "warning",
+          "description": "Severity of the issue this rule corrects."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable explanation of what this rule repairs."
+        }
+      }
+    },
+
+    "FuzzDefinition": {
+      "type": "object",
+      "description": "v2.5: Format-aware fuzzing configuration. Declares per-field mutation strategies and global options.",
+      "properties": {
+        "strategies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FuzzStrategy" },
+          "description": "Ordered list of field-level mutation strategies."
+        },
+        "preserveChecksums": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, all checksum fields are recomputed after each mutation so the file remains structurally consistent."
+        },
+        "maxMutationsPerFile": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Maximum number of mutations applied per generated variant (1 = single-mutation corpus)."
+        },
+        "note": {
+          "type": "string",
+          "description": "Human-readable note about the fuzzing strategy for this format."
+        }
+      }
+    },
+
+    "FuzzStrategy": {
+      "type": "object",
+      "required": ["field", "mutation"],
+      "description": "v2.5: A single field-level mutation strategy for fuzzing.",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Variable name of the field to mutate."
+        },
+        "mutation": {
+          "type": "string",
+          "enum": [
+            "boundary_values",
+            "enum_sweep",
+            "corrupt_signature",
+            "bit_flip",
+            "zero_field",
+            "overflow",
+            "random_bytes",
+            "truncate",
+            "duplicate"
+          ],
+          "description": "Mutation type: boundary_values=min/max/±1 of declared range; enum_sweep=all values from valueMap; corrupt_signature=overwrite magic bytes; bit_flip=random bit inversions; zero_field=fill with zeros; overflow=exceed declared length; random_bytes=random content; truncate=shorten field; duplicate=repeat field data."
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0,
+          "description": "Probability this strategy is applied per variant (0.0–1.0). Allows sparse mutations."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Relative weight when randomly selecting among strategies."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable explanation of why this field is interesting to fuzz."
+        }
+      }
+    },
+
+    "MigrationDefinition": {
+      "type": "object",
+      "required": ["from", "to", "changes"],
+      "description": "v2.5: Describes how to migrate a file from one version of this format to another.",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Source version label (must match a key in versionDetection.map)."
+        },
+        "to": {
+          "type": "string",
+          "description": "Target version label."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable summary of what changes between these versions."
+        },
+        "changes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MigrationChange" },
+          "description": "Ordered list of field-level changes to apply."
+        }
+      }
+    },
+
+    "MigrationChange": {
+      "type": "object",
+      "required": ["field", "changeType"],
+      "description": "v2.5: A single field-level change in a migration rule.",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Variable name of the affected field."
+        },
+        "changeType": {
+          "type": "string",
+          "enum": ["set_value", "insert", "delete", "resize", "reorder"],
+          "description": "Change type: set_value=overwrite with new value; insert=add new field; delete=remove field; resize=change field length; reorder=move field to different offset."
+        },
+        "value": {
+          "description": "New value to write (for set_value). Integer or hex string.",
+          "oneOf": [{ "type": "integer" }, { "type": "string" }]
+        },
+        "length": {
+          "type": "integer",
+          "description": "New length in bytes (for insert or resize)."
+        },
+        "atOffset": {
+          "type": "string",
+          "description": "Variable name pointing to target offset (for insert)."
+        },
+        "fillByte": {
+          "type": "string",
+          "description": "Hex byte to fill new space with (for insert, default '00')."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable explanation of this change."
         }
       }
     }

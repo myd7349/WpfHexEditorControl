@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Fechar _todos os documentos</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Fechar _solução</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Salvar</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Salvar _como…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Salvar _tudo</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Gravar no disco</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Área de trabalho</value></data>

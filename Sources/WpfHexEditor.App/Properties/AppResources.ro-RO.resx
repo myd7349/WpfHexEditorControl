@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Închidere _toate documentele</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Închidere _soluție</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Salvare</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Salvare _ca…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Salvare _tot</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Scriere pe disc</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Spațiu de lucru</value></data>

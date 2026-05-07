@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Zav&#345;&#237;t _v&#353;echny dokumenty</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Zav&#345;&#237;t _&#345;e&#353;en&#237;</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Ulo&#382;it</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Uložit _jako…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Ulo&#382;it _v&#353;e</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Zapsat na disk</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Pracovn&#237; plocha</value></data>

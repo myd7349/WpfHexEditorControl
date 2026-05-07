@@ -82,6 +82,8 @@ public partial class MainWindow
             () => OnCloseSolution(this, null!));
         Reg(CommandIds.File.Save,          "Save",                   "File",    "Ctrl+S",         "\uE74E",
             () => OnSave(this, null!));
+        Reg(CommandIds.File.SaveAs,        "Save As\u2026",               "File",    null,             "\uE792",
+            () => OnSaveAs(this, null!));
         Reg(CommandIds.File.SaveAll,       "Save All",               "File",    "Ctrl+Shift+S",   "\uE74E",
             () => OnSaveAll(this, null!));
         Reg(CommandIds.File.WriteToDisk,   "Write to Disk",          "File",    "Ctrl+Shift+W",   "\uE74E",

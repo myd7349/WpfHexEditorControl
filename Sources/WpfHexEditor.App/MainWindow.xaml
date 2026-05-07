@@ -266,6 +266,14 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="{StaticResource App_Menu_SaveAs}"
+                                  Command="{x:Static local:MainWindow.SaveAsCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE792;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="{StaticResource App_Menu_SaveAll}" Click="OnSaveAll" InputGestureText="Ctrl+Shift+S">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE78C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -2136,6 +2144,7 @@
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
         <CommandBinding Command="{x:Static ApplicationCommands.Open}"  Executed="OnOpenFile" />
         <CommandBinding Command="{x:Static ApplicationCommands.Save}"  Executed="OnSave" CanExecute="OnCanSave" />
+        <CommandBinding Command="{x:Static local:MainWindow.SaveAsCommand}" Executed="OnSaveAs" CanExecute="OnCanSaveAs" />
         <CommandBinding Command="{x:Static ApplicationCommands.Close}" Executed="OnCloseActiveDocument" />
         <CommandBinding Command="{x:Static ApplicationCommands.Find}"                 Executed="OnShowAdvancedSearch" />
         <CommandBinding Command="{x:Static local:MainWindow.AdvancedSearchCommand}" Executed="OnShowAdvancedSearchDialog" />

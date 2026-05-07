@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Stäng _alla dokument</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Stäng _lösning</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Spara</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Spara _som…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Spara _allt</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Skriv till disk</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Arbetsyta</value></data>

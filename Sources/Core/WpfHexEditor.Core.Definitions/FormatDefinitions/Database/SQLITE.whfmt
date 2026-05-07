@@ -504,5 +504,57 @@
     "Serverless": true,
     "ZeroConfiguration": true,
     "ACID": true
-  }
+  },
+
+  "diff": {
+    "keyFields": ["page_size", "file_format_write", "schema_format", "user_version", "application_id", "page_count", "freelist_count"],
+    "ignoreFields": ["change_counter", "version_valid_for", "sqlite_version_number", "file_change_counter"],
+    "groupBy": "page_number",
+    "orderBy": "page_number",
+    "note": "Structural diff on header fields. Ignore change counters that increment on every write. Page-level grouping for b-tree analysis."
+  },
+
+  "repair": [
+    {
+      "name": "FixSignature",
+      "trigger": "SignatureMismatch",
+      "action": "set_value",
+      "target": "0",
+      "value": "53514C697465206666726D61742033",
+      "length": 16,
+      "description": "Restore the 16-byte SQLite magic string 'SQLite format 3\\000' at offset 0."
+    },
+    {
+      "name": "FixPageCount",
+      "trigger": "PageCountMismatch",
+      "action": "set_value",
+      "target": "page_count_offset",
+      "description": "Rewrite in-header page count to match actual file size / page_size."
+    }
+  ],
+
+  "fuzz": {
+    "preserveChecksums": false,
+    "maxMutationsPerFile": 1,
+    "strategies": [
+      { "field": "page_size",          "mutation": "enum_sweep",      "description": "Sweep invalid page sizes (non-power-of-2, <512, >65536)." },
+      { "field": "sqlite_signature",   "mutation": "corrupt_signature","description": "Corrupt 'SQLite format 3' magic." },
+      { "field": "schema_format",      "mutation": "boundary_values", "description": "Schema format 0, 5 (invalid), 255 — triggers compatibility errors." },
+      { "field": "page_count",         "mutation": "overflow",        "description": "Page count larger than file — triggers excessive allocation." },
+      { "field": "freelist_head_page", "mutation": "random_bytes",    "description": "Random freelist page pointer — triggers invalid page dereference." },
+      { "field": "btree_page_data",    "mutation": "bit_flip", "rate": 0.001, "description": "Bit flips in b-tree page data." }
+    ],
+    "note": "SQLite parsers are embedded in millions of apps — high-value target for fuzzing."
+  },
+
+  "migration": [
+    {
+      "from": "schema-format-1",
+      "to": "schema-format-4",
+      "description": "Upgrade schema format to 4 (descending indexes, partial indexes support).",
+      "changes": [
+        { "field": "schema_format", "changeType": "set_value", "value": 4, "description": "Write schema format number 4 at header offset 44." }
+      ]
+    }
+  ]
 }

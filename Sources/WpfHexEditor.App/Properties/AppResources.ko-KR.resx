@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>모든 문서 닫기</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>솔루션 닫기</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>저장</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>다른 이름으로 저장(_A)…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>모두 저장</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>디스크에 쓰기</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>작업 영역</value></data>

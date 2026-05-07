@@ -505,5 +505,58 @@
     "SupportsZIP64": true,
     "MaxEntries": "65535 (standard), unlimited (ZIP64)",
     "MaxFileSize": "4GB (standard), 16EB (ZIP64)"
-  }
+  },
+
+  "diff": {
+    "keyFields": ["entry_name", "compression_method", "uncompressed_size", "crc32", "entry_count"],
+    "ignoreFields": ["last_modified_time", "last_modified_date", "local_header_offset", "extra_field"],
+    "groupBy": "entry_name",
+    "orderBy": "entry_name",
+    "note": "Group by entry name for stable comparison of archives with reordered entries. Ignore timestamps and offsets which change on re-pack."
+  },
+
+  "repair": [
+    {
+      "name": "FixLocalCRC32",
+      "trigger": "LocalCRCMismatch",
+      "action": "recompute_checksum",
+      "target": "local_crc_offset",
+      "algorithm": "crc32",
+      "dataRange": { "offsetVar": "local_data_offset", "lengthVar": "compressed_size" },
+      "description": "Recomputes CRC32 of the compressed data and writes it back to the local file header."
+    },
+    {
+      "name": "FixEntryCount",
+      "trigger": "EntryCountMismatch",
+      "action": "set_value",
+      "target": "eocd_entry_count_offset",
+      "description": "Rewrites the end-of-central-directory entry count to match the actual number of central directory records."
+    }
+  ],
+
+  "fuzz": {
+    "preserveChecksums": true,
+    "maxMutationsPerFile": 1,
+    "strategies": [
+      { "field": "entry_count",        "mutation": "boundary_values", "description": "Test 0, 1, 65535, 65536 entries — triggers ZIP64 path." },
+      { "field": "compression_method", "mutation": "enum_sweep",      "description": "Sweep all compression method codes including reserved/invalid values." },
+      { "field": "local_signature",    "mutation": "corrupt_signature","description": "Corrupt PK\\x03\\x04 magic to test parser rejection." },
+      { "field": "compressed_size",    "mutation": "overflow",         "description": "Set compressed_size larger than file — out-of-bounds read." },
+      { "field": "crc32",              "mutation": "random_bytes",     "description": "Random CRC triggers integrity failure path." }
+    ],
+    "note": "Single-mutation corpus recommended. preserveChecksums=true rewrites CRC32 after non-CRC mutations."
+  },
+
+  "migration": [
+    {
+      "from": "standard",
+      "to": "zip64",
+      "description": "Upgrade to ZIP64 format to support files > 4 GB or archives with > 65535 entries.",
+      "changes": [
+        { "field": "version_needed", "changeType": "set_value", "value": "0x002D", "description": "Set minimum version to 4.5 (ZIP64)." },
+        { "field": "zip64_eocd",     "changeType": "insert",    "length": 56,      "description": "Insert ZIP64 end-of-central-directory record." },
+        { "field": "zip64_locator",  "changeType": "insert",    "length": 20,      "description": "Insert ZIP64 end-of-central-directory locator." }
+      ]
+    }
+  ]
 }

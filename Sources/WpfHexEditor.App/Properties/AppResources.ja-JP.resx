@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>すべてのドキュメントを閉じる</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>ソリューションを閉じる</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>保存</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>名前を付けて保存(_A)…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>すべて保存</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>ディスクに書き込む</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>ワークスペース</value></data>
