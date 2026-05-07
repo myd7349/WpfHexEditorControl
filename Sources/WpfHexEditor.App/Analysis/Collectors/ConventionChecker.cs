@@ -6,11 +6,13 @@
 //              Stateless — safe for parallel use.
 // ==========================================================
 
+using System.IO;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using WpfHexEditor.App.Analysis.Models;
+using Severity = WpfHexEditor.App.Analysis.Models.DiagnosticSeverity;
 
 namespace WpfHexEditor.App.Analysis.Collectors;
 
@@ -38,7 +40,7 @@ internal static class ConventionChecker
                 var fileName  = Path.GetFileNameWithoutExtension(filePath);
                 var className = primaryType.Identifier.Text;
                 if (!string.Equals(fileName, className, StringComparison.Ordinal))
-                    results.Add(Diag("WH0031", DiagnosticSeverity.Warning,
+                    results.Add(Diag("WH0031", Severity.Warning,
                         $"File name '{fileName}' does not match primary type '{className}'.",
                         filePath, primaryType.GetLocation(), projectName));
             }
@@ -50,7 +52,7 @@ internal static class ConventionChecker
             foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 if (!IsPascalCase(method.Identifier.Text))
-                    results.Add(Diag("WH0030", DiagnosticSeverity.Info,
+                    results.Add(Diag("WH0030", Severity.Info,
                         $"Method '{method.Identifier.Text}' should be PascalCase.",
                         filePath, method.Identifier.GetLocation(), projectName));
             }
@@ -66,7 +68,7 @@ internal static class ConventionChecker
                         m.IsKind(SyntaxKind.InternalKeyword));
 
                     if (isPrivate && !PrivateFieldPrefixes.Any(name.StartsWith))
-                        results.Add(Diag("WH0030", DiagnosticSeverity.Info,
+                        results.Add(Diag("WH0030", Severity.Info,
                             $"Private field '{name}' should start with '_'.",
                             filePath, variable.Identifier.GetLocation(), projectName));
                 }
@@ -82,7 +84,7 @@ internal static class ConventionChecker
                 var lineText = line.ToString();
                 var match    = TodoPattern.Match(lineText);
                 if (match.Success)
-                    results.Add(Diag("WH0032", DiagnosticSeverity.Info,
+                    results.Add(Diag("WH0032", Severity.Info,
                         $"{match.Value} marker found.",
                         filePath, null, projectName, lineNum));
                 lineNum++;
@@ -96,7 +98,7 @@ internal static class ConventionChecker
         => name.Length > 0 && char.IsUpper(name[0]);
 
     private static AnalysisDiagnostic Diag(
-        string id, DiagnosticSeverity severity, string message,
+        string id, Severity severity, string message,
         string filePath, Location? location, string project, int line = -1)
     {
         int ln = line >= 0 ? line : (location?.GetLineSpan().StartLinePosition.Line + 1 ?? -1);

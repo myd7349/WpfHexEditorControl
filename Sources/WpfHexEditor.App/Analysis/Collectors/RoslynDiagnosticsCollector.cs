@@ -8,6 +8,8 @@
 
 using Microsoft.CodeAnalysis;
 using WpfHexEditor.App.Analysis.Models;
+using RoslynSeverity = Microsoft.CodeAnalysis.DiagnosticSeverity;
+using Severity = WpfHexEditor.App.Analysis.Models.DiagnosticSeverity;
 
 namespace WpfHexEditor.App.Analysis.Collectors;
 
@@ -21,7 +23,7 @@ internal static class RoslynDiagnosticsCollector
 
         foreach (var d in diags)
         {
-            if (d.Severity == DiagnosticSeverity.Hidden) continue;
+            if (d.Severity == RoslynSeverity.Hidden) continue;
             if (!d.Location.IsInSource) continue;
 
             var span = d.Location.GetLineSpan();
@@ -41,10 +43,10 @@ internal static class RoslynDiagnosticsCollector
         return results;
     }
 
-    private static Models.DiagnosticSeverity MapSeverity(DiagnosticSeverity s) => s switch
+    private static Severity MapSeverity(RoslynSeverity s) => s switch
     {
-        DiagnosticSeverity.Error   => Models.DiagnosticSeverity.Error,
-        DiagnosticSeverity.Warning => Models.DiagnosticSeverity.Warning,
-        _                          => Models.DiagnosticSeverity.Info,
+        RoslynSeverity.Error   => Severity.Error,
+        RoslynSeverity.Warning => Severity.Warning,
+        _                      => Severity.Info,
     };
 }

@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using WpfHexEditor.App.Analysis.Models;
+using RoslynAccessibility = Microsoft.CodeAnalysis.Accessibility;
 
 namespace WpfHexEditor.App.Analysis.Collectors;
 
@@ -76,10 +77,10 @@ internal static class DeadCodeDetector
     private static bool IsDeadCandidate(ISymbol symbol, out DeadSymbolKind kind, out bool isInternal)
     {
         kind       = DeadSymbolKind.Field;
-        isInternal = symbol.DeclaredAccessibility == Accessibility.Internal;
+        isInternal = symbol.DeclaredAccessibility == RoslynAccessibility.Internal;
 
         bool isPrivateOrInternal = symbol.DeclaredAccessibility
-            is Accessibility.Private or Accessibility.Internal;
+            is RoslynAccessibility.Private or RoslynAccessibility.Internal;
 
         if (!isPrivateOrInternal) return false;
 

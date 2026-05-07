@@ -5,6 +5,7 @@
 //              settings folder (.ide/code-analysis-options.json).
 // ==========================================================
 
+using System.IO;
 using System.Text.Json;
 using WpfHexEditor.App.Analysis.Models;
 

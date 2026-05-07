@@ -6,7 +6,7 @@
 
 namespace WpfHexEditor.App.Analysis.Models;
 
-public sealed class FileMetrics
+public sealed record FileMetrics
 {
     public string   FilePath        { get; init; } = string.Empty;
     public string   FileName        { get; init; } = string.Empty;

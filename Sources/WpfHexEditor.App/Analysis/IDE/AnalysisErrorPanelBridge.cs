@@ -10,6 +10,7 @@
 using WpfHexEditor.App.Analysis.Models;
 using WpfHexEditor.SDK.Contracts.Services;
 using SdkSeverity = WpfHexEditor.SDK.Contracts.Services.DiagnosticSeverity;
+using Severity = WpfHexEditor.App.Analysis.Models.DiagnosticSeverity;
 
 namespace WpfHexEditor.App.Analysis.IDE;
 
@@ -40,10 +41,10 @@ internal sealed class AnalysisErrorPanelBridge
         }
     }
 
-    private static SdkSeverity Map(DiagnosticSeverity s) => s switch
+    private static SdkSeverity Map(Severity s) => s switch
     {
-        DiagnosticSeverity.Error   => SdkSeverity.Error,
-        DiagnosticSeverity.Warning => SdkSeverity.Warning,
+        Severity.Error   => SdkSeverity.Error,
+        Severity.Warning => SdkSeverity.Warning,
         _                          => SdkSeverity.Info,
     };
 }

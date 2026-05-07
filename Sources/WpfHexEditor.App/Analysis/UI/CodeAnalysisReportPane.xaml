@@ -3,44 +3,50 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:WpfHexEditor.App.Analysis.UI.ViewModels"
              xmlns:conv="clr-namespace:WpfHexEditor.App.Analysis.UI.Converters"
-             Background="{DynamicResource IDE.Background}"
-             Foreground="{DynamicResource IDE.Foreground}">
+             Background="{DynamicResource DockWindowBackgroundBrush}"
+             Foreground="{DynamicResource DockMenuForegroundBrush}">
 
     <UserControl.Resources>
-        <conv:GradeToColorConverter   x:Key="GradeToColor"/>
-        <conv:SeverityToIconConverter x:Key="SevToIcon"/>
-        <conv:ScoreToProgressConverter x:Key="ScoreToProgress"/>
-        <BooleanToVisibilityConverter  x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/WpfHexEditor.App;component/Themes/DialogStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <Style x:Key="TabLabelStyle" TargetType="TextBlock">
-            <Setter Property="Margin"     Value="6,0"/>
-            <Setter Property="FontSize"   Value="12"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
+            <conv:GradeToColorConverter   x:Key="GradeToColor"/>
+            <conv:SeverityToIconConverter x:Key="SevToIcon"/>
+            <conv:ScoreToProgressConverter x:Key="ScoreToProgress"/>
+            <BooleanToVisibilityConverter  x:Key="BoolToVis"/>
 
-        <Style x:Key="MetricLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource IDE.ForegroundMuted}"/>
-            <Setter Property="FontSize"   Value="11"/>
-            <Setter Property="Margin"     Value="0,1"/>
-        </Style>
+            <Style x:Key="TabLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin"     Value="6,0"/>
+                <Setter Property="FontSize"   Value="12"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
 
-        <Style x:Key="ScoreBig" TargetType="TextBlock">
-            <Setter Property="FontSize"   Value="48"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-        </Style>
+            <Style x:Key="MetricLabel" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource DockForegroundBrush}"/>
+                <Setter Property="FontSize"   Value="11"/>
+                <Setter Property="Margin"     Value="0,1"/>
+            </Style>
 
-        <Style x:Key="GradeBig" TargetType="TextBlock">
-            <Setter Property="FontSize"   Value="24"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin"     Value="0,4,0,0"/>
-        </Style>
+            <Style x:Key="ScoreBig" TargetType="TextBlock">
+                <Setter Property="FontSize"   Value="48"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+            </Style>
 
-        <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize"   Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource IDE.ForegroundMuted}"/>
-            <Setter Property="Margin"     Value="0,12,0,4"/>
-        </Style>
+            <Style x:Key="GradeBig" TargetType="TextBlock">
+                <Setter Property="FontSize"   Value="24"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Margin"     Value="0,4,0,0"/>
+            </Style>
+
+            <Style x:Key="SectionHeader" TargetType="TextBlock">
+                <Setter Property="FontSize"   Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource DockForegroundBrush}"/>
+                <Setter Property="Margin"     Value="0,12,0,4"/>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -51,7 +57,7 @@
 
         <!-- ── Header bar ────────────────────────────────────────────────── -->
         <Border Grid.Row="0" BorderThickness="0,0,0,1"
-                BorderBrush="{DynamicResource IDE.Border}"
+                BorderBrush="{DynamicResource DockBorderBrush}"
                 Padding="12,6">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -85,7 +91,7 @@
                     </TextBlock>
                     <TextBlock Margin="16,0,0,0" VerticalAlignment="Center"
                                Text="{Binding TrendingText}"
-                               Foreground="{DynamicResource IDE.Accent}"/>
+                               Foreground="{DynamicResource DockAccentBrush}"/>
                 </StackPanel>
 
                 <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"
@@ -104,7 +110,7 @@
 
             <!-- Score sidebar -->
             <Border Grid.Column="0" BorderThickness="0,0,1,0"
-                    BorderBrush="{DynamicResource IDE.Border}"
+                    BorderBrush="{DynamicResource DockBorderBrush}"
                     Padding="16,16,12,16">
                 <StackPanel>
                     <TextBlock Style="{StaticResource SectionHeader}" Text="SCORE"/>
@@ -115,7 +121,7 @@
                                Text="{Binding Grade}"
                                Foreground="{Binding Grade, Converter={StaticResource GradeToColor}}"/>
                     <TextBlock Text="{Binding TrendingText}" Margin="0,6,0,0"
-                               Foreground="{DynamicResource IDE.Accent}"/>
+                               Foreground="{DynamicResource DockAccentBrush}"/>
 
                     <TextBlock Style="{StaticResource SectionHeader}" Text="SUB-SCORES" Margin="0,24,0,4"/>
 
@@ -293,7 +299,7 @@
                                 <DataTemplate>
                                     <Border Margin="0,0,0,8" Padding="8"
                                             BorderThickness="1"
-                                            BorderBrush="{DynamicResource IDE.Border}">
+                                            BorderBrush="{DynamicResource DockBorderBrush}">
                                         <StackPanel>
                                             <TextBlock FontWeight="SemiBold">
                                                 <Run Text="Clone group — "/>

@@ -2790,11 +2790,16 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             }
         }
 
-        // Ctrl+Click on hyperlink → open URL
+        // Ctrl+Click on hyperlink → open URL (safe schemes only — prevents RCE via malicious DOCX)
         if (block.Kind == "hyperlink" &&
             (Keyboard.Modifiers & ModifierKeys.Control) != 0 &&
             block.Attributes.TryGetValue("href", out var hrefVal) && hrefVal is string href &&
-            !string.IsNullOrWhiteSpace(href))
+            !string.IsNullOrWhiteSpace(href) &&
+            Uri.TryCreate(href, UriKind.Absolute, out var hrefUri) &&
+            (hrefUri.Scheme == Uri.UriSchemeHttps ||
+             hrefUri.Scheme == Uri.UriSchemeHttp  ||
+             hrefUri.Scheme == "mailto"            ||
+             hrefUri.Scheme == "ftp"))
         {
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(href) { UseShellExecute = true }); }
             catch { }

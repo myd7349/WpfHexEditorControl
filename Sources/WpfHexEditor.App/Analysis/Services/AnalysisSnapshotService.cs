@@ -6,6 +6,7 @@
 //              Location: <solution-dir>/.ide/analysis-snapshot.json
 // ==========================================================
 
+using System.IO;
 using System.Text.Json;
 using WpfHexEditor.App.Analysis.Models;
 

@@ -11,10 +11,12 @@
 // ==========================================================
 
 using System.Collections.Concurrent;
+using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using WpfHexEditor.App.Analysis.Collectors;
 using WpfHexEditor.App.Analysis.Models;
+using Severity = WpfHexEditor.App.Analysis.Models.DiagnosticSeverity;
 
 namespace WpfHexEditor.App.Analysis.Services;
 
@@ -94,40 +96,40 @@ internal sealed class CodeAnalysisRunner
                 foreach (var m in methods)
                 {
                     if (m.CyclomaticComplexity > opts.CcError)
-                        allDiagnostics.Add(ThresholdDiag("WH0001", DiagnosticSeverity.Error,
+                        allDiagnostics.Add(ThresholdDiag("WH0001", Severity.Error,
                             $"Method '{m.Name}' has cyclomatic complexity {m.CyclomaticComplexity} (error threshold: {opts.CcError}).",
                             tree.FilePath, m.Line, projName));
                     else if (m.CyclomaticComplexity > opts.CcWarning)
-                        allDiagnostics.Add(ThresholdDiag("WH0001", DiagnosticSeverity.Warning,
+                        allDiagnostics.Add(ThresholdDiag("WH0001", Severity.Warning,
                             $"Method '{m.Name}' has cyclomatic complexity {m.CyclomaticComplexity} (warning threshold: {opts.CcWarning}).",
                             tree.FilePath, m.Line, projName));
 
                     if (m.Loc > opts.MethodLocError)
-                        allDiagnostics.Add(ThresholdDiag("WH0003", DiagnosticSeverity.Error,
+                        allDiagnostics.Add(ThresholdDiag("WH0003", Severity.Error,
                             $"Method '{m.Name}' is {m.Loc} lines (error threshold: {opts.MethodLocError}).",
                             tree.FilePath, m.Line, projName));
                     else if (m.Loc > opts.MethodLocWarning)
-                        allDiagnostics.Add(ThresholdDiag("WH0003", DiagnosticSeverity.Warning,
+                        allDiagnostics.Add(ThresholdDiag("WH0003", Severity.Warning,
                             $"Method '{m.Name}' is {m.Loc} lines (warning threshold: {opts.MethodLocWarning}).",
                             tree.FilePath, m.Line, projName));
 
                     if (m.ParameterCount > opts.MaxParamsError)
-                        allDiagnostics.Add(ThresholdDiag("WH0005", DiagnosticSeverity.Error,
+                        allDiagnostics.Add(ThresholdDiag("WH0005", Severity.Error,
                             $"Method '{m.Name}' has {m.ParameterCount} parameters (error threshold: {opts.MaxParamsError}).",
                             tree.FilePath, m.Line, projName));
                     else if (m.ParameterCount > opts.MaxParamsWarning)
-                        allDiagnostics.Add(ThresholdDiag("WH0005", DiagnosticSeverity.Warning,
+                        allDiagnostics.Add(ThresholdDiag("WH0005", Severity.Warning,
                             $"Method '{m.Name}' has {m.ParameterCount} parameters (warning threshold: {opts.MaxParamsWarning}).",
                             tree.FilePath, m.Line, projName));
                 }
 
                 // File LOC thresholds
                 if (volume.TotalLines > opts.FileLocError)
-                    allDiagnostics.Add(ThresholdDiag("WH0004", DiagnosticSeverity.Error,
+                    allDiagnostics.Add(ThresholdDiag("WH0004", Severity.Error,
                         $"File has {volume.TotalLines} lines (error threshold: {opts.FileLocError}).",
                         tree.FilePath, 1, projName));
                 else if (volume.TotalLines > opts.FileLocWarning)
-                    allDiagnostics.Add(ThresholdDiag("WH0004", DiagnosticSeverity.Info,
+                    allDiagnostics.Add(ThresholdDiag("WH0004", Severity.Info,
                         $"File has {volume.TotalLines} lines (warning threshold: {opts.FileLocWarning}).",
                         tree.FilePath, 1, projName));
 
@@ -192,7 +194,7 @@ internal sealed class CodeAnalysisRunner
             foreach (var occ in grp.Occurrences)
             {
                 var projName = allFiles.FirstOrDefault(f => f.FilePath == occ.FilePath)?.ProjectName ?? string.Empty;
-                allDiagnostics.Add(ThresholdDiag("WH0020", DiagnosticSeverity.Warning,
+                allDiagnostics.Add(ThresholdDiag("WH0020", Severity.Warning,
                     $"Duplication clone: {grp.LineCount} lines, {grp.Occurrences.Count} occurrences.",
                     occ.FilePath, occ.StartLine, projName));
             }
@@ -211,7 +213,7 @@ internal sealed class CodeAnalysisRunner
             foreach (var d in dead)
             {
                 var ruleId = d.IsInternal ? "WH0011" : "WH0010";
-                allDiagnostics.Add(ThresholdDiag(ruleId, DiagnosticSeverity.Warning,
+                allDiagnostics.Add(ThresholdDiag(ruleId, Severity.Warning,
                     $"Dead {d.Kind.ToString().ToLower()} '{d.Name}'.",
                     d.FilePath, d.Line, d.ProjectName));
             }
@@ -369,7 +371,7 @@ internal sealed class CodeAnalysisRunner
     };
 
     private static AnalysisDiagnostic ThresholdDiag(
-        string id, DiagnosticSeverity severity, string message,
+        string id, Severity severity, string message,
         string file, int line, string project) => new()
     {
         Id          = id,

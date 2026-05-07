@@ -11,12 +11,14 @@
 //     Re-using the same tab on re-run (remove + re-add).
 // ==========================================================
 
+using System.IO;
 using System.Windows.Threading;
 using WpfHexEditor.App.Analysis.IDE;
 using WpfHexEditor.App.Analysis.Models;
 using WpfHexEditor.App.Analysis.Services;
 using WpfHexEditor.App.Analysis.UI;
 using WpfHexEditor.App.Analysis.UI.ViewModels;
+using WpfHexEditor.Core.Commands;
 using WpfHexEditor.Core.Options;
 using WpfHexEditor.PluginHost.Adapters;
 using WpfHexEditor.SDK.Contracts;
@@ -52,7 +54,8 @@ internal sealed class CodeAnalysisModule
         IDockingAdapter docking,
         IStatusBarAdapter statusBar,
         IMenuAdapter menu,
-        Dispatcher dispatcher)
+        Dispatcher dispatcher,
+        ICommandRegistry commandRegistry)
     {
         _context          = context;
         _docking          = docking;
@@ -78,7 +81,7 @@ internal sealed class CodeAnalysisModule
             runSolution:   () => RunAsync(AnalysisScope.Solution, GetSolutionPath()),
             openReport:    () => OpenReportAsync(),
             clearSnapshot: ClearSnapshot);
-        _commands.Register(context.CommandRegistry);
+        _commands.Register(commandRegistry);
 
         // Register Solution Explorer context menu contributors
         context.UIRegistry.RegisterContextMenuContributor(

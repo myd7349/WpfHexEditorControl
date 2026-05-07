@@ -46,7 +46,7 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
     // Rules — store ruleId (identifier) not the config object
     private readonly List<(string ruleId, CheckBox chk, ComboBox sev)> _ruleRows = [];
 
-    public CodeAnalysisOptionsPage(CodeAnalysisOptionsService service)
+    internal CodeAnalysisOptionsPage(CodeAnalysisOptionsService service)
     {
         _service = service;
 

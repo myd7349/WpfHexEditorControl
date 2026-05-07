@@ -7,7 +7,7 @@
 // ==========================================================
 
 using WpfHexEditor.Core.Commands;
-using WpfHexEditor.SDK.Commands;
+using SdkCmd = WpfHexEditor.SDK.Commands;
 
 namespace WpfHexEditor.App.Analysis.IDE;
 
@@ -31,14 +31,14 @@ internal sealed class AnalysisCommandsRegistrar
     {
         registry.Register(new CommandDefinition(
             "analysis.run", "Run Code Analysis", "Analysis",
-            null, "", new RelayCommand(() => _ = _runSolution())));
+            null, "", new SdkCmd.RelayCommand(() => _ = _runSolution())));
 
         registry.Register(new CommandDefinition(
             "analysis.openReport", "Open Code Analysis Report", "Analysis",
-            null, "", new RelayCommand(() => _ = _openReport())));
+            null, "", new SdkCmd.RelayCommand(() => _ = _openReport())));
 
         registry.Register(new CommandDefinition(
             "analysis.clearSnapshot", "Clear Code Analysis Snapshot", "Analysis",
-            null, null, new RelayCommand(_clearSnapshot)));
+            null, null, new SdkCmd.RelayCommand(_clearSnapshot)));
     }
 }

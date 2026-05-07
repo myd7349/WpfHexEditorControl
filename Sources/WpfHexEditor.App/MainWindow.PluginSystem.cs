@@ -493,7 +493,8 @@ public partial class MainWindow
                 dockingAdapter,
                 statusBarAdapter,
                 menuAdapter,
-                Dispatcher);
+                Dispatcher,
+                _commandRegistry);
 
             // Both modules are now ready. Any panel-dbg-* or AssemblyExplorer panels that were
             // rendered as a CreateDocumentContent placeholder during layout restore (because the

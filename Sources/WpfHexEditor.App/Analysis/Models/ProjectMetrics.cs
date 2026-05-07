@@ -6,7 +6,7 @@
 
 namespace WpfHexEditor.App.Analysis.Models;
 
-public sealed class ProjectMetrics
+public sealed record ProjectMetrics
 {
     public string   ProjectName     { get; init; } = string.Empty;
     public string   ProjectPath     { get; init; } = string.Empty;

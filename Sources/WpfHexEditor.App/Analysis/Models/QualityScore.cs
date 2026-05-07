@@ -6,7 +6,7 @@
 
 namespace WpfHexEditor.App.Analysis.Models;
 
-public sealed class QualityScore
+public sealed record QualityScore
 {
     /// <summary>Overall score 0–100.</summary>
     public int    Score           { get; init; }

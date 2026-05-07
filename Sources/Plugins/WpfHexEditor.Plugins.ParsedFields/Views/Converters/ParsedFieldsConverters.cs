@@ -22,9 +22,9 @@ public class GroupNameToExpandedConverter : IValueConverter
     {
         if (value is not string groupName) return true;
 
-        var collapsed = (parameter as string ?? "Format Metadata").AsSpan();
+        var collapsed = parameter as string ?? "Format Metadata";
         foreach (var entry in collapsed.Split(','))
-            if (collapsed[entry].Trim().Equals(groupName, StringComparison.Ordinal))
+            if (entry.Trim().Equals(groupName, StringComparison.Ordinal))
                 return false;
 
         return true;
