@@ -49,14 +49,17 @@ internal sealed class CodeAnalysisRunner
 
         Report(progress, "Discovering files…", 2);
         var csFiles = DiscoverFiles(scope, scopePath, opts.IncludeGeneratedFiles);
+        Report(progress, $"Found {csFiles.Count} .cs files in: {scopePath}", 3);
         if (csFiles.Count == 0)
             return new CodeAnalysisReport { ScopePath = scopePath, Scope = scope };
 
         Report(progress, "Parsing syntax trees…", 8);
         var parsedTrees = await ParseTreesAsync(csFiles, ct);
+        Report(progress, $"Parsed {parsedTrees.Count} trees", 9);
 
         // Group by project (heuristic: directory containing .csproj)
         var byProject = GroupByProject(parsedTrees);
+        Report(progress, $"Grouped into {byProject.Count} projects", 10);
 
         var allDiagnostics  = new ConcurrentBag<AnalysisDiagnostic>();
         var allFiles        = new ConcurrentBag<FileMetrics>();
@@ -294,9 +297,16 @@ internal sealed class CodeAnalysisRunner
             || name.EndsWith(".generated.cs", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static readonly string[] ExcludedSegments = [@"\obj\", @"\bin\", "/obj/", "/bin/"];
+
     private static bool IsExcluded(string path)
-        => path.Contains(@"\obj\") || path.Contains(@"\bin\")
-        || path.Contains("/obj/")   || path.Contains("/bin/");
+    {
+        // Only exclude obj/bin *subdirectories*, not paths that happen to contain
+        // these strings in a parent segment (e.g. C:\...\bin\Debug\net8.0\Sources\...)
+        var normalized = path.Replace('/', '\\');
+        return normalized.Contains(@"\obj\", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains(@"\bin\", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static async Task<List<(SyntaxTree tree, string projName, string projPath)>> ParseTreesAsync(
         List<string> files, CancellationToken ct)

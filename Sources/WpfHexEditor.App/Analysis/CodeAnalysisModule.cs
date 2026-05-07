@@ -134,8 +134,8 @@ internal sealed class CodeAnalysisModule
         // Update options (verbosity may have changed)
         _logger = new AnalysisOutputLogger(_context.Output, opts.OutputVerbosity);
 
-        // Update solution dir for snapshot/options
-        var solutionDir = Path.GetDirectoryName(path) ?? path;
+        // path is already a directory for Solution/Project scope
+        var solutionDir = Directory.Exists(path) ? path : (Path.GetDirectoryName(path) ?? path);
         _optionsService.SetSolutionDirectory(solutionDir);
         _snapshotService.SetSolutionDirectory(solutionDir);
 
@@ -157,6 +157,7 @@ internal sealed class CodeAnalysisModule
             AnalysisScope.Project  => Path.GetFileNameWithoutExtension(path),
             _                      => Path.GetFileName(path),
         };
+        _context.Output.Info($"[Code Analysis] Scope path: {path}");
         _logger?.LogStart(scopeLabel);
 
         CodeAnalysisReport? report = null;
@@ -168,12 +169,12 @@ internal sealed class CodeAnalysisModule
         catch (OperationCanceledException) { return; }
         catch (Exception ex)
         {
-            _logger?.LogError(ex.Message);
+            _logger?.LogError($"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
             await _dispatcher!.InvokeAsync(() =>
             {
                 _statusBar?.Hide();
                 _reportVm!.IsRunning  = false;
-                _reportVm.StatusText  = $"Analysis failed: {ex.Message}";
+                _reportVm.StatusText  = $"Analysis failed: {ex.GetType().Name}: {ex.Message}";
             });
             return;
         }

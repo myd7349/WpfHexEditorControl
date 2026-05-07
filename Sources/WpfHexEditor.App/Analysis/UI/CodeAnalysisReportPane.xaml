@@ -86,6 +86,53 @@
                 <Setter Property="Foreground" Value="{DynamicResource DockForegroundBrush}"/>
                 <Setter Property="Margin"     Value="0,12,0,4"/>
             </Style>
+
+            <Style TargetType="DataGrid">
+                <Setter Property="Background"            Value="{DynamicResource DockWindowBackgroundBrush}"/>
+                <Setter Property="Foreground"            Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="BorderBrush"           Value="{DynamicResource DockBorderBrush}"/>
+                <Setter Property="BorderThickness"       Value="1"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource DockBorderBrush}"/>
+                <Setter Property="VerticalGridLinesBrush"   Value="Transparent"/>
+                <Setter Property="RowBackground"         Value="Transparent"/>
+                <Setter Property="AlternatingRowBackground" Value="{DynamicResource DockWindowBackgroundBrush}"/>
+                <Setter Property="SelectionMode"         Value="Single"/>
+            </Style>
+
+            <Style TargetType="DataGridColumnHeader">
+                <Setter Property="Background"  Value="{DynamicResource DockBorderBrush}"/>
+                <Setter Property="Foreground"  Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DockBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                <Setter Property="Padding"     Value="6,4"/>
+                <Setter Property="FontSize"    Value="11"/>
+                <Setter Property="FontWeight"  Value="SemiBold"/>
+            </Style>
+
+            <Style TargetType="DataGridRow">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground"  Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource DockAccentBrush}"/>
+                    </Trigger>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource DockBorderBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style TargetType="DataGridCell">
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding"         Value="6,3"/>
+                <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
