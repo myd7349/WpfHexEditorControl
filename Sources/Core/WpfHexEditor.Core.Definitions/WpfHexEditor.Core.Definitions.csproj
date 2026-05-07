@@ -12,9 +12,9 @@
 
     <!-- NuGet package metadata -->
     <PackageId>whfmt.FileFormatCatalog</PackageId>
-    <Version>1.3.0</Version>
-    <AssemblyVersion>1.3.0</AssemblyVersion>
-    <FileVersion>1.3.0</FileVersion>
+    <Version>1.3.1</Version>
+    <AssemblyVersion>1.3.1</AssemblyVersion>
+    <FileVersion>1.3.1</FileVersion>
     <Authors>Derek Tremblay</Authors>
     <Company>Derek Tremblay (derektremblay666@gmail.com)</Company>
     <Product>whfmt.FileFormatCatalog</Product>
@@ -29,7 +29,7 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageReleaseNotes>1.3.0 — Schema v2.5: diff/repair/fuzz/migration blocks. 6 priority formats enriched (ZIP, PNG, PE_EXE, PDF, MP3, SQLite) with field-level diff keys, repair rules, and 5–7 fuzz strategies each. Powers whfmt.Analysis, whfmt.Fuzz, whfmt.CodeGen companion packages.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.3.1 — Mass enrichment: 101 formats now carry complete diff/repair/fuzz/migration blocks across 15 categories (Audio, Images, Archives, Executables, Video, Documents, Game/ROM, Crypto, Network, Firmware, 3D, Fonts, Disk, System, GIS). 8 new format definitions added (PEM, DER, P12, GPG, UEFI, BIOS, UBoot, DNS). Zero JSON errors.</PackageReleaseNotes>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
