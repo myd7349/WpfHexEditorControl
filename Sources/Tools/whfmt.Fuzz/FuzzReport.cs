@@ -6,7 +6,7 @@
 
 namespace WhfmtFuzz;
 
-/// <summary>Statistics and coverage report produced by <see cref="FormatFuzzer.GenerateWithReport"/>.</summary>
+/// <summary>Statistics and coverage report produced by <c>FormatFuzzer.GenerateWithReport</c>.</summary>
 public sealed class FuzzReport
 {
     /// <summary>Format name used for the session.</summary>

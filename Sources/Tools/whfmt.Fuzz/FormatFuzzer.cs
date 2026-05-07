@@ -45,37 +45,41 @@ public static class FormatFuzzer
     {
         var (entry, json, error) = Resolve(catalog, inputData, fileName, forcedFormat);
         if (error is not null) return [FuzzVariant.ErrorVariant(fileName, error)];
+        return GenerateFromResolved(entry!, json!, inputData, fileName, count, seed, compound);
+    }
 
-        using var doc = JsonDocument.Parse(json!);
+    private static List<FuzzVariant> GenerateFromResolved(
+        EmbeddedFormatEntry entry, string json,
+        byte[] inputData, string fileName,
+        int count, int? seed, int compound)
+    {
+        using var doc = JsonDocument.Parse(json);
         var root      = doc.RootElement;
         var strategies = ParseStrategies(root);
         bool preserveChecksums = root.TryGetProperty("fuzz", out var fuzzEl) &&
                                  fuzzEl.TryGetProperty("preserveChecksums", out var pc) &&
                                  pc.GetBoolean();
 
-        var rng      = seed.HasValue ? new Random(seed.Value) : new Random();
+        var rng      = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         var variants = new List<FuzzVariant>(count);
         int attempts = 0;
+        int effective = Math.Max(1, compound);
 
         while (variants.Count < count && attempts < count * 20)
         {
             attempts++;
-            var log      = new List<MutationLogEntry>();
+            var log     = new List<MutationLogEntry>(effective);
             byte[] mutated = (byte[])inputData.Clone();
-            int effective = Math.Max(1, compound);
-
             var usedFields = new HashSet<string>();
+
             for (int m = 0; m < effective; m++)
             {
                 var strategy = strategies.Count > 0
                     ? WeightedPick(strategies, rng)
                     : new FuzzStrategy { Field = "raw_data", Mutation = MutationType.BitFlip, Rate = 0.001f };
 
-                if (rng.NextDouble() > strategy.Rate && effective == 1) continue;
-
-                // For compound: avoid re-using the same field twice
-                if (effective > 1 && usedFields.Contains(strategy.Field) && strategies.Count > 1) continue;
-                usedFields.Add(strategy.Field);
+                if (effective == 1 && rng.NextDouble() > strategy.Rate) continue;
+                if (effective > 1 && strategies.Count > 1 && !usedFields.Add(strategy.Field)) continue;
 
                 mutated = Mutate(mutated, strategy, root, rng);
                 log.Add(new MutationLogEntry { Mutation = strategy.Mutation, Field = strategy.Field, Description = strategy.Description });
@@ -89,7 +93,7 @@ public static class FormatFuzzer
             {
                 Index         = variants.Count,
                 OriginalFile  = fileName,
-                FormatName    = entry!.Name,
+                FormatName    = entry.Name,
                 Strategy      = primary.Mutation.ToString(),
                 Field         = primary.Field,
                 Description   = primary.Description,
@@ -155,32 +159,38 @@ public static class FormatFuzzer
         int? seed = null,
         int compound = 1)
     {
-        var variants = Generate(catalog, inputData, fileName, count, forcedFormat, seed, compound);
-
-        // Collect all fields from blocks for untested detection
-        var (_, json, _) = Resolve(catalog, inputData, fileName, forcedFormat);
-        var allFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var fuzzedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (json is not null)
+        // Resolve once — shared by variant generation and report field collection
+        var (entry, json, error) = Resolve(catalog, inputData, fileName, forcedFormat);
+        if (error is not null)
         {
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.TryGetProperty("blocks", out var blocks))
-                foreach (var b in blocks.EnumerateArray())
-                {
-                    string? n = b.TryGetProperty("name",    out var nv) ? nv.GetString() : null;
-                    string? s = b.TryGetProperty("storeAs", out var sv) ? sv.GetString() : null;
-                    if (!string.IsNullOrEmpty(n)) allFields.Add(n);
-                    if (!string.IsNullOrEmpty(s)) allFields.Add(s);
-                }
+            var errVariant = FuzzVariant.ErrorVariant(fileName, error);
+            return ([errVariant], new FuzzReport { FormatName = fileName, TotalVariants = 1, ErrorCount = 1 });
         }
+
+        var variants = GenerateFromResolved(entry!, json!, inputData, fileName, count, seed, compound);
+
+        // Collect all block field names for untested detection (json already parsed above)
+        var allFields    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var fuzzedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var doc = JsonDocument.Parse(json!);
+        if (doc.RootElement.TryGetProperty("blocks", out var blocks))
+            foreach (var b in blocks.EnumerateArray())
+            {
+                string? n = b.TryGetProperty("name",    out var nv) ? nv.GetString() : null;
+                string? s = b.TryGetProperty("storeAs", out var sv) ? sv.GetString() : null;
+                if (!string.IsNullOrEmpty(n)) allFields.Add(n);
+                if (!string.IsNullOrEmpty(s)) allFields.Add(s);
+            }
 
         var fieldCoverage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var stratDist     = new Dictionary<MutationType, int>();
         long totalMutations = 0;
+        int ok = 0;
 
-        foreach (var v in variants.Where(v => !v.IsError))
+        foreach (var v in variants)
         {
+            if (v.IsError) continue;
+            ok++;
             totalMutations += v.MutationCount;
             foreach (var log in v.MutationLog)
             {
@@ -190,17 +200,16 @@ public static class FormatFuzzer
             }
         }
 
-        int ok = variants.Count(v => !v.IsError);
         var report = new FuzzReport
         {
-            FormatName                = variants.FirstOrDefault(v => !v.IsError)?.FormatName ?? Path.GetFileName(fileName),
-            TotalVariants             = variants.Count,
-            ErrorCount                = variants.Count(v => v.IsError),
-            FieldCoverage             = fieldCoverage,
-            StrategyDistribution      = stratDist,
-            UntestedFields            = allFields.Except(fuzzedFields, StringComparer.OrdinalIgnoreCase).Order().ToList(),
-            AverageMutationsPerVariant= ok == 0 ? 0 : (double)totalMutations / ok,
-            Seed                      = seed,
+            FormatName                 = entry!.Name,
+            TotalVariants              = variants.Count,
+            ErrorCount                 = variants.Count - ok,
+            FieldCoverage              = fieldCoverage,
+            StrategyDistribution       = stratDist,
+            UntestedFields             = allFields.Except(fuzzedFields, StringComparer.OrdinalIgnoreCase).Order().ToList(),
+            AverageMutationsPerVariant = ok == 0 ? 0 : (double)totalMutations / ok,
+            Seed                       = seed,
         };
 
         return (variants, report);

@@ -14,17 +14,17 @@ public sealed class DiffResult
     public string FileB            { get; init; } = "";
     public long   SizeA            { get; init; }
     public long   SizeB            { get; init; }
-    public string FormatName       { get; set; }  = "Unknown";
-    public string FormatDetectedA  { get; set; }  = "Unknown";
-    public string FormatDetectedB  { get; set; }  = "Unknown";
-    public bool   FormatsMatch     { get; set; }
-    public List<string> KeyFields    { get; set; } = [];
-    public List<string> IgnoreFields { get; set; } = [];
-    public string? GroupBy         { get; set; }
+    public string FormatName       { get; init; } = "Unknown";
+    public string FormatDetectedA  { get; init; } = "Unknown";
+    public string FormatDetectedB  { get; init; } = "Unknown";
+    public bool   FormatsMatch     { get; init; }
+    public List<string> KeyFields    { get; init; } = [];
+    public List<string> IgnoreFields { get; init; } = [];
+    public string? GroupBy         { get; init; }
     public List<FieldChange> FieldChanges { get; } = [];
-    public long   RawByteDelta     { get; set; }
-    public bool   IsIdentical      { get; set; }
-    public string? Error           { get; set; }
+    public long   RawByteDelta     { get; init; }
+    public bool   IsIdentical      { get; init; }
+    public string? Error           { get; init; }
 
     // Analysis-2: checksum validation
     public List<ChecksumStatus> ChecksumsA { get; } = [];

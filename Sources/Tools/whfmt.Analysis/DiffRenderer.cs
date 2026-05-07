@@ -38,9 +38,15 @@ public static class DiffRenderer
             return sb.ToString();
         }
 
-        var changed   = r.FieldChanges.Where(f => !f.IsIgnored && f.IsChanged).ToList();
-        var unchanged = r.FieldChanges.Where(f => !f.IsIgnored && !f.IsChanged).ToList();
-        var ignored   = r.FieldChanges.Where(f => f.IsIgnored).ToList();
+        var changed   = new List<FieldChange>();
+        var unchanged = new List<FieldChange>();
+        var ignored   = new List<FieldChange>();
+        foreach (var f in r.FieldChanges)
+        {
+            if (f.IsIgnored)          ignored.Add(f);
+            else if (f.IsChanged)     changed.Add(f);
+            else                      unchanged.Add(f);
+        }
 
         if (changed.Count > 0)
         {

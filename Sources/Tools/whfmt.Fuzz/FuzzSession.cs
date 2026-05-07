@@ -12,7 +12,7 @@ namespace WhfmtFuzz;
 
 /// <summary>
 /// A reproducible multi-generation fuzzing session.
-/// Use a fixed <paramref name="seed"/> for identical corpora across CI runs.
+/// Use a fixed seed for identical corpora across CI runs.
 /// </summary>
 public sealed class FuzzSession
 {
@@ -42,21 +42,11 @@ public sealed class FuzzSession
         string? forcedFormat = null,
         int compound = 1)
     {
-        int effectiveSeed = _seed.HasValue ? _seed.Value + _generation * 1000 : new Random().Next();
-        var batch = FormatFuzzer.Generate(_catalog, inputFile, count, forcedFormat, effectiveSeed, compound);
-
-        // Restamp indices globally across the session
-        int offset = _corpus.Count;
-        var stamped = batch.Select((v, i) => Restamp(v, offset + i)).ToList();
-
-        _corpus.AddRange(stamped);
-        _generation++;
-        return stamped;
+        var batch = FormatFuzzer.Generate(_catalog, inputFile, count, forcedFormat, NextSeed(), compound);
+        return Commit(batch);
     }
 
-    /// <summary>
-    /// Generate the next batch from raw bytes.
-    /// </summary>
+    /// <summary>Generate the next batch from raw bytes.</summary>
     public IReadOnlyList<FuzzVariant> NextGeneration(
         byte[] inputData,
         string fileName,
@@ -64,12 +54,16 @@ public sealed class FuzzSession
         string? forcedFormat = null,
         int compound = 1)
     {
-        int effectiveSeed = _seed.HasValue ? _seed.Value + _generation * 1000 : new Random().Next();
-        var batch = FormatFuzzer.Generate(_catalog, inputData, fileName, count, forcedFormat, effectiveSeed, compound);
+        var batch = FormatFuzzer.Generate(_catalog, inputData, fileName, count, forcedFormat, NextSeed(), compound);
+        return Commit(batch);
+    }
 
+    private int NextSeed() => _seed.HasValue ? _seed.Value + _generation * 397 : Random.Shared.Next();
+
+    private IReadOnlyList<FuzzVariant> Commit(IReadOnlyList<FuzzVariant> batch)
+    {
         int offset = _corpus.Count;
         var stamped = batch.Select((v, i) => Restamp(v, offset + i)).ToList();
-
         _corpus.AddRange(stamped);
         _generation++;
         return stamped;

@@ -45,38 +45,32 @@ public static class FormatDiff
             ? MatchForced(catalog, forcedFormat)
             : FormatFileAnalyzer.Analyze(catalog, new MemoryStream(dataB), Path.GetExtension(nameB));
 
-        var result = new DiffResult
-        {
-            FileA            = nameA,
-            FileB            = nameB,
-            SizeA            = dataA.Length,
-            SizeB            = dataB.Length,
-            FormatName       = matchA?.Entry.Name ?? matchB?.Entry.Name ?? "Unknown",
-            FormatDetectedA  = matchA?.Entry.Name ?? "Unknown",
-            FormatDetectedB  = matchB?.Entry.Name ?? "Unknown",
-            FormatsMatch     = matchA?.Entry.Name == matchB?.Entry.Name,
-        };
-
         var entry = matchA?.Entry ?? matchB?.Entry;
-        if (entry is null) { result.Error = "Could not detect format for either file."; return result; }
+        if (entry is null)
+            return new DiffResult { FileA = nameA, FileB = nameB, SizeA = dataA.Length, SizeB = dataB.Length,
+                FormatDetectedA = "Unknown", FormatDetectedB = "Unknown", Error = "Could not detect format for either file." };
 
         var json = catalog.GetJson(entry.ResourceKey);
-        if (json is null) { result.Error = "No full definition available for this format."; return result; }
+        if (json is null)
+            return new DiffResult { FileA = nameA, FileB = nameB, SizeA = dataA.Length, SizeB = dataB.Length,
+                FormatName = entry.Name, FormatDetectedA = entry.Name, FormatDetectedB = entry.Name,
+                Error = "No full definition available for this format." };
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        var diffConfig  = ParseDiffConfig(root);
-        result.KeyFields    = diffConfig.KeyFields;
-        result.IgnoreFields = diffConfig.IgnoreFields;
-        result.GroupBy      = diffConfig.GroupBy;
+        var diffConfig        = ParseDiffConfig(root);
+        var (varsA, rawA)     = ExtractFields(root, dataA);
+        var (varsB, rawB)     = ExtractFields(root, dataB);
 
-        var varsA = ExtractVariables(root, dataA);
-        var varsB = ExtractVariables(root, dataB);
-        var rawA  = ExtractRawFields(root, dataA);
-        var rawB  = ExtractRawFields(root, dataB);
+        // Build field changes in a single list — detect corrupted checksum flag inline
+        var checksA = new List<ChecksumStatus>();
+        var checksB = new List<ChecksumStatus>();
+        FillChecksumStatus(root, dataA, checksA);
+        FillChecksumStatus(root, dataB, checksB);
 
-        // Analysis-1: field diff with HexDiff inline
+        var fieldChanges = new List<FieldChange>(diffConfig.KeyFields.Count + diffConfig.IgnoreFields.Count);
+
         foreach (var field in diffConfig.KeyFields)
         {
             varsA.TryGetValue(field, out var valA);
@@ -85,67 +79,53 @@ public static class FormatDiff
             string strB = valB?.ToString() ?? "(not found)";
             bool equal  = string.Equals(strA, strB, StringComparison.OrdinalIgnoreCase);
 
-            HexDiff? hexDiff = null;
-            if (rawA.TryGetValue(field, out var rawBytesA) && rawB.TryGetValue(field, out var rawBytesB))
-                hexDiff = BuildHexDiff(field, rawBytesA, rawBytesB, root);
+            HexDiff? hexDiff = rawA.TryGetValue(field, out var rA) && rawB.TryGetValue(field, out var rB)
+                ? BuildHexDiff(field, rA, rB, root) : null;
 
-            result.FieldChanges.Add(new FieldChange
-            {
-                FieldName = field,
-                ValueA    = strA,
-                ValueB    = strB,
-                IsChanged = !equal,
-                IsIgnored = false,
-                HexDiff   = hexDiff,
-            });
+            var csA = checksA.FirstOrDefault(c => c.Algorithm.Contains(field, StringComparison.OrdinalIgnoreCase));
+            var csB = checksB.FirstOrDefault(c => c.Algorithm.Contains(field, StringComparison.OrdinalIgnoreCase));
+            bool corrupted = csA is { IsValid: true } && csB is { IsValid: false };
+
+            fieldChanges.Add(new FieldChange { FieldName = field, ValueA = strA, ValueB = strB, IsChanged = !equal, IsCorrupted = corrupted, HexDiff = hexDiff });
         }
 
         foreach (var field in diffConfig.IgnoreFields)
         {
             varsA.TryGetValue(field, out var valA);
             varsB.TryGetValue(field, out var valB);
-            result.FieldChanges.Add(new FieldChange
+            fieldChanges.Add(new FieldChange
             {
                 FieldName = field,
                 ValueA    = valA?.ToString() ?? "(not found)",
                 ValueB    = valB?.ToString() ?? "(not found)",
-                IsChanged = false,
                 IsIgnored = true,
             });
         }
 
-        // Analysis-2: checksum validation
-        FillChecksumStatus(root, dataA, result.ChecksumsA);
-        FillChecksumStatus(root, dataB, result.ChecksumsB);
+        var structural = BuildStructuralDiff(root, dataA, dataB);
+        bool identical = fieldChanges.All(c => c.IsIgnored || !c.IsChanged) && dataA.Length == dataB.Length;
 
-        // Mark corrupted fields (valid in A, invalid in B)
-        foreach (var change in result.FieldChanges)
+        var result = new DiffResult
         {
-            var csA = result.ChecksumsA.FirstOrDefault(c => c.Algorithm.Contains(change.FieldName, StringComparison.OrdinalIgnoreCase));
-            var csB = result.ChecksumsB.FirstOrDefault(c => c.Algorithm.Contains(change.FieldName, StringComparison.OrdinalIgnoreCase));
-            if (csA is not null && csB is not null && csA.IsValid && !csB.IsValid)
-            {
-                // Replace the FieldChange with IsCorrupted=true (rebuild since sealed class)
-                int idx = result.FieldChanges.IndexOf(change);
-                result.FieldChanges[idx] = new FieldChange
-                {
-                    FieldName   = change.FieldName,
-                    ValueA      = change.ValueA,
-                    ValueB      = change.ValueB,
-                    IsChanged   = change.IsChanged,
-                    IsIgnored   = change.IsIgnored,
-                    IsCorrupted = true,
-                    HexDiff     = change.HexDiff,
-                };
-            }
-        }
+            FileA           = nameA,
+            FileB           = nameB,
+            SizeA           = dataA.Length,
+            SizeB           = dataB.Length,
+            FormatName      = entry.Name,
+            FormatDetectedA = matchA?.Entry.Name ?? "Unknown",
+            FormatDetectedB = matchB?.Entry.Name ?? "Unknown",
+            FormatsMatch    = matchA?.Entry.Name == matchB?.Entry.Name,
+            KeyFields       = diffConfig.KeyFields,
+            IgnoreFields    = diffConfig.IgnoreFields,
+            GroupBy         = diffConfig.GroupBy,
+            RawByteDelta    = dataB.Length - dataA.Length,
+            IsIdentical     = identical,
+            StructuralDiff  = structural,
+        };
 
-        // Analysis-3: structural diff
-        result.StructuralDiff = BuildStructuralDiff(root, dataA, dataB);
-
-        result.RawByteDelta = dataB.Length - dataA.Length;
-        result.IsIdentical  = result.FieldChanges.All(c => c.IsIgnored || !c.IsChanged)
-                           && dataA.Length == dataB.Length;
+        result.FieldChanges.AddRange(fieldChanges);
+        result.ChecksumsA.AddRange(checksA);
+        result.ChecksumsB.AddRange(checksB);
 
         return result;
     }
@@ -301,43 +281,39 @@ public static class FormatDiff
         return (key, ignore, groupBy);
     }
 
-    private static Dictionary<string, object> ExtractVariables(JsonElement root, byte[] data)
+    // Single pass over blocks — returns both interpreted values and raw bytes
+    private static (Dictionary<string, object> Vars, Dictionary<string, byte[]> Raw) ExtractFields(JsonElement root, byte[] data)
     {
         var vars = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        var raw  = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
         if (root.TryGetProperty("variables", out var varBlock))
             foreach (var v in varBlock.EnumerateObject())
                 vars[v.Name] = v.Value.ValueKind == JsonValueKind.Number ? (object)v.Value.GetInt64() : (v.Value.GetString() ?? "");
-        if (root.TryGetProperty("blocks", out var blocks))
-            foreach (var block in blocks.EnumerateArray())
-            {
-                if (!block.TryGetProperty("storeAs", out var sa)) continue;
-                string varName = sa.GetString() ?? "";
-                if (string.IsNullOrWhiteSpace(varName)) continue;
-                long offset = block.TryGetProperty("offset", out var off) && off.ValueKind == JsonValueKind.Number ? off.GetInt64() : 0;
-                int  length = block.TryGetProperty("length", out var len) && len.ValueKind == JsonValueKind.Number ? len.GetInt32() : 0;
-                string vt   = block.TryGetProperty("valueType", out var vtEl) ? vtEl.GetString() ?? "" : "";
-                if (offset < 0 || length <= 0 || offset + length > data.Length) continue;
-                byte[] slice = data[(int)offset..(int)(offset + length)];
-                vars[varName] = ReadValue(slice, vt);
-            }
-        return vars;
-    }
 
-    private static Dictionary<string, byte[]> ExtractRawFields(JsonElement root, byte[] data)
-    {
-        var raw = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty("blocks", out var blocks)) return raw;
+        if (!root.TryGetProperty("blocks", out var blocks)) return (vars, raw);
+
         foreach (var block in blocks.EnumerateArray())
         {
-            string key    = block.TryGetProperty("storeAs", out var sa) ? sa.GetString() ?? ""
-                          : block.TryGetProperty("name",    out var n)  ? n.GetString()  ?? "" : "";
+            string name   = block.TryGetProperty("name",    out var n)  ? n.GetString()  ?? "" : "";
+            string storeAs= block.TryGetProperty("storeAs", out var sa) ? sa.GetString() ?? "" : "";
+            string key    = string.IsNullOrEmpty(storeAs) ? name : storeAs;
             if (string.IsNullOrEmpty(key)) continue;
+
             long offset = block.TryGetProperty("offset", out var o) && o.ValueKind == JsonValueKind.Number ? o.GetInt64() : 0;
             int  length = block.TryGetProperty("length", out var l) && l.ValueKind == JsonValueKind.Number ? l.GetInt32() : 0;
             if (length <= 0 || offset + length > data.Length) continue;
-            raw[key] = data[(int)offset..(int)(offset + length)];
+
+            byte[] slice = data[(int)offset..(int)(offset + length)];
+            raw[key] = slice;
+
+            if (!string.IsNullOrEmpty(storeAs))
+            {
+                string vt = block.TryGetProperty("valueType", out var vtEl) ? vtEl.GetString() ?? "" : "";
+                vars[storeAs] = ReadValue(slice, vt);
+            }
         }
-        return raw;
+        return (vars, raw);
     }
 
     private static object ReadValue(byte[] bytes, string valueType) => valueType.ToLowerInvariant() switch
