@@ -215,6 +215,9 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     public event EventHandler<string>? StatusMessage;
     public event EventHandler<string>? OutputMessage;
     public event EventHandler?         SelectionChanged;
+
+    /// <summary>Raised when the user chooses "Inspect in Hex Editor" on a block via the image context menu.</summary>
+    public event EventHandler<Core.Model.DocumentBlock>? BlockHexInspectRequested;
     public event EventHandler<DocumentOperationEventArgs>?          OperationStarted;
     public event EventHandler<DocumentOperationEventArgs>?          OperationProgress;
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
@@ -1221,6 +1224,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         PART_TextPane.PART_Renderer.SelectionFormatChanged += OnSelectionFormatChanged;
         PART_TextPane.PART_Renderer.PageChanged            += OnRendererPageChanged;
         PART_TextPane.PART_Renderer.FindResultsChanged     += (_, _) => UpdateSearchScrollMarkers();
+        PART_TextPane.PART_Renderer.InspectBlockRequested  += (_, b) => BlockHexInspectRequested?.Invoke(this, b);
 
         PART_StatusBar.ViewModeChangeRequested    += (_, m) => ViewMode   = m;
         PART_StatusBar.RenderModeChangeRequested  += (_, m) => RenderMode = m;

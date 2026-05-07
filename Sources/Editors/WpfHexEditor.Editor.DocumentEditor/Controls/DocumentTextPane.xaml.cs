@@ -111,6 +111,8 @@ public partial class DocumentTextPane : UserControl
     {
         _model = model;
         PART_Renderer.BindModel(model);
+        if (PART_ForensicGutter.Visibility == Visibility.Visible)
+            Dispatcher.InvokeAsync(RenderForensicGutter, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     public void ScrollToOffset(long offset)          => PART_Renderer.ScrollToOffset(offset);
