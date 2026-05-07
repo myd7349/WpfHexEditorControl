@@ -485,6 +485,15 @@ public class FormatService(IEmbeddedFormatCatalog catalog) { ... }
 
 ## Changelog
 
+### 1.3.0
+
+- **Schema v2.5** — `diff`, `repair`, `fuzz`, `migration` root blocks added to `whfmt.schema.json`.
+- **6 formats enriched** — ZIP, PNG, PE/EXE, PDF, MP3, SQLite: `diff.keyFields`, `repair[]` rules, `fuzz.strategies[]` with weights.
+- **whfmt.Analysis 1.0.0** — new companion NuGet: `FormatDiff.Compare()`, `DiffRenderer` (text/JSON/HTML).
+- **whfmt.Fuzz 1.0.0** — new companion NuGet: `FormatFuzzer.Generate()`, 9 mutation strategies, checksum recomputation.
+- **whfmt.CodeGen 1.0.0** — new companion dotnet tool: `whfmt-codegen generate <format>` → typed C# parser.
+- **whfmt.Validate 1.0.0** — new companion dotnet tool: `whfmt repair` command with `recompute_checksum`, `set_value`, `zero_field`, `truncate`, `pad` actions.
+
 ### 1.2.0
 
 - **Catalog**: 790+ definitions, schema v2.4, `formatId` on every entry, 57 language grammars.
