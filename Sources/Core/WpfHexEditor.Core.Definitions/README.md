@@ -11,6 +11,12 @@ dotnet add package whfmt.FileFormatCatalog
 
 ---
 
+## What's New in 1.3.1
+
+- **101 formats enriched** — `diff`, `repair`, `fuzz`, `migration` blocks added across 15 categories: Audio (10), Images (10), Archives (9), Executables (5), Video (10), Documents (10), Game/ROM (10), Crypto (4), Network (3), Firmware (3), 3D (5), Fonts (5), Disk (5), System (3), GIS (2).
+- **8 new format definitions** — PEM, DER, P12, GPG, UEFI, BIOS, UBoot, DNS added to catalog.
+- **Zero JSON parse errors** — all 101 enriched files validated.
+
 ## What's New in 1.3.0
 
 - **Schema v2.5** — four new root blocks: `diff`, `repair`, `fuzz`, `migration`. Each declares format-specific semantics for the new companion packages.
@@ -484,6 +490,12 @@ public class FormatService(IEmbeddedFormatCatalog catalog) { ... }
 ---
 
 ## Changelog
+
+### 1.3.1
+
+- **101 formats enriched** with diff/repair/fuzz/migration blocks across 15 categories.
+- **8 new format definitions**: PEM, DER, P12, GPG (Crypto), UEFI, BIOS, UBoot (Firmware), DNS (Network).
+- All enriched files pass JSON validation.
 
 ### 1.3.0
 
