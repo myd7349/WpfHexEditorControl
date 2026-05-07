@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Закрити _всі документи</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Закрити _рішення</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Зберегти</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Зберегти _як…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Зберегти _все</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Записати на диск</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Робочий простір</value></data>

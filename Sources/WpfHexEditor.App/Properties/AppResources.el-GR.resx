@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Κλείσιμο _όλων των εγγράφων</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Κλείσιμο _λύσης</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Αποθήκευση</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Αποθήκευση _ως…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Αποθήκευση _όλων</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Εγγραφή στο δίσκο</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Χώρος εργασίας</value></data>

@@ -89,6 +89,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         "FindNext", typeof(MainWindow),
         new InputGestureCollection { new KeyGesture(Key.F3) });
 
+    public static readonly RoutedCommand SaveAsCommand = new RoutedCommand(
+        "SaveAs", typeof(MainWindow),
+        new InputGestureCollection { new KeyGesture(Key.S, ModifierKeys.Control | ModifierKeys.Shift | ModifierKeys.Alt) });
+
     public static readonly RoutedCommand WriteToDiskCommand = new RoutedCommand(
         "WriteToDisk", typeof(MainWindow),
         new InputGestureCollection { new KeyGesture(Key.W, ModifierKeys.Control | ModifierKeys.Shift) });
@@ -6107,6 +6111,71 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _solutionManager.PushRecentFile(path);
             PopulateRecentMenus();
             OutputLogger.Info($"Saved new document as: {path}");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Save As failed: {ex.Message}");
+        }
+    }
+
+    private void OnCanSaveAs(object sender, CanExecuteRoutedEventArgs e)
+        => e.CanExecute = ActiveDocumentEditor is not null;
+
+    private void OnSaveAs(object sender, RoutedEventArgs e)
+    {
+        if (ActiveDocumentEditor is not { } ed) return;
+
+        var activeItem = _documentManager.ActiveDocument?.ContentId is { } cid
+            ? _layout.FindItemByContentId(cid)
+            : null;
+
+        _ = SaveAsDialogAsync(activeItem, ed);
+    }
+
+    private async Task SaveAsDialogAsync(DockItem? item, IDocumentEditor editor)
+    {
+        var currentPath = item?.Metadata.TryGetValue("FilePath", out var fp) == true ? fp : null;
+        var currentName = item?.Title ?? editor.Title.TrimEnd(' ', '*');
+
+        var filter = editor switch
+        {
+            HexEditorControl => "All files (*.*)|*.*|Binary files (*.bin)|*.bin|Hex files (*.hex)|*.hex",
+            WpfHexEditor.Editor.DocumentEditor.Controls.DocumentEditorHost
+                             => "Word documents (*.docx)|*.docx|Rich Text (*.rtf)|*.rtf|Text files (*.txt)|*.txt|All files (*.*)|*.*",
+            CodeEditorControl => "All files (*.*)|*.*|C# files (*.cs)|*.cs|JSON files (*.json)|*.json|Text files (*.txt)|*.txt",
+            _                => "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title      = AppResources.App_SaveAs,
+            FileName   = Path.GetFileName(currentName),
+            Filter     = filter,
+            DefaultExt = !string.IsNullOrEmpty(currentPath) ? Path.GetExtension(currentPath) : ".txt",
+            InitialDirectory = !string.IsNullOrEmpty(currentPath)
+                ? Path.GetDirectoryName(currentPath)
+                : null
+        };
+
+        if (dlg.ShowDialog(this) != true) return;
+
+        var path = dlg.FileName;
+        SuppressFileWatcherForSave(path);
+
+        try
+        {
+            await editor.SaveAsAsync(path);
+
+            if (item is not null)
+            {
+                item.Metadata["FilePath"]  = path;
+                item.Metadata["IsNewFile"] = "false";
+                item.Title = Path.GetFileName(path);
+            }
+
+            _solutionManager.PushRecentFile(path);
+            PopulateRecentMenus();
+            OutputLogger.Info($"Saved as: {path}");
         }
         catch (Exception ex)
         {

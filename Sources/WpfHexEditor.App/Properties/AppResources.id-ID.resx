@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Tutup _semua dokumen</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Tutup _solusi</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Simpan</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Simpan _Sebagai…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Simpan _semua</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Tulis ke disk</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Ruang kerja</value></data>

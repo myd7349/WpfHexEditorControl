@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Sulje _kaikki asiakirjat</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Sulje _ratkaisu</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Tallenna</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Tallenna _nimelää…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Tallenna _kaikki</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Kirjoita levylle</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Työtila</value></data>

@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>_Alle documenten sluiten</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>_Oplossing sluiten</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Opslaan</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Opslaan _als…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>_Alles opslaan</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Naar schijf schrijven</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Werkruimte</value></data>

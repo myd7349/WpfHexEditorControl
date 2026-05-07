@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>إغلاق كافة المستندات</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>إغلاق الحل</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>_حفظ باسم…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>حفظ الكل</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>كتابة على القرص</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>مساحة العمل</value></data>

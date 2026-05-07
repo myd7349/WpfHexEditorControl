@@ -541,5 +541,70 @@
     "SupportsTransparency": true,
     "SupportsAnimation": false,
     "ChunkBasedFormat": true
-  }
+  },
+
+  "diff": {
+    "keyFields": ["width", "height", "bit_depth", "color_type", "ihdr_crc", "idat_crc"],
+    "ignoreFields": ["time_stamp", "creation_time", "modification_time", "text_chunk_data"],
+    "groupBy": "chunk_type",
+    "orderBy": "chunk_offset",
+    "note": "Group by chunk type for structural comparison. Ignore tEXt/tIME metadata chunks that vary between tools."
+  },
+
+  "repair": [
+    {
+      "name": "FixSignature",
+      "trigger": "SignatureMismatch",
+      "action": "set_value",
+      "target": "0",
+      "value": "89504E470D0A1A0A",
+      "length": 8,
+      "description": "Restore the 8-byte PNG signature at offset 0."
+    },
+    {
+      "name": "FixIHDRCRC",
+      "trigger": "IHDRCRCMismatch",
+      "action": "recompute_checksum",
+      "target": "ihdr_crc_offset",
+      "algorithm": "crc32",
+      "dataRange": { "fixedOffset": 12, "fixedLength": 17 },
+      "description": "Recompute CRC32 over chunk_type+data of IHDR and write back to bytes 29-32."
+    },
+    {
+      "name": "FixIDATCRC",
+      "trigger": "IDATCRCMismatch",
+      "action": "recompute_checksum",
+      "target": "idat_crc_offset",
+      "algorithm": "crc32",
+      "dataRange": { "offsetVar": "idat_data_start", "lengthVar": "idat_length_plus_type" },
+      "description": "Recompute CRC32 of the IDAT chunk (type+data) and write back."
+    }
+  ],
+
+  "fuzz": {
+    "preserveChecksums": true,
+    "maxMutationsPerFile": 1,
+    "strategies": [
+      { "field": "width",       "mutation": "boundary_values", "description": "Test 0, 1, 2^31-1 width — triggers dimension overflow." },
+      { "field": "height",      "mutation": "boundary_values", "description": "Test 0, 1, 2^31-1 height." },
+      { "field": "bit_depth",   "mutation": "enum_sweep",      "description": "Sweep invalid bit depths (3, 5, 6, 7) not allowed by spec." },
+      { "field": "color_type",  "mutation": "enum_sweep",      "description": "Sweep all color type codes including reserved values." },
+      { "field": "png_sig",     "mutation": "corrupt_signature","description": "Corrupt 8-byte PNG signature." },
+      { "field": "ihdr_crc",    "mutation": "random_bytes",    "description": "Random IHDR CRC triggers integrity failure." },
+      { "field": "idat_data",   "mutation": "bit_flip", "rate": 0.001, "description": "Sparse bit flips in compressed IDAT stream." }
+    ],
+    "note": "PNG decoders are notorious for edge cases in dimension handling and color type validation."
+  },
+
+  "migration": [
+    {
+      "from": "png-1.0",
+      "to": "png-1.2",
+      "description": "Add sRGB and gAMA chunks for color-managed PNG 1.2 compliance.",
+      "changes": [
+        { "field": "srgb_chunk", "changeType": "insert", "length": 13, "atOffset": "after_ihdr", "description": "Insert sRGB chunk (rendering intent=0 Perceptual) after IHDR." },
+        { "field": "gama_chunk", "changeType": "insert", "length": 16, "atOffset": "after_srgb", "description": "Insert gAMA chunk (gamma=45455 for sRGB) after sRGB." }
+      ]
+    }
+  ]
 }

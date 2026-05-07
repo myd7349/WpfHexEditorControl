@@ -337,5 +337,57 @@
     "TrailerDictionary": true,
     "RandomAccess": true,
     "IncrementalUpdates": true
-  }
+  },
+
+  "diff": {
+    "keyFields": ["pdf_version", "page_count", "root_obj_id", "info_title", "info_author"],
+    "ignoreFields": ["creation_date", "mod_date", "producer", "creator", "xref_offset"],
+    "groupBy": "obj_id",
+    "orderBy": "obj_id",
+    "note": "Group by object ID for structural comparison. Ignore dates and producer strings which change on every save."
+  },
+
+  "repair": [
+    {
+      "name": "FixHeader",
+      "trigger": "HeaderMissing",
+      "action": "set_value",
+      "target": "0",
+      "value": "255044462D312E34",
+      "length": 8,
+      "description": "Restore %PDF-1.4 header at offset 0 (choose version to match file content)."
+    },
+    {
+      "name": "FixXRefOffset",
+      "trigger": "XRefOffsetInvalid",
+      "action": "rebuild_index",
+      "target": "startxref_offset",
+      "description": "Rebuild the cross-reference table by scanning all indirect objects and rewrite startxref."
+    }
+  ],
+
+  "fuzz": {
+    "preserveChecksums": false,
+    "maxMutationsPerFile": 1,
+    "strategies": [
+      { "field": "pdf_version",    "mutation": "enum_sweep",      "description": "Test version strings: 1.0–1.7, 2.0, invalid." },
+      { "field": "pdf_header",     "mutation": "corrupt_signature","description": "Corrupt %PDF- magic to test rejection." },
+      { "field": "xref_offset",    "mutation": "boundary_values", "description": "startxref pointing before/after file triggers parse failure." },
+      { "field": "stream_length",  "mutation": "overflow",        "description": "stream Length larger than actual data triggers buffer read." },
+      { "field": "obj_stream",     "mutation": "bit_flip", "rate": 0.001, "description": "Sparse bit flips in compressed object streams." }
+    ],
+    "note": "PDF has extremely complex parsing — many edge cases in stream decoding and xref reconstruction."
+  },
+
+  "migration": [
+    {
+      "from": "1.4",
+      "to": "2.0",
+      "description": "Upgrade to PDF 2.0 (ISO 32000-2) — removes deprecated encryption, adds new compression filters.",
+      "changes": [
+        { "field": "pdf_version", "changeType": "set_value", "value": "255044462D322E30", "description": "Write %PDF-2.0 header." },
+        { "field": "catalog_version", "changeType": "set_value", "value": "2", "description": "Set /Version in catalog dictionary to 2." }
+      ]
+    }
+  ]
 }

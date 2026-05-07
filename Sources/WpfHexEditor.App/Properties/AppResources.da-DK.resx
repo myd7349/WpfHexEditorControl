@@ -26,6 +26,7 @@
   <data name="App_Menu_CloseAllDocuments" xml:space="preserve"><value>Luk _alle dokumenter</value></data>
   <data name="App_Menu_CloseSolution" xml:space="preserve"><value>Luk _løsningen</value></data>
   <data name="App_Menu_Save" xml:space="preserve"><value>_Gem</value></data>
+  <data name="App_Menu_SaveAs" xml:space="preserve"><value>Gem _som…</value></data>
   <data name="App_Menu_SaveAll" xml:space="preserve"><value>Gem _alle</value></data>
   <data name="App_Menu_WriteToDisk" xml:space="preserve"><value>_Skriv til disk</value></data>
   <data name="App_Menu_Workspace" xml:space="preserve"><value>_Arbejdsområde</value></data>

@@ -879,5 +879,72 @@
     "COFFHeaderSize": 20,
     "OptionalHeaderMinSize": 96,
     "VariableOffsetFields": "PE/COFF/Optional headers are located at the offset specified by e_lfanew (offset 60)"
-  }
+  },
+
+  "diff": {
+    "keyFields": ["machine_type", "number_of_sections", "entry_point_rva", "image_base", "subsystem", "dll_characteristics", "size_of_image"],
+    "ignoreFields": ["time_date_stamp", "checksum", "debug_directory_rva"],
+    "groupBy": "section_name",
+    "orderBy": "section_virtual_address",
+    "note": "Group by section name for structural diff. Ignore timestamp and checksum which change on every link."
+  },
+
+  "repair": [
+    {
+      "name": "FixMZSignature",
+      "trigger": "MZSignatureMissing",
+      "action": "set_value",
+      "target": "0",
+      "value": "4D5A",
+      "length": 2,
+      "description": "Restore MZ magic bytes at offset 0."
+    },
+    {
+      "name": "FixPEChecksum",
+      "trigger": "PEChecksumMismatch",
+      "action": "recompute_checksum",
+      "target": "checksum_offset",
+      "algorithm": "crc32",
+      "description": "Recompute the optional header checksum field. Note: PE checksum uses a custom algorithm — implementation must use the MapFileAndCheckSum-compatible formula."
+    },
+    {
+      "name": "FixPESignature",
+      "trigger": "PESignatureMissing",
+      "action": "set_value",
+      "target": "pe_header_offset",
+      "value": "50450000",
+      "length": 4,
+      "description": "Restore PE\\0\\0 signature at the offset pointed to by e_lfanew."
+    }
+  ],
+
+  "fuzz": {
+    "preserveChecksums": false,
+    "maxMutationsPerFile": 1,
+    "strategies": [
+      { "field": "e_lfanew",          "mutation": "boundary_values",  "description": "PE header offset — 0, negative, beyond-file values trigger parser crashes." },
+      { "field": "number_of_sections", "mutation": "boundary_values", "description": "0 sections (no code) and 96+ sections (max) are common crash triggers." },
+      { "field": "machine_type",       "mutation": "enum_sweep",      "description": "Unknown machine types should be handled gracefully." },
+      { "field": "mz_signature",       "mutation": "corrupt_signature","description": "Corrupt MZ magic — tests fallback detection path." },
+      { "field": "size_of_image",      "mutation": "overflow",        "description": "Extremely large SizeOfImage can trigger allocation failures." },
+      { "field": "entry_point_rva",    "mutation": "random_bytes",    "description": "Random EP triggers invalid memory access in loaders." },
+      { "field": "section_raw_data",   "mutation": "bit_flip", "rate": 0.0001, "description": "Sparse bit flips in section data for code coverage." }
+    ],
+    "note": "PE parsers are high-value fuzz targets — AV engines, loaders, and disassemblers all consume them."
+  },
+
+  "migration": [
+    {
+      "from": "pe32",
+      "to": "pe32plus",
+      "description": "Upgrade 32-bit PE to 64-bit PE32+ (AMD64/ARM64).",
+      "changes": [
+        { "field": "machine_type",     "changeType": "set_value", "value": "0x8664", "description": "Set machine to IMAGE_FILE_MACHINE_AMD64." },
+        { "field": "magic",            "changeType": "set_value", "value": "0x020B", "description": "Set optional header magic to PE32+ (0x020B)." },
+        { "field": "image_base",       "changeType": "resize",    "length": 8,       "description": "Expand ImageBase from 4 to 8 bytes." },
+        { "field": "size_of_stack",    "changeType": "resize",    "length": 8,       "description": "Expand SizeOfStackReserve/Commit from 4 to 8 bytes." },
+        { "field": "size_of_heap",     "changeType": "resize",    "length": 8,       "description": "Expand SizeOfHeapReserve/Commit from 4 to 8 bytes." }
+      ]
+    }
+  ]
 }
