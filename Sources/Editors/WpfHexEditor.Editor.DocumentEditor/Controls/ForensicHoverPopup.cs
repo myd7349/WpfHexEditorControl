@@ -52,6 +52,10 @@ internal sealed class ForensicHoverPopup : Popup
     private DocumentBlock?   _currentBlock;
     private int              _currentBlockIndex;
 
+    // Placement anchors: bottom = preferred position, top = flip-above position
+    private double _anchorBottom;
+    private double _anchorTop;
+
     // ── Events ───────────────────────────────────────────────────────────────
 
     internal event EventHandler<int>?           NavigateRequested;
@@ -88,15 +92,19 @@ internal sealed class ForensicHoverPopup : Popup
     /// <paramref name="alert"/> may be null for kind-chip-only hover (no forensic alert).
     /// </summary>
     internal void Show(
-        FrameworkElement owner,
-        Point            anchor,
+        FrameworkElement    owner,
+        Point               anchor,
+        double              blockTop,
+        double              blockBottom,
         ForensicHoverTarget target,
-        DocumentBlock?   block,
-        int              blockIndex,
-        ForensicAlert?   alert,
-        string           kindLabel)
+        DocumentBlock?      block,
+        int                 blockIndex,
+        ForensicAlert?      alert,
+        string              kindLabel)
     {
         _anchor            = anchor;
+        _anchorTop         = blockTop;
+        _anchorBottom      = blockBottom;
         _currentAlert      = alert;
         _currentBlock      = block;
         _currentBlockIndex = blockIndex;
@@ -361,10 +369,24 @@ internal sealed class ForensicHoverPopup : Popup
 
     private CustomPopupPlacement[] CalculatePlacement(Size popupSize, Size targetSize, Point offset)
     {
-        double x = Math.Min(_anchor.X, Math.Max(0, targetSize.Width - popupSize.Width - 8));
-        double y = _anchor.Y + 20; // below the element
-        if (y + popupSize.Height > targetSize.Height - 8)
-            y = Math.Max(0, _anchor.Y - popupSize.Height - 4); // flip above
+        const double Gap = 8;
+
+        // X: align with mouse, clamped so popup stays inside the canvas
+        double x = Math.Max(0, Math.Min(_anchor.X, targetSize.Width - popupSize.Width - 8));
+
+        // Preferred: below the block bottom edge
+        double yBelow = _anchorBottom + Gap;
+
+        if (yBelow + popupSize.Height <= targetSize.Height - 8)
+            return [new CustomPopupPlacement(new Point(x, yBelow), PopupPrimaryAxis.Vertical)];
+
+        // Flip: above the block top edge — popup bottom aligns with block top - gap
+        double yAbove = _anchorTop - popupSize.Height - Gap;
+        if (yAbove >= 0)
+            return [new CustomPopupPlacement(new Point(x, yAbove), PopupPrimaryAxis.Vertical)];
+
+        // Last resort: best vertical fit
+        double y = Math.Max(0, targetSize.Height - popupSize.Height - 8);
         return [new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.Vertical)];
     }
 }

@@ -3230,8 +3230,13 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             string k    => k[..1] + k[1..].ToLowerInvariant()
         };
 
+        // Compute block screen rect — popup opens below bottom, flips above top if needed
+        double screenY     = PageCanvasPad + rb.Y - _offset.Y;
+        double blockTop    = screenY;
+        double blockBottom = screenY + rb.Height;
+
         var popup = EnsureForensicPopup();
-        popup.Show(this, _pendingHoverPt, ForensicHoverTarget.Block,
+        popup.Show(this, _pendingHoverPt, blockTop, blockBottom, ForensicHoverTarget.Block,
                    rb.Block, _forensicHoverBlockIdx, alert, kindLabel);
     }
 
