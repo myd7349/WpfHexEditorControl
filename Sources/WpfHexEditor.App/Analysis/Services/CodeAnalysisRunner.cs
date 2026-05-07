@@ -54,7 +54,7 @@ internal sealed class CodeAnalysisRunner
         var parsedTrees = await ParseTreesAsync(csFiles, ct);
 
         // Group by project (heuristic: directory containing .csproj)
-        var byProject = GroupByProject(parsedTrees, scopePath);
+        var byProject = GroupByProject(parsedTrees);
 
         var allDiagnostics  = new ConcurrentBag<AnalysisDiagnostic>();
         var allFiles        = new ConcurrentBag<FileMetrics>();
@@ -305,20 +305,20 @@ internal sealed class CodeAnalysisRunner
             token.ThrowIfCancellationRequested();
             string source;
             try   { source = await File.ReadAllTextAsync(file, token); }
-            catch { return; } // skip unreadable files
+            catch (OperationCanceledException) { throw; }
+            catch (Exception) { return; } // skip unreadable files — IOException, UnauthorizedAccessException, etc.
 
             if (string.IsNullOrWhiteSpace(source)) return;
 
-            var tree     = CSharpSyntaxTree.ParseText(source, path: file, cancellationToken: token);
-            var proj     = FindProjectName(file);
-            var projPath = FindProjectPath(file);
+            var tree                 = CSharpSyntaxTree.ParseText(source, path: file, cancellationToken: token);
+            var (proj, projPath)     = FindProjectInfo(file);
             results.Add((tree, proj, projPath));
         });
         return results.ToList();
     }
 
     private static List<(string projName, string projPath, IReadOnlyList<SyntaxTree> trees)> GroupByProject(
-        List<(SyntaxTree tree, string projName, string projPath)> parsed, string solutionPath)
+        List<(SyntaxTree tree, string projName, string projPath)> parsed)
     {
         return parsed
             .GroupBy(t => t.projName)
@@ -326,29 +326,17 @@ internal sealed class CodeAnalysisRunner
             .ToList();
     }
 
-    private static string FindProjectName(string filePath)
+    private static (string name, string path) FindProjectInfo(string filePath)
     {
         var dir = Path.GetDirectoryName(filePath) ?? string.Empty;
         while (!string.IsNullOrEmpty(dir))
         {
             var csproj = Directory.GetFiles(dir, "*.csproj").FirstOrDefault();
             if (csproj is not null)
-                return Path.GetFileNameWithoutExtension(csproj);
+                return (Path.GetFileNameWithoutExtension(csproj), dir);
             dir = Path.GetDirectoryName(dir);
         }
-        return "Unknown";
-    }
-
-    private static string FindProjectPath(string filePath)
-    {
-        var dir = Path.GetDirectoryName(filePath) ?? string.Empty;
-        while (!string.IsNullOrEmpty(dir))
-        {
-            var csproj = Directory.GetFiles(dir, "*.csproj").FirstOrDefault();
-            if (csproj is not null) return dir;
-            dir = Path.GetDirectoryName(dir);
-        }
-        return string.Empty;
+        return ("Unknown", string.Empty);
     }
 
     private static IEnumerable<MetadataReference> GetBasicReferences()

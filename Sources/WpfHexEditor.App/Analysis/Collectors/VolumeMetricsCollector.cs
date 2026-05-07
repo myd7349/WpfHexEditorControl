@@ -34,9 +34,19 @@ internal static class VolumeMetricsCollector
                 comment++;
         }
 
-        var types      = root.DescendantNodes().OfType<TypeDeclarationSyntax>().ToList();
-        var methods    = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
-        var properties = root.DescendantNodes().OfType<PropertyDeclarationSyntax>().ToList();
+        var types      = new List<TypeDeclarationSyntax>();
+        var methods    = new List<MethodDeclarationSyntax>();
+        var properties = new List<PropertyDeclarationSyntax>();
+
+        foreach (var node in root.DescendantNodes())
+        {
+            switch (node)
+            {
+                case TypeDeclarationSyntax   t: types.Add(t);      break;
+                case MethodDeclarationSyntax m: methods.Add(m);    break;
+                case PropertyDeclarationSyntax p: properties.Add(p); break;
+            }
+        }
 
         int maxDit = (model is null || types.Count == 0) ? 0 : types.Max(t => ComputeDit(t, model));
 

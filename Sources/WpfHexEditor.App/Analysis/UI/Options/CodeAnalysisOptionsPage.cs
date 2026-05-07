@@ -43,8 +43,8 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
     private readonly TextBox _parWarn;  private readonly TextBox _parError;
     private readonly TextBox _ditWarn;  private readonly TextBox _ditError;
 
-    // Rules
-    private readonly List<(RuleConfiguration rule, CheckBox chk, ComboBox sev)> _ruleRows = [];
+    // Rules — store ruleId (identifier) not the config object
+    private readonly List<(string ruleId, CheckBox chk, ComboBox sev)> _ruleRows = [];
 
     public CodeAnalysisOptionsPage(CodeAnalysisOptionsService service)
     {
@@ -144,7 +144,7 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
             row.Children.Add(sev);
             row.Children.Add(chk);
 
-            _ruleRows.Add((rule, chk, sev));
+            _ruleRows.Add((rule.RuleId, chk, sev));
             rulesPanel.Children.Add(row);
         }
 
@@ -203,9 +203,9 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
         o.MaxParamsWarning  = Int("5", _parWarn);  o.MaxParamsError  = Int("8", _parError);
         o.DitWarning        = Int("4", _ditWarn);  o.DitError        = Int("7", _ditError);
 
-        foreach (var (rule, chk, sev) in _ruleRows)
+        foreach (var (ruleId, chk, sev) in _ruleRows)
         {
-            var target = o.Rules.FirstOrDefault(r => r.RuleId == rule.RuleId);
+            var target = o.GetRule(ruleId);
             if (target is null) continue;
             target.Severity = chk.IsChecked == true
                 ? Enum.Parse<RuleSeverity>(sev.SelectedItem?.ToString() ?? "Warning", ignoreCase: true)
@@ -239,10 +239,10 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
             _parWarn.Text  = o.MaxParamsWarning.ToString();  _parError.Text  = o.MaxParamsError.ToString();
             _ditWarn.Text  = o.DitWarning.ToString();        _ditError.Text  = o.DitError.ToString();
 
-            foreach (var (rule, chk, sev) in _ruleRows)
+            foreach (var (ruleId, chk, sev) in _ruleRows)
             {
-                var cfg = o.Rules.FirstOrDefault(r => r.RuleId == rule.RuleId);
-                var severity = cfg?.Severity ?? rule.Severity;
+                var cfg      = o.GetRule(ruleId);
+                var severity = cfg?.Severity ?? RuleSeverity.Warning;
                 chk.IsChecked    = severity != RuleSeverity.Disabled;
                 sev.SelectedItem = severity == RuleSeverity.Disabled ? "Info" : severity.ToString();
             }

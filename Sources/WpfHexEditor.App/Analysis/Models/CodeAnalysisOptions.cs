@@ -39,6 +39,12 @@ public sealed class CodeAnalysisOptions
     // -- Rules ------------------------------------------------------------
     public List<RuleConfiguration> Rules { get; set; } = CodeAnalysisOptions.DefaultRules();
 
+    public RuleConfiguration? GetRule(string ruleId)
+        => Rules.FirstOrDefault(r => r.RuleId == ruleId);
+
+    public bool IsRuleEnabled(string ruleId)
+        => GetRule(ruleId)?.IsEnabled == true;
+
     public static List<RuleConfiguration> DefaultRules() =>
     [
         new() { RuleId = "WH0001", Description = "Cyclomatic complexity exceeded",  Severity = RuleSeverity.Warning },

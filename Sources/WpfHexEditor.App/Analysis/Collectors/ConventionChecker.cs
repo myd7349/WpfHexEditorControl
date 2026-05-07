@@ -19,6 +19,8 @@ internal static class ConventionChecker
     private static readonly Regex TodoPattern =
         new(@"\b(TODO|FIXME|HACK)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    private static readonly string[] PrivateFieldPrefixes = ["_", "s_", "k_"];
+
     internal static IReadOnlyList<AnalysisDiagnostic> Check(
         SyntaxTree tree, string projectName, CodeAnalysisOptions options)
     {
@@ -28,7 +30,7 @@ internal static class ConventionChecker
         var results  = new List<AnalysisDiagnostic>();
 
         // WH0031 — File/class name mismatch
-        if (options.Rules.FirstOrDefault(r => r.RuleId == "WH0031")?.IsEnabled == true)
+        if (options.IsRuleEnabled("WH0031"))
         {
             var primaryType = root.DescendantNodes().OfType<TypeDeclarationSyntax>().FirstOrDefault();
             if (primaryType is not null)
@@ -43,7 +45,7 @@ internal static class ConventionChecker
         }
 
         // WH0030 — Naming conventions
-        if (options.Rules.FirstOrDefault(r => r.RuleId == "WH0030")?.IsEnabled == true)
+        if (options.IsRuleEnabled("WH0030"))
         {
             foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
@@ -58,16 +60,12 @@ internal static class ConventionChecker
                 foreach (var variable in field.Declaration.Variables)
                 {
                     var name = variable.Identifier.Text;
-                    // A field is private if it has the private keyword, or has no
-                    // accessibility modifier (C# default is private inside a class).
-                    bool hasAccessibilityModifier = field.Modifiers.Any(m =>
+                    bool isPrivate = !field.Modifiers.Any(m =>
                         m.IsKind(SyntaxKind.PublicKeyword)    ||
                         m.IsKind(SyntaxKind.ProtectedKeyword) ||
                         m.IsKind(SyntaxKind.InternalKeyword));
-                    bool isPrivate = field.Modifiers.Any(m => m.IsKind(SyntaxKind.PrivateKeyword))
-                                     || !hasAccessibilityModifier;
 
-                    if (isPrivate && !name.StartsWith('_') && !name.StartsWith("s_") && !name.StartsWith("k_"))
+                    if (isPrivate && !PrivateFieldPrefixes.Any(name.StartsWith))
                         results.Add(Diag("WH0030", DiagnosticSeverity.Info,
                             $"Private field '{name}' should start with '_'.",
                             filePath, variable.Identifier.GetLocation(), projectName));
@@ -76,7 +74,7 @@ internal static class ConventionChecker
         }
 
         // WH0032 — TODO/FIXME/HACK markers
-        if (options.Rules.FirstOrDefault(r => r.RuleId == "WH0032")?.IsEnabled == true)
+        if (options.IsRuleEnabled("WH0032"))
         {
             int lineNum = 1;
             foreach (var line in text.Lines)
