@@ -52,7 +52,21 @@ internal sealed class DocxXmlMapper
         {
             ct.ThrowIfCancellationRequested();
             var block = MapElement(child, entryBaseOffset, mapBuilder);
-            if (block is not null) blocks.Add(block);
+            if (block is null) continue;
+            blocks.Add(block);
+
+            // Lift images carried as paragraph children into the top-level flow:
+            // the renderer treats `image` as a block-level kind, so children of
+            // paragraphs are ignored. Inline + anchored images are both flowed
+            // here (anchored absolute positioning is not yet supported, so they
+            // appear after the paragraph instead — best-effort visual fallback).
+            for (int i = block.Children.Count - 1; i >= 0; i--)
+            {
+                var c = block.Children[i];
+                if (c.Kind != "image") continue;
+                block.Children.RemoveAt(i);
+                blocks.Add(c);
+            }
         }
 
         return blocks;
@@ -146,13 +160,12 @@ internal sealed class DocxXmlMapper
             }
         }
 
-        // Images: only wp:inline enter the block flow; wp:anchor (floating/positioned)
-        // cannot be placed by the flow renderer so are skipped.
+        // Images (inline + anchored). Both are added as paragraph children and
+        // lifted to the top-level flow by Map(). Anchored images currently flow
+        // at their containing paragraph position (best-effort fallback — true
+        // absolute positioning is not yet implemented).
         foreach (var drawing in pElem.Descendants(W + "drawing"))
         {
-            bool isInline = drawing.Element(ADrawNs + "inline") is not null;
-            if (!isInline) continue;
-
             var blip  = drawing.Descendants(ANs + "blip").FirstOrDefault();
             var embed = blip?.Attribute(RelNs + "embed")?.Value;
             if (embed is null || !_relsMap.TryGetValue(embed, out var entryName)) continue;
@@ -168,6 +181,11 @@ internal sealed class DocxXmlMapper
                 imgBlock.Attributes["naturalWidth"]  = cx.Value.ToString(CultureInfo.InvariantCulture);
             if (cy.HasValue)
                 imgBlock.Attributes["naturalHeight"] = cy.Value.ToString(CultureInfo.InvariantCulture);
+
+            // Mark anchored images for the renderer (future: render as floating overlay)
+            bool isAnchored = drawing.Element(ADrawNs + "anchor") is not null;
+            if (isAnchored) imgBlock.Attributes["floating"] = true;
+
             para.Children.Add(imgBlock);
         }
 
