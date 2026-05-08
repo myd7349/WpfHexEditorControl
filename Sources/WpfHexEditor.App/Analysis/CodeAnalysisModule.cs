@@ -214,16 +214,19 @@ internal sealed class CodeAnalysisModule
 
     private void EnsureReportPane()
     {
-        if (_reportPane is not null) return;
+        // Create the pane + VM once; keep them across re-runs so the report data persists
+        if (_reportPane is null)
+        {
+            _reportVm   = new CodeAnalysisReportViewModel();
+            _reportPane = new CodeAnalysisReportPane(
+                _reportVm,
+                _context!.DocumentHost);
+            _reportPane.SetReRunCallback(
+                () => RunAsync(AnalysisScope.Solution, GetSolutionPath()));
+        }
 
-        _reportVm   = new CodeAnalysisReportViewModel();
-        _reportPane = new CodeAnalysisReportPane(
-            _reportVm,
-            _context!.DocumentHost);
-
-        _reportPane.SetReRunCallback(
-            () => RunAsync(AnalysisScope.Solution, GetSolutionPath()));
-
+        // Always (re-)register the tab — the user may have closed it. AddDocumentTab is
+        // expected to no-op (or refresh) when a tab with the same uiId already exists.
         _docking!.AddDocumentTab(
             ReportTabUiId,
             _reportPane,
@@ -232,6 +235,7 @@ internal sealed class CodeAnalysisModule
                 Title   = "Code Analysis",
                 ToolTip = "Code Analysis Report",
             });
+        _docking.ShowDockablePanel(ReportTabUiId);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
