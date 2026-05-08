@@ -28,9 +28,15 @@ internal sealed class DocxXmlMapper
     // ── Relationship map (rId → zip entry path) ───────────────────────────────
 
     private readonly IReadOnlyDictionary<string, string> _relsMap;
+    private readonly DocxStyleTable                      _styleTable;
 
-    public DocxXmlMapper(IReadOnlyDictionary<string, string>? relsMap = null)
-        => _relsMap = relsMap ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    public DocxXmlMapper(
+        IReadOnlyDictionary<string, string>? relsMap     = null,
+        DocxStyleTable?                      styleTable = null)
+    {
+        _relsMap    = relsMap    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        _styleTable = styleTable ?? DocxStyleTable.Empty;
+    }
 
     // ── Entry point ───────────────────────────────────────────────────────────
 
@@ -302,7 +308,7 @@ internal sealed class DocxXmlMapper
 
     // ── Property extractors ───────────────────────────────────────────────────
 
-    private static void ExtractParagraphProps(XElement pPr, DocumentBlock para)
+    private void ExtractParagraphProps(XElement pPr, DocumentBlock para)
     {
         var style = pPr.Element(W + "pStyle")?.Attribute(W + "val")?.Value;
         if (style is not null)
@@ -311,6 +317,15 @@ internal sealed class DocxXmlMapper
             // Store raw style for non-heading paragraphs.
             if (!style.StartsWith("Heading", StringComparison.OrdinalIgnoreCase))
                 para.Attributes["style"] = style;
+
+            // Resolve pStyle from word/styles.xml: font/size/bold/color from the style
+            // chain (basedOn-flattened) become paragraph-level defaults that child runs
+            // inherit. Direct pPr/rPr (handled below) overrides these; rStyle/rPr on
+            // a child run wins over both. Italic is intentionally not propagated to
+            // paragraph defaults — that matches the existing pPr/rPr-as-defaults rule
+            // (italic in pPr describes the paragraph mark, not a run default).
+            if (_styleTable.TryResolveParagraph(style, out var resolved))
+                ApplyResolvedStyleToParagraph(para, resolved);
         }
 
         var jc = pPr.Element(W + "jc")?.Attribute(W + "val")?.Value;
@@ -382,8 +397,19 @@ internal sealed class DocxXmlMapper
         }
     }
 
-    private static void ExtractRunProps(XElement rPr, DocumentBlock run)
+    private void ExtractRunProps(XElement rPr, DocumentBlock run)
     {
+        // Resolve rStyle FIRST: the style chain populates font/size/bold/italic/color
+        // as defaults that direct rPr properties below can override (each direct
+        // setter overwrites unconditionally). This produces the correct OOXML cascade:
+        //   docDefaults → pStyle → pPr direct → rStyle → rPr direct
+        // (pStyle is applied at the paragraph level in ExtractParagraphProps; the
+        // earlier stages have already filled the paragraph's defaults via
+        // ExtractRunPropsAsParaDefaults / ApplyResolvedStyleToParagraph.)
+        var rStyleEarly = rPr.Element(W + "rStyle")?.Attribute(W + "val")?.Value;
+        if (rStyleEarly is not null && _styleTable.TryResolveCharacter(rStyleEarly, out var rResolved))
+            ApplyResolvedStyleToRun(run, rResolved);
+
         // w:val="0" or w:val="false" means explicit off (override inherited); absent means inherit
         if (rPr.Element(W + "b") is { } bElem)
         {
@@ -442,7 +468,7 @@ internal sealed class DocxXmlMapper
     /// bold/italic/underline/strikethrough, which in pPr/w:rPr describe the paragraph
     /// mark style, not a default for child runs.
     /// </summary>
-    private static void ExtractRunPropsAsParaDefaults(XElement rPr, DocumentBlock para)
+    private void ExtractRunPropsAsParaDefaults(XElement rPr, DocumentBlock para)
     {
         var szVal = rPr.Element(W + "sz")?.Attribute(W + "val")?.Value
                  ?? rPr.Element(W + "szCs")?.Attribute(W + "val")?.Value;
@@ -459,6 +485,45 @@ internal sealed class DocxXmlMapper
         var color = rPr.Element(W + "color")?.Attribute(W + "val")?.Value;
         if (color is not null && color != "auto")
             para.Attributes["color"] = color.StartsWith('#') ? color : $"#{color}";
+    }
+
+    // ── Resolved-style application (pStyle / rStyle from styles.xml) ──────────
+
+    /// <summary>
+    /// Applies a flattened paragraph style to <paramref name="para"/>, only filling
+    /// keys that aren't already set so direct pPr/rPr settings handled afterwards
+    /// retain priority. Italic is intentionally skipped at the paragraph level: it
+    /// describes the paragraph mark, not a default for child runs (matches
+    /// <see cref="ExtractRunPropsAsParaDefaults"/>'s rule).
+    /// </summary>
+    private static void ApplyResolvedStyleToParagraph(DocumentBlock para, DocxStyleTable.ResolvedStyle s)
+    {
+        if (s.IsEmpty) return;
+
+        if (s.Font   is not null && !para.Attributes.ContainsKey("fontFamily"))
+            para.Attributes["fontFamily"] = s.Font;
+        if (s.SizePt is double sz && !para.Attributes.ContainsKey("fontSize"))
+            para.Attributes["fontSize"]   = sz;
+        if (s.Bold   is bool b   && b && !para.Attributes.ContainsKey("bold"))
+            para.Attributes["bold"]       = true;
+        if (s.Color  is not null && !para.Attributes.ContainsKey("color"))
+            para.Attributes["color"]      = s.Color;
+    }
+
+    /// <summary>
+    /// Applies a flattened character style to a run BEFORE direct rPr keys are read,
+    /// so the direct rPr (which writes unconditionally in <see cref="ExtractRunProps"/>)
+    /// overrides the style values when both are present.
+    /// </summary>
+    private static void ApplyResolvedStyleToRun(DocumentBlock run, DocxStyleTable.ResolvedStyle s)
+    {
+        if (s.IsEmpty) return;
+
+        if (s.Font   is not null) run.Attributes["fontFamily"] = s.Font;
+        if (s.SizePt is double sz) run.Attributes["fontSize"]  = sz;
+        if (s.Bold   is bool b   && b) run.Attributes["bold"]   = true;
+        if (s.Italic is bool i   && i) run.Attributes["italic"] = true;
+        if (s.Color  is not null) run.Attributes["color"]      = s.Color;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

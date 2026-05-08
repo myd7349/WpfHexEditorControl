@@ -70,7 +70,12 @@ public sealed class DocxDocumentLoader : IDocumentLoader
             catch { /* best-effort — missing rels just means no images */ }
         }
 
-        var mapper = new DocxXmlMapper(relsMap);
+        // Parse word/styles.xml once: docDefaults + pStyle/rStyle inheritance
+        // (basedOn chains flattened) so the mapper can apply resolved style
+        // attributes during traversal without re-walking the graph per node.
+        var styleTable = DocxStyleTable.Parse(zipReader.ReadEntryText("word/styles.xml"));
+
+        var mapper = new DocxXmlMapper(relsMap, styleTable);
         var blocks = await Task.Run(
             () => mapper.Map(documentXml, docEntryOffset, mapBuilder, ct), ct);
 
@@ -79,9 +84,8 @@ public sealed class DocxDocumentLoader : IDocumentLoader
         // Skip structural kinds (image, page-break, header, footer, table-row)
         // so the renderer doesn't pick up a font on something that should not
         // be drawn as text.
-        var (defFont, defSize) = ReadDocDefaults(zipReader);
-        if (defFont is not null || defSize is not null)
-            ApplyTextDefaults(blocks, defFont, defSize);
+        if (styleTable.DefaultFont is not null || styleTable.DefaultSizePt is not null)
+            ApplyTextDefaults(blocks, styleTable.DefaultFont, styleTable.DefaultSizePt);
 
         var metadata = ReadCoreProperties(zipReader);
         metadata = metadata with
@@ -170,33 +174,6 @@ public sealed class DocxDocumentLoader : IDocumentLoader
 
     private static int ParseTwips(string? s) =>
         int.TryParse(s, out var v) ? v : 0;
-
-    /// <summary>
-    /// Reads <c>w:docDefaults/w:rPrDefault</c> from <c>word/styles.xml</c>:
-    /// the default font family + half-point size that the document inherits
-    /// when nothing more specific is declared on a paragraph or run.
-    /// </summary>
-    private static (string? family, double? sizePt) ReadDocDefaults(DocxZipReader zip)
-    {
-        var stylesXml = zip.ReadEntryText("word/styles.xml");
-        if (stylesXml is null) return (null, null);
-        try
-        {
-            XNamespace W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-            var doc      = XDocument.Parse(stylesXml);
-            var rPrDef   = doc.Descendants(W + "rPrDefault").FirstOrDefault()?.Element(W + "rPr");
-            if (rPrDef is null) return (null, null);
-
-            string? family = rPrDef.Element(W + "rFonts")?.Attribute(W + "ascii")?.Value
-                          ?? rPrDef.Element(W + "rFonts")?.Attribute(W + "hAnsi")?.Value;
-            var szRaw = rPrDef.Element(W + "sz")?.Attribute(W + "val")?.Value
-                     ?? rPrDef.Element(W + "szCs")?.Attribute(W + "val")?.Value;
-            double? sizePt = szRaw is not null && int.TryParse(szRaw, out int hpt)
-                ? hpt / 2.0 : null;
-            return (family, sizePt);
-        }
-        catch { return (null, null); }
-    }
 
     /// <summary>
     /// Writes <c>fontFamily</c>/<c>fontSize</c> only on text-bearing block kinds
