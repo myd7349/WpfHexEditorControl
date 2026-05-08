@@ -26,7 +26,71 @@ internal static class CodeSmellDetector
         if (opts.IsRuleEnabled("WH0044"))
             DetectDataClumps(trees, results, projectName);
 
+        if (opts.IsRuleEnabled("WH0043"))
+            DetectFeatureEnvy(trees, results, projectName, opts);
+
         return results;
+    }
+
+    // ── WH0043 — Feature Envy ─────────────────────────────────────────────────
+    // Heuristic: a method is "envious" when it accesses members of a foreign
+    // receiver more often than its own (this/self) members.
+    //
+    //   envyRatio = foreignAccess / max(1, selfAccess)
+    //
+    // We only flag when foreign access dominates AND the absolute count is
+    // meaningful (≥ 6), to avoid spam on tiny accessors.
+
+    private const int FeatureEnvyMinForeign = 6;
+    private const double FeatureEnvyRatio   = 2.0;
+
+    private static void DetectFeatureEnvy(IReadOnlyList<SyntaxTree> trees, List<AnalysisDiagnostic> results, string projectName, CodeAnalysisOptions opts)
+    {
+        foreach (var tree in trees)
+        {
+            foreach (var method in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
+            {
+                int self = 0, foreign = 0;
+                string? topReceiver = null;
+                int topReceiverCount = 0;
+                var receiverCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+
+                foreach (var ma in method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
+                {
+                    var receiverText = ma.Expression.ToString();
+                    if (receiverText == "this" || receiverText == "base")
+                    {
+                        self++;
+                    }
+                    else
+                    {
+                        foreign++;
+                        receiverCounts[receiverText] = receiverCounts.GetValueOrDefault(receiverText) + 1;
+                        if (receiverCounts[receiverText] > topReceiverCount)
+                        {
+                            topReceiverCount = receiverCounts[receiverText];
+                            topReceiver = receiverText;
+                        }
+                    }
+                }
+
+                if (foreign < FeatureEnvyMinForeign) continue;
+                if (foreign < self * FeatureEnvyRatio) continue;
+
+                var pos = method.Identifier.GetLocation().GetLineSpan().StartLinePosition;
+                results.Add(new AnalysisDiagnostic
+                {
+                    Id          = "WH0043",
+                    Severity    = Severity.Info,
+                    Message     = $"Feature envy: '{method.Identifier.Text}' touches '{topReceiver}' {topReceiverCount}× vs self {self}× — consider moving to '{topReceiver}'.",
+                    FilePath    = tree.FilePath,
+                    Line        = pos.Line + 1,
+                    Column      = pos.Character + 1,
+                    ProjectName = projectName,
+                    RuleSource  = "Quality",
+                });
+            }
+        }
     }
 
     // ── WH0044 — Data Clumps ──────────────────────────────────────────────────

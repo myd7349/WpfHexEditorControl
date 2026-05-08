@@ -90,6 +90,14 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
     }
     public bool HasProjectFilter => !string.IsNullOrEmpty(_projectFilter);
 
+    /// <summary>Cross-tab search query (file name / method name / issue id or message).</summary>
+    private string _globalSearch = string.Empty;
+    public string GlobalSearch
+    {
+        get => _globalSearch;
+        set { _globalSearch = value ?? string.Empty; OnPropertyChanged(); RefreshIssues(); }
+    }
+
     private string _groupByMode = "None"; // None / Severity / Rule / Project / File
     public string GroupByMode
     {
@@ -120,6 +128,10 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
 
     /// <summary>Phase 4 — cyclic project deps.</summary>
     public ObservableCollection<ProjectCycleInfo> ProjectCycles { get; } = [];
+
+    /// <summary>Phase 3 — flat list of all files across projects (treemap source).</summary>
+    public IReadOnlyList<FileMetrics> AllFiles =>
+        _report?.Projects.SelectMany(p => p.Files).ToList() ?? [];
 
     // ── Update ───────────────────────────────────────────────────────────────
 
@@ -178,6 +190,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ConventionScore));
         OnPropertyChanged(nameof(HasReport));
         OnPropertyChanged(nameof(AvailableProjects));
+        OnPropertyChanged(nameof(AllFiles));
     }
 
     private void RefreshIssues()
@@ -194,7 +207,11 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
                      || d.Severity.ToString() == _selectedSeverity)
             .Where(d => string.IsNullOrEmpty(_projectFilter)
                      || _projectFilter == "(All projects)"
-                     || string.Equals(d.ProjectName, _projectFilter, StringComparison.Ordinal));
+                     || string.Equals(d.ProjectName, _projectFilter, StringComparison.Ordinal))
+            .Where(d => string.IsNullOrEmpty(_globalSearch)
+                     || d.Message.Contains(_globalSearch, StringComparison.OrdinalIgnoreCase)
+                     || d.Id.Contains(_globalSearch, StringComparison.OrdinalIgnoreCase)
+                     || d.FilePath.Contains(_globalSearch, StringComparison.OrdinalIgnoreCase));
 
         foreach (var d in filtered)
             Issues.Add(new IssueViewModel(d));

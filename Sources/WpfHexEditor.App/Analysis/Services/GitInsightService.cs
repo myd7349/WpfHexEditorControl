@@ -50,23 +50,43 @@ internal sealed class GitInsightService
         return result;
     }
 
-    /// <summary>For each file → most-frequent author (top contributor).</summary>
-    internal IReadOnlyDictionary<string, string> TopAuthors(IReadOnlyList<string> filePaths)
+    /// <summary>
+    /// For each file → most-frequent author (top contributor).
+    /// One batch git log call; aggregation happens in-memory.
+    /// </summary>
+    internal IReadOnlyDictionary<string, string> TopAuthors()
     {
         if (!IsGitRepo()) return new Dictionary<string, string>();
 
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var file in filePaths)
+        // Format: per commit, "@@<author>" then file paths until next "@@"
+        var output = RunGit("log --pretty=format:@@%an --name-only");
+        if (output is null) return new Dictionary<string, string>();
+
+        var counts = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+        string? currentAuthor = null;
+
+        foreach (var raw in output.Split('\n'))
         {
-            var output = RunGit($"log --pretty=format:%an -- \"{file}\"");
-            if (output is null) continue;
+            var line = raw.Trim();
+            if (line.Length == 0) continue;
+            if (line.StartsWith("@@", StringComparison.Ordinal))
+            {
+                currentAuthor = line[2..];
+                continue;
+            }
+            if (currentAuthor is null) continue;
 
-            var top = output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .GroupBy(x => x, StringComparer.Ordinal)
-                .OrderByDescending(g => g.Count())
-                .FirstOrDefault();
+            var abs = Path.Combine(_solutionDir, line);
+            if (!counts.TryGetValue(abs, out var perAuthor))
+                counts[abs] = perAuthor = new Dictionary<string, int>(StringComparer.Ordinal);
+            perAuthor[currentAuthor] = perAuthor.GetValueOrDefault(currentAuthor) + 1;
+        }
 
-            if (top is not null) result[file] = top.Key;
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (file, perAuthor) in counts)
+        {
+            var top = perAuthor.OrderByDescending(p => p.Value).FirstOrDefault();
+            if (!string.IsNullOrEmpty(top.Key)) result[file] = top.Key;
         }
         return result;
     }

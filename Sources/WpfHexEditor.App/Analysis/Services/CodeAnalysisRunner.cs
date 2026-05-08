@@ -55,6 +55,9 @@ internal sealed class CodeAnalysisRunner
     {
         var opts = _optionsService.Options;
 
+        // Phase 6 — apply .editorconfig severity overrides for WHxxxx rules
+        EditorConfigReader.ApplyTo(opts, scopePath);
+
         Report(progress, "Discovering files…", 2);
         var csFiles = DiscoverFiles(scope, scopePath, opts.IncludeGeneratedFiles);
         Report(progress, $"Found {csFiles.Count} .cs files in: {scopePath}", 3);
@@ -315,20 +318,22 @@ internal sealed class CodeAnalysisRunner
         }
 
         Report(progress, "Computing git insights…", 63);
-        // Phase 5 — git-aware hotspots (graceful no-op if not a git repo)
+        // Phase 5 — git-aware hotspots + top authors (graceful no-op if not a git repo)
         var gitInsight = new GitInsightService(scopePath);
-        var changeFreq = gitInsight.IsGitRepo() ? gitInsight.ChangeFrequency() : new Dictionary<string, int>();
+        bool isGit = gitInsight.IsGitRepo();
+        var changeFreq = isGit ? gitInsight.ChangeFrequency() : new Dictionary<string, int>();
+        var topAuthors = isGit ? gitInsight.TopAuthors()      : new Dictionary<string, string>();
 
-        // Mark hotspots: low score AND high change frequency
+        // Mark hotspots + attach git insights
         for (int pi = 0; pi < projectMetrics.Count; pi++)
         {
             var p = projectMetrics[pi];
             var newFiles = p.Files.Select(f =>
             {
-                bool hot = f.Score < HotspotScoreThreshold
-                        && changeFreq.TryGetValue(f.FilePath, out var cnt)
-                        && cnt >= HotspotChangeThreshold;
-                return hot ? f with { IsHotspot = true } : f;
+                int    cnt    = changeFreq.GetValueOrDefault(f.FilePath);
+                string author = topAuthors.GetValueOrDefault(f.FilePath, string.Empty);
+                bool   hot    = f.Score < HotspotScoreThreshold && cnt >= HotspotChangeThreshold;
+                return f with { IsHotspot = hot, ChangeCount = cnt, TopAuthor = author };
             }).ToList();
             projectMetrics[pi] = p with { Files = newFiles };
         }

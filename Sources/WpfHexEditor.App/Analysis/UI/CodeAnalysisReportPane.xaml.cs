@@ -33,10 +33,13 @@ public partial class CodeAnalysisReportPane : UserControl
         _docHost = docHost;
         DataContext = vm;
 
-        // Phase 7 — keyboard shortcuts (F5 = re-run, Ctrl+F = focus filter)
+        // Phase 7 — keyboard shortcuts (F5 = re-run, Ctrl+F = focus search)
         InputBindings.Add(new KeyBinding(
             new RelayCmd(_ => _ = (_reRunCallback?.Invoke() ?? Task.CompletedTask)),
             new KeyGesture(Key.F5)));
+        InputBindings.Add(new KeyBinding(
+            new RelayCmd(_ => GlobalSearchBox.Focus()),
+            new KeyGesture(Key.F, ModifierKeys.Control)));
     }
 
     internal void SetReRunCallback(Func<Task> callback)
@@ -121,6 +124,7 @@ public partial class CodeAnalysisReportPane : UserControl
             1 => "Markdown",
             2 => "CSV",
             3 => "SARIF",
+            4 => "Checklist",
             _ => "CSV",
         };
         ExportCombo.SelectedIndex = 0;
@@ -134,22 +138,56 @@ public partial class CodeAnalysisReportPane : UserControl
             vm.ProjectFilter = sel == "(All projects)" ? string.Empty : sel;
     }
 
+    private void OnTreemapItemActivated(object? sender, FileMetrics file)
+    {
+        if (string.IsNullOrEmpty(file.FilePath)) return;
+        Navigate(file.FilePath, 1);
+    }
+
+    private void OnGroupByChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is not CodeAnalysisReportViewModel vm) return;
+        if (GroupByCombo.SelectedItem is not ComboBoxItem ci) return;
+
+        var view = System.Windows.Data.CollectionViewSource.GetDefaultView(vm.Issues);
+        view.GroupDescriptions.Clear();
+
+        string mode = ci.Content?.ToString() ?? "";
+        string? prop = mode switch
+        {
+            "By Severity" => nameof(IssueViewModel.Severity),
+            "By Rule"     => nameof(IssueViewModel.Id),
+            "By Project"  => nameof(IssueViewModel.ProjectName),
+            "By File"     => nameof(IssueViewModel.FileName),
+            _             => null,
+        };
+        if (prop is not null)
+            view.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(prop));
+    }
+
     private void Export(string format)
     {
         (string fileName, string filter) = format switch
         {
-            "Markdown" => ("code-analysis-report.md",   "Markdown files (*.md)|*.md"),
-            "SARIF"    => ("code-analysis-report.sarif", "SARIF files (*.sarif)|*.sarif"),
-            _          => ("code-analysis-report.csv",   "CSV files (*.csv)|*.csv"),
+            "Markdown"  => ("code-analysis-report.md",    "Markdown files (*.md)|*.md"),
+            "SARIF"     => ("code-analysis-report.sarif", "SARIF files (*.sarif)|*.sarif"),
+            "Checklist" => ("code-review-checklist.md",   "Markdown files (*.md)|*.md"),
+            _           => ("code-analysis-report.csv",   "CSV files (*.csv)|*.csv"),
         };
         var dlg = new SaveFileDialog { FileName = fileName, Filter = filter };
         if (dlg.ShowDialog() != true) return;
 
         if (format == "SARIF")
         {
-            // Need the underlying report — exposed via the VM in Phase 8
             if (_vm.CurrentReport is not null)
                 Services.SarifExporter.Export(_vm.CurrentReport, dlg.FileName);
+            return;
+        }
+        if (format == "Checklist")
+        {
+            if (_vm.CurrentReport is not null)
+                File.WriteAllText(dlg.FileName,
+                    Services.CodeReviewChecklistBuilder.Build(_vm.CurrentReport), Encoding.UTF8);
             return;
         }
 

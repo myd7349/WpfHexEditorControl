@@ -48,6 +48,10 @@ public sealed record FileMetrics
     // Hotspot flag (high complexity + frequent changes — set in Phase 5)
     public bool     IsHotspot       { get; init; }
 
+    // Phase 5 — top contributor per file (git blame top author)
+    public string   TopAuthor       { get; init; } = string.Empty;
+    public int      ChangeCount     { get; init; }   // commits in last N days
+
     // Quality score for this file [0–100]
     public int      Score           { get; init; }
 

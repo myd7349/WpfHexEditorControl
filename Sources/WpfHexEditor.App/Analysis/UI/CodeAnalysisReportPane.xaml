@@ -90,6 +90,7 @@
 
             <Style TargetType="DataGrid">
                 <EventSetter Event="ContextMenuOpening" Handler="OnGridContextMenuOpening"/>
+                <Setter Property="CanUserSortColumns"    Value="True"/>
                 <Setter Property="Background"            Value="{DynamicResource DockWindowBackgroundBrush}"/>
                 <Setter Property="Foreground"            Value="{DynamicResource DockMenuForegroundBrush}"/>
                 <Setter Property="BorderBrush"           Value="{DynamicResource DockBorderBrush}"/>
@@ -161,12 +162,22 @@
                         <ComboBoxItem Content="Markdown"/>
                         <ComboBoxItem Content="CSV"/>
                         <ComboBoxItem Content="SARIF"/>
+                        <ComboBoxItem Content="PR Checklist"/>
                     </ComboBox>
                     <!-- Phase 7 — Project filter -->
-                    <ComboBox x:Name="ProjectFilterCombo" Width="160" Margin="4,0"
+                    <TextBlock Text="Project:" VerticalAlignment="Center" Margin="8,0,4,0"
+                               Foreground="{DynamicResource DockForegroundBrush}" FontSize="11"/>
+                    <ComboBox x:Name="ProjectFilterCombo" Width="160" Margin="0,0,4,0"
                               ItemsSource="{Binding AvailableProjects, Mode=OneWay}"
                               SelectionChanged="OnProjectFilterChanged"
                               ToolTip="Filter all tabs by project"/>
+                    <!-- Phase 7 — Global search (Ctrl+F) -->
+                    <TextBlock Text="Search:" VerticalAlignment="Center" Margin="4,0"
+                               Foreground="{DynamicResource DockForegroundBrush}" FontSize="11"/>
+                    <TextBox x:Name="GlobalSearchBox" Width="180" Margin="0,0,4,0"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding GlobalSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Search across files / methods / issues (Ctrl+F)"/>
                 </StackPanel>
 
                 <!-- Progress bar (indeterminate while running) -->
@@ -206,7 +217,7 @@
         <!-- ── Body ─────────────────────────────────────────────────────── -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="220"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -229,7 +240,7 @@
 
                     <!-- Phase 3 — Radar visualization -->
                     <controls:ScoreRadarChart
-                        Width="200" Height="200"
+                        Width="180" Height="180"
                         Foreground="{DynamicResource DockForegroundBrush}"
                         Volume="{Binding VolumeScore,        Mode=OneWay}"
                         Complexity="{Binding ComplexityScore, Mode=OneWay}"
@@ -320,6 +331,15 @@
                             <TextBox x:Name="IssueSearchBox" Width="200"
                                      Text="{Binding IssueFilter, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="Search issues…"/>
+                            <ComboBox x:Name="GroupByCombo" Width="120" Margin="8,0,0,0"
+                                      SelectedIndex="0" ToolTip="Group issues by…"
+                                      SelectionChanged="OnGroupByChanged">
+                                <ComboBoxItem Content="Group: None"/>
+                                <ComboBoxItem Content="By Severity"/>
+                                <ComboBoxItem Content="By Rule"/>
+                                <ComboBoxItem Content="By Project"/>
+                                <ComboBoxItem Content="By File"/>
+                            </ComboBox>
                         </StackPanel>
                         <DataGrid Grid.Row="1"
                                   ItemsSource="{Binding Issues, Mode=OneWay}"
@@ -427,6 +447,16 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
+                </TabItem>
+
+                <!-- ── Treemap (Phase 3) ─────────────────────────────────── -->
+                <TabItem Header="Treemap">
+                    <Grid Margin="8">
+                        <controls:Treemap x:Name="FileTreemap"
+                                          Items="{Binding AllFiles, Mode=OneWay}"
+                                          Foreground="White"
+                                          ItemActivated="OnTreemapItemActivated"/>
+                    </Grid>
                 </TabItem>
 
                 <!-- ── Dead Code ─────────────────────────────────────────── -->
