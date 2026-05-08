@@ -97,6 +97,7 @@ public sealed class Treemap : Control
             else
             {
                 remaining = LayoutRow(row.Select(j => (sizes[j], children[j])).ToList(), rowSum, remaining, output);
+                if (remaining.IsEmpty || remaining.Width <= 0 || remaining.Height <= 0) return;
                 row.Clear();
                 rowSum = 0;
                 shortSide = Math.Min(remaining.Width, remaining.Height);
@@ -104,7 +105,7 @@ public sealed class Treemap : Control
                 rowSum = sizes[i];
             }
         }
-        if (row.Count > 0)
+        if (row.Count > 0 && !remaining.IsEmpty && remaining.Width > 0 && remaining.Height > 0)
             LayoutRow(row.Select(j => (sizes[j], children[j])).ToList(), rowSum, remaining, output);
     }
 
@@ -121,23 +122,40 @@ public sealed class Treemap : Control
     private static Rect LayoutRow(List<(double size, FileMetrics file)> row, double rowSum,
         Rect bounds, List<(Rect, FileMetrics)> output)
     {
+        if (bounds.Width <= 0 || bounds.Height <= 0 || rowSum <= 0) return Rect.Empty;
+
         bool horizontal = bounds.Width >= bounds.Height;
-        double thickness = rowSum / (horizontal ? bounds.Height : bounds.Width);
+        double along    = horizontal ? bounds.Height : bounds.Width;
+        if (along <= 0) return Rect.Empty;
+
+        // Clamp thickness so we never request a width/height that exceeds the bounds —
+        // floating-point error can otherwise drive `bounds.Width - thickness` negative
+        // and crash `new Rect(...)` with "Width/Height cannot be negative".
+        double thickness = rowSum / along;
+        double maxThickness = horizontal ? bounds.Width : bounds.Height;
+        if (thickness > maxThickness) thickness = maxThickness;
+
+        double remainingExtent = along;
         double cursor = horizontal ? bounds.Top : bounds.Left;
 
         foreach (var (size, file) in row)
         {
-            double extent = size / thickness;
+            double extent = thickness > 0 ? size / thickness : 0;
+            if (extent > remainingExtent) extent = remainingExtent;
+            if (extent < 0) extent = 0;
+
             Rect tile = horizontal
                 ? new Rect(bounds.Left, cursor, thickness, extent)
                 : new Rect(cursor, bounds.Top, extent, thickness);
             output.Add((tile, file));
             cursor += extent;
+            remainingExtent -= extent;
         }
 
+        double leftover = Math.Max(0, (horizontal ? bounds.Width : bounds.Height) - thickness);
         return horizontal
-            ? new Rect(bounds.Left + thickness, bounds.Top, bounds.Width - thickness, bounds.Height)
-            : new Rect(bounds.Left, bounds.Top + thickness, bounds.Width, bounds.Height - thickness);
+            ? new Rect(bounds.Left + thickness, bounds.Top, leftover, bounds.Height)
+            : new Rect(bounds.Left, bounds.Top + thickness, bounds.Width, leftover);
     }
 
     // ── Render & hit-test ─────────────────────────────────────────────────────
