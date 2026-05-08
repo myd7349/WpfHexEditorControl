@@ -1151,16 +1151,13 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     }
 
     /// <summary>
-    /// Draws all floating (wp:anchor) images as overlays. Their Y is already
-    /// resolved by RebuildLayoutPaged (rb.Y = anchor paragraph top + posOffsetV);
-    /// horizontal alignment is resolved here against the page content column.
+    /// Draws all floating (wp:anchor) images as overlays positioned relative to
+    /// their containing page or anchor paragraph. Floating blocks have height=0
+    /// in the flow and would otherwise be invisible.
     /// </summary>
     private void DrawFloatingImages(DrawingContext dc, double vw, double vh)
     {
         if (_blocks.Count == 0) return;
-
-        double contentLeft  = _pageLeft + _pageSettings.MarginLeft;
-        double contentWidth = Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight);
 
         for (int i = 0; i < _blocks.Count; i++)
         {
@@ -1168,30 +1165,58 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             if (rb.Block.Kind != "image") continue;
             if (!rb.Block.Attributes.TryGetValue("floating", out var fv) || fv is not true) continue;
 
+            // Resolve the page that contains this anchor (rb.Y is the in-flow position
+            // where the anchor paragraph would have been laid out).
+            int pageIdx = ResolvePageIndex(rb.Y);
+            double pageStart = _pageStarts[pageIdx];
+            double pageTopOnCanvas = PageCanvasPad + pageStart - _offset.Y;
+            double contentLeft  = _pageLeft + _pageSettings.MarginLeft;
+            double contentWidth = Math.Max(1, _pageWidth - _pageSettings.MarginLeft - _pageSettings.MarginRight);
+
+            // Image natural size (already in pixels — converted from EMU by mapper)
             double natW = TryParseAttr(rb.Block, "naturalWidth");
             double natH = TryParseAttr(rb.Block, "naturalHeight");
             if (natW <= 0) natW = 200;
             if (natH <= 0) natH = 150;
 
-            // Resolve X within the content column
+            // Resolve X
             string anchorX  = rb.Block.Attributes.GetValueOrDefault("anchorX") as string ?? "0";
             string anchorRH = rb.Block.Attributes.GetValueOrDefault("anchorRelH") as string ?? "column";
-            double xInCol;
-            if (anchorX == "center")     xInCol = (contentWidth - natW) / 2;
-            else if (anchorX == "right") xInCol = contentWidth - natW;
-            else if (anchorX == "left")  xInCol = 0;
+            double x;
+            if (anchorX == "center")      x = contentLeft + (contentWidth - natW) / 2;
+            else if (anchorX == "right")  x = contentLeft + contentWidth - natW;
+            else if (anchorX == "left")   x = contentLeft;
             else if (double.TryParse(anchorX, System.Globalization.NumberStyles.Float,
                                      System.Globalization.CultureInfo.InvariantCulture, out double xOff))
-                xInCol = anchorRH == "page" ? xOff - _pageSettings.MarginLeft : xOff;
-            else xInCol = 0;
-            xInCol = Math.Max(0, Math.Min(xInCol, contentWidth - natW));
+            {
+                x = (anchorRH == "page" ? _pageLeft : contentLeft) + xOff;
+            }
+            else x = contentLeft;
 
-            double x = contentLeft + xInCol;
-            double y = PageCanvasPad + rb.Y - _offset.Y;
+            // Resolve Y — relative to anchor paragraph by default, or page top
+            string anchorY  = rb.Block.Attributes.GetValueOrDefault("anchorY") as string ?? "0";
+            string anchorRV = rb.Block.Attributes.GetValueOrDefault("anchorRelV") as string ?? "paragraph";
+            double anchorYBase;
+            if (anchorRV == "page" || anchorRV == "margin")
+                anchorYBase = pageTopOnCanvas + (anchorRV == "margin" ? _pageSettings.MarginTop : 0);
+            else
+                anchorYBase = PageCanvasPad + rb.Y - _offset.Y; // paragraph/column relative
+
+            double y;
+            if (anchorY == "center")      y = anchorYBase;
+            else if (anchorY == "top")    y = anchorYBase;
+            else if (anchorY == "bottom") y = anchorYBase;
+            else if (double.TryParse(anchorY, System.Globalization.NumberStyles.Float,
+                                     System.Globalization.CultureInfo.InvariantCulture, out double yOff))
+                y = anchorYBase + yOff;
+            else y = anchorYBase;
 
             // Quick viewport cull
             if (y + natH < 0 || y > vh) continue;
 
+            // Build a virtual RenderBlock at (x,y) for DrawImageBlock.
+            // It already handles cache/loading. Pass natW as maxW so the image
+            // is drawn at its natural size, not capped to the content column.
             DrawImageBlockAt(dc, rb.Block, x, y, natW, natH);
         }
     }
@@ -2066,9 +2091,6 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         var    headers      = new List<DocumentBlock>();
         var    footers      = new List<DocumentBlock>();
 
-        // Active floating-image exclusion zones (rect in canvas coords, side L/R, gap)
-        var floatRects = new List<(double Top, double Bottom, double Left, double Right, bool OnLeftSide)>();
-
         foreach (var block in _model!.Blocks)
         {
             // Pull header/footer blocks out of the body flow
@@ -2079,84 +2101,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             if (_renderMode == RenderMode.Outline && block.Kind != "heading")
                 continue;
 
-            // Floating image: zero-height in flow, occupies overlay zone
-            bool isFloating = block.Kind == "image" &&
-                              block.Attributes.TryGetValue("floating", out var fv) && fv is true;
-            if (isFloating)
-            {
-                double natW = TryParseAttr(block, "naturalWidth");
-                double natH = TryParseAttr(block, "naturalHeight");
-                if (natW <= 0) natW = 200;
-                if (natH <= 0) natH = 150;
-
-                // Resolve horizontal anchor relative to content column (= maxW)
-                string ax  = block.Attributes.GetValueOrDefault("anchorX") as string ?? "0";
-                string arh = block.Attributes.GetValueOrDefault("anchorRelH") as string ?? "column";
-                double xLeft;
-                double contentLeft = 0; // relative to content column origin
-                if (ax == "center")     xLeft = (maxW - natW) / 2;
-                else if (ax == "right") xLeft = maxW - natW;
-                else if (ax == "left")  xLeft = 0;
-                else if (double.TryParse(ax, System.Globalization.NumberStyles.Float,
-                                         System.Globalization.CultureInfo.InvariantCulture, out double xOff))
-                    xLeft = arh == "page" ? xOff - _pageSettings.MarginLeft : xOff;
-                else xLeft = 0;
-                xLeft = Math.Max(0, Math.Min(xLeft, maxW - natW));
-
-                // Vertical anchor offset (relativeFrom=paragraph): apply to current yCanvas
-                string ay = block.Attributes.GetValueOrDefault("anchorY") as string ?? "0";
-                double yOffset = double.TryParse(ay, System.Globalization.NumberStyles.Float,
-                                  System.Globalization.CultureInfo.InvariantCulture, out double y0) ? y0 : 0;
-                double imgTop  = yCanvas + yOffset;
-                double imgBot  = imgTop + natH;
-                bool onLeft    = xLeft + natW / 2 < maxW / 2;
-                const double WrapGap = 8.0;
-                floatRects.Add((imgTop, imgBot,
-                                xLeft - (onLeft ? 0 : WrapGap),
-                                xLeft + natW + (onLeft ? WrapGap : 0),
-                                onLeft));
-
-                // Place the image block in the flow with zero height (overlay draws it)
-                var imgRb = new RenderBlock(block, yCanvas + yOffset, 0, 0, 0, null, false, 0, null);
-                result.Add(imgRb);
-
-                // Reserve flow height equal to image so subsequent paragraphs
-                // don't overflow into it when there's no wrap room.
-                // (We don't add to yCanvas here — paragraphs that fit alongside
-                //  via reduced maxW won't be pushed down.)
-                continue;
-            }
-
-            // Determine wrap-around exclusion for this block based on its top Y
-            double exclLeft = 0, exclRight = 0;
-            double provisionalTop = yCanvas;
-            foreach (var fr in floatRects)
-            {
-                if (provisionalTop >= fr.Bottom) continue;
-                // We don't yet know the block's height; use its likely top for overlap check.
-                // Apply if the block top is within the float's vertical span.
-                if (provisionalTop + 1 < fr.Top) continue;
-                if (fr.OnLeftSide) exclLeft  = Math.Max(exclLeft,  fr.Right);
-                else               exclRight = Math.Max(exclRight, maxW - fr.Left);
-            }
-
-            // Wrap-around: pass the reduced width (excluding the float overlap)
-            // to BuildRenderBlock so glyph layout wraps inside the available
-            // space, then bake the L/R exclusions into IndentLeft/Right so
-            // DrawBlock shifts x by exclLeft. BuildRenderBlock internally does
-            // `effW = maxW - IndentLeft - IndentRight` — that's already applied
-            // here by passing the reduced width directly, so we add exclLeft/R
-            // ON TOP of any OOXML indent that was baked by BuildRenderBlock.
-            double availW = Math.Max(40, maxW - exclLeft - exclRight);
-            var rb = BuildRenderBlock(block, 0, availW, alertMap);
-            if (exclLeft > 0 || exclRight > 0)
-            {
-                rb = rb with
-                {
-                    IndentLeft  = rb.IndentLeft  + exclLeft,
-                    IndentRight = rb.IndentRight + exclRight
-                };
-            }
+            var rb = BuildRenderBlock(block, 0, maxW, alertMap);
 
             // Explicit page-break forces a new page
             if (block.Kind == "page-break")
@@ -2187,17 +2132,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
             result.Add(placed);
             yCanvas += placed.Height + placed.SpaceAfter;
             yOnPage += placed.Height + placed.SpaceAfter;
-
-            // After placing the block, ensure yCanvas clears any float that ended
-            // mid-block — otherwise the NEXT paragraph might still overlap it.
-            // (No-op here because we already advanced yCanvas by block height.)
         }
-
-        // Make sure yCanvas advances past any unfinished floats so the page extent
-        // includes them (otherwise an image that protrudes below the last paragraph
-        // could get clipped from the scroll extent).
-        foreach (var fr in floatRects)
-            if (fr.Bottom > yCanvas) yCanvas = fr.Bottom;
 
         _pageStarts      = pageStarts;
         _pageCount       = pageStarts.Count;
