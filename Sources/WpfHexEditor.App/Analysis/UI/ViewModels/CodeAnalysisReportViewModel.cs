@@ -35,6 +35,9 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
 
     public bool HasReport => _report is not null && !_isRunning;
 
+    /// <summary>Underlying report (Phase 7/8 — for export, AI prompt, drill-down).</summary>
+    public CodeAnalysisReport? CurrentReport => _report;
+
     // ── Score ────────────────────────────────────────────────────────────────
 
     public int    Score          => _report?.Score.Score ?? 0;
@@ -78,6 +81,46 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
         set { _selectedSeverity = value; OnPropertyChanged(); RefreshIssues(); }
     }
 
+    private string _projectFilter = string.Empty;
+    /// <summary>Empty = all projects. Set to a project name to filter every tab.</summary>
+    public string ProjectFilter
+    {
+        get => _projectFilter;
+        set { _projectFilter = value ?? string.Empty; OnPropertyChanged(); RefreshIssues(); OnPropertyChanged(nameof(HasProjectFilter)); }
+    }
+    public bool HasProjectFilter => !string.IsNullOrEmpty(_projectFilter);
+
+    private string _groupByMode = "None"; // None / Severity / Rule / Project / File
+    public string GroupByMode
+    {
+        get => _groupByMode;
+        set { _groupByMode = value ?? "None"; OnPropertyChanged(); }
+    }
+
+    public IReadOnlyList<string> AvailableProjects =>
+        Projects.Select(p => p.ProjectName).Prepend("(All projects)").ToList();
+
+    /// <summary>AI insights markdown (Phase 8).</summary>
+    private string _aiInsights = string.Empty;
+    public string AiInsights
+    {
+        get => _aiInsights;
+        set { _aiInsights = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(HasAiInsights)); }
+    }
+    public bool HasAiInsights => !string.IsNullOrEmpty(_aiInsights);
+
+    /// <summary>Phase 5 — last N snapshots for sparkline / trending tab.</summary>
+    public IReadOnlyList<int> RecentScores { get; private set; } = [];
+
+    public void SetRecentScores(IReadOnlyList<int> scores)
+    {
+        RecentScores = scores;
+        OnPropertyChanged(nameof(RecentScores));
+    }
+
+    /// <summary>Phase 4 — cyclic project deps.</summary>
+    public ObservableCollection<ProjectCycleInfo> ProjectCycles { get; } = [];
+
     // ── Update ───────────────────────────────────────────────────────────────
 
     public void SetReport(CodeAnalysisReport report)
@@ -113,6 +156,9 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
         DeadSymbols.Clear();
         foreach (var d in report.DeadSymbols) DeadSymbols.Add(d);
 
+        ProjectCycles.Clear();
+        foreach (var c in report.ProjectCycles) ProjectCycles.Add(c);
+
         WorstFiles.Clear();
         foreach (var f in report.Score.WorstFiles)
             WorstFiles.Add(new FileMetricsViewModel(f));
@@ -131,6 +177,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(DeadCodeScore));
         OnPropertyChanged(nameof(ConventionScore));
         OnPropertyChanged(nameof(HasReport));
+        OnPropertyChanged(nameof(AvailableProjects));
     }
 
     private void RefreshIssues()
@@ -144,7 +191,10 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
                      || d.Id.Contains(_issueFilter, StringComparison.OrdinalIgnoreCase)
                      || d.FilePath.Contains(_issueFilter, StringComparison.OrdinalIgnoreCase))
             .Where(d => _selectedSeverity == "All"
-                     || d.Severity.ToString() == _selectedSeverity);
+                     || d.Severity.ToString() == _selectedSeverity)
+            .Where(d => string.IsNullOrEmpty(_projectFilter)
+                     || _projectFilter == "(All projects)"
+                     || string.Equals(d.ProjectName, _projectFilter, StringComparison.Ordinal));
 
         foreach (var d in filtered)
             Issues.Add(new IssueViewModel(d));

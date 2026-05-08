@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using WpfHexEditor.App.Analysis.Models;
+using WpfHexEditor.App.Analysis.UI.ContextMenus;
 using WpfHexEditor.App.Analysis.UI.ViewModels;
 using WpfHexEditor.SDK.Contracts.Services;
 
@@ -31,10 +32,44 @@ public partial class CodeAnalysisReportPane : UserControl
         _vm      = vm;
         _docHost = docHost;
         DataContext = vm;
+
+        // Phase 7 — keyboard shortcuts (F5 = re-run, Ctrl+F = focus filter)
+        InputBindings.Add(new KeyBinding(
+            new RelayCmd(_ => _ = (_reRunCallback?.Invoke() ?? Task.CompletedTask)),
+            new KeyGesture(Key.F5)));
     }
 
     internal void SetReRunCallback(Func<Task> callback)
         => _reRunCallback = callback;
+
+    // Phase 7 — Context menu opening (call site: DataGrid.ContextMenuOpening)
+    private void OnGridContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (sender is not DataGrid grid) return;
+        var builder = new AnalysisContextMenuBuilder(_docHost, _vm);
+        grid.ContextMenu = grid.CurrentItem switch
+        {
+            ProjectMetrics p              => builder.BuildForProject(p),
+            FileMetrics f                 => builder.BuildForFile(f),
+            FileMetricsViewModel fm       => builder.BuildForFileVm(fm),
+            MethodMetrics m               => builder.BuildForMethod(m, null),
+            IssueViewModel iv             => builder.BuildForIssue(iv),
+            CouplingMetrics c             => builder.BuildForCoupling(c),
+            DuplicationGroup d            => builder.BuildForDuplication(d),
+            DeadSymbol ds                 => builder.BuildForDeadSymbol(ds),
+            _                             => null,
+        };
+        if (grid.ContextMenu is null) e.Handled = true;
+    }
+
+    private sealed class RelayCmd : ICommand
+    {
+        private readonly Action<object?> _exec;
+        public RelayCmd(Action<object?> exec) => _exec = exec;
+        public bool CanExecute(object? p) => true;
+        public void Execute(object? p)    => _exec(p);
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
+    }
 
     // ── Navigation ───────────────────────────────────────────────────────────
 
@@ -81,24 +116,44 @@ public partial class CodeAnalysisReportPane : UserControl
     private void OnExportSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ExportCombo.SelectedIndex <= 0) return;
-        var fmt = ExportCombo.SelectedIndex == 1 ? "Markdown" : "CSV";
+        var fmt = ExportCombo.SelectedIndex switch
+        {
+            1 => "Markdown",
+            2 => "CSV",
+            3 => "SARIF",
+            _ => "CSV",
+        };
         ExportCombo.SelectedIndex = 0;
         Export(fmt);
     }
 
+    private void OnProjectFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is CodeAnalysisReportViewModel vm
+            && ProjectFilterCombo.SelectedItem is string sel)
+            vm.ProjectFilter = sel == "(All projects)" ? string.Empty : sel;
+    }
+
     private void Export(string format)
     {
-        var dlg = new SaveFileDialog
+        (string fileName, string filter) = format switch
         {
-            FileName = format == "Markdown" ? "code-analysis-report.md" : "code-analysis-report.csv",
-            Filter   = format == "Markdown" ? "Markdown files (*.md)|*.md" : "CSV files (*.csv)|*.csv",
+            "Markdown" => ("code-analysis-report.md",   "Markdown files (*.md)|*.md"),
+            "SARIF"    => ("code-analysis-report.sarif", "SARIF files (*.sarif)|*.sarif"),
+            _          => ("code-analysis-report.csv",   "CSV files (*.csv)|*.csv"),
         };
+        var dlg = new SaveFileDialog { FileName = fileName, Filter = filter };
         if (dlg.ShowDialog() != true) return;
 
-        var content = format == "Markdown"
-            ? BuildMarkdown()
-            : BuildCsv();
+        if (format == "SARIF")
+        {
+            // Need the underlying report — exposed via the VM in Phase 8
+            if (_vm.CurrentReport is not null)
+                Services.SarifExporter.Export(_vm.CurrentReport, dlg.FileName);
+            return;
+        }
 
+        var content = format == "Markdown" ? BuildMarkdown() : BuildCsv();
         File.WriteAllText(dlg.FileName, content, Encoding.UTF8);
     }
 

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:WpfHexEditor.App.Analysis.UI.ViewModels"
              xmlns:conv="clr-namespace:WpfHexEditor.App.Analysis.UI.Converters"
+             xmlns:controls="clr-namespace:WpfHexEditor.App.Analysis.UI.Controls"
              Background="{DynamicResource DockWindowBackgroundBrush}"
              Foreground="{DynamicResource DockMenuForegroundBrush}">
 
@@ -88,6 +89,7 @@
             </Style>
 
             <Style TargetType="DataGrid">
+                <EventSetter Event="ContextMenuOpening" Handler="OnGridContextMenuOpening"/>
                 <Setter Property="Background"            Value="{DynamicResource DockWindowBackgroundBrush}"/>
                 <Setter Property="Foreground"            Value="{DynamicResource DockMenuForegroundBrush}"/>
                 <Setter Property="BorderBrush"           Value="{DynamicResource DockBorderBrush}"/>
@@ -158,7 +160,13 @@
                         <ComboBoxItem Content="Export ▾"/>
                         <ComboBoxItem Content="Markdown"/>
                         <ComboBoxItem Content="CSV"/>
+                        <ComboBoxItem Content="SARIF"/>
                     </ComboBox>
+                    <!-- Phase 7 — Project filter -->
+                    <ComboBox x:Name="ProjectFilterCombo" Width="160" Margin="4,0"
+                              ItemsSource="{Binding AvailableProjects, Mode=OneWay}"
+                              SelectionChanged="OnProjectFilterChanged"
+                              ToolTip="Filter all tabs by project"/>
                 </StackPanel>
 
                 <!-- Progress bar (indeterminate while running) -->
@@ -219,24 +227,18 @@
 
                     <TextBlock Style="{StaticResource SectionHeader}" Text="SUB-SCORES" Margin="0,24,0,4"/>
 
-                    <TextBlock Text="Volume"     Style="{StaticResource MetricLabel}"/>
-                    <ProgressBar Value="{Binding VolumeScore,     Mode=OneWay, Converter={StaticResource ScoreToProgress}}"
-                                 Maximum="1" Height="4" Margin="0,2,0,6"/>
-                    <TextBlock Text="Complexity" Style="{StaticResource MetricLabel}"/>
-                    <ProgressBar Value="{Binding ComplexityScore, Mode=OneWay, Converter={StaticResource ScoreToProgress}}"
-                                 Maximum="1" Height="4" Margin="0,2,0,6"/>
-                    <TextBlock Text="Coupling"   Style="{StaticResource MetricLabel}"/>
-                    <ProgressBar Value="{Binding CouplingScore,   Mode=OneWay, Converter={StaticResource ScoreToProgress}}"
-                                 Maximum="1" Height="4" Margin="0,2,0,6"/>
-                    <TextBlock Text="Duplication" Style="{StaticResource MetricLabel}"/>
-                    <ProgressBar Value="{Binding DuplicationScore, Mode=OneWay, Converter={StaticResource ScoreToProgress}}"
-                                 Maximum="1" Height="4" Margin="0,2,0,6"/>
-                    <TextBlock Text="Dead Code"  Style="{StaticResource MetricLabel}"/>
-                    <ProgressBar Value="{Binding DeadCodeScore,   Mode=OneWay, Converter={StaticResource ScoreToProgress}}"
-                                 Maximum="1" Height="4" Margin="0,2,0,6"/>
-                    <TextBlock Text="Conventions" Style="{StaticResource MetricLabel}"/>
-                    <ProgressBar Value="{Binding ConventionScore, Mode=OneWay, Converter={StaticResource ScoreToProgress}}"
-                                 Maximum="1" Height="4" Margin="0,2,0,6"/>
+                    <!-- Phase 3 — Radar visualization -->
+                    <controls:ScoreRadarChart
+                        Width="200" Height="200"
+                        Foreground="{DynamicResource DockForegroundBrush}"
+                        Volume="{Binding VolumeScore,        Mode=OneWay}"
+                        Complexity="{Binding ComplexityScore, Mode=OneWay}"
+                        Coupling="{Binding CouplingScore,    Mode=OneWay}"
+                        Duplication="{Binding DuplicationScore, Mode=OneWay}"
+                        DeadCode="{Binding DeadCodeScore,    Mode=OneWay}"
+                        Conventions="{Binding ConventionScore, Mode=OneWay}"
+                        HorizontalAlignment="Center"
+                        Margin="0,4,0,8"/>
                 </StackPanel>
             </Border>
 
