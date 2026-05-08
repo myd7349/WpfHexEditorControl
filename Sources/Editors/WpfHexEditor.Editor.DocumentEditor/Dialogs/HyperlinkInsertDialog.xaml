@@ -9,14 +9,13 @@
         ShowInTaskbar="False"
         Background="{DynamicResource DockWindowBackgroundBrush}"
         Foreground="{DynamicResource DockMenuForegroundBrush}">
-    <Window.Resources>
+    <ec:ThemedDialog.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <docSvc:DocumentEditorLocalizedDictionary/>
-                <ResourceDictionary Source="pack://application:,,,/WpfHexEditor.App;component/Themes/DialogStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
-    </Window.Resources>
+    </ec:ThemedDialog.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- icon + title header -->
