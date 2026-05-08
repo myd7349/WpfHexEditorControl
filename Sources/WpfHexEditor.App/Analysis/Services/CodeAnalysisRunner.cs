@@ -229,11 +229,8 @@ internal sealed class CodeAnalysisRunner
         var diagList = allDiagnostics.ToList();
 
         // Patch project grades
-        foreach (var pm in projectMetrics)
-        {
-            var patched = pm with { Grade = ScoreToGrade(pm.Score) };
-            projectMetrics[projectMetrics.IndexOf(pm)] = patched;
-        }
+        for (int i = 0; i < projectMetrics.Count; i++)
+            projectMetrics[i] = projectMetrics[i] with { Grade = ScoreToGrade(projectMetrics[i].Score) };
 
         var score = QualityScoreCalculator.Calculate(
             projectMetrics, duplications, allDeadSymbols, diagList,
