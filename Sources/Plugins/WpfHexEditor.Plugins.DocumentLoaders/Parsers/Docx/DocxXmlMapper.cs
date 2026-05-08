@@ -146,9 +146,13 @@ internal sealed class DocxXmlMapper
             }
         }
 
-        // Inline images (w:drawing at paragraph level or nested inside w:r)
+        // Images: only wp:inline enter the block flow; wp:anchor (floating/positioned)
+        // cannot be placed by the flow renderer so are skipped.
         foreach (var drawing in pElem.Descendants(W + "drawing"))
         {
+            bool isInline = drawing.Element(ADrawNs + "inline") is not null;
+            if (!isInline) continue;
+
             var blip  = drawing.Descendants(ANs + "blip").FirstOrDefault();
             var embed = blip?.Attribute(RelNs + "embed")?.Value;
             if (embed is null || !_relsMap.TryGetValue(embed, out var entryName)) continue;
