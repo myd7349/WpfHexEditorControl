@@ -239,6 +239,38 @@ public sealed class DocumentBlockNode : INotifyPropertyChanged
     public string OffsetText  => $"0x{Block.RawOffset:X}";
 
     /// <summary>
+    /// Segoe MDL2 glyph picked per <see cref="Block"/>.Kind for the chip prefix.
+    /// Codepoints expressed via \uXXXX escapes to keep the source ASCII-clean.
+    /// </summary>
+    public string KindGlyph => Block.Kind switch
+    {
+        "heading"        => "\uE8FD", // Header
+        "paragraph"      => "\uE7C3", // Page
+        "list-item"      => "\uEA37", // BulletedList
+        "table"          => "\uF532", // GridView
+        "table-row"      => "\uE9D9", // RowGrid
+        "image"          => "\uEB9F", // Photo2
+        "hyperlink"      => "\uE71B", // Link
+        "page-break"     => "\uE7AD", // NewPage
+        "structured-tag" => "\uE8EC", // Tag
+        "run"            => "\uE8C1", // Font
+        _                => "\uE8A5", // PageHash
+    };
+
+    /// <summary>Resource key resolved by ResourceKeyToBrushConverter to color the chip background.</summary>
+    public string KindBrushKey => Block.Kind switch
+    {
+        "heading"        => "DE_StructureChipHeadingBrush",
+        "list-item"      => "DE_StructureChipListBrush",
+        "table"          => "DE_StructureChipTableBrush",
+        "table-row"      => "DE_StructureChipTableBrush",
+        "image"          => "DE_StructureChipImageBrush",
+        "hyperlink"      => "DE_StructureChipLinkBrush",
+        "structured-tag" => "DE_StructureChipTagBrush",
+        _                => "DE_StructureChipDefaultBrush",
+    };
+
+    /// <summary>
     /// Trims and collapses runs of whitespace (incl. tabs) into single spaces so
     /// LibreOffice-style text alignment via tabs/multi-spaces (common in CV docs)
     /// doesn't render as fragmented previews. Truncates to 60 chars with ellipsis.

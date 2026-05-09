@@ -14,6 +14,16 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <local:ResourceKeyToBrushConverter x:Key="ResourceKeyToBrushConverter"/>
 
+        <!-- Per-Kind chip backgrounds (semi-transparent so they read on any theme).
+             Resolved by ResourceKeyToBrushConverter via DocumentBlockNode.KindBrushKey. -->
+        <SolidColorBrush x:Key="DE_StructureChipHeadingBrush" Color="#5040A0FF"/>
+        <SolidColorBrush x:Key="DE_StructureChipListBrush"    Color="#4040C060"/>
+        <SolidColorBrush x:Key="DE_StructureChipTableBrush"   Color="#50FF8040"/>
+        <SolidColorBrush x:Key="DE_StructureChipImageBrush"   Color="#50FFC040"/>
+        <SolidColorBrush x:Key="DE_StructureChipLinkBrush"    Color="#5020C0C0"/>
+        <SolidColorBrush x:Key="DE_StructureChipTagBrush"     Color="#50C0A0FF"/>
+        <SolidColorBrush x:Key="DE_StructureChipDefaultBrush" Color="#30808080"/>
+
         <!-- Small icon button style -->
         <Style x:Key="StructToolBtnStyle" TargetType="Button">
             <Setter Property="Background"      Value="Transparent"/>
@@ -174,14 +184,23 @@
                                 Background="{Binding AlertBrushKey, Converter={StaticResource ResourceKeyToBrushConverter}}"
                                 ToolTip="{Binding AlertMessage}"/>
 
-                        <!-- Kind chip -->
+                        <!-- Kind chip: semantic icon + 3-letter label, color-coded by Kind -->
                         <Border CornerRadius="2"
-                                Padding="3,0"
+                                Padding="4,0,5,0"
                                 Margin="0,0,4,0"
-                                Background="{DynamicResource DE_ToolbarButtonActiveBrush}">
-                            <TextBlock Text="{Binding KindLabel}"
-                                       FontSize="10"
-                                       Foreground="{DynamicResource DE_StructureKindFg}"/>
+                                Background="{Binding KindBrushKey, Converter={StaticResource ResourceKeyToBrushConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding KindGlyph}"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="10"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,3,0"
+                                           Foreground="{DynamicResource DE_StructureKindFg}"/>
+                                <TextBlock Text="{Binding KindLabel}"
+                                           FontSize="10"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource DE_StructureKindFg}"/>
+                            </StackPanel>
                         </Border>
 
                         <!-- Text preview -->
