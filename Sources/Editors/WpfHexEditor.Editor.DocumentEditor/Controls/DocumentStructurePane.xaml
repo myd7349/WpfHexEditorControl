@@ -208,12 +208,16 @@
                                    Foreground="{DynamicResource DE_StructureNodeFg}"
                                    FontSize="12"/>
 
-                        <!-- Offset badge -->
+                        <!-- Offset badge: monospace + 8-digit hex so siblings align vertically -->
                         <TextBlock Text="{Binding OffsetText}"
+                                   FontFamily="Consolas"
                                    Foreground="{DynamicResource DockMenuForegroundBrush}"
                                    FontSize="10"
                                    Opacity="0.5"
-                                   Margin="8,0,0,0"/>
+                                   MinWidth="80"
+                                   TextAlignment="Right"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

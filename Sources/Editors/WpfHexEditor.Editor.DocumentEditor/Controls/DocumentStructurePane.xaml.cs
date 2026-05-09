@@ -252,7 +252,11 @@ public sealed class DocumentBlockNode : INotifyPropertyChanged
         }
     }
     public string Preview     => BuildPreview(Block.Text);
-    public string OffsetText  => $"0x{Block.RawOffset:X}";
+    /// <summary>
+    /// 8-digit zero-padded hex so all offsets render with the same character width
+    /// and stay visually aligned across siblings (Consolas in the chip).
+    /// </summary>
+    public string OffsetText  => $"0x{Block.RawOffset:X8}";
 
     /// <summary>
     /// Segoe MDL2 glyph picked per <see cref="Block"/>.Kind for the chip prefix.
