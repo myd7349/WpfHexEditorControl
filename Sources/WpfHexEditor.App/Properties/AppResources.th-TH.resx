@@ -665,6 +665,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>คำเตือน</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>ข้อผิดพลาด</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ เรียกใช้อีกครั้ง</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ เรียกใช้อีกครั้ง (ขอบเขตเดิม)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>เรียกใช้ Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>เรียกใช้ Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>เรียกใช้ไฟล์…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>ไฟล์: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>เปิดไฟล์</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>คัดลอกเส้นทาง</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>คัดลอกเมตริก</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>เรียกใช้การวิเคราะห์กับไฟล์</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>กรองตาม Project นี้</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>ไฮไลต์ 10 จุดร้อนอันดับแรก</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>เรียกใช้การวิเคราะห์อีกครั้งโดยใช้ขอบเขตและเส้นทางเดิมกับการเรียกใช้ครั้งล่าสุด</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>เรียกใช้การวิเคราะห์บน Solution ทั้งหมด</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>ส่งออก ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>ทรีแมป</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>คะแนน</value></data>

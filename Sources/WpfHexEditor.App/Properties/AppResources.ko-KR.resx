@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>경고</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>오류</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ 다시 실행</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ 다시 실행(동일 범위)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Solution 실행</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Project 실행…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>파일 실행…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>파일: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>파일 열기</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>경로 복사</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>메트릭 복사</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>파일에서 분석 실행</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>이 Project로 필터링</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>상위 10개 핸스팟 강조 표시</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>마지막 실행과 동일한 범위 및 경로로 분석을 다시 실행합니다</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>전체 Solution에서 분석 실행</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>내보내기 ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>트리맵</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>점수</value></data>

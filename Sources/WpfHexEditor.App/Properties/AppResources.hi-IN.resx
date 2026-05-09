@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>चेतावनी</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>त्रुटि</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ पुनः चलाएं</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ पुनः चलाएँ (समान दायरा)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Solution चलाएँ</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Project चलाएँ…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>फ़ाइल चलाएँ…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>फ़ाइल: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>फ़ाइल खोलें</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>पथ कॉपी करें</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>मेट्रिक्स कॉपी करें</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>फ़ाइल पर विश्लेषण चलाएँ</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>इस Project पर फ़िल्टर करें</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>शीर्ष 10 हॉटस्पॉट हाइलाइट करें</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>अंतिम रन के समान दायरे और पथ का उपयोग करके विश्लेषण पुनः चलाएँ</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>पूरे Solution पर विश्लेषण चलाएँ</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>निर्यात ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>ट्रीमैप</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>स्कोर</value></data>

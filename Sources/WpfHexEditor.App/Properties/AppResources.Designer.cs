@@ -5190,7 +5190,52 @@ namespace WpfHexEditor.App.Properties {
                 return ResourceManager.GetString("CodeAnalysis_Rerun", resourceCulture);
             }
         }
-        
+        internal static string CodeAnalysis_Rerun_SameScope {
+            get { return ResourceManager.GetString("CodeAnalysis_Rerun_SameScope", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Rerun_RunSolution {
+            get { return ResourceManager.GetString("CodeAnalysis_Rerun_RunSolution", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Rerun_RunProject {
+            get { return ResourceManager.GetString("CodeAnalysis_Rerun_RunProject", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Rerun_RunFile {
+            get { return ResourceManager.GetString("CodeAnalysis_Rerun_RunFile", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Scope_Solution {
+            get { return ResourceManager.GetString("CodeAnalysis_Scope_Solution", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Scope_Project {
+            get { return ResourceManager.GetString("CodeAnalysis_Scope_Project", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Scope_File {
+            get { return ResourceManager.GetString("CodeAnalysis_Scope_File", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Treemap_OpenFile {
+            get { return ResourceManager.GetString("CodeAnalysis_Treemap_OpenFile", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Treemap_CopyPath {
+            get { return ResourceManager.GetString("CodeAnalysis_Treemap_CopyPath", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Treemap_CopyMetrics {
+            get { return ResourceManager.GetString("CodeAnalysis_Treemap_CopyMetrics", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Treemap_RunOnFile {
+            get { return ResourceManager.GetString("CodeAnalysis_Treemap_RunOnFile", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Treemap_FilterProject {
+            get { return ResourceManager.GetString("CodeAnalysis_Treemap_FilterProject", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Treemap_HighlightHotspots {
+            get { return ResourceManager.GetString("CodeAnalysis_Treemap_HighlightHotspots", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Tooltip_Rerun_SameScope {
+            get { return ResourceManager.GetString("CodeAnalysis_Tooltip_Rerun_SameScope", resourceCulture); }
+        }
+        internal static string CodeAnalysis_Tooltip_Rerun_RunSolution {
+            get { return ResourceManager.GetString("CodeAnalysis_Tooltip_Rerun_RunSolution", resourceCulture); }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à Export ▾.
         /// </summary>

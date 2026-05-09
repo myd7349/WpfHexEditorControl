@@ -631,6 +631,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Προειδοποίηση</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Σφάλμα</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Επανεκτέλεση</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Εκτέλεση ξανά (ίδιο εύρος)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Εκτέλεση Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Εκτέλεση Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Εκτέλεση αρχείου…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Αρχείο: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Άνοιγμα αρχείου</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Αντιγραφή διαδρομής</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Αντιγραφή μετρικών</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Εκτέλεση ανάλυσης σε αρχείο</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Φιλτράρισμα σε αυτό το Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Επισήμανση κορυφαίων 10 hotspots</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Εκτέλεση ανάλυσης με το ίδιο εύρος και διαδρομή όπως την τελευταία φορά</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Εκτέλεση ανάλυσης στο πλήρες Solution</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Εξαγωγή ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Δενδροδιάγραμμα</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>ΒΑΘΜΟΛΟΓΙΑ</value></data>

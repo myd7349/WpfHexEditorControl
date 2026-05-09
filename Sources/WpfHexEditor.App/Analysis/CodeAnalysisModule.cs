@@ -43,6 +43,8 @@ internal sealed class CodeAnalysisModule
 
     private CodeAnalysisOptionsService _optionsService  = new();
     private AnalysisSnapshotService    _snapshotService = new();
+    private AnalysisScope              _lastScope       = AnalysisScope.Solution;
+    private string                     _lastPath        = string.Empty;
     private CodeAnalysisRunner?        _runner;
     private AnalysisOutputLogger?      _logger;
     private AnalysisErrorPanelBridge?  _errorBridge;
@@ -81,11 +83,14 @@ internal sealed class CodeAnalysisModule
             runSolution: () => RunAsync(AnalysisScope.Solution, GetSolutionPath()),
             openReport:  () => OpenReportAsync());
 
+        _lastPath = GetSolutionPath();
+
         // Register IDE commands (Command Palette)
         _commands = new AnalysisCommandsRegistrar(
             runSolution:   () => RunAsync(AnalysisScope.Solution, GetSolutionPath()),
             openReport:    () => OpenReportAsync(),
             clearSnapshot: ClearSnapshot);
+
         _commands.Register(commandRegistry);
 
         // Register Solution Explorer context menu contributors
@@ -133,6 +138,9 @@ internal sealed class CodeAnalysisModule
     private async Task RunAsync(AnalysisScope scope, string path)
     {
         if (_runner is null || _context is null) return;
+
+        _lastScope = scope;
+        _lastPath  = path;
 
         // Cancel any in-flight run
         _cts?.Cancel();
@@ -200,9 +208,8 @@ internal sealed class CodeAnalysisModule
                 _statusBar?.ShowScore(report.Score.Score, report.Score.Grade);
 
             EnsureReportPane();
-            _context!.Output.Info(
-                $"[Code Analysis] Pushing to VM: Score={report.Score.Score} Projects={report.Projects.Count} Files={report.TotalFiles} VM={(_reportVm is null ? "null" : "ok")}");
-            _reportVm!.SetReport(report);
+            _reportVm!.SetScope(scope, path);
+            _reportVm.SetReport(report);
         });
     }
 
@@ -235,7 +242,9 @@ internal sealed class CodeAnalysisModule
         _reportVm   = new CodeAnalysisReportViewModel();
         _reportPane = new CodeAnalysisReportPane(_reportVm, _context.DocumentHost);
         _reportPane.SetReRunCallback(
-            () => RunAsync(AnalysisScope.Solution, GetSolutionPath()));
+            rerun:       () => RunAsync(_lastScope, string.IsNullOrEmpty(_lastPath) ? GetSolutionPath() : _lastPath),
+            runSolution: () => RunAsync(AnalysisScope.Solution, GetSolutionPath()),
+            runFile:     path => RunAsync(AnalysisScope.File, path));
     }
 
     private void EnsureReportPane()

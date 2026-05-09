@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Warnung</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Fehler</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Erneut ausführen</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Erneut ausführen (gleicher Bereich)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Solution ausführen</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Project ausführen…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Datei ausführen…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Datei: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Datei öffnen</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Pfad kopieren</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Metriken kopieren</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Analyse für Datei ausführen</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Auf dieses Project filtern</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Top 10 Hotspots hervorheben</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Analyse mit demselben Bereich und Pfad wie beim letzten Durchlauf erneut ausführen</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Analyse für die gesamte Solution ausführen</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Exportieren ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Treemap</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>PUNKTZAHL</value></data>

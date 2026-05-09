@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>تحذير</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>خطأ</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ إعادة التشغيل</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ إعادة التشغيل (نفس النطاق)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>تشغيل الحل</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>تشغيل المشروع...</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>تشغيل الملف...</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>الحل: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>المشروع: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>الملف: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>فتح الملف</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>نسخ المسار</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>نسخ المقاييس</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>تشغيل التحليل على الملف</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>تصفية لهذا المشروع</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>تمييز أفضل 10 نقاط ساخنة</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>إعادة تشغيل التحليل باستخدام نفس النطاق والمسار كآخر تشغيل</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>تشغيل التحليل على الحل الكامل</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>تصدير ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>خريطة شجرية</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>النتيجة</value></data>

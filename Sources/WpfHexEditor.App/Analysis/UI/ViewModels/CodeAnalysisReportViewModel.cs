@@ -21,6 +21,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
     private CodeAnalysisReport? _report;
     private bool                _isRunning;
     private string              _statusText = "No analysis run yet.";
+    private string              _scopeLabel = string.Empty;
 
     public bool IsRunning
     {
@@ -35,6 +36,12 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
     }
 
     public bool HasReport => _report is not null && !_isRunning;
+
+    public string ScopeLabel
+    {
+        get => _scopeLabel;
+        private set { _scopeLabel = value; OnPropertyChanged(); }
+    }
 
     /// <summary>Underlying report (Phase 7/8 — for export, AI prompt, drill-down).</summary>
     public CodeAnalysisReport? CurrentReport => _report;
@@ -120,6 +127,17 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
 
     /// <summary>Phase 5 — last N snapshots for sparkline / trending tab.</summary>
     public IReadOnlyList<int> RecentScores { get; private set; } = [];
+
+    public void SetScope(AnalysisScope scope, string path)
+    {
+        var name = scope switch
+        {
+            AnalysisScope.Solution => string.Format(AppResources.CodeAnalysis_Scope_Solution, System.IO.Path.GetFileName(path.TrimEnd('\\', '/'))),
+            AnalysisScope.Project  => string.Format(AppResources.CodeAnalysis_Scope_Project,  System.IO.Path.GetFileNameWithoutExtension(path)),
+            _                      => string.Format(AppResources.CodeAnalysis_Scope_File,      System.IO.Path.GetFileName(path)),
+        };
+        ScopeLabel = name;
+    }
 
     public void SetRecentScores(IReadOnlyList<int> scores)
     {

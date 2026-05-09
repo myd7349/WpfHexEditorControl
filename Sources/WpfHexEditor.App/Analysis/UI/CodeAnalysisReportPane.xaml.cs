@@ -24,6 +24,8 @@ public partial class CodeAnalysisReportPane : UserControl
     private readonly CodeAnalysisReportViewModel _vm;
     private readonly IDocumentHostService?        _docHost;
     private          Func<Task>?                  _reRunCallback;
+    private          Func<Task>?                  _runSolutionCallback;
+    private          Func<string, Task>?          _runFileCallback;
 
     public CodeAnalysisReportPane(
         CodeAnalysisReportViewModel vm,
@@ -43,8 +45,12 @@ public partial class CodeAnalysisReportPane : UserControl
             new KeyGesture(Key.F, ModifierKeys.Control)));
     }
 
-    internal void SetReRunCallback(Func<Task> callback)
-        => _reRunCallback = callback;
+    internal void SetReRunCallback(Func<Task> rerun, Func<Task> runSolution, Func<string, Task> runFile)
+    {
+        _reRunCallback       = rerun;
+        _runSolutionCallback = runSolution;
+        _runFileCallback     = runFile;
+    }
 
     // Phase 7 — Context menu opening (call site: DataGrid.ContextMenuOpening)
     private void OnGridContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -114,6 +120,74 @@ public partial class CodeAnalysisReportPane : UserControl
         if (_reRunCallback is null) return;
         _ = _reRunCallback();
     }
+
+    private void OnReRunDropdownClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.ContextMenu is { } cm)
+        {
+            cm.PlacementTarget = btn;
+            cm.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            cm.IsOpen = true;
+        }
+    }
+
+    private void OnRunSolutionClicked(object sender, RoutedEventArgs e)
+    {
+        if (_runSolutionCallback is null) return;
+        _ = _runSolutionCallback();
+    }
+
+    // ── Treemap context menu ──────────────────────────────────────────────────
+
+    private void OnTreemapContextMenuRequested(object? sender, Controls.TreemapContextMenuEventArgs e)
+    {
+        var cm = new ContextMenu();
+
+        var openItem = new MenuItem { Header = AppResources.CodeAnalysis_Treemap_OpenFile };
+        openItem.Click += (_, _) => Navigate(e.File.FilePath, 1);
+        cm.Items.Add(openItem);
+
+        var copyPath = new MenuItem { Header = AppResources.CodeAnalysis_Treemap_CopyPath };
+        copyPath.Click += (_, _) => Clipboard.SetText(e.File.FilePath);
+        cm.Items.Add(copyPath);
+
+        var copyMetrics = new MenuItem { Header = AppResources.CodeAnalysis_Treemap_CopyMetrics };
+        copyMetrics.Click += (_, _) => Clipboard.SetText(BuildFileMetricsText(e.File));
+        cm.Items.Add(copyMetrics);
+
+        cm.Items.Add(new Separator());
+
+        var runFile = new MenuItem { Header = AppResources.CodeAnalysis_Treemap_RunOnFile };
+        runFile.IsEnabled = _runFileCallback is not null;
+        runFile.Click += (_, _) => { if (_runFileCallback is not null) _ = _runFileCallback(e.File.FilePath); };
+        cm.Items.Add(runFile);
+
+        cm.Items.Add(new Separator());
+
+        var filterProj = new MenuItem { Header = AppResources.CodeAnalysis_Treemap_FilterProject };
+        filterProj.Click += (_, _) => _vm.ProjectFilter = e.File.ProjectName;
+        cm.Items.Add(filterProj);
+
+        var highlight = new MenuItem { Header = AppResources.CodeAnalysis_Treemap_HighlightHotspots };
+        highlight.Click += (_, _) => FileTreemap.ToggleHotspotMode();
+        cm.Items.Add(highlight);
+
+        cm.IsOpen = true;
+    }
+
+    private static string BuildFileMetricsText(FileMetrics f) =>
+        $"""
+         File      : {f.FileName}
+         Project   : {f.ProjectName}
+         Path      : {f.FilePath}
+         Score     : {f.Score}/100
+         LOC       : {f.TotalLines:N0}  ({f.CodeLines:N0} code · {f.CommentLines:N0} comments)
+         Max CC    : {f.MaxCyclomaticComplexity}
+         Max Cog   : {f.MaxCognitiveComplexity}
+         MI        : {f.MaintainabilityIndex:F0}
+         Methods   : {f.MethodCount}
+         """;
+
 
     // ── Export ───────────────────────────────────────────────────────────────
 

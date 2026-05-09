@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Предупреждение</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Ошибка</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Повторить</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Повторить (тот же охват)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Запустить Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Запустить Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Запустить файл…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Файл: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Открыть файл</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Копировать путь</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Копировать метрики</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Запустить анализ файла</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Фильтровать по этому Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Выделить топ-10 горячих точек</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Повторить анализ с тем же охватом и путём, что и в последнем запуске</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Запустить анализ всего Solution</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Экспорт ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Дерево карты</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>ОЦЕНКА</value></data>

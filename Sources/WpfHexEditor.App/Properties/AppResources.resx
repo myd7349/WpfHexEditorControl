@@ -1256,7 +1256,22 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Warning</value></data>
   <data name="CodeAnalysis_Options_Severity_Error"  xml:space="preserve"><value>Error</value></data>
   <data name="CodeAnalysis_Rerun"                   xml:space="preserve"><value>⟳ Re-run</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope"         xml:space="preserve"><value>⟳ Re-run (same scope)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution"       xml:space="preserve"><value>Run Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject"        xml:space="preserve"><value>Run Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile"           xml:space="preserve"><value>Run File…</value></data>
+  <data name="CodeAnalysis_Scope_Solution"          xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project"           xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File"              xml:space="preserve"><value>File: {0}</value></data>
   <data name="CodeAnalysis_Export"                  xml:space="preserve"><value>Export ▾</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile"        xml:space="preserve"><value>Open File</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath"        xml:space="preserve"><value>Copy Path</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics"     xml:space="preserve"><value>Copy Metrics</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile"       xml:space="preserve"><value>Run Analysis on File</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject"   xml:space="preserve"><value>Filter to This Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Highlight Top 10 Hotspots</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Re-run analysis using the same scope and path as the last run</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Run analysis on the full solution</value></data>
   <!-- ── CodeAnalysis Report Pane (Phase 7+) ─────────────────────────────── -->
   <data name="CodeAnalysis_Tab_Treemap"             xml:space="preserve"><value>Treemap</value></data>
   <data name="CodeAnalysis_Header_Score"            xml:space="preserve"><value>SCORE</value></data>

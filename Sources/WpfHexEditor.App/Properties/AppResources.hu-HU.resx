@@ -665,6 +665,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Figyelmeztetés</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Hiba</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Újrafuttatás</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Újrafuttatás (ugyanaz a hatókör)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Solution futtatása</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Project futtatása…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Fájl futtatása…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Fájl: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Fájl megnyitása</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Elérési út másolása</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Mérőszámok másolása</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Elemzés futtatása fájlon</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Szűrés erre a Projectre</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Top 10 hotspot kiemelése</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Az elemzés újrafuttatása ugyanolyan hatókörrel és elérési úttal, mint az utolsó futtatásnál</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Elemzés futtatása a teljes Solutionön</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Exportálás ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Fatérkép</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>PONTSZÁM</value></data>

@@ -625,6 +625,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Upozornění</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Chyba</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Znovu spustit</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Znovu spustit (stejný rozsah)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Spustit Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Spustit Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Spustit soubor…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Soubor: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Otevřít soubor</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Kopírovat cestu</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Kopírovat metriky</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Spustit analýzu souboru</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Filtrovat na tento Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Zvýraznit top 10 hotspotů</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Znovu spustit analýzu se stejným rozsahem a cestou jako při posledním spuštění</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Spustit analýzu na celém Solution</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Exportovat ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Stromová mapa</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>SKÓRE</value></data>

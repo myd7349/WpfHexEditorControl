@@ -665,6 +665,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Advarsel</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Fejl</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Kør igen</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Kør igen (samme omfang)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Kør Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Kør Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Kør fil…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Fil: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Åbn fil</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Kopiér sti</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Kopiér metrikker</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Kør analyse på fil</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Filtrer til dette Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Fremhæv top 10 hotspots</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Kør analyse igen med samme omfang og sti som sidst</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Kør analyse på hele Solution</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Eksportér ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Trædiagram</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>SCORE</value></data>

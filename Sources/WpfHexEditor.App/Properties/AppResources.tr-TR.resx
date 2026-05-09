@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Uyarı</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Hata</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Yeniden çalıştır</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Yeniden Çalıştır (aynı kapsam)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Solution'ı Çalıştır</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Project'i Çalıştır…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Dosyayı Çalıştır…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Dosya: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Dosyayı Aç</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Yolu Kopyala</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Metrikleri Kopyala</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Dosyada Analiz Çalıştır</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Bu Project'e Göre Filtrele</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>İlk 10 Hotspot'ı Vurgula</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Son çalıştırmayla aynı kapsam ve yolu kullanarak analizi yeniden çalıştır</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Analizi tüm Solution üzerine çalıştır</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Dışa aktar ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Ağaç haritası</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>PUAN</value></data>

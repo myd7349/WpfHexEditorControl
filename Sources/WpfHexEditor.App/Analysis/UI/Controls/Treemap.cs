@@ -19,6 +19,12 @@ using WpfHexEditor.App.Analysis.Models;
 
 namespace WpfHexEditor.App.Analysis.UI.Controls;
 
+public sealed class TreemapContextMenuEventArgs : EventArgs
+{
+    public FileMetrics File { get; }
+    public TreemapContextMenuEventArgs(FileMetrics file) => File = file;
+}
+
 public sealed class Treemap : Control
 {
     public static readonly DependencyProperty ItemsProperty =
@@ -31,9 +37,11 @@ public sealed class Treemap : Control
         set => SetValue(ItemsProperty, value);
     }
 
-    public event EventHandler<FileMetrics>? ItemActivated;
+    public event EventHandler<FileMetrics>?                  ItemActivated;
+    public event EventHandler<TreemapContextMenuEventArgs>?  ContextMenuRequested;
 
     private List<(Rect bounds, FileMetrics file)> _tiles = [];
+    private bool _hotspotMode;
 
     private static void OnItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         => ((Treemap)d).Recompute();
@@ -168,7 +176,9 @@ public sealed class Treemap : Control
         foreach (var (rect, file) in _tiles)
         {
             if (rect.Width <= 1 || rect.Height <= 1) continue;
-            var brush = ScoreToBrush(file.Score);
+            var brush = _hotspotMode && !file.IsHotspot
+                ? new SolidColorBrush(Color.FromArgb(80, 60, 60, 60))
+                : ScoreToBrush(file.Score);
             var pen   = new Pen(Brushes.Black, 0.5);
             dc.DrawRectangle(brush, pen, rect);
 
@@ -207,6 +217,24 @@ public sealed class Treemap : Control
                 return;
             }
         }
+    }
+
+    protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
+    {
+        var p = e.GetPosition(this);
+        foreach (var (rect, file) in _tiles)
+        {
+            if (!rect.Contains(p)) continue;
+            ContextMenuRequested?.Invoke(this, new TreemapContextMenuEventArgs(file));
+            e.Handled = true;
+            return;
+        }
+    }
+
+    public void ToggleHotspotMode()
+    {
+        _hotspotMode = !_hotspotMode;
+        InvalidateVisual();
     }
 
     protected override void OnMouseMove(MouseEventArgs e)

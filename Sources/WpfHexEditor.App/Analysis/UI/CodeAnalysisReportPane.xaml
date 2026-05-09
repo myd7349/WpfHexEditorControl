@@ -153,10 +153,33 @@
                 Padding="12,6">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button x:Name="ReRunButton" Content="{DynamicResource CodeAnalysis_Rerun}"
-                            Padding="10,4" Margin="4,0"
-                            Click="OnReRunClicked"
-                            ToolTip="{DynamicResource CodeAnalysis_Tooltip_Rerun}"/>
+                    <!-- SplitButton: Re-run (left) + dropdown (right) -->
+                    <StackPanel Orientation="Horizontal" Margin="4,0">
+                        <Button x:Name="ReRunButton"
+                                Content="{DynamicResource CodeAnalysis_Rerun_SameScope}"
+                                Padding="10,4" BorderThickness="1,1,0,1"
+                                Click="OnReRunClicked"
+                                ToolTip="{DynamicResource CodeAnalysis_Tooltip_Rerun_SameScope}"/>
+                        <Button x:Name="ReRunDropdown" Content="▾"
+                                Padding="4,4" BorderThickness="0,1,1,1"
+                                ToolTip="{DynamicResource CodeAnalysis_Tooltip_Rerun}"
+                                Click="OnReRunDropdownClicked">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{DynamicResource CodeAnalysis_Rerun_SameScope}"
+                                              Click="OnReRunClicked"/>
+                                    <MenuItem Header="{DynamicResource CodeAnalysis_Rerun_RunSolution}"
+                                              Click="OnRunSolutionClicked"
+                                              ToolTip="{DynamicResource CodeAnalysis_Tooltip_Rerun_RunSolution}"/>
+                                    <Separator/>
+                                    <MenuItem Header="{DynamicResource CodeAnalysis_Rerun_RunProject}"
+                                              IsEnabled="False"/>
+                                    <MenuItem Header="{DynamicResource CodeAnalysis_Rerun_RunFile}"
+                                              IsEnabled="False"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </StackPanel>
                     <ComboBox x:Name="ExportCombo" Width="90" Margin="4,0"
                               SelectedIndex="0"
                               ToolTip="{DynamicResource CodeAnalysis_Tooltip_Export}"
@@ -198,6 +221,12 @@
                 <!-- Summary line when done -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
                             Visibility="{Binding HasReport, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                    <!-- Scope label (Solution / Project / File) -->
+                    <TextBlock Text="{Binding ScopeLabel, Mode=OneWay}"
+                               VerticalAlignment="Center" FontSize="11" FontStyle="Italic"
+                               Foreground="{DynamicResource DockForegroundBrush}"
+                               Margin="0,0,12,0" MaxWidth="240"
+                               TextTrimming="CharacterEllipsis"/>
                     <TextBlock Style="{StaticResource TabLabelStyle}">
                         <Run Text="{Binding TotalFiles,    Mode=OneWay, StringFormat={}{0} files}"/>
                         <Run Text=" · "/>
@@ -524,7 +553,8 @@
                         <controls:Treemap x:Name="FileTreemap"
                                           Items="{Binding AllFiles, Mode=OneWay}"
                                           Foreground="White"
-                                          ItemActivated="OnTreemapItemActivated"/>
+                                          ItemActivated="OnTreemapItemActivated"
+                                          ContextMenuRequested="OnTreemapContextMenuRequested"/>
                     </DockPanel>
                 </TabItem>
 

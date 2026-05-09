@@ -665,6 +665,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>Cảnh báo</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>Lỗi</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ Chạy lại</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Chạy lại (cùng phạm vi)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Chạy Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Chạy Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Chạy tệp…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Tệp: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Mở tệp</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Sao chép đường dẫn</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Sao chép chỉ số</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Chạy phân tích trên tệp</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Lọc theo Project này</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Đánh dấu 10 điểm nóng hàng đầu</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Chạy lại phân tích với cùng phạm vi và đường dẫn như lần chạy cuối</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Chạy phân tích trên toàn bộ Solution</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>Xuất ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Bản đồ cây</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>ĐIỂM</value></data>

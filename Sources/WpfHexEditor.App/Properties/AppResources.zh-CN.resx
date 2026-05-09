@@ -969,6 +969,21 @@
   <data name="CodeAnalysis_Options_Severity_Warning" xml:space="preserve"><value>警告</value></data>
   <data name="CodeAnalysis_Options_Severity_Error" xml:space="preserve"><value>错误</value></data>
   <data name="CodeAnalysis_Rerun" xml:space="preserve"><value>⟳ 重新运行</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ 重新运行（相同范围）</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>运行 Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>运行 Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>运行文件…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution: {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project: {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>文件: {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>打开文件</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>复制路径</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>复制指标</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>对文件运行分析</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>筛选到此 Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>突出显示前 10 个热点</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>使用与上次运行相同的范围和路径重新运行分析</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>对整个 Solution 运行分析</value></data>
   <data name="CodeAnalysis_Export" xml:space="preserve"><value>导出 ▾</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>树状图</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>评分</value></data>

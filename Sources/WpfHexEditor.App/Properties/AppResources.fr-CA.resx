@@ -633,6 +633,21 @@
   <data name="CodeAnalysis_Options_PushDiagnostics"  xml:space="preserve"><value>Envoyer les diagnostics vers le panneau d'erreurs</value></data>
   <data name="CodeAnalysis_Options_RestoreDefaults"  xml:space="preserve"><value>Retablir les valeurs par defaut</value></data>
   <data name="CodeAnalysis_Rerun"                    xml:space="preserve"><value>Relancer</value></data>
+  <data name="CodeAnalysis_Rerun_SameScope" xml:space="preserve"><value>⟳ Relancer (même portée)</value></data>
+  <data name="CodeAnalysis_Rerun_RunSolution" xml:space="preserve"><value>Lancer la Solution</value></data>
+  <data name="CodeAnalysis_Rerun_RunProject" xml:space="preserve"><value>Lancer le Project…</value></data>
+  <data name="CodeAnalysis_Rerun_RunFile" xml:space="preserve"><value>Lancer le fichier…</value></data>
+  <data name="CodeAnalysis_Scope_Solution" xml:space="preserve"><value>Solution : {0}</value></data>
+  <data name="CodeAnalysis_Scope_Project" xml:space="preserve"><value>Project : {0}</value></data>
+  <data name="CodeAnalysis_Scope_File" xml:space="preserve"><value>Fichier : {0}</value></data>
+  <data name="CodeAnalysis_Treemap_OpenFile" xml:space="preserve"><value>Ouvrir le fichier</value></data>
+  <data name="CodeAnalysis_Treemap_CopyPath" xml:space="preserve"><value>Copier le chemin</value></data>
+  <data name="CodeAnalysis_Treemap_CopyMetrics" xml:space="preserve"><value>Copier les métriques</value></data>
+  <data name="CodeAnalysis_Treemap_RunOnFile" xml:space="preserve"><value>Analyser le fichier</value></data>
+  <data name="CodeAnalysis_Treemap_FilterProject" xml:space="preserve"><value>Filtrer sur ce Project</value></data>
+  <data name="CodeAnalysis_Treemap_HighlightHotspots" xml:space="preserve"><value>Mettre en évidence les 10 points chauds</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_SameScope" xml:space="preserve"><value>Relancer l'analyse avec la même portée et le même chemin que la dernière exécution</value></data>
+  <data name="CodeAnalysis_Tooltip_Rerun_RunSolution" xml:space="preserve"><value>Lancer l'analyse sur la Solution complète</value></data>
   <data name="CodeAnalysis_Export"                   xml:space="preserve"><value>Exporter</value></data>
   <data name="CodeAnalysis_Tab_Treemap" xml:space="preserve"><value>Carte arborescente</value></data>
   <data name="CodeAnalysis_Header_Score" xml:space="preserve"><value>SCORE</value></data>
