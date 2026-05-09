@@ -113,6 +113,19 @@
                               Unchecked="OnShowRunsToggled">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7BA;" FontSize="11"/>
                 </ToggleButton>
+
+                <ToggleButton x:Name="PART_OutlineBtn"
+                              DockPanel.Dock="Right"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Foreground="{DynamicResource DockMenuForegroundBrush}"
+                              Width="22" Height="22" Padding="3"
+                              Cursor="Hand"
+                              ToolTip="{DynamicResource DocStructure_OutlineModeToolTip}"
+                              Checked="OnOutlineModeToggled"
+                              Unchecked="OnOutlineModeToggled">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE71D;" FontSize="11"/>
+                </ToggleButton>
             </DockPanel>
         </Border>
 

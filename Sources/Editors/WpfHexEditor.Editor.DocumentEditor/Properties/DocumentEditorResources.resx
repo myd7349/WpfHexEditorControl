@@ -440,6 +440,9 @@
   <data name="DocStructure_ShowRunsToggleToolTip" xml:space="preserve">
     <value>Show runs (text fragments)</value>
   </data>
+  <data name="DocStructure_OutlineModeToolTip" xml:space="preserve">
+    <value>Outline only (headings hierarchy)</value>
+  </data>
   <data name="DocStructure_KindFilterToolTip" xml:space="preserve">
     <value>Filter by block kind</value>
   </data>

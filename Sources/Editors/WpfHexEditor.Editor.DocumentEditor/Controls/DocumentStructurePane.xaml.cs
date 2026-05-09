@@ -34,6 +34,7 @@ public partial class DocumentStructurePane : UserControl
     private string _filterText = string.Empty;
     private bool   _showRuns   = false; // hide run leaves by default — they duplicate paragraph text
     private string _kindFilter = "all"; // "all" | "heading" | "list-item" | "table" | "image"
+    private bool   _outlineMode;        // true = headings-only, hierarchically grouped by level
     private bool   _suppressNavigateEvent;       // re-entrancy guard for SyncToBlock
 
     // ── Events ────────────────────────────────────────────────────────────────
@@ -139,14 +140,61 @@ public partial class DocumentStructurePane : UserControl
         if (_model is null) return;
 
         var alertMap = BuildAlertMap();
-        _allNodes = new ObservableCollection<DocumentBlockNode>(
-            _model.Blocks
-                  .Where(b => _showRuns || b.Kind != "run")
-                  .Select(b => BuildNode(b, alertMap, _showRuns)));
+        _allNodes = _outlineMode
+            ? BuildOutlineNodes(_model.Blocks, alertMap)
+            : new ObservableCollection<DocumentBlockNode>(
+                _model.Blocks
+                      .Where(b => _showRuns || b.Kind != "run")
+                      .Select(b => BuildNode(b, alertMap, _showRuns)));
 
         ApplyFilter();
         UpdateCountLabel();
     }
+
+    /// <summary>
+    /// Builds a heading-only tree where each heading owns the deeper-level headings
+    /// that follow it until a same-or-shallower heading breaks the chain. Mirrors
+    /// the document outline panes in VS Code / Word.
+    /// </summary>
+    private static ObservableCollection<DocumentBlockNode> BuildOutlineNodes(
+        IEnumerable<DocumentBlock> blocks, Dictionary<DocumentBlock, ForensicAlert> alertMap)
+    {
+        var roots = new ObservableCollection<DocumentBlockNode>();
+        var stack = new Stack<(int Level, DocumentBlockNode Node)>();
+
+        foreach (var block in blocks.SelectMany(Flatten).Where(b => b.Kind == "heading"))
+        {
+            int level = ReadHeadingLevel(block);
+            var node  = new DocumentBlockNode(block)
+            {
+                Alert = alertMap.TryGetValue(block, out var a) ? a : null
+            };
+
+            // Pop until we find a stricter ancestor.
+            while (stack.Count > 0 && stack.Peek().Level >= level)
+                stack.Pop();
+
+            if (stack.Count == 0)
+                roots.Add(node);
+            else
+                stack.Peek().Node.Children.Add(node);
+
+            stack.Push((level, node));
+        }
+
+        return roots;
+    }
+
+    private static IEnumerable<DocumentBlock> Flatten(DocumentBlock b)
+    {
+        yield return b;
+        foreach (var c in b.Children)
+            foreach (var d in Flatten(c)) yield return d;
+    }
+
+    private static int ReadHeadingLevel(DocumentBlock b) =>
+        b.Attributes.TryGetValue("level", out var lv) &&
+        lv is string s && int.TryParse(s, out int n) ? n : 1;
 
     private void ApplyFilter()
     {
@@ -270,6 +318,17 @@ public partial class DocumentStructurePane : UserControl
     private void OnShowRunsToggled(object sender, RoutedEventArgs e)
     {
         _showRuns = PART_ShowRunsBtn.IsChecked == true;
+        RebuildTree();
+    }
+
+    private void OnOutlineModeToggled(object sender, RoutedEventArgs e)
+    {
+        _outlineMode = PART_OutlineBtn.IsChecked == true;
+        // Outline mode is heading-only; the "show runs" and "kind filter" controls
+        // become noise in that view. Disable them visually so the user understands
+        // why their settings have no effect.
+        PART_ShowRunsBtn.IsEnabled = !_outlineMode;
+        PART_KindFilter.IsEnabled  = !_outlineMode;
         RebuildTree();
     }
 
