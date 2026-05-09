@@ -1074,7 +1074,9 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     private void OnRendererCaretBlockChanged(object? sender, EventArgs e)
     {
-        PART_Breadcrumb.SetPath(PART_TextPane.PART_Renderer.CurrentBlock, _vm?.Model);
+        var block = PART_TextPane.PART_Renderer.CurrentBlock;
+        PART_Breadcrumb.SetPath(block, _vm?.Model);
+        PART_StructurePane.SyncToBlock(block);
     }
 
     private void OnBreadcrumbBlockSelected(object? sender, DocumentBlock block)

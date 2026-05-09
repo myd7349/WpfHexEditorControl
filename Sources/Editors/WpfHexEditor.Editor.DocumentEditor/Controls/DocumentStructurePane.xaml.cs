@@ -34,6 +34,7 @@ public partial class DocumentStructurePane : UserControl
     private string _filterText = string.Empty;
     private bool   _showRuns   = false; // hide run leaves by default — they duplicate paragraph text
     private string _kindFilter = "all"; // "all" | "heading" | "list-item" | "table" | "image"
+    private bool   _suppressNavigateEvent;       // re-entrancy guard for SyncToBlock
 
     // ── Events ────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,70 @@ public partial class DocumentStructurePane : UserControl
         _model.ForensicAlertsChanged += OnAlertsChanged;
 
         RebuildTree();
+    }
+
+    /// <summary>
+    /// Selects, expands ancestors of, and scrolls into view the tree node whose
+    /// underlying <see cref="DocumentBlock"/> matches <paramref name="block"/>.
+    /// Called from the host when the renderer's caret moves into a new block —
+    /// keeps the structure tree in sync with the cursor like VS's outline pane.
+    /// </summary>
+    public void SyncToBlock(DocumentBlock? block)
+    {
+        if (block is null) return;
+        var node = FindNode(_allNodes, block);
+        if (node is null) return;
+
+        // Expand chain: walk up by re-finding parents in the visual tree, since
+        // DocumentBlockNode doesn't carry a parent pointer. Re-running the search
+        // top-down with a path-collecting visitor keeps SyncToBlock allocation-light
+        // and stays correct under filtered ItemsSources.
+        var path = new List<DocumentBlockNode>();
+        if (CollectPath(_allNodes, block, path))
+        {
+            for (int i = 0; i < path.Count - 1; i++)
+            {
+                if (PART_Tree.ItemContainerGenerator.ContainerFromItem(path[i]) is TreeViewItem tvi)
+                    tvi.IsExpanded = true;
+            }
+            // Defer container realization for the leaf — the item generator
+            // populates lazily on expansion, so the container we need may not
+            // exist yet on the first dispatcher pass.
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+            {
+                if (PART_Tree.ItemContainerGenerator.ContainerFromItem(node) is TreeViewItem leaf)
+                {
+                    _suppressNavigateEvent = true;
+                    leaf.IsSelected = true;
+                    _suppressNavigateEvent = false;
+                    leaf.BringIntoView();
+                }
+            });
+        }
+    }
+
+    private static DocumentBlockNode? FindNode(IEnumerable<DocumentBlockNode> nodes, DocumentBlock target)
+    {
+        foreach (var n in nodes)
+        {
+            if (ReferenceEquals(n.Block, target)) return n;
+            var hit = FindNode(n.Children, target);
+            if (hit is not null) return hit;
+        }
+        return null;
+    }
+
+    private static bool CollectPath(IEnumerable<DocumentBlockNode> nodes,
+        DocumentBlock target, List<DocumentBlockNode> path)
+    {
+        foreach (var n in nodes)
+        {
+            path.Add(n);
+            if (ReferenceEquals(n.Block, target)) return true;
+            if (CollectPath(n.Children, target, path)) return true;
+            path.RemoveAt(path.Count - 1);
+        }
+        return false;
     }
 
     // ── Tree building ────────────────────────────────────────────────────────
@@ -166,6 +231,10 @@ public partial class DocumentStructurePane : UserControl
 
     private void OnTreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
+        // SyncToBlock toggles the selection programmatically when the caret
+        // moves — we must not re-fire BlockNavigated, or the renderer will
+        // fight the user every time they move the cursor.
+        if (_suppressNavigateEvent) return;
         if (e.NewValue is DocumentBlockNode node)
             BlockNavigated?.Invoke(this, node.Block);
     }
