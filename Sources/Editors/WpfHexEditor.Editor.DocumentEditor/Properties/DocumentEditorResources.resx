@@ -437,6 +437,9 @@
   <data name="DocStructure_ExpandAllToolTip" xml:space="preserve">
     <value>Expand all</value>
   </data>
+  <data name="DocStructure_ShowRunsToggleToolTip" xml:space="preserve">
+    <value>Show runs (text fragments)</value>
+  </data>
   <data name="DocStructure_FilterPlaceholder" xml:space="preserve">
     <value>Filter blocks…</value>
   </data>

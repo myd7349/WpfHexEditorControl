@@ -32,6 +32,7 @@ public partial class DocumentStructurePane : UserControl
     private DocumentModel? _model;
     private ObservableCollection<DocumentBlockNode> _allNodes = [];
     private string _filterText = string.Empty;
+    private bool   _showRuns   = false; // hide run leaves by default — they duplicate paragraph text
 
     // ── Events ────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,9 @@ public partial class DocumentStructurePane : UserControl
 
         var alertMap = BuildAlertMap();
         _allNodes = new ObservableCollection<DocumentBlockNode>(
-            _model.Blocks.Select(b => BuildNode(b, alertMap)));
+            _model.Blocks
+                  .Where(b => _showRuns || b.Kind != "run")
+                  .Select(b => BuildNode(b, alertMap, _showRuns)));
 
         ApplyFilter();
         UpdateCountLabel();
@@ -111,14 +114,19 @@ public partial class DocumentStructurePane : UserControl
         nodes.Sum(n => 1 + CountNodes(n.Children));
 
     private static DocumentBlockNode BuildNode(
-        DocumentBlock block, Dictionary<DocumentBlock, ForensicAlert> alertMap)
+        DocumentBlock block, Dictionary<DocumentBlock, ForensicAlert> alertMap, bool showRuns)
     {
         var node = new DocumentBlockNode(block)
         {
             Alert = alertMap.TryGetValue(block, out var a) ? a : null
         };
         foreach (var child in block.Children)
-            node.Children.Add(BuildNode(child, alertMap));
+        {
+            // Run leaves duplicate the parent paragraph's flat text — hiding them
+            // by default cuts the tree size 2-3× without losing information.
+            if (!showRuns && child.Kind == "run") continue;
+            node.Children.Add(BuildNode(child, alertMap, showRuns));
+        }
         return node;
     }
 
@@ -161,6 +169,12 @@ public partial class DocumentStructurePane : UserControl
 
     private void OnExpandAllClicked(object sender, RoutedEventArgs e)  => SetExpanded(PART_Tree, true);
     private void OnCollapseAllClicked(object sender, RoutedEventArgs e) => SetExpanded(PART_Tree, false);
+
+    private void OnShowRunsToggled(object sender, RoutedEventArgs e)
+    {
+        _showRuns = PART_ShowRunsBtn.IsChecked == true;
+        RebuildTree();
+    }
 
     private static void SetExpanded(ItemsControl parent, bool expand)
     {

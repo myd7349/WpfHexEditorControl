@@ -100,6 +100,19 @@
                         Click="OnExpandAllClicked">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70E;" FontSize="11"/>
                 </Button>
+
+                <ToggleButton x:Name="PART_ShowRunsBtn"
+                              DockPanel.Dock="Right"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Foreground="{DynamicResource DockMenuForegroundBrush}"
+                              Width="22" Height="22" Padding="3"
+                              Cursor="Hand"
+                              ToolTip="{DynamicResource DocStructure_ShowRunsToggleToolTip}"
+                              Checked="OnShowRunsToggled"
+                              Unchecked="OnShowRunsToggled">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7BA;" FontSize="11"/>
+                </ToggleButton>
             </DockPanel>
         </Border>
 
