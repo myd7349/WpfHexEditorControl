@@ -135,7 +135,17 @@ public sealed class OdtDocumentLoader : IDocumentLoader
     {
         var xml = zipReader.ReadEntryText(entryName);
         if (xml is null) return;
+        LoadOdtStylesRawFromXml(xml, into);
+    }
 
+    /// <summary>
+    /// XML-only variant of <see cref="LoadOdtStylesRaw"/> — used by FlatODT
+    /// where styles and content live in a single XML document.
+    /// </summary>
+    internal static void LoadOdtStylesRawFromXml(
+        string xml,
+        Dictionary<string, OdtRawStyle> into)
+    {
         XDocument doc;
         try { doc = XDocument.Parse(xml); }
         catch { return; }
@@ -180,7 +190,7 @@ public sealed class OdtDocumentLoader : IDocumentLoader
     /// Flattens basedOn chains (parent-style-name) with cycle guard. Parent props come first,
     /// child overrides. Mirrors DocxStyleTable.Flatten and the new RtfStyleTable approach.
     /// </summary>
-    private static Dictionary<string, IReadOnlyDictionary<string, object>> FlattenOdtStyles(
+    internal static Dictionary<string, IReadOnlyDictionary<string, object>> FlattenOdtStyles(
         IReadOnlyDictionary<string, OdtRawStyle> raw)
     {
         var resolved = new Dictionary<string, IReadOnlyDictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
@@ -229,7 +239,7 @@ public sealed class OdtDocumentLoader : IDocumentLoader
         return null;
     }
 
-    private sealed record OdtRawStyle(
+    internal sealed record OdtRawStyle(
         IReadOnlyDictionary<string, object> Props,
         string? Parent,
         string? Family);

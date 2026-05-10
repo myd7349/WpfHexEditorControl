@@ -18,15 +18,17 @@ using IDocumentSaver = WpfHexEditor.Editor.DocumentEditor.Core.IDocumentSaver;
 namespace WpfHexEditor.Plugins.DocumentLoaders;
 
 /// <summary>
-/// Registers <see cref="RtfDocumentLoader"/>, <see cref="DocxDocumentLoader"/>,
-/// and <see cref="OdtDocumentLoader"/> as <see cref="IDocumentLoader"/> extension
-/// points so the <c>DocumentEditorHost</c> can auto-select them by file extension.
+/// Registers <see cref="RtfDocumentLoader"/>, <see cref="DocxDocumentLoader"/>
+/// (covers docx/docm/dotx/dotm), <see cref="OdtDocumentLoader"/>, and
+/// <see cref="FlatOdtDocumentLoader"/> as <see cref="IDocumentLoader"/>
+/// extension points so the <c>DocumentEditorHost</c> can auto-select them
+/// by file extension.
 /// </summary>
 public sealed class DocumentLoadersPlugin : IWpfHexEditorPlugin
 {
     public string  Id      => "WpfHexEditor.Plugins.DocumentLoaders";
-    public string  Name    => "Document Loaders (RTF / DOCX / ODT)";
-    public Version Version => new(1, 0, 0);
+    public string  Name    => "Document Loaders (RTF / DOCX family / ODT / FlatODT)";
+    public Version Version => new(1, 1, 0);
 
     public PluginCapabilities Capabilities => new()
     {
@@ -37,9 +39,10 @@ public sealed class DocumentLoadersPlugin : IWpfHexEditorPlugin
 
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
     {
-        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Rtf",  new RtfDocumentLoader());
-        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Docx", new DocxDocumentLoader());
-        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Odt",  new OdtDocumentLoader());
+        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Rtf",     new RtfDocumentLoader());
+        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Docx",    new DocxDocumentLoader());
+        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Odt",     new OdtDocumentLoader());
+        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".FlatOdt", new FlatOdtDocumentLoader());
 
         context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Rtf",  new RtfDocumentSaver());
         context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Docx", new DocxDocumentSaver());

@@ -2,7 +2,10 @@
 // Project: WpfHexEditor.Plugins.DocumentLoaders
 // File: Parsers/Docx/DocxDocumentLoader.cs
 // Description:
-//     IDocumentLoader for DOCX/DOTX files.
+//     IDocumentLoader for DOCX/DOCM/DOTX/DOTM files.
+//     All four are OOXML wordprocessingml — same parser, same
+//     cascade. DOCM/DOTM differ only by presence of vbaProject.bin
+//     (macro flag); DOTX/DOTM differ only by template MIME type.
 // ==========================================================
 
 using System.Xml.Linq;
@@ -19,15 +22,31 @@ public sealed class DocxDocumentLoader : IDocumentLoader
 {
     public string LoaderName => "DOCX Document Loader";
 
-    public IReadOnlyList<string> SupportedExtensions { get; } = ["docx", "dotx"];
+    public IReadOnlyList<string> SupportedExtensions { get; } = ["docx", "docm", "dotx", "dotm"];
 
     public bool CanLoad(string filePath)
     {
         var ext = Path.GetExtension(filePath);
-        return ext is not null &&
-               (ext.Equals(".docx", StringComparison.OrdinalIgnoreCase) ||
-                ext.Equals(".dotx", StringComparison.OrdinalIgnoreCase));
+        if (ext is null) return false;
+        return ext.Equals(".docx", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".docm", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".dotx", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".dotm", StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>Maps the file extension to the canonical OOXML MIME type.</summary>
+    private static string GetMimeType(string filePath) =>
+        Path.GetExtension(filePath).ToLowerInvariant() switch
+        {
+            ".docm" => "application/vnd.ms-word.document.macroEnabled.12",
+            ".dotx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+            ".dotm" => "application/vnd.ms-word.template.macroEnabled.12",
+            _       => "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        };
+
+    private static bool IsTemplate(string filePath) =>
+        Path.GetExtension(filePath).Equals(".dotx", StringComparison.OrdinalIgnoreCase) ||
+        Path.GetExtension(filePath).Equals(".dotm", StringComparison.OrdinalIgnoreCase);
 
     public async Task LoadAsync(
         string            filePath,
@@ -88,14 +107,17 @@ public sealed class DocxDocumentLoader : IDocumentLoader
             ApplyTextDefaults(blocks, styleTable.DefaultFont, styleTable.DefaultSizePt);
 
         var metadata = ReadCoreProperties(zipReader);
+        bool hasMacros = zipReader.ReadEntryText("word/vbaProject.bin") is not null;
         metadata = metadata with
         {
-            MimeType  = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            HasMacros = zipReader.ReadEntryText("word/vbaProject.bin") is not null,
+            MimeType  = GetMimeType(filePath),
+            HasMacros = hasMacros,
             Title     = !string.IsNullOrEmpty(metadata.Title)
                             ? metadata.Title
                             : Path.GetFileNameWithoutExtension(filePath)
         };
+        if (IsTemplate(filePath))
+            metadata.Extra["isTemplate"] = "true";
 
         target.FilePath    = filePath;
         target.Metadata    = metadata;
