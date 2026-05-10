@@ -14,12 +14,14 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
+using WpfHexEditor.App.Analysis.CodeFixes;
 using WpfHexEditor.App.Analysis.IDE;
 using WpfHexEditor.App.Analysis.Models;
 using WpfHexEditor.App.Analysis.Services;
 using WpfHexEditor.App.Analysis.Suppressions;
 using WpfHexEditor.App.Analysis.UI;
 using WpfHexEditor.App.Analysis.UI.ViewModels;
+using WpfHexEditor.Editor.CodeEditor.Providers;
 using WpfHexEditor.Core.Commands;
 using WpfHexEditor.Core.Options;
 using WpfHexEditor.PluginHost.Adapters;
@@ -42,9 +44,10 @@ internal sealed class CodeAnalysisModule
     private IMenuAdapter?              _menuAdapter;
     private Dispatcher?                _dispatcher;
 
-    private CodeAnalysisOptionsService _optionsService  = new();
-    private AnalysisSnapshotService    _snapshotService = new();
-    private AnalysisBaselineService    _baselineService = new();
+    private CodeAnalysisOptionsService    _optionsService   = new();
+    private AnalysisSnapshotService       _snapshotService  = new();
+    private AnalysisBaselineService       _baselineService  = new();
+    private CodeAnalysisCodeActionProvider _codeActionProvider = new();
     private AnalysisScope              _lastScope       = AnalysisScope.Solution;
     private string                     _lastPath        = string.Empty;
     private CodeAnalysisRunner?        _runner;
@@ -73,6 +76,9 @@ internal sealed class CodeAnalysisModule
         _dispatcher       = dispatcher;
 
         _optionsService.Load();
+
+        // Make inline Code Actions (Ctrl+. / lightbulb) available in every CodeEditor.
+        CodeActionRegistry.Register(_codeActionProvider);
 
         _runner      = new CodeAnalysisRunner(_optionsService, _snapshotService);
         _logger      = new AnalysisOutputLogger(context.Output, _optionsService.Options.OutputVerbosity);
@@ -213,6 +219,7 @@ internal sealed class CodeAnalysisModule
             EnsureReportPane();
             _reportVm!.SetScope(scope, path);
             _reportVm.SetReport(report);
+            _codeActionProvider.SetDiagnostics(report.Diagnostics);
         });
     }
 

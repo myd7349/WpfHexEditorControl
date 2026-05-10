@@ -6182,6 +6182,42 @@ namespace WpfHexEditor.App.Properties {
         }
 
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Remove TODO/FIXME marker.
+        /// </summary>
+        internal static string CodeAnalysis_Fix_WH0032_Title {
+            get {
+                return ResourceManager.GetString("CodeAnalysis_Fix_WH0032_Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Add .ConfigureAwait(false).
+        /// </summary>
+        internal static string CodeAnalysis_Fix_WH0062_Title {
+            get {
+                return ResourceManager.GetString("CodeAnalysis_Fix_WH0062_Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Use Any() instead of Count() &gt; 0.
+        /// </summary>
+        internal static string CodeAnalysis_Fix_WH0070_Title {
+            get {
+                return ResourceManager.GetString("CodeAnalysis_Fix_WH0070_Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Suppress {0} here.
+        /// </summary>
+        internal static string CodeAnalysis_Fix_Suppress_Title {
+            get {
+                return ResourceManager.GetString("CodeAnalysis_Fix_Suppress_Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Copy as Markdown.
         /// </summary>
         internal static string CodeAnalysis_ContextMenu_CopyAsMarkdown {

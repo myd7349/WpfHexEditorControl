@@ -751,6 +751,10 @@
   <data name="CodeAnalysis_Suppress_InFile" xml:space="preserve"><value>Καταστολή για αυτό το αρχείο</value></data>
   <data name="CodeAnalysis_Suppress_InBaseline" xml:space="preserve"><value>Προσθήκη στη βάση</value></data>
   <data name="CodeAnalysis_Suppress_Disable" xml:space="preserve"><value>Καθολική απενεργοποίηση κανόνα</value></data>
+  <data name="CodeAnalysis_Fix_WH0032_Title" xml:space="preserve"><value>Αφαίρεση δείκτη TODO/FIXME</value></data>
+  <data name="CodeAnalysis_Fix_WH0062_Title" xml:space="preserve"><value>Προσθήκη .ConfigureAwait(false)</value></data>
+  <data name="CodeAnalysis_Fix_WH0070_Title" xml:space="preserve"><value>Χρήση Any() αντί για Count() &gt; 0</value></data>
+  <data name="CodeAnalysis_Fix_Suppress_Title" xml:space="preserve"><value>Καταστολή {0} εδώ</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Αντιγραφή ως Markdown</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>Αντιγραφή ID ζητήματος</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>Άνοιγμα αρχείου πηγής</value></data>
