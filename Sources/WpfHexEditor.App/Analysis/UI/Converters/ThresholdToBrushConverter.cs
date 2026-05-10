@@ -49,8 +49,15 @@ public sealed class ThresholdToBrushConverter : IValueConverter
     private static bool TryParseDouble(object? value, out double d)
     {
         d = 0;
-        if (value is null) return false;
-        return double.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out d);
+        return value switch
+        {
+            double dbl => (d = dbl) == dbl,
+            int    i   => (d = i)   == i,
+            float  f   => !float.IsNaN(f) && (d = f) == f,
+            string s   => double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out d),
+            null       => false,
+            _          => double.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out d),
+        };
     }
 
     private static (double, SolidColorBrush)[] ParseAndCache(string spec)
@@ -74,6 +81,7 @@ public sealed class ThresholdToBrushConverter : IValueConverter
     private static Color? ParseHex(string hex)
     {
         try { return (Color)ColorConverter.ConvertFromString(hex); }
-        catch { return null; }
+        catch (FormatException) { return null; }
+        catch (NotSupportedException) { return null; }
     }
 }
