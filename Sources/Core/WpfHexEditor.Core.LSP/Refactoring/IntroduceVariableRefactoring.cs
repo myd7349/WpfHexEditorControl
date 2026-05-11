@@ -26,15 +26,17 @@ public sealed class IntroduceVariableRefactoring : IRefactoring
     {
         if (!CanApply(context)) return [];
 
-        var indent = DetectIndent(context.DocumentText, context.SelectionStart);
-        var lineStart = LineStart(context.DocumentText, context.SelectionStart);
-
+        var indent      = DetectIndent(context.DocumentText, context.SelectionStart);
+        var lineStart   = LineStart(context.DocumentText, context.SelectionStart);
         var declaration = $"{indent}var {VariableName} = {context.SelectedText.Trim()};\n";
 
+        // TextEdit offsets are expressed against the original document text;
+        // RefactoringOrchestrator applies edits in reverse offset order, so
+        // both offsets are kept in the pre-edit coordinate space.
         return
         [
             new TextEdit(context.FilePath, lineStart, 0, declaration),
-            new TextEdit(context.FilePath, context.SelectionStart + declaration.Length, context.SelectionLength, VariableName),
+            new TextEdit(context.FilePath, context.SelectionStart, context.SelectionLength, VariableName),
         ];
     }
 

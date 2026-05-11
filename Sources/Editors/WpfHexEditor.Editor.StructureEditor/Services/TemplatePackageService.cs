@@ -35,6 +35,11 @@ public sealed class TemplatePackageService
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
+    private static readonly JsonSerializerOptions ImportOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     /// <summary>Exports <paramref name="def"/> to <paramref name="outputPath"/> in the requested format.</summary>
     public async Task ExportAsync(FormatDefinition def, string outputPath, TemplateExportFormat format)
     {
@@ -48,14 +53,13 @@ public sealed class TemplatePackageService
         await File.WriteAllTextAsync(outputPath, content).ConfigureAwait(false);
     }
 
-    /// <summary>Imports a .whfmt JSON file into a <see cref="FormatDefinition"/>.</summary>
+    /// <summary>Imports a .whfmt JSON file into a <see cref="FormatDefinition"/>; null on failure.</summary>
     public async Task<FormatDefinition?> ImportAsync(string filePath)
     {
-        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
         try
         {
-            return JsonSerializer.Deserialize<FormatDefinition>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+            return JsonSerializer.Deserialize<FormatDefinition>(json, ImportOptions);
         }
         catch
         {

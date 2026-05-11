@@ -50,25 +50,29 @@ public sealed class WhxpluginPackager
         }
     }
 
+    private static readonly HashSet<string> BinaryExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".dll", ".pdb", ".json", ".xml" };
+
+    private static readonly string[] BuildConfigs = ["Release", "Debug"];
+
     private static List<(string Path, string Rel)> FindBinaries(string pluginDir)
     {
-        var list = new List<(string, string)>();
-        foreach (var config in new[] { "Release", "Debug" })
+        foreach (var config in BuildConfigs)
         {
             var dir = Path.Combine(pluginDir, "bin", config, "net8.0-windows");
             if (!Directory.Exists(dir)) continue;
 
+            var list = new List<(string, string)>();
             foreach (var file in Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories))
             {
-                var ext = Path.GetExtension(file).ToLowerInvariant();
-                if (ext is not (".dll" or ".pdb" or ".json" or ".xml")) continue;
+                if (!BinaryExtensions.Contains(Path.GetExtension(file))) continue;
                 if (Path.GetFileName(file).EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase)) continue;
 
                 var rel = Path.GetRelativePath(dir, file).Replace(Path.DirectorySeparatorChar, '/');
                 list.Add((file, rel));
             }
-            if (list.Count > 0) return list; // first non-empty wins
+            if (list.Count > 0) return list;
         }
-        return list;
+        return [];
     }
 }

@@ -29,7 +29,8 @@ internal sealed class PluginNewCommand : PluginTerminalCommandBase
         }
 
         var name   = args[0];
-        var author = args.Length > 1 && !args[1].StartsWith("--") ? args[1] : null;
+        var author = TerminalArgs.GetFlag(args, "--author")
+                     ?? (args.Length > 1 && !args[1].StartsWith("--") ? args[1] : null);
         var path   = TerminalArgs.GetFlag(args, "--path") ?? Environment.CurrentDirectory;
 
         if (!Directory.Exists(path))

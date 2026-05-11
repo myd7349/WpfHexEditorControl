@@ -30,6 +30,8 @@ public sealed partial class PluginDevLogPanel : UserControl
     /// <summary>Binds the panel to a live <see cref="PluginDevLog"/> instance.</summary>
     public void Bind(PluginDevLog log)
     {
+        Unbind();
+
         _log = log;
         _filters = new Dictionary<PluginDevLogCategory, CheckBox>
         {
@@ -45,6 +47,19 @@ public sealed partial class PluginDevLogPanel : UserControl
         PART_List.ItemsSource = _view;
 
         ((INotifyCollectionChanged)_log.Entries).CollectionChanged += OnEntriesChanged;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object? sender, RoutedEventArgs e) => Unbind();
+
+    private void Unbind()
+    {
+        if (_log is null) return;
+        ((INotifyCollectionChanged)_log.Entries).CollectionChanged -= OnEntriesChanged;
+        Unloaded -= OnUnloaded;
+        _log = null;
+        _view = null;
+        _filters = null;
     }
 
     private bool _scrollPending;

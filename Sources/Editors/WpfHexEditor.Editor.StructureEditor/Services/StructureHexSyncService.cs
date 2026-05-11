@@ -66,20 +66,45 @@ public sealed class StructureHexSyncService : IStructureHexSyncService
         return true;
     }
 
-    /// <summary>Parses a hex string (e.g. "DE AD BE EF" or "DEADBEEF") to bytes; returns null on parse failure.</summary>
+    /// <summary>
+    /// Parses a hex string (e.g. "DE AD BE EF", "DE-AD-BE-EF", "0xDEADBEEF",
+    /// "DEADBEEF") to bytes; returns null on parse failure. Single-pass — no
+    /// intermediate string allocation.
+    /// </summary>
     public static byte[]? TryParseHex(string hex)
     {
         if (string.IsNullOrWhiteSpace(hex)) return null;
-        var clean = hex.Replace(" ", "").Replace("-", "").Replace("0x", "", StringComparison.OrdinalIgnoreCase);
-        if (clean.Length % 2 != 0) return null;
-        var bytes = new byte[clean.Length / 2];
-        for (int i = 0; i < bytes.Length; i++)
+
+        // Skip leading "0x" / "0X".
+        int start = (hex.Length >= 2 && hex[0] == '0' && (hex[1] == 'x' || hex[1] == 'X')) ? 2 : 0;
+
+        // Count nibble chars first to avoid a List<byte> allocation.
+        int nibbles = 0;
+        for (int i = start; i < hex.Length; i++)
+            if (!char.IsWhiteSpace(hex[i]) && hex[i] != '-') nibbles++;
+        if (nibbles == 0 || (nibbles & 1) != 0) return null;
+
+        var bytes = new byte[nibbles / 2];
+        int b = 0, accum = 0, halfNibble = 0;
+        for (int i = start; i < hex.Length; i++)
         {
-            if (!byte.TryParse(clean.AsSpan(i * 2, 2),
-                System.Globalization.NumberStyles.HexNumber,
-                System.Globalization.CultureInfo.InvariantCulture, out bytes[i]))
-                return null;
+            var c = hex[i];
+            if (char.IsWhiteSpace(c) || c == '-') continue;
+            int v = FromHex(c);
+            if (v < 0) return null;
+            accum = (accum << 4) | v;
+            if (++halfNibble == 2)
+            {
+                bytes[b++] = (byte)accum;
+                accum = 0;
+                halfNibble = 0;
+            }
         }
         return bytes;
     }
+
+    private static int FromHex(char c) =>
+        c is >= '0' and <= '9' ? c - '0'      :
+        c is >= 'a' and <= 'f' ? c - 'a' + 10 :
+        c is >= 'A' and <= 'F' ? c - 'A' + 10 : -1;
 }

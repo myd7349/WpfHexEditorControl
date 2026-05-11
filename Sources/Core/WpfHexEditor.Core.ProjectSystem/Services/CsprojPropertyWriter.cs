@@ -39,7 +39,15 @@ public static class CsprojPropertyWriter
     /// <c>&lt;PropertyGroup&gt;</c>. A null/empty value removes the element.
     /// </summary>
     public static void SetProjectProperty(string projectPath, string propertyName, string? value)
+        => SetProjectProperties(projectPath, new Dictionary<string, string?> { [propertyName] = value });
+
+    /// <summary>
+    /// Batch-sets multiple project-level properties in a single load/save cycle.
+    /// Null/empty values remove the corresponding element.
+    /// </summary>
+    public static void SetProjectProperties(string projectPath, IReadOnlyDictionary<string, string?> properties)
     {
+        if (properties is null || properties.Count == 0) return;
         try
         {
             var doc = XDocument.Load(projectPath, LoadOptions.PreserveWhitespace);
@@ -48,23 +56,20 @@ public static class CsprojPropertyWriter
             var pg = FindFirstUnconditionalPropertyGroup(doc, ns)
                      ?? CreatePropertyGroup(doc, ns);
 
-            var el = pg.Element(ns + propertyName);
-            if (string.IsNullOrEmpty(value))
-            {
-                el?.Remove();
-            }
-            else if (el is null)
-            {
-                pg.Add(new XElement(ns + propertyName, value));
-            }
-            else
-            {
-                el.Value = value;
-            }
+            foreach (var (name, value) in properties)
+                UpdatePropertyElement(pg, ns + name, value);
 
             doc.Save(projectPath);
         }
         catch { /* write errors are non-fatal */ }
+    }
+
+    private static void UpdatePropertyElement(XElement parent, XName name, string? value)
+    {
+        var el = parent.Element(name);
+        if (string.IsNullOrEmpty(value))  el?.Remove();
+        else if (el is null)               parent.Add(new XElement(name, value));
+        else                               el.Value = value;
     }
 
     private static XElement? FindFirstUnconditionalPropertyGroup(XDocument doc, XNamespace ns) =>

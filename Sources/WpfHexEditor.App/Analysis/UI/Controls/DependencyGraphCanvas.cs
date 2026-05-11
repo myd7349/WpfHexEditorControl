@@ -46,7 +46,16 @@ public sealed class DependencyGraphCanvas : FrameworkElement
 
     public event EventHandler<DependencyNode>? NodeActivated;
 
+    private const int    LayoutIterations = 80;
+    private const double CoolingRate      = 0.95;
+    private const double NodePadX         = 30;
+    private const double NodePadY         = 14;
+    private const double ArrowHeadLength  = 8;
+    private const double ArrowHeadWidth   = 4;
+    private const int    LayoutSeed       = 42;
+
     private readonly Dictionary<string, Point> _positions = new();
+    private readonly Dictionary<string, Rect>  _nodeBounds = new();
 
     private static void OnDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -76,7 +85,7 @@ public sealed class DependencyGraphCanvas : FrameworkElement
         _positions.Clear();
         if (Nodes is null) return;
 
-        var rng = new Random(42);
+        var rng = new Random(LayoutSeed);
         foreach (var n in Nodes)
             _positions[n.Id] = new Point(
                 area.X + rng.NextDouble() * area.Width,
@@ -84,7 +93,7 @@ public sealed class DependencyGraphCanvas : FrameworkElement
 
         var k = Math.Sqrt(area.Width * area.Height / Math.Max(1, Nodes.Count));
         var temp = area.Width / 10;
-        const int iterations = 80;
+        const int iterations = LayoutIterations;
 
         var disp = new Dictionary<string, Vector>(Nodes.Count);
 
@@ -125,11 +134,11 @@ public sealed class DependencyGraphCanvas : FrameworkElement
                 var dl = Math.Max(0.01, d.Length);
                 var move = d / dl * Math.Min(dl, temp);
                 var p = _positions[n.Id] + move;
-                p.X = Math.Clamp(p.X, area.X + 30, area.Right - 30);
-                p.Y = Math.Clamp(p.Y, area.Y + 14, area.Bottom - 14);
+                p.X = Math.Clamp(p.X, area.X + NodePadX, area.Right - NodePadX);
+                p.Y = Math.Clamp(p.Y, area.Y + NodePadY, area.Bottom - NodePadY);
                 _positions[n.Id] = p;
             }
-            temp *= 0.95;
+            temp *= CoolingRate;
         }
     }
 
@@ -161,15 +170,16 @@ public sealed class DependencyGraphCanvas : FrameworkElement
             if (len < 0.01) continue;
             var unit = dir / len;
             var perp = new Vector(-unit.Y, unit.X);
-            var tip  = p2 - unit * 8;
-            dc.DrawLine(EdgePen, tip + perp * 4, p2);
-            dc.DrawLine(EdgePen, tip - perp * 4, p2);
+            var tip  = p2 - unit * ArrowHeadLength;
+            dc.DrawLine(EdgePen, tip + perp * ArrowHeadWidth, p2);
+            dc.DrawLine(EdgePen, tip - perp * ArrowHeadWidth, p2);
         }
     }
 
     private void DrawNodes(DrawingContext dc)
     {
         if (Nodes is null) return;
+        _nodeBounds.Clear();
         foreach (var n in Nodes)
         {
             if (!_positions.TryGetValue(n.Id, out var p)) continue;
@@ -179,6 +189,7 @@ public sealed class DependencyGraphCanvas : FrameworkElement
             var w = ft.Width + 12;
             var h = ft.Height + 6;
             var rect = new Rect(p.X - w / 2, p.Y - h / 2, w, h);
+            _nodeBounds[n.Id] = rect;
             dc.DrawRoundedRectangle(NodeBg, NodeBorder, rect, 4, 4);
             dc.DrawText(ft, new Point(rect.X + 6, rect.Y + 3));
         }
@@ -188,17 +199,21 @@ public sealed class DependencyGraphCanvas : FrameworkElement
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
-        var pos = e.GetPosition(this);
-        if (Nodes is null) return;
+        var node = HitTest(e.GetPosition(this));
+        if (node is not null) NodeActivated?.Invoke(this, node);
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        Cursor = HitTest(e.GetPosition(this)) is not null ? System.Windows.Input.Cursors.Hand : null;
+    }
+
+    private DependencyNode? HitTest(Point pos)
+    {
+        if (Nodes is null) return null;
         foreach (var n in Nodes)
-        {
-            if (!_positions.TryGetValue(n.Id, out var c)) continue;
-            // Approximate hit-test: 80px x 22px box centered on c.
-            if (Math.Abs(pos.X - c.X) < 50 && Math.Abs(pos.Y - c.Y) < 12)
-            {
-                NodeActivated?.Invoke(this, n);
-                return;
-            }
-        }
+            if (_nodeBounds.TryGetValue(n.Id, out var rect) && rect.Contains(pos))
+                return n;
+        return null;
     }
 }

@@ -81,6 +81,12 @@ public sealed class RoslynSourceOutlineService : ISourceOutlineService
 
     private static SourceOutlineModel BuildModel(string filePath, IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspDocumentSymbol> symbols)
     {
+        // Pre-pass: collect all declared type names — used as O(1) lookup to
+        // decide whether a member's container is a type or a namespace.
+        var typeNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var s in symbols)
+            if (IsType(s.Kind, out _)) typeNames.Add(s.Name);
+
         var typeBuckets = new Dictionary<string, (SourceTypeKind kind, int line, List<SourceMemberModel> members)>(StringComparer.Ordinal);
         var topLevelTypes = new List<string>();
 
@@ -91,7 +97,7 @@ public sealed class RoslynSourceOutlineService : ISourceOutlineService
                 if (!typeBuckets.ContainsKey(s.Name))
                 {
                     typeBuckets[s.Name] = (typeKind, s.StartLine + 1, new List<SourceMemberModel>());
-                    if (string.IsNullOrEmpty(s.ContainerName) || IsNamespaceContainer(symbols, s.ContainerName))
+                    if (string.IsNullOrEmpty(s.ContainerName) || !typeNames.Contains(s.ContainerName))
                         topLevelTypes.Add(s.Name);
                 }
             }
@@ -120,12 +126,10 @@ public sealed class RoslynSourceOutlineService : ISourceOutlineService
 
         return new SourceOutlineModel
         {
-            FilePath  = filePath,
-            Kind      = filePath.EndsWith(".vb", StringComparison.OrdinalIgnoreCase)
-                          ? SourceFileKind.CSharp  // model has no VB kind; treat as C#
-                          : SourceFileKind.CSharp,
-            Types     = types,
-            ParsedAt  = SafeLastWrite(filePath),
+            FilePath = filePath,
+            Kind     = SourceFileKind.CSharp, // model has no VB kind; C# is used as the structural representation
+            Types    = types,
+            ParsedAt = SafeLastWrite(filePath),
         };
     }
 
@@ -134,9 +138,6 @@ public sealed class RoslynSourceOutlineService : ISourceOutlineService
         try { return File.Exists(filePath) ? File.GetLastWriteTimeUtc(filePath) : DateTime.UtcNow; }
         catch { return DateTime.UtcNow; }
     }
-
-    private static bool IsNamespaceContainer(IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspDocumentSymbol> all, string containerName) =>
-        !all.Any(x => x.Name == containerName && IsType(x.Kind, out _));
 
     private static bool IsType(string? kind, out SourceTypeKind result)
     {

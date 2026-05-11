@@ -399,10 +399,13 @@ public sealed class ProjectPropertiesViewModel : ViewModelBase
         var projectFile = TryGetVsProjectPath();
         if (!string.IsNullOrEmpty(projectFile) && File.Exists(projectFile))
         {
-            CsprojPropertyWriter.SetProjectProperty(projectFile, "TargetFramework",  TargetFramework);
-            CsprojPropertyWriter.SetProjectProperty(projectFile, "AssemblyName",     AssemblyName);
-            CsprojPropertyWriter.SetProjectProperty(projectFile, "RootNamespace",    DefaultNamespace);
-            CsprojPropertyWriter.SetProjectProperty(projectFile, "OutputType",       OutputType);
+            CsprojPropertyWriter.SetProjectProperties(projectFile, new Dictionary<string, string?>
+            {
+                ["TargetFramework"] = TargetFramework,
+                ["AssemblyName"]    = AssemblyName,
+                ["RootNamespace"]   = DefaultNamespace,
+                ["OutputType"]      = OutputType,
+            });
         }
 
         IsDirty       = false;

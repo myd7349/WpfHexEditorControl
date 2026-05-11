@@ -70,15 +70,7 @@ public sealed class TrendChartControl : FrameworkElement
                             Math.Max(0, b.Height - padding * 2 - legendHeight));
         if (plot.Width < 1 || plot.Height < 1) return;
 
-        // Compute global min/max across all series with values.
-        double min = double.MaxValue, max = double.MinValue;
-        int maxCount = 0;
-        foreach (var s in Series)
-        {
-            if (s?.Values is null) continue;
-            foreach (var v in s.Values) { if (v < min) min = v; if (v > max) max = v; }
-            if (s.Values.Count > maxCount) maxCount = s.Values.Count;
-        }
+        var (min, max, maxCount) = ComputeBounds(Series);
         if (maxCount < 2 || max <= min) return;
 
         // Horizontal baseline grid (4 lines).
@@ -123,5 +115,18 @@ public sealed class TrendChartControl : FrameworkElement
             lx += 14 + ft.Width + 12;
             if (lx > plot.Right - 60) break; // overflow guard
         }
+    }
+
+    private static (double min, double max, int maxCount) ComputeBounds(IList<TrendChartSeries> series)
+    {
+        double min = double.MaxValue, max = double.MinValue;
+        int maxCount = 0;
+        foreach (var s in series)
+        {
+            if (s?.Values is null) continue;
+            foreach (var v in s.Values) { if (v < min) min = v; if (v > max) max = v; }
+            if (s.Values.Count > maxCount) maxCount = s.Values.Count;
+        }
+        return (min, max, maxCount);
     }
 }

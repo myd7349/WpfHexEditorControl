@@ -29,8 +29,7 @@ internal sealed class PluginPackCommand : PluginTerminalCommandBase
             return Task.FromResult(1);
         }
 
-        var defaultOut = Path.Combine(pluginDir, $"{Path.GetFileName(pluginDir.TrimEnd(Path.DirectorySeparatorChar))}.whxplugin");
-        var outputPath = TerminalArgs.GetFlag(args, "--output") ?? defaultOut;
+        var outputPath = TerminalArgs.GetFlag(args, "--output") ?? BuildDefaultOutputPath(pluginDir);
 
         var result = new WhxpluginPackager().Pack(pluginDir, outputPath);
         if (!result.Success)
@@ -41,5 +40,12 @@ internal sealed class PluginPackCommand : PluginTerminalCommandBase
 
         output.WriteInfo($"{AppResources.PluginCmd_Pack_Success} {result.OutputPath}");
         return Task.FromResult(0);
+    }
+
+    private static string BuildDefaultOutputPath(string pluginDir)
+    {
+        var dir  = pluginDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var name = string.IsNullOrEmpty(Path.GetFileName(dir)) ? "plugin" : Path.GetFileName(dir);
+        return Path.Combine(pluginDir, name + ".whxplugin");
     }
 }
