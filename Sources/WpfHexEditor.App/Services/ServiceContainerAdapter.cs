@@ -23,7 +23,7 @@ internal sealed class ServiceContainerAdapter : IServiceContainer
 
     public T Require<T>() where T : class => _provider.GetRequiredService<T>();
 
-    public IServiceScope CreateScope()
+    public WpfHexEditor.SDK.Contracts.IServiceScope CreateScope()
         => new ServiceScopeAdapter(_provider.CreateScope());
 }
 

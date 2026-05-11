@@ -27,26 +27,37 @@ public sealed class CommandBus : ICommandBus
     public CommandExecutionResult Execute(string commandId, object? parameter = null)
     {
         var def = _registry.Find(commandId);
+        var timestamp = DateTime.UtcNow;
+
         if (def?.Command is null)
-            return Notify(commandId, parameter, CommandExecutionResult.NotFound, null);
+        {
+            Notify(commandId, parameter, CommandExecutionResult.NotFound, null, timestamp);
+            return CommandExecutionResult.NotFound;
+        }
 
         if (!def.Command.CanExecute(parameter))
-            return Notify(commandId, parameter, CommandExecutionResult.Disabled, null);
+        {
+            Notify(commandId, parameter, CommandExecutionResult.Disabled, null, timestamp);
+            return CommandExecutionResult.Disabled;
+        }
 
         try
         {
             def.Command.Execute(parameter);
-            return Notify(commandId, parameter, CommandExecutionResult.Executed, null);
+            Notify(commandId, parameter, CommandExecutionResult.Executed, null, timestamp);
+            return CommandExecutionResult.Executed;
         }
         catch (Exception ex)
         {
-            return Notify(commandId, parameter, CommandExecutionResult.Faulted, ex);
+            Notify(commandId, parameter, CommandExecutionResult.Faulted, ex, timestamp);
+            return CommandExecutionResult.Faulted;
         }
     }
 
-    private CommandExecutionResult Notify(string id, object? param, CommandExecutionResult result, Exception? error)
+    private void Notify(string id, object? param, CommandExecutionResult result, Exception? error, DateTime timestamp)
     {
-        CommandInvoked?.Invoke(this, new CommandInvokedNotification(id, param, result, error, DateTime.UtcNow));
-        return result;
+        var handler = CommandInvoked;
+        if (handler is null) return; // skip allocation when no subscribers
+        handler(this, new CommandInvokedNotification(id, param, result, error, timestamp));
     }
 }
