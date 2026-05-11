@@ -40,14 +40,21 @@ public sealed class OdtDocumentSaver : IDocumentSaver
         using var originalMs = new MemoryStream(originalBytes);
         using var outputMs   = new MemoryStream();
 
+        bool anonymize = model.Metadata?.Extra is { } extra &&
+                         extra.TryGetValue("anonymized", out var anon) && anon == "true";
+
         using (var originalZip = new ZipArchive(originalMs, ZipArchiveMode.Read, leaveOpen: true))
         using (var outputZip   = new ZipArchive(outputMs,   ZipArchiveMode.Create, leaveOpen: true))
         {
             const string contentEntry = "content.xml";
+            const string metaEntry    = "meta.xml";
 
             foreach (var entry in originalZip.Entries)
             {
                 if (entry.FullName.Equals(contentEntry, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                // Anonymize: replace meta.xml with a stripped version.
+                if (anonymize && entry.FullName.Equals(metaEntry, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var newEntry = outputZip.CreateEntry(entry.FullName, CompressionLevel.Optimal);
@@ -55,6 +62,14 @@ public sealed class OdtDocumentSaver : IDocumentSaver
                 await using var src = entry.Open();
                 await using var dst = newEntry.Open();
                 await src.CopyToAsync(dst, ct);
+            }
+
+            if (anonymize)
+            {
+                var metaWriter = outputZip.CreateEntry(metaEntry, CompressionLevel.Optimal);
+                await using var ms = metaWriter.Open();
+                await using var mw = new StreamWriter(ms);
+                await mw.WriteAsync(BuildAnonymizedMetaXml(model.Metadata?.Title ?? string.Empty));
             }
 
             string newXml = schema is not null
@@ -69,6 +84,25 @@ public sealed class OdtDocumentSaver : IDocumentSaver
 
         outputMs.Position = 0;
         await outputMs.CopyToAsync(output, ct);
+    }
+
+    /// <summary>
+    /// Minimal anonymized meta.xml: keeps the title, drops initial-creator/
+    /// creation-date/dc:date and any user-defined fields.
+    /// </summary>
+    private static string BuildAnonymizedMetaXml(string title)
+    {
+        string safeTitle = System.Security.SecurityElement.Escape(title) ?? string.Empty;
+        return $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+                                  xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"
+                                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+              <office:meta>
+                <dc:title>{safeTitle}</dc:title>
+              </office:meta>
+            </office:document-meta>
+            """;
     }
 
     private static string FallbackSerialize(DocumentModel model)

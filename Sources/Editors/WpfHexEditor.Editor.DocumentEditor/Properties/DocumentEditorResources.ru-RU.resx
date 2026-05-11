@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -239,7 +239,7 @@
   <data name="HyperlinkDlg_LabelUrl" xml:space="preserve"><value>URL</value></data>
   <data name="HyperlinkDlg_OK" xml:space="preserve"><value>ОК</value></data>
   <data name="HyperlinkDlg_Cancel" xml:space="preserve"><value>Отмена</value></data>
-  <data name="HyperlinkDlg_TestUrl"    xml:space="preserve"><value>Открыть URL в браузере</value></data>
+  <data name="HyperlinkDlg_TestUrl" xml:space="preserve"><value>Открыть URL в браузере</value></data>
   <data name="HyperlinkDlg_InvalidUrl" xml:space="preserve"><value>Введите корректный URL (https://, http://, mailto:, ftp://)</value></data>
   <data name="InsertTableDlg_Title" xml:space="preserve"><value>Вставить таблицу</value></data>
   <data name="InsertTableDlg_Rows" xml:space="preserve"><value>Строки</value></data>
@@ -285,31 +285,31 @@
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>ОК</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>Отмена</value></data>
 
-  <!-- SPELL CHECKER -->
-  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Включить проверку орфографии</value></data>
-  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Словари</value></data>
-  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Язык</value></data>
-  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Состояние</value></data>
-  <data name="SpellCheck_Download"            xml:space="preserve"><value>Загрузить</value></data>
-  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Обзор...</value></data>
-  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Удалить</value></data>
-  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Пользовательский словарь</value></data>
-  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Изменить пользовательский словарь</value></data>
-  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Установлен</value></data>
-  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Не установлен</value></data>
-  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Игнорировать</value></data>
-  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Добавить в словарь</value></data>
-  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Выбрать файл словаря</value></data>
-  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Выбрать файл аффиксов</value></data>
-  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Не удалось загрузить словарь.</value></data>
-  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>Ошибка загрузки</value></data>
-  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Словарь проверки орфографии</value></data>
-  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Словарь проверки орфографии не найден. Загрузить сейчас?</value></data>
-  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Установить</value></data>
-  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Позже</value></data>
-  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Не показывать снова</value></data>
+  
+  <data name="SpellCheck_Enable" xml:space="preserve"><value>Включить проверку орфографии</value></data>
+  <data name="SpellCheck_DictSection" xml:space="preserve"><value>Словари</value></data>
+  <data name="SpellCheck_ColLanguage" xml:space="preserve"><value>Язык</value></data>
+  <data name="SpellCheck_ColStatus" xml:space="preserve"><value>Состояние</value></data>
+  <data name="SpellCheck_Download" xml:space="preserve"><value>Загрузить</value></data>
+  <data name="SpellCheck_Browse" xml:space="preserve"><value>Обзор...</value></data>
+  <data name="SpellCheck_Remove" xml:space="preserve"><value>Удалить</value></data>
+  <data name="SpellCheck_UserDictSection" xml:space="preserve"><value>Пользовательский словарь</value></data>
+  <data name="SpellCheck_EditUserDict" xml:space="preserve"><value>Изменить пользовательский словарь</value></data>
+  <data name="SpellCheck_StatusInstalled" xml:space="preserve"><value>Установлен</value></data>
+  <data name="SpellCheck_StatusNotInstalled" xml:space="preserve"><value>Не установлен</value></data>
+  <data name="SpellCheck_Ignore" xml:space="preserve"><value>Игнорировать</value></data>
+  <data name="SpellCheck_AddToDict" xml:space="preserve"><value>Добавить в словарь</value></data>
+  <data name="SpellCheck_BrowseDicTitle" xml:space="preserve"><value>Выбрать файл словаря</value></data>
+  <data name="SpellCheck_BrowseAffTitle" xml:space="preserve"><value>Выбрать файл аффиксов</value></data>
+  <data name="SpellCheck_DownloadError" xml:space="preserve"><value>Не удалось загрузить словарь.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle" xml:space="preserve"><value>Ошибка загрузки</value></data>
+  <data name="SpellCheck_NotifTitle" xml:space="preserve"><value>Словарь проверки орфографии</value></data>
+  <data name="SpellCheck_NotifMessage" xml:space="preserve"><value>Словарь проверки орфографии не найден. Загрузить сейчас?</value></data>
+  <data name="SpellCheck_NotifInstall" xml:space="preserve"><value>Установить</value></data>
+  <data name="SpellCheck_NotifLater" xml:space="preserve"><value>Позже</value></data>
+  <data name="SpellCheck_NotifNever" xml:space="preserve"><value>Не показывать снова</value></data>
 
-  <!-- Image dialog & context menu -->
+  
   <data name="ImgDlg_Title" xml:space="preserve"><value>Свойства изображения</value></data>
   <data name="ImgDlg_TabSize" xml:space="preserve"><value>Размер и позиция</value></data>
   <data name="ImgDlg_TabWrap" xml:space="preserve"><value>Обтекание текстом</value></data>
@@ -393,4 +393,11 @@
   <data name="DocStructure_KindFilter_ImagesOnly" xml:space="preserve">
     <value>Изображения</value>
   </data>
-</root>
+<data name="DocEditorHost_AnonymizeBtn" xml:space="preserve"><value>Анонимизировать метаданные</value></data><data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve"><value>Удаляет автора, метки времени, пользовательские свойства и макросы из этого документа. Изменение сохраняется в памяти до сохранения файла.</value></data><data name="DocEditorHost_AnonymizeTitle" xml:space="preserve"><value>Анонимизировать метаданные</value></data><data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve"><value>Удалить автора, метки времени, пользовательские свойства и макросы из этого документа?
+
+Изменение применяется немедленно в памяти и записывается в файл при следующем Сохранении.</value></data><data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve"><value>Анонимизация завершена.
+
+Автор удалён: {0}
+Метки времени удалены: {1}
+Макросы удалены: {2}
+Пользовательские свойства очищены: {3}</value></data></root>

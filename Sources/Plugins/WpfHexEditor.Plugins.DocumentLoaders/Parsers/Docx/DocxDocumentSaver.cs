@@ -35,12 +35,19 @@ public sealed class DocxDocumentSaver : IDocumentSaver
     {
         var schema = LoadSchema("DOCX.whfmt");
         bool hasOriginal = !string.IsNullOrEmpty(model.FilePath) && File.Exists(model.FilePath);
+        bool anonymize   = model.Metadata?.Extra is { } extra &&
+                           extra.TryGetValue("anonymized", out var anon) && anon == "true";
+        bool stripMacros = anonymize && model.Metadata?.Extra is { } extra2 &&
+                           extra2.TryGetValue("macrosRemoved", out var mr) && mr == "true";
 
         using var outputMs = new MemoryStream();
 
         using (var outputZip = new ZipArchive(outputMs, ZipArchiveMode.Create, leaveOpen: true))
         {
             const string documentEntry = "word/document.xml";
+            const string corePropsEntry = "docProps/core.xml";
+            const string appPropsEntry  = "docProps/app.xml";
+            const string vbaEntry       = "word/vbaProject.bin";
 
             if (hasOriginal)
             {
@@ -53,12 +60,25 @@ public sealed class DocxDocumentSaver : IDocumentSaver
                     if (entry.FullName.Equals(documentEntry, StringComparison.OrdinalIgnoreCase))
                         continue;
 
+                    // Anonymization: skip vbaProject.bin (will be omitted) and
+                    // replace docProps/core.xml + app.xml with cleaned content.
+                    if (anonymize && stripMacros &&
+                        entry.FullName.Equals(vbaEntry, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (anonymize &&
+                        (entry.FullName.Equals(corePropsEntry, StringComparison.OrdinalIgnoreCase) ||
+                         entry.FullName.Equals(appPropsEntry,  StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
                     var newEntry = outputZip.CreateEntry(entry.FullName, CompressionLevel.Optimal);
                     newEntry.LastWriteTime = entry.LastWriteTime;
                     await using var src = entry.Open();
                     await using var dst = newEntry.Open();
                     await src.CopyToAsync(dst, ct);
                 }
+
+                if (anonymize)
+                    WriteEntry(outputZip, corePropsEntry, BuildAnonymizedCoreProps(model.Metadata?.Title ?? string.Empty));
             }
             else
             {
@@ -108,6 +128,24 @@ public sealed class DocxDocumentSaver : IDocumentSaver
         WriteEntry(zip, "[Content_Types].xml",          contentTypesXml);
         WriteEntry(zip, "_rels/.rels",                  packageRelsXml);
         WriteEntry(zip, "word/_rels/document.xml.rels", documentRelsXml);
+    }
+
+    /// <summary>
+    /// Builds a minimal anonymized docProps/core.xml: keeps the title only,
+    /// drops creator/lastModifiedBy/created/modified.
+    /// </summary>
+    private static string BuildAnonymizedCoreProps(string title)
+    {
+        string safeTitle = System.Security.SecurityElement.Escape(title) ?? string.Empty;
+        return $"""
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+                               xmlns:dc="http://purl.org/dc/elements/1.1/"
+                               xmlns:dcterms="http://purl.org/dc/terms/"
+                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <dc:title>{safeTitle}</dc:title>
+            </cp:coreProperties>
+            """;
     }
 
     private static void WriteEntry(ZipArchive zip, string path, string content)

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -239,7 +239,7 @@
   <data name="HyperlinkDlg_LabelUrl" xml:space="preserve"><value>URL</value></data>
   <data name="HyperlinkDlg_OK" xml:space="preserve"><value>ตกลง</value></data>
   <data name="HyperlinkDlg_Cancel" xml:space="preserve"><value>ยกเลิก</value></data>
-  <data name="HyperlinkDlg_TestUrl"    xml:space="preserve"><value>เปิด URL ในเบราว์เซอร์</value></data>
+  <data name="HyperlinkDlg_TestUrl" xml:space="preserve"><value>เปิด URL ในเบราว์เซอร์</value></data>
   <data name="HyperlinkDlg_InvalidUrl" xml:space="preserve"><value>กรุณาใส่ URL ที่ถูกต้อง (https://, http://, mailto:, ftp://)</value></data>
   <data name="InsertTableDlg_Title" xml:space="preserve"><value>แทรกตาราง</value></data>
   <data name="InsertTableDlg_Rows" xml:space="preserve"><value>แถว</value></data>
@@ -285,31 +285,31 @@
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>ตกลง</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>ยกเลิก</value></data>
 
-  <!-- SPELL CHECKER -->
-  <data name="SpellCheck_Enable"              xml:space="preserve"><value>เปิดใช้การตรวจสอบการสะกด</value></data>
-  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>พจนานุกรม</value></data>
-  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>ภาษา</value></data>
-  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>สถานะ</value></data>
-  <data name="SpellCheck_Download"            xml:space="preserve"><value>ดาวน์โหลด</value></data>
-  <data name="SpellCheck_Browse"              xml:space="preserve"><value>เรียกดู...</value></data>
-  <data name="SpellCheck_Remove"              xml:space="preserve"><value>ลบออก</value></data>
-  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>พจนานุกรมผู้ใช้</value></data>
-  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>แก้ไขพจนานุกรมผู้ใช้</value></data>
-  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>ติดตั้งแล้ว</value></data>
-  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>ยังไม่ได้ติดตั้ง</value></data>
-  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>ละเว้น</value></data>
-  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>เพิ่มในพจนานุกรม</value></data>
-  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>เลือกไฟล์พจนานุกรม</value></data>
-  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>เลือกไฟล์ affix</value></data>
-  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>ไม่สามารถดาวน์โหลดพจนานุกรมได้</value></data>
-  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>ข้อผิดพลาดในการดาวน์โหลด</value></data>
-  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>พจนานุกรมการสะกด</value></data>
-  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>ไม่พบพจนานุกรมการสะกด ดาวน์โหลดตอนนี้เลยหรือไม่?</value></data>
-  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>ติดตั้ง</value></data>
-  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>ภายหลัง</value></data>
-  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>ไม่แสดงอีก</value></data>
+  
+  <data name="SpellCheck_Enable" xml:space="preserve"><value>เปิดใช้การตรวจสอบการสะกด</value></data>
+  <data name="SpellCheck_DictSection" xml:space="preserve"><value>พจนานุกรม</value></data>
+  <data name="SpellCheck_ColLanguage" xml:space="preserve"><value>ภาษา</value></data>
+  <data name="SpellCheck_ColStatus" xml:space="preserve"><value>สถานะ</value></data>
+  <data name="SpellCheck_Download" xml:space="preserve"><value>ดาวน์โหลด</value></data>
+  <data name="SpellCheck_Browse" xml:space="preserve"><value>เรียกดู...</value></data>
+  <data name="SpellCheck_Remove" xml:space="preserve"><value>ลบออก</value></data>
+  <data name="SpellCheck_UserDictSection" xml:space="preserve"><value>พจนานุกรมผู้ใช้</value></data>
+  <data name="SpellCheck_EditUserDict" xml:space="preserve"><value>แก้ไขพจนานุกรมผู้ใช้</value></data>
+  <data name="SpellCheck_StatusInstalled" xml:space="preserve"><value>ติดตั้งแล้ว</value></data>
+  <data name="SpellCheck_StatusNotInstalled" xml:space="preserve"><value>ยังไม่ได้ติดตั้ง</value></data>
+  <data name="SpellCheck_Ignore" xml:space="preserve"><value>ละเว้น</value></data>
+  <data name="SpellCheck_AddToDict" xml:space="preserve"><value>เพิ่มในพจนานุกรม</value></data>
+  <data name="SpellCheck_BrowseDicTitle" xml:space="preserve"><value>เลือกไฟล์พจนานุกรม</value></data>
+  <data name="SpellCheck_BrowseAffTitle" xml:space="preserve"><value>เลือกไฟล์ affix</value></data>
+  <data name="SpellCheck_DownloadError" xml:space="preserve"><value>ไม่สามารถดาวน์โหลดพจนานุกรมได้</value></data>
+  <data name="SpellCheck_DownloadErrorTitle" xml:space="preserve"><value>ข้อผิดพลาดในการดาวน์โหลด</value></data>
+  <data name="SpellCheck_NotifTitle" xml:space="preserve"><value>พจนานุกรมการสะกด</value></data>
+  <data name="SpellCheck_NotifMessage" xml:space="preserve"><value>ไม่พบพจนานุกรมการสะกด ดาวน์โหลดตอนนี้เลยหรือไม่?</value></data>
+  <data name="SpellCheck_NotifInstall" xml:space="preserve"><value>ติดตั้ง</value></data>
+  <data name="SpellCheck_NotifLater" xml:space="preserve"><value>ภายหลัง</value></data>
+  <data name="SpellCheck_NotifNever" xml:space="preserve"><value>ไม่แสดงอีก</value></data>
 
-  <!-- Image dialog & context menu -->
+  
   <data name="ImgDlg_Title" xml:space="preserve"><value>คุณสมบัติรูปภาพ</value></data>
   <data name="ImgDlg_TabSize" xml:space="preserve"><value>ขนาดและตำแหน่ง</value></data>
   <data name="ImgDlg_TabWrap" xml:space="preserve"><value>การตัดข้อความ</value></data>
@@ -393,4 +393,11 @@
   <data name="DocStructure_KindFilter_ImagesOnly" xml:space="preserve">
     <value>รูปภาพ</value>
   </data>
-</root>
+<data name="DocEditorHost_AnonymizeBtn" xml:space="preserve"><value>ทำให้ข้อมูลเมตาเป็นนิรนาม</value></data><data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve"><value>ลบผู้สร้าง การประทับเวลา คุณสมบัติแบบกำหนดเอง และมาโครจากเอกสารนี้ การเปลี่ยนแปลงจะอยู่ในหน่วยความจำจนกว่าจะบันทึก</value></data><data name="DocEditorHost_AnonymizeTitle" xml:space="preserve"><value>ทำให้ข้อมูลเมตาเป็นนิรนาม</value></data><data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve"><value>ลบผู้สร้าง การประทับเวลา คุณสมบัติแบบกำหนดเอง และมาโครจากเอกสารนี้หรือไม่
+
+การเปลี่ยนแปลงจะมีผลในหน่วยความจำทันทีและจะถูกบันทึกในไฟล์เมื่อบันทึกครั้งถัดไป</value></data><data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve"><value>การทำให้เป็นนิรนามเสร็จสมบูรณ์
+
+ผู้สร้างถูกลบ: {0}
+การประทับเวลาถูกลบ: {1}
+มาโครถูกลบ: {2}
+คุณสมบัติแบบกำหนดเองถูกล้าง: {3}</value></data></root>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -239,7 +239,7 @@
   <data name="HyperlinkDlg_LabelUrl" xml:space="preserve"><value>URL</value></data>
   <data name="HyperlinkDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="HyperlinkDlg_Cancel" xml:space="preserve"><value>Avbryt</value></data>
-  <data name="HyperlinkDlg_TestUrl"    xml:space="preserve"><value>Öppna URL i webbläsare</value></data>
+  <data name="HyperlinkDlg_TestUrl" xml:space="preserve"><value>Öppna URL i webbläsare</value></data>
   <data name="HyperlinkDlg_InvalidUrl" xml:space="preserve"><value>Ange en giltig URL (https://, http://, mailto:, ftp://)</value></data>
   <data name="InsertTableDlg_Title" xml:space="preserve"><value>Infoga tabell</value></data>
   <data name="InsertTableDlg_Rows" xml:space="preserve"><value>Rader</value></data>
@@ -285,31 +285,31 @@
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>Avbryt</value></data>
 
-  <!-- SPELL CHECKER -->
-  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Aktivera stavningskontroll</value></data>
-  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Ordböcker</value></data>
-  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Språk</value></data>
-  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Status</value></data>
-  <data name="SpellCheck_Download"            xml:space="preserve"><value>Ladda ned</value></data>
-  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Bläddra...</value></data>
-  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Ta bort</value></data>
-  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Användarordbok</value></data>
-  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Redigera användarordbok</value></data>
-  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Installerad</value></data>
-  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Inte installerad</value></data>
-  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Ignorera</value></data>
-  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Lägg till i ordbok</value></data>
-  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Välj ordboksfil</value></data>
-  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Välj affixfil</value></data>
-  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Det gick inte att hämta ordboken.</value></data>
-  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>Nedladdningsfel</value></data>
-  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Stavningsordbok</value></data>
-  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Ingen stavningsordbok hittades. Ladda ned nu?</value></data>
-  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Installera</value></data>
-  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Senare</value></data>
-  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Visa aldrig</value></data>
+  
+  <data name="SpellCheck_Enable" xml:space="preserve"><value>Aktivera stavningskontroll</value></data>
+  <data name="SpellCheck_DictSection" xml:space="preserve"><value>Ordböcker</value></data>
+  <data name="SpellCheck_ColLanguage" xml:space="preserve"><value>Språk</value></data>
+  <data name="SpellCheck_ColStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="SpellCheck_Download" xml:space="preserve"><value>Ladda ned</value></data>
+  <data name="SpellCheck_Browse" xml:space="preserve"><value>Bläddra...</value></data>
+  <data name="SpellCheck_Remove" xml:space="preserve"><value>Ta bort</value></data>
+  <data name="SpellCheck_UserDictSection" xml:space="preserve"><value>Användarordbok</value></data>
+  <data name="SpellCheck_EditUserDict" xml:space="preserve"><value>Redigera användarordbok</value></data>
+  <data name="SpellCheck_StatusInstalled" xml:space="preserve"><value>Installerad</value></data>
+  <data name="SpellCheck_StatusNotInstalled" xml:space="preserve"><value>Inte installerad</value></data>
+  <data name="SpellCheck_Ignore" xml:space="preserve"><value>Ignorera</value></data>
+  <data name="SpellCheck_AddToDict" xml:space="preserve"><value>Lägg till i ordbok</value></data>
+  <data name="SpellCheck_BrowseDicTitle" xml:space="preserve"><value>Välj ordboksfil</value></data>
+  <data name="SpellCheck_BrowseAffTitle" xml:space="preserve"><value>Välj affixfil</value></data>
+  <data name="SpellCheck_DownloadError" xml:space="preserve"><value>Det gick inte att hämta ordboken.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle" xml:space="preserve"><value>Nedladdningsfel</value></data>
+  <data name="SpellCheck_NotifTitle" xml:space="preserve"><value>Stavningsordbok</value></data>
+  <data name="SpellCheck_NotifMessage" xml:space="preserve"><value>Ingen stavningsordbok hittades. Ladda ned nu?</value></data>
+  <data name="SpellCheck_NotifInstall" xml:space="preserve"><value>Installera</value></data>
+  <data name="SpellCheck_NotifLater" xml:space="preserve"><value>Senare</value></data>
+  <data name="SpellCheck_NotifNever" xml:space="preserve"><value>Visa aldrig</value></data>
 
-  <!-- Image dialog & context menu -->
+  
   <data name="ImgDlg_Title" xml:space="preserve"><value>Bildegenskaper</value></data>
   <data name="ImgDlg_TabSize" xml:space="preserve"><value>Storlek och position</value></data>
   <data name="ImgDlg_TabWrap" xml:space="preserve"><value>Textbrytning</value></data>
@@ -393,4 +393,11 @@
   <data name="DocStructure_KindFilter_ImagesOnly" xml:space="preserve">
     <value>Bilder</value>
   </data>
-</root>
+<data name="DocEditorHost_AnonymizeBtn" xml:space="preserve"><value>Anonymisera metadata</value></data><data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve"><value>Tar bort författare, tidsstämplar, anpassade egenskaper och makron från detta dokument. Ändringen behålls i minnet till spara.</value></data><data name="DocEditorHost_AnonymizeTitle" xml:space="preserve"><value>Anonymisera metadata</value></data><data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve"><value>Ta bort författare, tidsstämplar, anpassade egenskaper och makron från detta dokument?
+
+Ändringen tillämpas direkt i minnet och sparas i filen vid nästa Spara.</value></data><data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve"><value>Anonymisering klar.
+
+Författare borttagen: {0}
+Tidsstämplar borttagna: {1}
+Makron borttagna: {2}
+Anpassade egenskaper rensade: {3}</value></data></root>

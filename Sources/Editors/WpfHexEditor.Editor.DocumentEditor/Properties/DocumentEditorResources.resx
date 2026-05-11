@@ -344,6 +344,28 @@
   <data name="DocEditorHost_MetadataToolTip" xml:space="preserve">
     <value>Document metadata</value>
   </data>
+  <data name="DocEditorHost_AnonymizeBtn" xml:space="preserve">
+    <value>Anonymize metadata</value>
+  </data>
+  <data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve">
+    <value>Strip author, timestamps, custom properties and macros from this document. The change is in-memory until you save.</value>
+  </data>
+  <data name="DocEditorHost_AnonymizeTitle" xml:space="preserve">
+    <value>Anonymize metadata</value>
+  </data>
+  <data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve">
+    <value>Remove author, timestamps, custom properties and macros from this document?
+
+The change applies in memory immediately and is persisted to the file on the next Save.</value>
+  </data>
+  <data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve">
+    <value>Anonymization complete.
+
+Author removed: {0}
+Timestamps removed: {1}
+Macros removed: {2}
+Custom properties cleared: {3}</value>
+  </data>
   <data name="DocEditorHost_ExportToolTip" xml:space="preserve">
     <value>Export document</value>
   </data>

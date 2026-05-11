@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -239,7 +239,7 @@
   <data name="HyperlinkDlg_LabelUrl" xml:space="preserve"><value>URL</value></data>
   <data name="HyperlinkDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="HyperlinkDlg_Cancel" xml:space="preserve"><value>Anulare</value></data>
-  <data name="HyperlinkDlg_TestUrl"    xml:space="preserve"><value>Deschide URL în browser</value></data>
+  <data name="HyperlinkDlg_TestUrl" xml:space="preserve"><value>Deschide URL în browser</value></data>
   <data name="HyperlinkDlg_InvalidUrl" xml:space="preserve"><value>Introduceți un URL valid (https://, http://, mailto:, ftp://)</value></data>
   <data name="InsertTableDlg_Title" xml:space="preserve"><value>Inserați tabel</value></data>
   <data name="InsertTableDlg_Rows" xml:space="preserve"><value>Rânduri</value></data>
@@ -285,31 +285,31 @@
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>Anulare</value></data>
 
-  <!-- SPELL CHECKER -->
-  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Activați verificarea ortografică</value></data>
-  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Dicționare</value></data>
-  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Limbă</value></data>
-  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Stare</value></data>
-  <data name="SpellCheck_Download"            xml:space="preserve"><value>Descărcare</value></data>
-  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Răsfoire...</value></data>
-  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Eliminare</value></data>
-  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Dicționar utilizator</value></data>
-  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Editați dicționarul utilizatorului</value></data>
-  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Instalat</value></data>
-  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Neinstalat</value></data>
-  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Ignorați</value></data>
-  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Adăugați în dicționar</value></data>
-  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Selectați fișierul dicționar</value></data>
-  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Selectați fișierul de afixe</value></data>
-  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Descărcarea dicționarului a eșuat.</value></data>
-  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>Eroare descărcare</value></data>
-  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Dicționar ortografic</value></data>
-  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Nu s-a găsit niciun dicționar ortografic. Descărcați acum?</value></data>
-  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Instalare</value></data>
-  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Mai târziu</value></data>
-  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Nu mai afișa</value></data>
+  
+  <data name="SpellCheck_Enable" xml:space="preserve"><value>Activați verificarea ortografică</value></data>
+  <data name="SpellCheck_DictSection" xml:space="preserve"><value>Dicționare</value></data>
+  <data name="SpellCheck_ColLanguage" xml:space="preserve"><value>Limbă</value></data>
+  <data name="SpellCheck_ColStatus" xml:space="preserve"><value>Stare</value></data>
+  <data name="SpellCheck_Download" xml:space="preserve"><value>Descărcare</value></data>
+  <data name="SpellCheck_Browse" xml:space="preserve"><value>Răsfoire...</value></data>
+  <data name="SpellCheck_Remove" xml:space="preserve"><value>Eliminare</value></data>
+  <data name="SpellCheck_UserDictSection" xml:space="preserve"><value>Dicționar utilizator</value></data>
+  <data name="SpellCheck_EditUserDict" xml:space="preserve"><value>Editați dicționarul utilizatorului</value></data>
+  <data name="SpellCheck_StatusInstalled" xml:space="preserve"><value>Instalat</value></data>
+  <data name="SpellCheck_StatusNotInstalled" xml:space="preserve"><value>Neinstalat</value></data>
+  <data name="SpellCheck_Ignore" xml:space="preserve"><value>Ignorați</value></data>
+  <data name="SpellCheck_AddToDict" xml:space="preserve"><value>Adăugați în dicționar</value></data>
+  <data name="SpellCheck_BrowseDicTitle" xml:space="preserve"><value>Selectați fișierul dicționar</value></data>
+  <data name="SpellCheck_BrowseAffTitle" xml:space="preserve"><value>Selectați fișierul de afixe</value></data>
+  <data name="SpellCheck_DownloadError" xml:space="preserve"><value>Descărcarea dicționarului a eșuat.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle" xml:space="preserve"><value>Eroare descărcare</value></data>
+  <data name="SpellCheck_NotifTitle" xml:space="preserve"><value>Dicționar ortografic</value></data>
+  <data name="SpellCheck_NotifMessage" xml:space="preserve"><value>Nu s-a găsit niciun dicționar ortografic. Descărcați acum?</value></data>
+  <data name="SpellCheck_NotifInstall" xml:space="preserve"><value>Instalare</value></data>
+  <data name="SpellCheck_NotifLater" xml:space="preserve"><value>Mai târziu</value></data>
+  <data name="SpellCheck_NotifNever" xml:space="preserve"><value>Nu mai afișa</value></data>
 
-  <!-- Image dialog & context menu -->
+  
   <data name="ImgDlg_Title" xml:space="preserve"><value>Proprietăți imagine</value></data>
   <data name="ImgDlg_TabSize" xml:space="preserve"><value>Dimensiune și poziție</value></data>
   <data name="ImgDlg_TabWrap" xml:space="preserve"><value>Înfășurare text</value></data>
@@ -393,4 +393,11 @@
   <data name="DocStructure_KindFilter_ImagesOnly" xml:space="preserve">
     <value>Imagini</value>
   </data>
-</root>
+<data name="DocEditorHost_AnonymizeBtn" xml:space="preserve"><value>Anonimizează metadatele</value></data><data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve"><value>Elimină autorul, marcajele de timp, proprietățile personalizate și macrocomenzile din acest document. Modificarea rămâne în memorie până la salvare.</value></data><data name="DocEditorHost_AnonymizeTitle" xml:space="preserve"><value>Anonimizează metadatele</value></data><data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve"><value>Eliminați autorul, marcajele de timp, proprietățile personalizate și macrocomenzile din acest document?
+
+Modificarea se aplică imediat în memorie și se salvează în fișier la următoarea Salvare.</value></data><data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve"><value>Anonimizare finalizată.
+
+Autor eliminat: {0}
+Marcaje de timp eliminate: {1}
+Macrocomenzi eliminate: {2}
+Proprietăți personalizate șterse: {3}</value></data></root>

@@ -1017,6 +1017,36 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         }
     }
 
+    private void OnAnonymizeClicked(object sender, RoutedEventArgs e)
+    {
+        var model = _vm?.Model;
+        if (model is null) return;
+
+        var confirm = WpfHexEditor.Editor.Core.Dialogs.IdeMessageBox.Show(
+            DocumentEditorResources.DocEditorHost_AnonymizeConfirm,
+            DocumentEditorResources.DocEditorHost_AnonymizeTitle,
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            Window.GetWindow(this));
+        if (confirm != MessageBoxResult.Yes) return;
+
+        var result = WpfHexEditor.Editor.DocumentEditor.Services.DocumentAnonymizer.Anonymize(model);
+
+        // Refresh popup view to reflect stripped metadata immediately.
+        OnMetadataClicked(sender, e);
+
+        WpfHexEditor.Editor.Core.Dialogs.IdeMessageBox.Show(
+            string.Format(DocumentEditorResources.DocEditorHost_AnonymizeDoneFmt,
+                result.HadAuthor ? 1 : 0,
+                result.HadCreated || result.HadModified ? 1 : 0,
+                result.HadMacros ? 1 : 0,
+                result.ExtraKeysRemoved),
+            DocumentEditorResources.DocEditorHost_AnonymizeTitle,
+            MessageBoxButton.OK,
+            MessageBoxImage.Information,
+            Window.GetWindow(this));
+    }
+
     private void OnMetadataClicked(object sender, RoutedEventArgs e)
     {
         var meta = _vm?.Model?.Metadata;

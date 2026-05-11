@@ -275,7 +275,37 @@ namespace WpfHexEditor.Editor.DocumentEditor.Properties {
                 return ResourceManager.GetString("DocEditorHost_MetadataToolTip", resourceCulture);
             }
         }
-        
+
+        internal static string DocEditorHost_AnonymizeBtn {
+            get {
+                return ResourceManager.GetString("DocEditorHost_AnonymizeBtn", resourceCulture);
+            }
+        }
+
+        internal static string DocEditorHost_AnonymizeToolTip {
+            get {
+                return ResourceManager.GetString("DocEditorHost_AnonymizeToolTip", resourceCulture);
+            }
+        }
+
+        internal static string DocEditorHost_AnonymizeTitle {
+            get {
+                return ResourceManager.GetString("DocEditorHost_AnonymizeTitle", resourceCulture);
+            }
+        }
+
+        internal static string DocEditorHost_AnonymizeConfirm {
+            get {
+                return ResourceManager.GetString("DocEditorHost_AnonymizeConfirm", resourceCulture);
+            }
+        }
+
+        internal static string DocEditorHost_AnonymizeDoneFmt {
+            get {
+                return ResourceManager.GetString("DocEditorHost_AnonymizeDoneFmt", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à —.
         /// </summary>

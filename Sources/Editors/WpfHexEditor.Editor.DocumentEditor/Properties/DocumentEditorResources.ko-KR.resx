@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -239,7 +239,7 @@
   <data name="HyperlinkDlg_LabelUrl" xml:space="preserve"><value>URL</value></data>
   <data name="HyperlinkDlg_OK" xml:space="preserve"><value>확인</value></data>
   <data name="HyperlinkDlg_Cancel" xml:space="preserve"><value>취소</value></data>
-  <data name="HyperlinkDlg_TestUrl"    xml:space="preserve"><value>브라우저에서 URL 열기</value></data>
+  <data name="HyperlinkDlg_TestUrl" xml:space="preserve"><value>브라우저에서 URL 열기</value></data>
   <data name="HyperlinkDlg_InvalidUrl" xml:space="preserve"><value>올바른 URL을 입력하세요 (https://, http://, mailto:, ftp://)</value></data>
   <data name="InsertTableDlg_Title" xml:space="preserve"><value>표 삽입</value></data>
   <data name="InsertTableDlg_Rows" xml:space="preserve"><value>행</value></data>
@@ -285,31 +285,31 @@
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>확인</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>취소</value></data>
 
-  <!-- SPELL CHECKER -->
-  <data name="SpellCheck_Enable"              xml:space="preserve"><value>맞춤법 검사 사용</value></data>
-  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>사전</value></data>
-  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>언어</value></data>
-  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>상태</value></data>
-  <data name="SpellCheck_Download"            xml:space="preserve"><value>다운로드</value></data>
-  <data name="SpellCheck_Browse"              xml:space="preserve"><value>찾아보기...</value></data>
-  <data name="SpellCheck_Remove"              xml:space="preserve"><value>제거</value></data>
-  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>사용자 사전</value></data>
-  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>사용자 사전 편집</value></data>
-  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>설치됨</value></data>
-  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>설치되지 않음</value></data>
-  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>무시</value></data>
-  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>사전에 추가</value></data>
-  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>사전 파일 선택</value></data>
-  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>어미 파일 선택</value></data>
-  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>사전을 다운로드하지 못했습니다.</value></data>
-  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>다운로드 오류</value></data>
-  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>맞춤법 검사 사전</value></data>
-  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>맞춤법 검사 사전을 찾을 수 없습니다. 지금 다운로드하시겠습니까?</value></data>
-  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>설치</value></data>
-  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>나중에</value></data>
-  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>다시 표시 안 함</value></data>
+  
+  <data name="SpellCheck_Enable" xml:space="preserve"><value>맞춤법 검사 사용</value></data>
+  <data name="SpellCheck_DictSection" xml:space="preserve"><value>사전</value></data>
+  <data name="SpellCheck_ColLanguage" xml:space="preserve"><value>언어</value></data>
+  <data name="SpellCheck_ColStatus" xml:space="preserve"><value>상태</value></data>
+  <data name="SpellCheck_Download" xml:space="preserve"><value>다운로드</value></data>
+  <data name="SpellCheck_Browse" xml:space="preserve"><value>찾아보기...</value></data>
+  <data name="SpellCheck_Remove" xml:space="preserve"><value>제거</value></data>
+  <data name="SpellCheck_UserDictSection" xml:space="preserve"><value>사용자 사전</value></data>
+  <data name="SpellCheck_EditUserDict" xml:space="preserve"><value>사용자 사전 편집</value></data>
+  <data name="SpellCheck_StatusInstalled" xml:space="preserve"><value>설치됨</value></data>
+  <data name="SpellCheck_StatusNotInstalled" xml:space="preserve"><value>설치되지 않음</value></data>
+  <data name="SpellCheck_Ignore" xml:space="preserve"><value>무시</value></data>
+  <data name="SpellCheck_AddToDict" xml:space="preserve"><value>사전에 추가</value></data>
+  <data name="SpellCheck_BrowseDicTitle" xml:space="preserve"><value>사전 파일 선택</value></data>
+  <data name="SpellCheck_BrowseAffTitle" xml:space="preserve"><value>어미 파일 선택</value></data>
+  <data name="SpellCheck_DownloadError" xml:space="preserve"><value>사전을 다운로드하지 못했습니다.</value></data>
+  <data name="SpellCheck_DownloadErrorTitle" xml:space="preserve"><value>다운로드 오류</value></data>
+  <data name="SpellCheck_NotifTitle" xml:space="preserve"><value>맞춤법 검사 사전</value></data>
+  <data name="SpellCheck_NotifMessage" xml:space="preserve"><value>맞춤법 검사 사전을 찾을 수 없습니다. 지금 다운로드하시겠습니까?</value></data>
+  <data name="SpellCheck_NotifInstall" xml:space="preserve"><value>설치</value></data>
+  <data name="SpellCheck_NotifLater" xml:space="preserve"><value>나중에</value></data>
+  <data name="SpellCheck_NotifNever" xml:space="preserve"><value>다시 표시 안 함</value></data>
 
-  <!-- Image dialog & context menu -->
+  
   <data name="ImgDlg_Title" xml:space="preserve"><value>이미지 속성</value></data>
   <data name="ImgDlg_TabSize" xml:space="preserve"><value>크기 및 위치</value></data>
   <data name="ImgDlg_TabWrap" xml:space="preserve"><value>텍스트 줄 바꿈</value></data>
@@ -393,4 +393,11 @@
   <data name="DocStructure_KindFilter_ImagesOnly" xml:space="preserve">
     <value>이미지</value>
   </data>
-</root>
+<data name="DocEditorHost_AnonymizeBtn" xml:space="preserve"><value>메타데이터 익명화</value></data><data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve"><value>이 문서에서 작성자, 타임스탬프, 사용자 지정 속성 및 매크로를 제거합니다. 저장 전까지 변경 사항은 메모리에 유지됩니다.</value></data><data name="DocEditorHost_AnonymizeTitle" xml:space="preserve"><value>메타데이터 익명화</value></data><data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve"><value>이 문서에서 작성자, 타임스탬프, 사용자 지정 속성 및 매크로를 제거하시겠습니까?
+
+변경 사항은 즉시 메모리에 적용되며 다음 저장 시 파일에 기록됩니다.</value></data><data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve"><value>익명화가 완료되었습니다.
+
+작성자 제거됨: {0}
+타임스탬프 제거됨: {1}
+매크로 제거됨: {2}
+사용자 지정 속성 지워짐: {3}</value></data></root>

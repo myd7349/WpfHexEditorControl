@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -239,7 +239,7 @@
   <data name="HyperlinkDlg_LabelUrl" xml:space="preserve"><value>URL</value></data>
   <data name="HyperlinkDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="HyperlinkDlg_Cancel" xml:space="preserve"><value>Annuller</value></data>
-  <data name="HyperlinkDlg_TestUrl"    xml:space="preserve"><value>Åbn URL i browser</value></data>
+  <data name="HyperlinkDlg_TestUrl" xml:space="preserve"><value>Åbn URL i browser</value></data>
   <data name="HyperlinkDlg_InvalidUrl" xml:space="preserve"><value>Angiv en gyldig URL (https://, http://, mailto:, ftp://)</value></data>
   <data name="InsertTableDlg_Title" xml:space="preserve"><value>Indsæt tabel</value></data>
   <data name="InsertTableDlg_Rows" xml:space="preserve"><value>Rækker</value></data>
@@ -284,31 +284,31 @@
   <data name="PageStyleDlg_Apply" xml:space="preserve"><value>Anvend</value></data>
   <data name="PageStyleDlg_OK" xml:space="preserve"><value>OK</value></data>
   <data name="PageStyleDlg_Cancel" xml:space="preserve"><value>Annuller</value></data>
-  <!-- SPELL CHECKER -->
-  <data name="SpellCheck_Enable"              xml:space="preserve"><value>Aktivér stavekontrol</value></data>
-  <data name="SpellCheck_DictSection"         xml:space="preserve"><value>Ordbøger</value></data>
-  <data name="SpellCheck_ColLanguage"         xml:space="preserve"><value>Sprog</value></data>
-  <data name="SpellCheck_ColStatus"           xml:space="preserve"><value>Status</value></data>
-  <data name="SpellCheck_Download"            xml:space="preserve"><value>Download</value></data>
-  <data name="SpellCheck_Browse"              xml:space="preserve"><value>Gennemse…</value></data>
-  <data name="SpellCheck_Remove"              xml:space="preserve"><value>Fjern</value></data>
-  <data name="SpellCheck_UserDictSection"     xml:space="preserve"><value>Brugerdefineret ordbog</value></data>
-  <data name="SpellCheck_EditUserDict"        xml:space="preserve"><value>Rediger…</value></data>
-  <data name="SpellCheck_StatusInstalled"     xml:space="preserve"><value>Installeret</value></data>
-  <data name="SpellCheck_StatusNotInstalled"  xml:space="preserve"><value>Ikke installeret</value></data>
-  <data name="SpellCheck_Ignore"              xml:space="preserve"><value>Ignorer</value></data>
-  <data name="SpellCheck_AddToDict"           xml:space="preserve"><value>Tilføj til ordbog</value></data>
-  <data name="SpellCheck_BrowseDicTitle"      xml:space="preserve"><value>Vælg .dic ordbogsfil</value></data>
-  <data name="SpellCheck_BrowseAffTitle"      xml:space="preserve"><value>Vælg .aff affixfil</value></data>
-  <data name="SpellCheck_DownloadError"       xml:space="preserve"><value>Download mislykkedes: {0}</value></data>
-  <data name="SpellCheck_DownloadErrorTitle"  xml:space="preserve"><value>Fejl ved download af ordbog</value></data>
-  <data name="SpellCheck_NotifTitle"          xml:space="preserve"><value>Stavekontrols ordbog er tilgængelig</value></data>
-  <data name="SpellCheck_NotifMessage"        xml:space="preserve"><value>Installer {0} ordbog til stavekontrol? (~2 MB)</value></data>
-  <data name="SpellCheck_NotifInstall"        xml:space="preserve"><value>Installer</value></data>
-  <data name="SpellCheck_NotifLater"          xml:space="preserve"><value>Ikke nu</value></data>
-  <data name="SpellCheck_NotifNever"          xml:space="preserve"><value>Spørg ikke igen</value></data>
+  
+  <data name="SpellCheck_Enable" xml:space="preserve"><value>Aktivér stavekontrol</value></data>
+  <data name="SpellCheck_DictSection" xml:space="preserve"><value>Ordbøger</value></data>
+  <data name="SpellCheck_ColLanguage" xml:space="preserve"><value>Sprog</value></data>
+  <data name="SpellCheck_ColStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="SpellCheck_Download" xml:space="preserve"><value>Download</value></data>
+  <data name="SpellCheck_Browse" xml:space="preserve"><value>Gennemse…</value></data>
+  <data name="SpellCheck_Remove" xml:space="preserve"><value>Fjern</value></data>
+  <data name="SpellCheck_UserDictSection" xml:space="preserve"><value>Brugerdefineret ordbog</value></data>
+  <data name="SpellCheck_EditUserDict" xml:space="preserve"><value>Rediger…</value></data>
+  <data name="SpellCheck_StatusInstalled" xml:space="preserve"><value>Installeret</value></data>
+  <data name="SpellCheck_StatusNotInstalled" xml:space="preserve"><value>Ikke installeret</value></data>
+  <data name="SpellCheck_Ignore" xml:space="preserve"><value>Ignorer</value></data>
+  <data name="SpellCheck_AddToDict" xml:space="preserve"><value>Tilføj til ordbog</value></data>
+  <data name="SpellCheck_BrowseDicTitle" xml:space="preserve"><value>Vælg .dic ordbogsfil</value></data>
+  <data name="SpellCheck_BrowseAffTitle" xml:space="preserve"><value>Vælg .aff affixfil</value></data>
+  <data name="SpellCheck_DownloadError" xml:space="preserve"><value>Download mislykkedes: {0}</value></data>
+  <data name="SpellCheck_DownloadErrorTitle" xml:space="preserve"><value>Fejl ved download af ordbog</value></data>
+  <data name="SpellCheck_NotifTitle" xml:space="preserve"><value>Stavekontrols ordbog er tilgængelig</value></data>
+  <data name="SpellCheck_NotifMessage" xml:space="preserve"><value>Installer {0} ordbog til stavekontrol? (~2 MB)</value></data>
+  <data name="SpellCheck_NotifInstall" xml:space="preserve"><value>Installer</value></data>
+  <data name="SpellCheck_NotifLater" xml:space="preserve"><value>Ikke nu</value></data>
+  <data name="SpellCheck_NotifNever" xml:space="preserve"><value>Spørg ikke igen</value></data>
 
-  <!-- Image dialog & context menu -->
+  
   <data name="ImgDlg_Title" xml:space="preserve"><value>Billedegenskaber</value></data>
   <data name="ImgDlg_TabSize" xml:space="preserve"><value>Størrelse og position</value></data>
   <data name="ImgDlg_TabWrap" xml:space="preserve"><value>Ombrydning</value></data>
@@ -392,4 +392,11 @@
   <data name="DocStructure_KindFilter_ImagesOnly" xml:space="preserve">
     <value>Billeder</value>
   </data>
-</root>
+<data name="DocEditorHost_AnonymizeBtn" xml:space="preserve"><value>Anonymisér metadata</value></data><data name="DocEditorHost_AnonymizeToolTip" xml:space="preserve"><value>Fjerner forfatter, tidsstempler, brugerdefinerede egenskaber og makroer fra dette dokument. Ændringen bevares i hukommelsen indtil gem.</value></data><data name="DocEditorHost_AnonymizeTitle" xml:space="preserve"><value>Anonymisér metadata</value></data><data name="DocEditorHost_AnonymizeConfirm" xml:space="preserve"><value>Fjern forfatter, tidsstempler, brugerdefinerede egenskaber og makroer fra dette dokument?
+
+Ændringen anvendes straks i hukommelsen og gemmes i filen ved næste Gem.</value></data><data name="DocEditorHost_AnonymizeDoneFmt" xml:space="preserve"><value>Anonymisering fuldført.
+
+Forfatter fjernet: {0}
+Tidsstempler fjernet: {1}
+Makroer fjernet: {2}
+Brugerdefinerede egenskaber ryddet: {3}</value></data></root>
