@@ -995,4 +995,19 @@ Custom properties cleared: {3}</value>
 
   <!-- Print / Export PDF (T1.3) -->
   <data name="DocEditorHost_PrintToolTip"    xml:space="preserve"><value>Print or export as PDF (use the "Microsoft Print to PDF" printer to generate a PDF)</value></data>
+
+  <!-- Document Diff (T1.2) -->
+  <data name="DocEditorHost_DiffToolTip"     xml:space="preserve"><value>Compare with another document…</value></data>
+  <data name="DocDiffDlg_Title"              xml:space="preserve"><value>Compare documents</value></data>
+  <data name="DocDiffDlg_LabelLeft"          xml:space="preserve"><value>Left:</value></data>
+  <data name="DocDiffDlg_LabelRight"         xml:space="preserve"><value>Right:</value></data>
+  <data name="DocDiffDlg_PickRight"          xml:space="preserve"><value>Browse…</value></data>
+  <data name="DocDiffDlg_PickHint"           xml:space="preserve"><value>(click Browse to pick a file)</value></data>
+  <data name="DocDiffDlg_ColKind"            xml:space="preserve"><value>Kind</value></data>
+  <data name="DocDiffDlg_ColChange"          xml:space="preserve"><value>Change</value></data>
+  <data name="DocDiffDlg_ColText"            xml:space="preserve"><value>Text</value></data>
+  <data name="DocDiffDlg_SummaryFmt"         xml:space="preserve"><value>+{0} added, −{1} removed, ~{2} modified, {3} unchanged</value></data>
+  <data name="DocDiffDlg_NoLoaders"          xml:space="preserve"><value>No document loaders are registered.</value></data>
+  <data name="DocDiffDlg_NoLoaderForFmt"     xml:space="preserve"><value>No loader registered for extension {0}.</value></data>
+  <data name="DocDiffDlg_Close"              xml:space="preserve"><value>Close</value></data>
 </root>

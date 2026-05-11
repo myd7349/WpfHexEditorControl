@@ -202,6 +202,55 @@ namespace WpfHexEditor.Tests.Unit
             Assert.IsFalse(model.Metadata.Extra.ContainsKey(DocumentMetadataExtraKeys.MacrosRemoved));
         }
 
+        // ── DocumentDiffService ───────────────────────────────────────────
+
+        [TestMethod]
+        public void Diff_IdenticalDocuments_AllEqual()
+        {
+            var (a, b) = (BuildDoc("hello", "world"), BuildDoc("hello", "world"));
+            var rows = DocumentDiffService.Diff(a, b);
+            Assert.IsTrue(rows.All(r => r.Kind == DocumentDiffKind.Equal));
+            Assert.AreEqual(2, rows.Count);
+        }
+
+        [TestMethod]
+        public void Diff_AppendedParagraph_DetectedAsAdded()
+        {
+            var a = BuildDoc("one");
+            var b = BuildDoc("one", "two");
+            var rows = DocumentDiffService.Diff(a, b);
+            Assert.AreEqual(2, rows.Count);
+            Assert.AreEqual(DocumentDiffKind.Equal, rows[0].Kind);
+            Assert.AreEqual(DocumentDiffKind.Added, rows[1].Kind);
+        }
+
+        [TestMethod]
+        public void Diff_EditedParagraph_DetectedAsModified()
+        {
+            var a = BuildDoc("hello world");
+            var b = BuildDoc("hello universe");
+            var rows = DocumentDiffService.Diff(a, b);
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual(DocumentDiffKind.Modified, rows[0].Kind);
+        }
+
+        [TestMethod]
+        public void Diff_RemovedParagraph_DetectedAsRemoved()
+        {
+            var a = BuildDoc("one", "two", "three");
+            var b = BuildDoc("one", "three");
+            var rows = DocumentDiffService.Diff(a, b);
+            Assert.IsTrue(rows.Any(r => r.Kind == DocumentDiffKind.Removed && r.Text == "two"));
+        }
+
+        private static DocumentModel BuildDoc(params string[] paragraphs)
+        {
+            var model = new DocumentModel();
+            foreach (var p in paragraphs)
+                model.Blocks.Add(new DocumentBlock { Kind = DocumentBlockKinds.Paragraph, Text = p });
+            return model;
+        }
+
         // ── RtfSchemaEngine.EscapeText ────────────────────────────────────
 
         [TestMethod]

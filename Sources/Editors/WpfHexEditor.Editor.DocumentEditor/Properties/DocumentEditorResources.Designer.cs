@@ -402,6 +402,46 @@ namespace WpfHexEditor.Editor.DocumentEditor.Properties {
             }
         }
 
+        internal static string DocEditorHost_DiffToolTip {
+            get { return ResourceManager.GetString("DocEditorHost_DiffToolTip", resourceCulture); }
+        }
+        internal static string DocDiffDlg_Title {
+            get { return ResourceManager.GetString("DocDiffDlg_Title", resourceCulture); }
+        }
+        internal static string DocDiffDlg_LabelLeft {
+            get { return ResourceManager.GetString("DocDiffDlg_LabelLeft", resourceCulture); }
+        }
+        internal static string DocDiffDlg_LabelRight {
+            get { return ResourceManager.GetString("DocDiffDlg_LabelRight", resourceCulture); }
+        }
+        internal static string DocDiffDlg_PickRight {
+            get { return ResourceManager.GetString("DocDiffDlg_PickRight", resourceCulture); }
+        }
+        internal static string DocDiffDlg_PickHint {
+            get { return ResourceManager.GetString("DocDiffDlg_PickHint", resourceCulture); }
+        }
+        internal static string DocDiffDlg_ColKind {
+            get { return ResourceManager.GetString("DocDiffDlg_ColKind", resourceCulture); }
+        }
+        internal static string DocDiffDlg_ColChange {
+            get { return ResourceManager.GetString("DocDiffDlg_ColChange", resourceCulture); }
+        }
+        internal static string DocDiffDlg_ColText {
+            get { return ResourceManager.GetString("DocDiffDlg_ColText", resourceCulture); }
+        }
+        internal static string DocDiffDlg_SummaryFmt {
+            get { return ResourceManager.GetString("DocDiffDlg_SummaryFmt", resourceCulture); }
+        }
+        internal static string DocDiffDlg_NoLoaders {
+            get { return ResourceManager.GetString("DocDiffDlg_NoLoaders", resourceCulture); }
+        }
+        internal static string DocDiffDlg_NoLoaderForFmt {
+            get { return ResourceManager.GetString("DocDiffDlg_NoLoaderForFmt", resourceCulture); }
+        }
+        internal static string DocDiffDlg_Close {
+            get { return ResourceManager.GetString("DocDiffDlg_Close", resourceCulture); }
+        }
+
         internal static string DocEditorHost_AnonymizeToolTip {
             get {
                 return ResourceManager.GetString("DocEditorHost_AnonymizeToolTip", resourceCulture);
