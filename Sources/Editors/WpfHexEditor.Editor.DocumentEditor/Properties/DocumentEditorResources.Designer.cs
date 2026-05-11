@@ -282,6 +282,90 @@ namespace WpfHexEditor.Editor.DocumentEditor.Properties {
             }
         }
 
+        internal static string DocEditorHost_EmbeddedToolTip {
+            get {
+                return ResourceManager.GetString("DocEditorHost_EmbeddedToolTip", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_Title {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_Title", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_ColKind {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_ColKind", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_ColName {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_ColName", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_ColSize {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_ColSize", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_ColSource {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_ColSource", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_Extract {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_Extract", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_ExtractToolTip {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_ExtractToolTip", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_OpenHex {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_OpenHex", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_OpenHexToolTip {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_OpenHexToolTip", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_Close {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_Close", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_CountFmt {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_CountFmt", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_EntryNotFoundFmt {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_EntryNotFoundFmt", resourceCulture);
+            }
+        }
+
+        internal static string EmbeddedDlg_NoSource {
+            get {
+                return ResourceManager.GetString("EmbeddedDlg_NoSource", resourceCulture);
+            }
+        }
+
         internal static string DocEditorHost_AnonymizeToolTip {
             get {
                 return ResourceManager.GetString("DocEditorHost_AnonymizeToolTip", resourceCulture);

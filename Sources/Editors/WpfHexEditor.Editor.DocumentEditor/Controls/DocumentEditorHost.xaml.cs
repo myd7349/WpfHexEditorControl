@@ -1017,6 +1017,17 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         }
     }
 
+    private void OnEmbeddedClicked(object sender, RoutedEventArgs e)
+    {
+        var model = _vm?.Model;
+        if (model is null) return;
+        var dlg = new WpfHexEditor.Editor.DocumentEditor.Dialogs.EmbeddedObjectsDialog(model, _ideContext)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        dlg.ShowDialog();
+    }
+
     private void OnAnonymizeClicked(object sender, RoutedEventArgs e)
     {
         var model = _vm?.Model;

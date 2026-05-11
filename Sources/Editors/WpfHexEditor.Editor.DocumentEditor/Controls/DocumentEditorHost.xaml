@@ -569,6 +569,15 @@
                            ToolTip="{DynamicResource DocEditorHost_ReadOnlyToolTip}"
                            Visibility="Collapsed"/>
 
+                <Button x:Name="PART_EmbeddedBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Right"
+                        Margin="0,0,2,0"
+                        ToolTip="{DynamicResource DocEditorHost_EmbeddedToolTip}"
+                        Click="OnEmbeddedClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7B8;" FontSize="13"/>
+                </Button>
+
                 <Button x:Name="PART_MetadataBtn"
                         Style="{StaticResource DocActionButtonStyle}"
                         DockPanel.Dock="Right"

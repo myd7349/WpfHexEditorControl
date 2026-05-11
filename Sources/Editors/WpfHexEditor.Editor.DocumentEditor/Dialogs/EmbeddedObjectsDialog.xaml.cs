@@ -1,0 +1,139 @@
+// ==========================================================
+// Project: WpfHexEditor.Editor.DocumentEditor
+// File: Dialogs/EmbeddedObjectsDialog.xaml.cs
+// Description:
+//     Forensic review pane: lists images, OLE objects and VBA
+//     macros embedded in the active document. Supports extract-
+//     to-file and open-in-hex (uses IIDEHostContext.DocumentHost
+//     when available to route through the IDE).
+// ==========================================================
+
+using System.IO;
+using System.IO.Compression;
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.Win32;
+using WpfHexEditor.Editor.Core.Dialogs;
+using WpfHexEditor.Editor.Core.Views;
+using WpfHexEditor.Editor.DocumentEditor.Core.Model;
+using WpfHexEditor.Editor.DocumentEditor.Properties;
+using WpfHexEditor.Editor.DocumentEditor.Services;
+using WpfHexEditor.SDK.Contracts;
+
+namespace WpfHexEditor.Editor.DocumentEditor.Dialogs;
+
+public partial class EmbeddedObjectsDialog : ThemedDialog
+{
+    private readonly DocumentModel _model;
+    private readonly IIDEHostContext? _host;
+
+    public EmbeddedObjectsDialog(DocumentModel model, IIDEHostContext? host)
+    {
+        InitializeComponent();
+        _model = model ?? throw new ArgumentNullException(nameof(model));
+        _host  = host;
+
+        var entries = EmbeddedObjectsScanner.Scan(model);
+        PART_List.ItemsSource = entries;
+        PART_Subtitle.Text   = model.Metadata?.Title ?? Path.GetFileName(model.FilePath ?? string.Empty);
+        PART_CountLabel.Text = string.Format(
+            DocumentEditorResources.EmbeddedDlg_CountFmt, entries.Count);
+
+        if (entries.Count > 0)
+            PART_List.SelectedIndex = 0;
+    }
+
+    private void OnItemDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => OpenSelectedInHex();
+
+    private void OnOpenInHexClicked(object sender, RoutedEventArgs e)
+        => OpenSelectedInHex();
+
+    private void OpenSelectedInHex()
+    {
+        if (PART_List.SelectedItem is not EmbeddedObjectEntry entry) return;
+        try
+        {
+            string tempPath = ExtractToTemp(entry);
+            if (_host?.DocumentHost is { } host)
+                host.OpenDocument(tempPath, preferredEditorId: "hex-editor");
+            else
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            IdeMessageBox.Show(ex.Message, DocumentEditorResources.EmbeddedDlg_Title,
+                MessageBoxButton.OK, MessageBoxImage.Error, Window.GetWindow(this));
+        }
+    }
+
+    private void OnExtractClicked(object sender, RoutedEventArgs e)
+    {
+        if (PART_List.SelectedItem is not EmbeddedObjectEntry entry) return;
+        var dlg = new SaveFileDialog
+        {
+            FileName = entry.Name,
+            Title    = DocumentEditorResources.EmbeddedDlg_ExtractToolTip
+        };
+        if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+        try
+        {
+            byte[] bytes = LoadBytes(entry);
+            File.WriteAllBytes(dlg.FileName, bytes);
+        }
+        catch (Exception ex)
+        {
+            IdeMessageBox.Show(ex.Message, DocumentEditorResources.EmbeddedDlg_Title,
+                MessageBoxButton.OK, MessageBoxImage.Error, Window.GetWindow(this));
+        }
+    }
+
+    private void OnCloseClicked(object sender, RoutedEventArgs e) => Close();
+
+    // ── Extraction helpers ────────────────────────────────────────────────
+
+    private byte[] LoadBytes(EmbeddedObjectEntry entry)
+    {
+        if (entry.InlineData is not null) return entry.InlineData;
+
+        if (!string.IsNullOrEmpty(entry.ZipEntryName) &&
+            !string.IsNullOrEmpty(_model.FilePath) &&
+            File.Exists(_model.FilePath))
+        {
+            using var zip = ZipFile.OpenRead(_model.FilePath);
+            var ze = zip.GetEntry(entry.ZipEntryName);
+            if (ze is null)
+                throw new FileNotFoundException(
+                    string.Format(DocumentEditorResources.EmbeddedDlg_EntryNotFoundFmt, entry.ZipEntryName));
+            using var s  = ze.Open();
+            using var ms = new MemoryStream();
+            s.CopyTo(ms);
+            return ms.ToArray();
+        }
+
+        if (entry.Block is not null && entry.Block.RawLength > 0 &&
+            !string.IsNullOrEmpty(_model.FilePath) && File.Exists(_model.FilePath))
+        {
+            using var fs = File.OpenRead(_model.FilePath);
+            fs.Seek(entry.Block.RawOffset, SeekOrigin.Begin);
+            byte[] buf = new byte[entry.Block.RawLength];
+            int read   = fs.Read(buf, 0, buf.Length);
+            if (read < buf.Length) Array.Resize(ref buf, read);
+            return buf;
+        }
+
+        throw new InvalidOperationException(DocumentEditorResources.EmbeddedDlg_NoSource);
+    }
+
+    private string ExtractToTemp(EmbeddedObjectEntry entry)
+    {
+        byte[] bytes = LoadBytes(entry);
+        string baseName = string.IsNullOrEmpty(entry.Name) ? "embed" : Path.GetFileName(entry.Name);
+        string tempPath = Path.Combine(
+            Path.GetTempPath(),
+            $"whdoc_{Guid.NewGuid():N}_{baseName}");
+        File.WriteAllBytes(tempPath, bytes);
+        return tempPath;
+    }
+}
