@@ -90,10 +90,16 @@ public sealed class DiagramCanvas : Canvas
     private double _dragNodeStartY;
     private Dictionary<string, Point> _dragStartPositions = []; // for multi-node drag
 
-    // ── Resize gripper ────────────────────────────────────────────────────────
-    private ClassNode? _resizingNode;
-    private double     _resizeStartY;
-    private double     _resizeStartHeight;
+    // ── Resize gripper (8-way) ────────────────────────────────────────────────
+    private ClassNode?  _resizingNode;
+    private ResizeEdge  _resizingEdge;
+    private Point       _resizeStartPt;
+    private double      _resizeStartHeight;
+    private double      _resizeStartWidth;
+    private double      _resizeStartNodeX;
+    private double      _resizeStartNodeY;
+    // kept for backwards-compat with old code paths that only read Y delta:
+    private double      _resizeStartY;
 
     // ── Swimlane group drag ──────────────────────────────────────────────────
     private string? _draggingGroupNs;
@@ -793,15 +799,22 @@ public sealed class DiagramCanvas : Canvas
             }
         }
 
-        // Resize gripper — bottom edge of any node
-        if (_doc is not null)
+        // 8-way resize gripper on the primary-selected node.
+        // We restrict to the selected node so unselected nodes don't fight
+        // hover/click interactions with their handles.
+        if (_doc is not null && _primarySelected is not null)
         {
-            var gripNode = _layer.IsGripperHit(_doc.Classes, pt);
-            if (gripNode is not null)
+            var hit = _layer.HitTestResizeHandle(new[] { _primarySelected }, pt);
+            if (hit is { } handle)
             {
-                _resizingNode      = gripNode;
+                _resizingNode      = handle.Node;
+                _resizingEdge      = handle.Edge;
+                _resizeStartPt     = pt;
                 _resizeStartY      = pt.Y;
-                _resizeStartHeight = _layer.ComputeNodeHeight(gripNode);
+                _resizeStartHeight = _layer.ComputeNodeHeight(handle.Node);
+                _resizeStartWidth  = handle.Node.Width;
+                _resizeStartNodeX  = handle.Node.X;
+                _resizeStartNodeY  = handle.Node.Y;
                 UpdateSelectAdornerPosition();
                 CaptureMouse();
                 e.Handled = true;
@@ -928,11 +941,51 @@ public sealed class DiagramCanvas : Canvas
             return;
         }
 
-        // Node resize in progress
+        // Node resize in progress (8-way)
         if (_resizingNode is not null)
         {
-            double dy = pt.Y - _resizeStartY;
-            _layer.SetCustomHeight(_resizingNode.Id, Math.Max(_resizeStartHeight + dy, 40));
+            const double minW = 80, minH = 40;
+            double dx = pt.X - _resizeStartPt.X;
+            double dy = pt.Y - _resizeStartPt.Y;
+
+            double newX = _resizeStartNodeX;
+            double newY = _resizeStartNodeY;
+            double newW = _resizeStartWidth;
+            double newH = _resizeStartHeight;
+
+            switch (_resizingEdge)
+            {
+                case ResizeEdge.E:  newW = _resizeStartWidth  + dx; break;
+                case ResizeEdge.W:  newX = _resizeStartNodeX  + dx; newW = _resizeStartWidth  - dx; break;
+                case ResizeEdge.S:  newH = _resizeStartHeight + dy; break;
+                case ResizeEdge.N:  newY = _resizeStartNodeY  + dy; newH = _resizeStartHeight - dy; break;
+                case ResizeEdge.NE: newW = _resizeStartWidth  + dx; newY = _resizeStartNodeY + dy; newH = _resizeStartHeight - dy; break;
+                case ResizeEdge.NW: newX = _resizeStartNodeX  + dx; newW = _resizeStartWidth - dx;
+                                     newY = _resizeStartNodeY + dy; newH = _resizeStartHeight - dy; break;
+                case ResizeEdge.SE: newW = _resizeStartWidth  + dx; newH = _resizeStartHeight + dy; break;
+                case ResizeEdge.SW: newX = _resizeStartNodeX  + dx; newW = _resizeStartWidth - dx;
+                                     newH = _resizeStartHeight + dy; break;
+            }
+
+            // Enforce minima — if a left/top drag would shrink below minimum,
+            // pin the new origin so the right/bottom edge stays put.
+            if (newW < minW)
+            {
+                if (_resizingEdge is ResizeEdge.W or ResizeEdge.NW or ResizeEdge.SW)
+                    newX = _resizeStartNodeX + (_resizeStartWidth - minW);
+                newW = minW;
+            }
+            if (newH < minH)
+            {
+                if (_resizingEdge is ResizeEdge.N or ResizeEdge.NE or ResizeEdge.NW)
+                    newY = _resizeStartNodeY + (_resizeStartHeight - minH);
+                newH = minH;
+            }
+
+            _resizingNode.X     = newX;
+            _resizingNode.Y     = newY;
+            _resizingNode.Width = newW;
+            _layer.SetCustomHeight(_resizingNode.Id, newH);
             _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
             UpdateSelectAdornerPosition();
             e.Handled = true;
@@ -1017,11 +1070,24 @@ public sealed class DiagramCanvas : Canvas
                 }
             }
 
-            // Show SizeNS cursor when hovering over a node's bottom-edge gripper,
-            // SizeAll cursor when hovering a swimlane background (group drag hint)
-            bool onGripper = _doc is not null && _layer.IsGripperHit(_doc.Classes, pt) is not null;
-            if (onGripper)
-                Cursor = Cursors.SizeNS;
+            // 8-way resize cursor when hovering one of the selected node's handles;
+            // SizeAll over a swimlane background for group-drag hint.
+            Cursor? resizeCursor = null;
+            if (_doc is not null && _primarySelected is not null)
+            {
+                var hit = _layer.HitTestResizeHandle(new[] { _primarySelected }, pt);
+                if (hit is { } h)
+                    resizeCursor = h.Edge switch
+                    {
+                        ResizeEdge.N or ResizeEdge.S   => Cursors.SizeNS,
+                        ResizeEdge.E or ResizeEdge.W   => Cursors.SizeWE,
+                        ResizeEdge.NE or ResizeEdge.SW => Cursors.SizeNESW,
+                        ResizeEdge.NW or ResizeEdge.SE => Cursors.SizeNWSE,
+                        _                              => null
+                    };
+            }
+            if (resizeCursor is not null)
+                Cursor = resizeCursor;
             else if (_hoveredNode is null && _layer.HitTestSwimLane(pt) is not null)
                 Cursor = Cursors.SizeAll;
             else
@@ -1067,19 +1133,43 @@ public sealed class DiagramCanvas : Canvas
 
         if (_resizingNode is not null)
         {
-            // Commit resize undo entry
+            // Commit 8-way resize undo entry — captures every dimension that
+            // can change so undo restores the box exactly to its starting rect.
             if (_undoManager is not null && _doc is not null)
             {
-                double finalH  = _layer.ComputeNodeHeight(_resizingNode);
-                double startH  = _resizeStartHeight;
-                var    rNode   = _resizingNode;
-                var    rDoc    = _doc;   // capture current doc
-                if (Math.Abs(finalH - startH) > 0.5)
+                var    rNode    = _resizingNode;
+                var    rDoc     = _doc;
+                double startX   = _resizeStartNodeX;
+                double startY   = _resizeStartNodeY;
+                double startW   = _resizeStartWidth;
+                double startH   = _resizeStartHeight;
+                double finalX   = rNode.X;
+                double finalY   = rNode.Y;
+                double finalW   = rNode.Width;
+                double finalH   = _layer.ComputeNodeHeight(rNode);
+
+                bool changed =
+                    Math.Abs(finalH - startH) > 0.5 ||
+                    Math.Abs(finalW - startW) > 0.5 ||
+                    Math.Abs(finalX - startX) > 0.5 ||
+                    Math.Abs(finalY - startY) > 0.5;
+
+                if (changed)
                 {
                     _undoManager.Push(new SingleClassDiagramUndoEntry(
                         Description: $"Resize {rNode.Name}",
-                        UndoAction: () => { _layer.SetCustomHeight(rNode.Id, startH); _layer.RenderAll(rDoc, _selectedNode?.Id, _hoveredNode?.Id); },
-                        RedoAction: () => { _layer.SetCustomHeight(rNode.Id, finalH); _layer.RenderAll(rDoc, _selectedNode?.Id, _hoveredNode?.Id); }));
+                        UndoAction: () =>
+                        {
+                            rNode.X = startX; rNode.Y = startY; rNode.Width = startW;
+                            _layer.SetCustomHeight(rNode.Id, startH);
+                            _layer.RenderAll(rDoc, _selectedNode?.Id, _hoveredNode?.Id);
+                        },
+                        RedoAction: () =>
+                        {
+                            rNode.X = finalX; rNode.Y = finalY; rNode.Width = finalW;
+                            _layer.SetCustomHeight(rNode.Id, finalH);
+                            _layer.RenderAll(rDoc, _selectedNode?.Id, _hoveredNode?.Id);
+                        }));
                 }
             }
             _resizingNode = null;

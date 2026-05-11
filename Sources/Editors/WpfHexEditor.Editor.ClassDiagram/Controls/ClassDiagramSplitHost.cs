@@ -1740,16 +1740,24 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         if (node is null) return;
 
-        var headerRect = _canvas.GetHeaderBoundsOf(node);
-        var (origin, width, height) = DiagramRectToScreen(headerRect);
+        // The Add Class / Add Interface flow raises RenameNodeRequested in the
+        // same UI tick as it adds the node; layout / RenderAll have queued but
+        // not yet flushed, so reading bounds now would use stale screen coords.
+        // Defer via Dispatcher (Render priority) so the visual tree settles
+        // before we sample positions.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
+        {
+            var headerRect = _canvas.GetHeaderBoundsOf(node);
+            var (origin, width, height) = DiagramRectToScreen(headerRect);
 
-        ShowRenameOverlay(
-            initialText:  node.Name,
-            origin:       origin,
-            width:        Math.Max(width, 160),
-            height:       Math.Max(height, 24),
-            isBold:       true,
-            onCommit:     newName => CommitNodeRename(node, newName));
+            ShowRenameOverlay(
+                initialText:  node.Name,
+                origin:       origin,
+                width:        Math.Max(width, 160),
+                height:       Math.Max(height, 24),
+                isBold:       true,
+                onCommit:     newName => CommitNodeRename(node, newName));
+        });
     }
 
     /// <summary>
@@ -1759,18 +1767,23 @@ public sealed class ClassDiagramSplitHost : Grid,
     /// </summary>
     private void BeginRenameMember(ClassNode owner, ClassMember member)
     {
-        var memberRect = _canvas.GetMemberBoundsOf(owner, member);
-        if (memberRect is null) return; // member section is collapsed
+        // Deferred to Render priority so any pending layout pass from a
+        // preceding _canvas.ApplyDocument settles before sampling the row rect.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
+        {
+            var memberRect = _canvas.GetMemberBoundsOf(owner, member);
+            if (memberRect is null) return; // member section is collapsed
 
-        var (origin, width, height) = DiagramRectToScreen(memberRect.Value);
+            var (origin, width, height) = DiagramRectToScreen(memberRect.Value);
 
-        ShowRenameOverlay(
-            initialText:  member.Name,
-            origin:       origin,
-            width:        Math.Max(width, 160),
-            height:       Math.Max(height, 22),
-            isBold:       false,
-            onCommit:     newName => CommitMemberRename(owner, member, newName));
+            ShowRenameOverlay(
+                initialText:  member.Name,
+                origin:       origin,
+                width:        Math.Max(width, 160),
+                height:       Math.Max(height, 22),
+                isBold:       false,
+                onCommit:     newName => CommitMemberRename(owner, member, newName));
+        });
     }
 
     /// <summary>Generic inline rename overlay shared by node and member rename.</summary>

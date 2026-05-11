@@ -28,6 +28,12 @@ using WpfHexEditor.Editor.ClassDiagram.Core.Model;
 
 namespace WpfHexEditor.Editor.ClassDiagram.Controls;
 
+/// <summary>Edge identifier for the 8-way node resize gripper hit-test.</summary>
+public enum ResizeEdge
+{
+    N, S, E, W, NE, NW, SE, SW
+}
+
 /// <summary>
 /// Renders all diagram nodes and arrows using a pool of <see cref="DrawingVisual"/> children.
 /// </summary>
@@ -1509,6 +1515,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
     /// <summary>
     /// Returns the node whose bottom-edge gripper is at <paramref name="pt"/>, or null.
     /// The gripper zone is GripperHeight pixels above and below the node bottom edge.
+    /// Kept for backwards compatibility with the bottom-only resize flow; new code
+    /// should use <see cref="HitTestResizeHandle"/> which supports all 8 directions.
     /// </summary>
     public ClassNode? IsGripperHit(IReadOnlyList<ClassNode> nodes, Point pt)
     {
@@ -1522,6 +1530,45 @@ public sealed class DiagramVisualLayer : FrameworkElement
         }
         return null;
     }
+
+    /// <summary>
+    /// Returns the node + edge whose 8-way resize handle is at <paramref name="pt"/>, or null.
+    /// Corners win over edges (smaller hit zone but higher priority). Hit zone is
+    /// GripperHeight pixels around each anchor point. Only the primary-selected
+    /// node exposes resize handles — passing the full classes list lets callers
+    /// limit checks to a single node by filtering upstream when needed.
+    /// </summary>
+    public (ClassNode Node, ResizeEdge Edge)? HitTestResizeHandle(
+        IReadOnlyList<ClassNode> nodes, Point pt)
+    {
+        const double slack = GripperHeight;
+
+        foreach (var node in nodes)
+        {
+            double h    = ComputeNodeHeight(node);
+            double left = node.X, right = node.X + node.Width;
+            double top  = node.Y, bottom = node.Y + h;
+            double midX = node.X + node.Width / 2.0;
+            double midY = node.Y + h           / 2.0;
+
+            // 4 corners first (smaller zones, higher priority)
+            if (HitZone(pt, left,  top,    slack)) return (node, ResizeEdge.NW);
+            if (HitZone(pt, right, top,    slack)) return (node, ResizeEdge.NE);
+            if (HitZone(pt, left,  bottom, slack)) return (node, ResizeEdge.SW);
+            if (HitZone(pt, right, bottom, slack)) return (node, ResizeEdge.SE);
+
+            // 4 edge mid-points
+            if (HitZone(pt, midX, top,    slack)) return (node, ResizeEdge.N);
+            if (HitZone(pt, midX, bottom, slack)) return (node, ResizeEdge.S);
+            if (HitZone(pt, left,  midY,  slack)) return (node, ResizeEdge.W);
+            if (HitZone(pt, right, midY,  slack)) return (node, ResizeEdge.E);
+        }
+        return null;
+    }
+
+    private static bool HitZone(Point pt, double cx, double cy, double half) =>
+        pt.X >= cx - half && pt.X <= cx + half &&
+        pt.Y >= cy - half && pt.Y <= cy + half;
 
     private int CountHiddenMembers(ClassNode node, double displayHeight)
     {
