@@ -61,8 +61,9 @@ public sealed class TemplatePackageService
             var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
             return JsonSerializer.Deserialize<FormatDefinition>(json, ImportOptions);
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[TemplatePackageService] import failed: {filePath} — {ex.Message}");
             return null;
         }
     }

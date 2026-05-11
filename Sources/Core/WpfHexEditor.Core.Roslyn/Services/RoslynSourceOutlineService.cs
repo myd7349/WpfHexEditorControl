@@ -30,6 +30,8 @@ namespace WpfHexEditor.Core.Roslyn.Services;
 /// </summary>
 public sealed class RoslynSourceOutlineService : ISourceOutlineService
 {
+    private const int MaxCacheSize = 256;
+
     private readonly Func<RoslynWorkspaceManager?> _workspaceAccessor;
     private readonly ConcurrentDictionary<string, CacheEntry> _cache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -72,7 +74,20 @@ public sealed class RoslynSourceOutlineService : ISourceOutlineService
         var model   = BuildModel(filePath, symbols);
 
         _cache[filePath] = new CacheEntry(version, model);
+        EvictIfOverCap();
         return model;
+    }
+
+    /// <summary>
+    /// Drops oldest-added entries when the cache exceeds <see cref="MaxCacheSize"/>.
+    /// ConcurrentDictionary doesn't preserve insertion order, so we just trim
+    /// until we drop below the cap — fine for an outline cache.
+    /// </summary>
+    private void EvictIfOverCap()
+    {
+        if (_cache.Count <= MaxCacheSize) return;
+        foreach (var key in _cache.Keys.Take(_cache.Count - MaxCacheSize).ToArray())
+            _cache.TryRemove(key, out _);
     }
 
     public void Invalidate(string filePath) => _cache.TryRemove(filePath, out _);

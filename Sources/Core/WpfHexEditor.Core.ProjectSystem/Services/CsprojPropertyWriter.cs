@@ -31,7 +31,11 @@ public static class CsprojPropertyWriter
             return FindFirstUnconditionalPropertyGroup(doc, ns)?
                    .Element(ns + propertyName)?.Value;
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CsprojPropertyWriter] read failed: {projectPath} — {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
@@ -61,7 +65,10 @@ public static class CsprojPropertyWriter
 
             doc.Save(projectPath);
         }
-        catch { /* write errors are non-fatal */ }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CsprojPropertyWriter] write failed: {projectPath} — {ex.Message}");
+        }
     }
 
     private static void UpdatePropertyElement(XElement parent, XName name, string? value)

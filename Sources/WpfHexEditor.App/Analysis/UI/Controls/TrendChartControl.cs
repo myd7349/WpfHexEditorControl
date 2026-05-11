@@ -48,9 +48,12 @@ public sealed class TrendChartControl : FrameworkElement
         GridPen.Freeze();
     }
 
+    private const int MaxPenCacheSize = 32;
+
     private static Pen GetPen(Brush stroke)
     {
         if (PenCache.TryGetValue(stroke, out var existing)) return existing;
+        if (PenCache.Count >= MaxPenCacheSize) PenCache.Clear();
         var p = new Pen(stroke, 1.5);
         p.Freeze();
         PenCache[stroke] = p;
