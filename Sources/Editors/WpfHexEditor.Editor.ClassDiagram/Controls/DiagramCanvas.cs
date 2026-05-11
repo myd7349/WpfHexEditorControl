@@ -1745,12 +1745,42 @@ public sealed class DiagramCanvas : Canvas
         var node = new ClassNode { Name = typeName, Id = Guid.NewGuid().ToString(), Kind = kind };
         node.X = Math.Max(0, _lastMenuPoint.X - node.Width / 2);
         node.Y = Math.Max(0, _lastMenuPoint.Y - 40);
+
+        // Phase 1B-7: inherit a source-file target from the document so the
+        // AddType round-trip can write the new declaration to the .cs file.
+        string? targetFile = DiagramTargetFileResolver.Resolve(doc, _primarySelected);
+        if (targetFile is not null)
+        {
+            node.SourceFilePath = targetFile;
+            node.Namespace = doc.Classes
+                .FirstOrDefault(c => string.Equals(c.SourceFilePath, targetFile, StringComparison.OrdinalIgnoreCase))?
+                .Namespace ?? string.Empty;
+        }
+
         doc.Classes.Add(node);
         _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
         _undoManager?.Push(new SingleClassDiagramUndoEntry(
             Description: $"Add {kind} {typeName}",
             UndoAction: () => { doc.Classes.Remove(node); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
             RedoAction: () => { doc.Classes.Add(node);    _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
+
+        // Round-trip: append type declaration to the inferred file.
+        if (_undoManager is not null && node.SourceFilePath is not null)
+        {
+            string kindKw = kind switch
+            {
+                ClassKind.Interface => "interface",
+                ClassKind.Struct    => "struct",
+                ClassKind.Enum      => "enum",
+                _                   => "class"
+            };
+            RoundTripScope.TryApply(
+                node,
+                new AddType($"public {kindKw} {node.Name} {{ }}") { TargetTypeFullName = node.Name },
+                _undoManager,
+                $"Source add {kind} {typeName}");
+        }
+
         SelectSingleNode(node);
         RenameNodeRequested?.Invoke(this, (node, null));
     }

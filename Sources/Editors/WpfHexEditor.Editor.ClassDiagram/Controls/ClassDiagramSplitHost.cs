@@ -1714,11 +1714,30 @@ public sealed class ClassDiagramSplitHost : Grid,
         var node = ClassNode.Create(name, kind);
         node.X = 50 + (_document.Classes.Count % 5) * 210.0;
         node.Y = 50 + (_document.Classes.Count / 5) * 120.0;
+
+        // Phase 1B-7: try to inherit a source-file target from the diagram
+        // so the AddType round-trip can write the new declaration.
+        string? targetFile = DiagramTargetFileResolver.Resolve(_document, _canvas.SelectedNode);
+        if (targetFile is not null)
+        {
+            node.SourceFilePath = targetFile;
+            // Inherit namespace from a sibling on the same file when possible.
+            node.Namespace = _document.Classes
+                .FirstOrDefault(c => string.Equals(c.SourceFilePath, targetFile, StringComparison.OrdinalIgnoreCase))?
+                .Namespace ?? string.Empty;
+        }
         _document.Classes.Add(node);
 
         string afterDsl = ClassDiagramSerializer.Serialize(_document);
         _undoManager.Push(new SnapshotClassDiagramUndoEntry(beforeDsl, afterDsl,
             $"Add {kindLabel} {name}", ApplyDslSnapshot));
+
+        // Round-trip: write the new type declaration to the inferred source file.
+        RoundTripScope.TryApply(
+            node,
+            new AddType(BuildTypeSnippet(node)) { TargetTypeFullName = node.Name },
+            _undoManager,
+            $"Source add {kindLabel} {name}");
 
         _canvas.ApplyDocument(_document);
         SyncDslPane();
