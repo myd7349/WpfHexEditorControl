@@ -33,13 +33,13 @@ namespace WpfHexEditor.Editor.ClassDiagram.Core.RoundTrip;
 public sealed class CSharpRoundTripEditor : ILanguageRoundTripEditor
 {
     /// <inheritdoc/>
-    public string LanguageId => "csharp";
+    public string LanguageId => LanguageIds.CSharp;
 
     /// <inheritdoc/>
     public string DisplayName => "C#";
 
     /// <inheritdoc/>
-    public IReadOnlyList<string> FileExtensions => [".cs"];
+    public IReadOnlyList<string> FileExtensions => [LanguageFileExtensions.CSharp];
 
     /// <inheritdoc/>
     public async Task<RoundTripResult> ApplyAsync(

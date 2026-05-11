@@ -12,6 +12,7 @@
 // ==========================================================
 
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
+using WpfHexEditor.Editor.ClassDiagram.Core.RoundTrip.Abstractions;
 
 namespace WpfHexEditor.Editor.ClassDiagram.Services;
 
@@ -48,23 +49,27 @@ internal static class TypeSnippetBuilder
     {
         ClassKind.Interface => $"Public Interface {node.Name}\nEnd Interface",
         ClassKind.Struct    => $"Public Structure {node.Name}\nEnd Structure",
-        ClassKind.Enum      => $"Public Enum {node.Name}\n    Default\nEnd Enum",
+        // VB enums require ≥1 member to compile cleanly across all toolchains;
+        // "None = 0" is the idiomatic placeholder (flag-zero pattern).
+        ClassKind.Enum      => $"Public Enum {node.Name}\n    None = 0\nEnd Enum",
         _                   => node.IsAbstract
             ? $"Public MustInherit Class {node.Name}\nEnd Class"
             : $"Public Class {node.Name}\nEnd Class"
     };
 
     /// <summary>
-    /// Returns the appropriate snippet for the file extension associated
-    /// with <paramref name="node"/>. Falls back to C# when no path or
-    /// an unknown extension is encountered.
+    /// Returns the appropriate snippet for the language registered for
+    /// <paramref name="node"/>'s source path. Resolution is delegated to
+    /// <see cref="RoundTripEditorRegistry.TryGetByFilePath"/> so the
+    /// snippet builder stays consistent with the round-trip routing.
+    /// Falls back to C# when no path is set or no editor is registered.
     /// </summary>
     public static string ForLanguage(ClassNode node)
     {
-        string? ext = node.SourceFilePath is null
+        var editor = node.SourceFilePath is null
             ? null
-            : System.IO.Path.GetExtension(node.SourceFilePath);
-        return string.Equals(ext, ".vb", StringComparison.OrdinalIgnoreCase)
+            : RoundTripEditorRegistry.TryGetByFilePath(node.SourceFilePath);
+        return editor?.LanguageId == LanguageIds.VisualBasic
             ? ForVisualBasic(node)
             : ForCSharp(node);
     }

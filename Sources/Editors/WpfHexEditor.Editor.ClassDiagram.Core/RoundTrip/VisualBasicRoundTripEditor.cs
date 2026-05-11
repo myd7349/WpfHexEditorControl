@@ -30,13 +30,13 @@ namespace WpfHexEditor.Editor.ClassDiagram.Core.RoundTrip;
 public sealed class VisualBasicRoundTripEditor : ILanguageRoundTripEditor
 {
     /// <inheritdoc/>
-    public string LanguageId => "vb";
+    public string LanguageId => LanguageIds.VisualBasic;
 
     /// <inheritdoc/>
     public string DisplayName => "Visual Basic";
 
     /// <inheritdoc/>
-    public IReadOnlyList<string> FileExtensions => [".vb"];
+    public IReadOnlyList<string> FileExtensions => [LanguageFileExtensions.VisualBasic];
 
     /// <inheritdoc/>
     public async Task<RoundTripResult> ApplyAsync(
@@ -213,8 +213,9 @@ public sealed class VisualBasicRoundTripEditor : ILanguageRoundTripEditor
         var member = target.Members.FirstOrDefault(m => GetMemberName(m) == memberName)
                      ?? throw new InvalidOperationException($"Member '{memberName}' not found.");
 
-        var newModifiers = ReplaceVisibility(GetModifiers(member), newVisibility);
-        var newMember = WithModifiers(member, newModifiers);
+        var facet = Inspect(member);
+        var newModifiers = ReplaceVisibility(facet.Modifiers, newVisibility);
+        var newMember = facet.WithMods(newModifiers);
         if (ReferenceEquals(newMember, member)) return root;
         var newTarget = target.ReplaceNode(member, newMember);
         return root.ReplaceNode(target, newTarget);
@@ -243,43 +244,37 @@ public sealed class VisualBasicRoundTripEditor : ILanguageRoundTripEditor
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static string? GetMemberName(StatementSyntax m) => m switch
+    /// <summary>
+    /// Triple-facet view of a VB member statement: name, current modifier
+    /// list, and a delegate to clone the statement with a new modifier list.
+    /// Factors three parallel switches (GetMemberName/GetModifiers/WithModifiers)
+    /// into one — adding a new syntax shape only touches one place.
+    /// </summary>
+    private readonly record struct VbMemberFacet(
+        string?                               Name,
+        SyntaxTokenList                       Modifiers,
+        Func<SyntaxTokenList, StatementSyntax> WithMods);
+
+    private static VbMemberFacet Inspect(StatementSyntax m) => m switch
     {
-        MethodStatementSyntax x        => x.Identifier.Text,
-        PropertyStatementSyntax x      => x.Identifier.Text,
-        FieldDeclarationSyntax x       => x.Declarators.FirstOrDefault()?.Names.FirstOrDefault()?.Identifier.Text,
-        EventStatementSyntax x         => x.Identifier.Text,
-        SubNewStatementSyntax          => "New",
-        MethodBlockSyntax mb           => mb.SubOrFunctionStatement.Identifier.Text,
-        ConstructorBlockSyntax cb      => "New",
-        PropertyBlockSyntax pb         => pb.PropertyStatement.Identifier.Text,
-        EventBlockSyntax eb            => eb.EventStatement.Identifier.Text,
-        _                              => null
+        MethodStatementSyntax x       => new(x.Identifier.Text, x.Modifiers,             mods => x.WithModifiers(mods)),
+        PropertyStatementSyntax x     => new(x.Identifier.Text, x.Modifiers,             mods => x.WithModifiers(mods)),
+        FieldDeclarationSyntax x      => new(x.Declarators.FirstOrDefault()?.Names.FirstOrDefault()?.Identifier.Text,
+                                              x.Modifiers,                                mods => x.WithModifiers(mods)),
+        EventStatementSyntax x        => new(x.Identifier.Text, x.Modifiers,             mods => x.WithModifiers(mods)),
+        SubNewStatementSyntax x       => new("New",             x.Modifiers,             mods => x.WithModifiers(mods)),
+        MethodBlockSyntax mb          => new(mb.SubOrFunctionStatement.Identifier.Text,  mb.SubOrFunctionStatement.Modifiers,
+                                              mods => mb.WithSubOrFunctionStatement(mb.SubOrFunctionStatement.WithModifiers(mods))),
+        ConstructorBlockSyntax cb     => new("New",             cb.SubNewStatement.Modifiers,
+                                              mods => cb.WithSubNewStatement(cb.SubNewStatement.WithModifiers(mods))),
+        PropertyBlockSyntax pb        => new(pb.PropertyStatement.Identifier.Text,       pb.PropertyStatement.Modifiers,
+                                              mods => pb.WithPropertyStatement(pb.PropertyStatement.WithModifiers(mods))),
+        EventBlockSyntax eb           => new(eb.EventStatement.Identifier.Text,          eb.EventStatement.Modifiers,
+                                              mods => eb.WithEventStatement(eb.EventStatement.WithModifiers(mods))),
+        _                             => new(null,              default,                 _ => m)
     };
 
-    private static SyntaxTokenList GetModifiers(StatementSyntax m) => m switch
-    {
-        MethodStatementSyntax x   => x.Modifiers,
-        PropertyStatementSyntax x => x.Modifiers,
-        FieldDeclarationSyntax x  => x.Modifiers,
-        EventStatementSyntax x    => x.Modifiers,
-        MethodBlockSyntax mb      => mb.SubOrFunctionStatement.Modifiers,
-        PropertyBlockSyntax pb    => pb.PropertyStatement.Modifiers,
-        EventBlockSyntax eb       => eb.EventStatement.Modifiers,
-        _                         => default
-    };
-
-    private static StatementSyntax WithModifiers(StatementSyntax m, SyntaxTokenList modifiers) => m switch
-    {
-        MethodStatementSyntax x   => x.WithModifiers(modifiers),
-        PropertyStatementSyntax x => x.WithModifiers(modifiers),
-        FieldDeclarationSyntax x  => x.WithModifiers(modifiers),
-        EventStatementSyntax x    => x.WithModifiers(modifiers),
-        MethodBlockSyntax mb      => mb.WithSubOrFunctionStatement(mb.SubOrFunctionStatement.WithModifiers(modifiers)),
-        PropertyBlockSyntax pb    => pb.WithPropertyStatement(pb.PropertyStatement.WithModifiers(modifiers)),
-        EventBlockSyntax eb       => eb.WithEventStatement(eb.EventStatement.WithModifiers(modifiers)),
-        _                         => m
-    };
+    private static string? GetMemberName(StatementSyntax m) => Inspect(m).Name;
 
     private static SyntaxTokenList ReplaceVisibility(SyntaxTokenList modifiers, MemberVisibilityKind kind)
     {
