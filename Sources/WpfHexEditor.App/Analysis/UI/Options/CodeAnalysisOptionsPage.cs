@@ -244,10 +244,22 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
             if (child is StackPanel sp && "RulesPanel".Equals(sp.Tag)) { rulesPanel = sp; break; }
         if (rulesPanel is null) return;
 
+        // Children are Expanders (Phase 11). Walk Expander.Content (StackPanel of rows)
+        // and apply the filter per-row; collapse the Expander when every row is hidden.
         foreach (UIElement child in rulesPanel.Children)
-            if (child is DockPanel row && row.Children.Count > 0 && row.Children[1] is CheckBox cb)
-                row.Visibility = string.IsNullOrWhiteSpace(text) || cb.Content?.ToString()?.Contains(text, StringComparison.OrdinalIgnoreCase) == true
-                    ? Visibility.Visible : Visibility.Collapsed;
+        {
+            if (child is not Expander exp || exp.Content is not StackPanel rows) continue;
+            int visibleInGroup = 0;
+            foreach (UIElement rowEl in rows.Children)
+            {
+                if (rowEl is not DockPanel row || row.Children.Count == 0 || row.Children[1] is not CheckBox cb) continue;
+                bool show = string.IsNullOrWhiteSpace(text)
+                         || cb.Content?.ToString()?.Contains(text, StringComparison.OrdinalIgnoreCase) == true;
+                row.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+                if (show) visibleInGroup++;
+            }
+            exp.Visibility = visibleInGroup > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     private void OnChanged(object sender, RoutedEventArgs e)

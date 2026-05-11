@@ -43,9 +43,20 @@ internal sealed class CodeAnalysisCodeActionProvider : ICodeActionProvider
 
     private DiagnosticIndex? _index;
 
+    // Parse cache — keyed by (path, mtime, length). The lightbulb fires repeatedly
+    // for the same caret, so re-reading and re-parsing the same .cs is pure waste.
+    private readonly Dictionary<string, ParseCacheEntry> _parseCache = new(StringComparer.OrdinalIgnoreCase);
+    private const int MaxParseCacheEntries = 32;
+
+    private sealed record ParseCacheEntry(DateTime Mtime, long Length, string[] Lines, SyntaxTree? Tree);
+
     /// <summary>Update the index with the diagnostics from the latest report.</summary>
     internal void SetDiagnostics(IReadOnlyList<AnalysisDiagnostic> diagnostics)
-        => _index = new DiagnosticIndex(diagnostics);
+    {
+        _index = new DiagnosticIndex(diagnostics);
+        // Fresh report → source on disk may have changed; drop stale parses.
+        _parseCache.Clear();
+    }
 
     public Task<IReadOnlyList<LspCodeAction>> GetCodeActionsAsync(
         string filePath, int line, int column, CancellationToken ct)
@@ -63,19 +74,9 @@ internal sealed class CodeAnalysisCodeActionProvider : ICodeActionProvider
 
     private IReadOnlyList<LspCodeAction> BuildActions(string filePath, List<AnalysisDiagnostic> diagnostics)
     {
-        IReadOnlyList<string>? lines = null;
-        SyntaxTree?            tree  = null;
-        try
-        {
-            if (File.Exists(filePath))
-            {
-                var text = File.ReadAllText(filePath);
-                lines    = text.Split('\n');
-                if (filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
-                    tree = CSharpSyntaxTree.ParseText(text, path: filePath);
-            }
-        }
-        catch { /* best-effort; provider must never throw */ }
+        bool needsTree = filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                      && diagnostics.Any(d => _roslynFixers.Any(f => f.RuleId == d.Id));
+        var (lines, tree) = ReadAndParse(filePath, needsTree);
 
         var actions = new List<LspCodeAction>();
         foreach (var d in diagnostics)
@@ -103,32 +104,52 @@ internal sealed class CodeAnalysisCodeActionProvider : ICodeActionProvider
         return actions;
     }
 
+    private (IReadOnlyList<string>? lines, SyntaxTree? tree) ReadAndParse(string filePath, bool needsTree)
+    {
+        FileInfo info;
+        try { info = new FileInfo(filePath); if (!info.Exists) return (null, null); }
+        catch { return (null, null); }
+
+        if (_parseCache.TryGetValue(filePath, out var hit)
+         && hit.Mtime == info.LastWriteTimeUtc
+         && hit.Length == info.Length)
+        {
+            if (!needsTree || hit.Tree is not null) return (hit.Lines, hit.Tree);
+        }
+
+        try
+        {
+            var text  = File.ReadAllText(filePath);
+            // Split on \r?\n so Windows files don't leave \r in matched line slices.
+            var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            SyntaxTree? tree = needsTree ? CSharpSyntaxTree.ParseText(text, path: filePath) : null;
+
+            _parseCache[filePath] = new ParseCacheEntry(info.LastWriteTimeUtc, info.Length, lines, tree);
+            if (_parseCache.Count > MaxParseCacheEntries) TrimCache();
+            return (lines, tree);
+        }
+        catch { return (null, null); }
+    }
+
+    private void TrimCache()
+    {
+        // Evict the entry with the oldest mtime — simple, no LRU bookkeeping needed at this scale.
+        var oldest = _parseCache.OrderBy(kv => kv.Value.Mtime).First().Key;
+        _parseCache.Remove(oldest);
+    }
+
     /// <summary>"Suppress WH0xxx here" — always available, inserts a comment marker above the line.</summary>
     private static LspCodeAction BuildSuppressAction(AnalysisDiagnostic d)
     {
         int idx = Math.Max(0, d.Line - 1);
-        string marker = $"// CodeAnalysis: suppress {d.Id}\n";
-
         var edit = new LspTextEdit
         {
             StartLine   = idx,
             StartColumn = 0,
             EndLine     = idx,
             EndColumn   = 0,
-            NewText     = marker,
+            NewText     = $"// CodeAnalysis: suppress {d.Id}\n",
         };
-
-        return new LspCodeAction
-        {
-            Title = string.Format(AppResources.CodeAnalysis_Fix_Suppress_Title, d.Id),
-            Kind  = "quickfix",
-            Edit  = new LspWorkspaceEdit
-            {
-                Changes = new Dictionary<string, IReadOnlyList<LspTextEdit>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    [d.FilePath] = new[] { edit },
-                },
-            },
-        };
+        return FixerHelpers.SingleFileEdit(string.Format(AppResources.CodeAnalysis_Fix_Suppress_Title, d.Id), d.FilePath, edit);
     }
 }

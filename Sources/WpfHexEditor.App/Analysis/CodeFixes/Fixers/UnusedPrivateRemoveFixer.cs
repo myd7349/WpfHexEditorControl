@@ -26,7 +26,7 @@ internal sealed class UnusedPrivateRemoveFixer : IRoslynFixer
         var member = root.DescendantNodes()
             .OfType<MemberDeclarationSyntax>()
             .Where(m => m is MethodDeclarationSyntax or PropertyDeclarationSyntax or FieldDeclarationSyntax or EventFieldDeclarationSyntax)
-            .FirstOrDefault(m => OnLine(m, d.Line));
+            .FirstOrDefault(m => FixerHelpers.OnLine(m, d.Line));
         if (member is null) return null;
 
         // Refuse partial / abstract / virtual / override — caller analysis is shaky there
@@ -36,7 +36,9 @@ internal sealed class UnusedPrivateRemoveFixer : IRoslynFixer
          || HasModifier(member, SyntaxKind.OverrideKeyword))
             return null;
 
-        var span = member.GetLocation().GetLineSpan();
+        // FullSpan includes leading trivia (XML doc comments, [Attribute] lists),
+        // so removing it doesn't orphan documentation onto the next declaration.
+        var span = tree.GetLineSpan(member.FullSpan);
         var edit = new LspTextEdit
         {
             StartLine   = span.StartLinePosition.Line,
@@ -46,27 +48,9 @@ internal sealed class UnusedPrivateRemoveFixer : IRoslynFixer
             NewText     = string.Empty,
         };
 
-        return new LspCodeAction
-        {
-            Title = AppResources.CodeAnalysis_Fix_WH0010_Title,
-            Kind  = "quickfix",
-            Edit  = new LspWorkspaceEdit
-            {
-                Changes = new Dictionary<string, IReadOnlyList<LspTextEdit>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    [d.FilePath] = new[] { edit },
-                },
-            },
-        };
+        return FixerHelpers.SingleFileEdit(AppResources.CodeAnalysis_Fix_WH0010_Title, d.FilePath, edit);
     }
 
     private static bool HasModifier(MemberDeclarationSyntax m, SyntaxKind kind)
         => m.Modifiers.Any(mod => mod.IsKind(kind));
-
-    private static bool OnLine(SyntaxNode node, int diagLine1Based)
-    {
-        var span = node.GetLocation().GetLineSpan();
-        return diagLine1Based >= span.StartLinePosition.Line + 1
-            && diagLine1Based <= span.EndLinePosition.Line + 1;
-    }
 }

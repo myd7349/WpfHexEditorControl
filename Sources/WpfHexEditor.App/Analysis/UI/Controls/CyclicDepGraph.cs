@@ -129,13 +129,7 @@ public sealed class CyclicDepGraph : FrameworkElement
     }
 
     private static string ShortName(string projectPath)
-    {
-        // Project name may be a full path; show the file-name-without-extension.
-        var idx = Math.Max(projectPath.LastIndexOf('\\'), projectPath.LastIndexOf('/'));
-        var name = idx >= 0 ? projectPath[(idx + 1)..] : projectPath;
-        var dot  = name.LastIndexOf('.');
-        return dot > 0 ? name[..dot] : name;
-    }
+        => System.IO.Path.GetFileNameWithoutExtension(projectPath);
 
     private List<ProjectCycleInfo> ExtractCycles()
     {

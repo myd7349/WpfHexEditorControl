@@ -47,17 +47,6 @@ internal sealed class CountToAnyFixer : IMechanicalFixer
             NewText     = rewritten,
         };
 
-        return new LspCodeAction
-        {
-            Title = AppResources.CodeAnalysis_Fix_WH0070_Title,
-            Kind  = "quickfix",
-            Edit  = new LspWorkspaceEdit
-            {
-                Changes = new Dictionary<string, IReadOnlyList<LspTextEdit>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    [d.FilePath] = new[] { edit },
-                },
-            },
-        };
+        return FixerHelpers.SingleFileEdit(AppResources.CodeAnalysis_Fix_WH0070_Title, d.FilePath, edit);
     }
 }

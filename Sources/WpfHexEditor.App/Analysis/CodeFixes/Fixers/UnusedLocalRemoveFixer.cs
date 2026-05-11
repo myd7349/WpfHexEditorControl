@@ -23,7 +23,7 @@ internal sealed class UnusedLocalRemoveFixer : IRoslynFixer
         var root = tree.GetRoot();
         var local = root.DescendantNodes()
             .OfType<LocalDeclarationStatementSyntax>()
-            .FirstOrDefault(l => OnLine(l, d.Line));
+            .FirstOrDefault(l => FixerHelpers.OnLine(l, d.Line));
         if (local is null) return null;
 
         // Multi-declarator (var a = 1, b = 2;) — out of scope for v1
@@ -31,8 +31,13 @@ internal sealed class UnusedLocalRemoveFixer : IRoslynFixer
 
         var v = local.Declaration.Variables[0];
         var init = v.Initializer?.Value;
-        if (init is InvocationExpressionSyntax or AwaitExpressionSyntax or ObjectCreationExpressionSyntax)
-            return null; // Could have side effects
+        // Refuse anything that may have side effects.
+        if (init is InvocationExpressionSyntax
+                 or AwaitExpressionSyntax
+                 or ObjectCreationExpressionSyntax
+                 or ImplicitObjectCreationExpressionSyntax
+                 or ConditionalAccessExpressionSyntax)
+            return null;
 
         var span = local.GetLocation().GetLineSpan();
         var edit = new LspTextEdit
@@ -44,24 +49,6 @@ internal sealed class UnusedLocalRemoveFixer : IRoslynFixer
             NewText     = string.Empty,
         };
 
-        return new LspCodeAction
-        {
-            Title = AppResources.CodeAnalysis_Fix_WH0013_Title,
-            Kind  = "quickfix",
-            Edit  = new LspWorkspaceEdit
-            {
-                Changes = new Dictionary<string, IReadOnlyList<LspTextEdit>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    [d.FilePath] = new[] { edit },
-                },
-            },
-        };
-    }
-
-    private static bool OnLine(SyntaxNode node, int diagLine1Based)
-    {
-        var span = node.GetLocation().GetLineSpan();
-        return diagLine1Based >= span.StartLinePosition.Line + 1
-            && diagLine1Based <= span.EndLinePosition.Line + 1;
+        return FixerHelpers.SingleFileEdit(AppResources.CodeAnalysis_Fix_WH0013_Title, d.FilePath, edit);
     }
 }

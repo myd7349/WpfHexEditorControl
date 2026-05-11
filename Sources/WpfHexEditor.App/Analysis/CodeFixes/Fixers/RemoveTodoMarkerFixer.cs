@@ -38,17 +38,6 @@ internal sealed class RemoveTodoMarkerFixer : IMechanicalFixer
             NewText     = string.Empty,
         };
 
-        return new LspCodeAction
-        {
-            Title = AppResources.CodeAnalysis_Fix_WH0032_Title,
-            Kind  = "quickfix",
-            Edit  = new LspWorkspaceEdit
-            {
-                Changes = new Dictionary<string, IReadOnlyList<LspTextEdit>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    [d.FilePath] = new[] { edit },
-                },
-            },
-        };
+        return FixerHelpers.SingleFileEdit(AppResources.CodeAnalysis_Fix_WH0032_Title, d.FilePath, edit);
     }
 }

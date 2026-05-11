@@ -24,7 +24,7 @@ internal sealed class AsyncVoidToTaskFixer : IRoslynFixer
         var root = tree.GetRoot();
         var method = root.DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault(m => OnLine(m, d.Line));
+            .FirstOrDefault(m => FixerHelpers.OnLine(m, d.Line));
         if (method is null) return null;
 
         // Must be async + void
@@ -44,26 +44,7 @@ internal sealed class AsyncVoidToTaskFixer : IRoslynFixer
             NewText     = "Task",
         };
 
-        return new LspCodeAction
-        {
-            Title = AppResources.CodeAnalysis_Fix_WH0061_Title,
-            Kind  = "quickfix",
-            Edit  = new LspWorkspaceEdit
-            {
-                Changes = new Dictionary<string, IReadOnlyList<LspTextEdit>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    [d.FilePath] = new[] { edit },
-                },
-            },
-        };
-    }
-
-    private static bool OnLine(SyntaxNode node, int diagLine1Based)
-    {
-        var span = node.GetLocation().GetLineSpan();
-        int from = span.StartLinePosition.Line + 1;
-        int to   = span.EndLinePosition.Line + 1;
-        return diagLine1Based >= from && diagLine1Based <= to;
+        return FixerHelpers.SingleFileEdit(AppResources.CodeAnalysis_Fix_WH0061_Title, d.FilePath, edit);
     }
 
     private static bool IsEventHandlerSignature(MethodDeclarationSyntax m)
