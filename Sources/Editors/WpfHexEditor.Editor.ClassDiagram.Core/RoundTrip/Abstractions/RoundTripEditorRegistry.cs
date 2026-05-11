@@ -60,7 +60,7 @@ public static class RoundTripEditorRegistry
         _byLanguageId.Values.OrderBy(e => e.LanguageId, StringComparer.Ordinal).ToArray();
 
     /// <summary>Removes every registration. Intended for tests only.</summary>
-    internal static void ResetForTests()
+    public static void ResetForTests()
     {
         _byLanguageId.Clear();
         _byExtension.Clear();

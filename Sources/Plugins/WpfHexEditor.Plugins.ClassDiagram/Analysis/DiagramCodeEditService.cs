@@ -109,7 +109,7 @@ public static class DiagramCodeEditService
         {
             TargetTypeFullName = node.Name
         };
-        var res = await ApplyEditAsync(filePath, edit, liveSync: null, ct).ConfigureAwait(false);
+        var res = await ApplyEditAsync(filePath, edit, liveSync: null, confirmBeforeWrite: null, ct: ct).ConfigureAwait(false);
         return res.Success;
     }
 
@@ -126,7 +126,7 @@ public static class DiagramCodeEditService
         {
             TargetTypeFullName = node.Name
         };
-        var res = await ApplyEditAsync(filePath, edit, liveSync: null, ct).ConfigureAwait(false);
+        var res = await ApplyEditAsync(filePath, edit, liveSync: null, confirmBeforeWrite: null, ct: ct).ConfigureAwait(false);
         return res.Success;
     }
 
@@ -142,7 +142,7 @@ public static class DiagramCodeEditService
         {
             TargetTypeFullName = node.Name
         };
-        var res = await ApplyEditAsync(filePath, edit, liveSync: null, ct).ConfigureAwait(false);
+        var res = await ApplyEditAsync(filePath, edit, liveSync: null, confirmBeforeWrite: null, ct: ct).ConfigureAwait(false);
         return res.Success;
     }
 }
