@@ -1420,6 +1420,13 @@
   <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown"   xml:space="preserve"><value>Copy group as Markdown</value></data>
   <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>Suggest extract refactor (to clipboard)</value></data>
   <data name="CodeAnalysis_Duplication_Menu_SuppressFile"   xml:space="preserve"><value>Suppress WH0020 in all files</value></data>
+  <data name="CodeAnalysis_Status_Running"     xml:space="preserve"><value>Analysis running…</value></data>
+  <data name="CodeAnalysis_Status_Complete"    xml:space="preserve"><value>Analysis complete — {0:g}</value></data>
+  <data name="CodeAnalysis_Status_None"        xml:space="preserve"><value>No analysis run yet.</value></data>
+  <data name="CodeAnalysis_Status_Failed"      xml:space="preserve"><value>Analysis failed: {0}: {1}</value></data>
+  <data name="CodeAnalysis_Tab_Title"          xml:space="preserve"><value>Code Analysis</value></data>
+  <data name="CodeAnalysis_Tab_ToolTip"        xml:space="preserve"><value>Code Analysis Report</value></data>
+  <data name="CodeAnalysis_Snapshot_Cleared"   xml:space="preserve"><value>[Code Analysis] Snapshot cleared.</value></data>
   <data name="PluginCmd_New_Description"   xml:space="preserve"><value>Scaffold a new plugin project from the official template.</value></data>
   <data name="PluginCmd_New_Usage"         xml:space="preserve"><value>plugin-new &lt;name&gt; [author] [--path &lt;folder&gt;]</value></data>
   <data name="PluginCmd_New_NameRequired"  xml:space="preserve"><value>Plugin name is required.</value></data>

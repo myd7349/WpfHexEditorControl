@@ -20,7 +20,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
 
     private CodeAnalysisReport? _report;
     private bool                _isRunning;
-    private string              _statusText = "No analysis run yet.";
+    private string              _statusText = AppResources.CodeAnalysis_Status_None;
     private string              _scopeLabel = string.Empty;
     private IReadOnlyList<HistoryEntry> _history = [];
 
@@ -213,7 +213,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
     {
         _report    = report;
         IsRunning  = false;
-        StatusText = $"Analysis complete — {report.Timestamp:g}";
+        StatusText = string.Format(AppResources.CodeAnalysis_Status_Complete, report.Timestamp);
 
         Projects.Clear();
         foreach (var p in report.Projects) Projects.Add(p);
@@ -338,7 +338,6 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
             .Where(d => _selectedSeverity == "All"
                      || d.Severity.ToString() == _selectedSeverity)
             .Where(d => string.IsNullOrEmpty(_projectFilter)
-                     || _projectFilter == "(All projects)"
                      || string.Equals(d.ProjectName, _projectFilter, StringComparison.Ordinal))
             .Where(d => string.IsNullOrEmpty(_globalSearch)
                      || d.Message.Contains(_globalSearch, StringComparison.OrdinalIgnoreCase)

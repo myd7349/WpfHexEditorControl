@@ -40,13 +40,10 @@ public partial class CodeAnalysisReportPane : UserControl
 
         // Re-apply filter/sort + drop the snippet cache whenever a fresh report
         // arrives. DuplicationSummaryText is raised at the end of SetReport so
-        // it's a stable, allocation-free signal.
-        _vm.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName != nameof(CodeAnalysisReportViewModel.DuplicationSummaryText)) return;
-            Controls.DuplicationCodePreview.InvalidateCache();
-            if (IsLoaded) ApplyDupView();
-        };
+        // it's a stable, allocation-free signal. Stored as a field so we can
+        // unsubscribe on Unloaded — VM outlives this control.
+        _vm.PropertyChanged += OnVmPropertyChanged;
+        Unloaded += (_, _) => _vm.PropertyChanged -= OnVmPropertyChanged;
 
         // Phase 7 — keyboard shortcuts (F5 = re-run, Ctrl+F = focus search)
         InputBindings.Add(new KeyBinding(
@@ -55,6 +52,13 @@ public partial class CodeAnalysisReportPane : UserControl
         InputBindings.Add(new KeyBinding(
             new RelayCmd(_ => GlobalSearchBox.Focus()),
             new KeyGesture(Key.F, ModifierKeys.Control)));
+    }
+
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(CodeAnalysisReportViewModel.DuplicationSummaryText)) return;
+        Controls.DuplicationCodePreview.InvalidateCache();
+        if (IsLoaded) ApplyDupView();
     }
 
     internal void SetReRunCallback(Func<Task> rerun, Func<Task> runSolution, Func<string, Task> runFile)

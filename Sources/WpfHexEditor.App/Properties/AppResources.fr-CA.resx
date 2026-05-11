@@ -780,6 +780,13 @@
   <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown" xml:space="preserve"><value>Copier le groupe en Markdown</value></data>
   <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>Suggérer un refactor d'extraction (presse-papiers)</value></data>
   <data name="CodeAnalysis_Duplication_Menu_SuppressFile" xml:space="preserve"><value>Supprimer WH0020 dans tous les fichiers</value></data>
+  <data name="CodeAnalysis_Status_Running" xml:space="preserve"><value>Analyse en cours…</value></data>
+  <data name="CodeAnalysis_Status_Complete" xml:space="preserve"><value>Analyse terminée — {0:g}</value></data>
+  <data name="CodeAnalysis_Status_None" xml:space="preserve"><value>Aucune analyse exécutée.</value></data>
+  <data name="CodeAnalysis_Status_Failed" xml:space="preserve"><value>Échec de l'analyse : {0}: {1}</value></data>
+  <data name="CodeAnalysis_Tab_Title" xml:space="preserve"><value>Analyse de code</value></data>
+  <data name="CodeAnalysis_Tab_ToolTip" xml:space="preserve"><value>Rapport d'analyse de code</value></data>
+  <data name="CodeAnalysis_Snapshot_Cleared" xml:space="preserve"><value>[Analyse de code] Instantané effacé.</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Copier en Markdown</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>Copier l’ID du problème</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>Ouvrir le fichier source</value></data>

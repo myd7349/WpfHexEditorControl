@@ -6265,6 +6265,13 @@ namespace WpfHexEditor.App.Properties {
         internal static string CodeAnalysis_Duplication_Menu_SuggestExtract { get { return ResourceManager.GetString("CodeAnalysis_Duplication_Menu_SuggestExtract", resourceCulture); } }
         internal static string CodeAnalysis_Duplication_Menu_SuppressFile   { get { return ResourceManager.GetString("CodeAnalysis_Duplication_Menu_SuppressFile",   resourceCulture); } }
 
+        internal static string CodeAnalysis_Status_Running   { get { return ResourceManager.GetString("CodeAnalysis_Status_Running",   resourceCulture); } }
+        internal static string CodeAnalysis_Status_Complete  { get { return ResourceManager.GetString("CodeAnalysis_Status_Complete",  resourceCulture); } }
+        internal static string CodeAnalysis_Status_None      { get { return ResourceManager.GetString("CodeAnalysis_Status_None",      resourceCulture); } }
+        internal static string CodeAnalysis_Status_Failed    { get { return ResourceManager.GetString("CodeAnalysis_Status_Failed",    resourceCulture); } }
+        internal static string CodeAnalysis_Tab_Title        { get { return ResourceManager.GetString("CodeAnalysis_Tab_Title",        resourceCulture); } }
+        internal static string CodeAnalysis_Tab_ToolTip      { get { return ResourceManager.GetString("CodeAnalysis_Tab_ToolTip",      resourceCulture); } }
+
         internal static string PluginCmd_New_Description    { get { return ResourceManager.GetString("PluginCmd_New_Description",    resourceCulture); } }
         internal static string PluginCmd_New_Usage          { get { return ResourceManager.GetString("PluginCmd_New_Usage",          resourceCulture); } }
         internal static string PluginCmd_New_NameRequired   { get { return ResourceManager.GetString("PluginCmd_New_NameRequired",   resourceCulture); } }

@@ -133,7 +133,7 @@ internal sealed class CodeAnalysisModule
         {
             var snapshot = _snapshotService.LoadLatest();
             if (snapshot is not null)
-                _statusBar.ShowScore(snapshot.Score, ScoreToGrade(snapshot.Score));
+                _statusBar.ShowScore(snapshot.Score, QualityScore.ToGrade(snapshot.Score));
         }
 
         // Pre-build the report pane so a layout-restored Code Analysis tab
@@ -153,6 +153,7 @@ internal sealed class CodeAnalysisModule
 
         // Cancel any in-flight run
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
 
@@ -174,7 +175,7 @@ internal sealed class CodeAnalysisModule
             _statusBar?.ShowRunning();
             EnsureReportPane();
             _reportVm!.IsRunning  = true;
-            _reportVm.StatusText  = "Analysis running…";
+            _reportVm.StatusText  = Properties.AppResources.CodeAnalysis_Status_Running;
         });
 
         if (opts.PushToErrorPanel)
@@ -203,7 +204,7 @@ internal sealed class CodeAnalysisModule
             {
                 _statusBar?.Hide();
                 _reportVm!.IsRunning  = false;
-                _reportVm.StatusText  = $"Analysis failed: {ex.GetType().Name}: {ex.Message}";
+                _reportVm.StatusText  = string.Format(Properties.AppResources.CodeAnalysis_Status_Failed, ex.GetType().Name, ex.Message);
             });
             return;
         }
@@ -243,7 +244,7 @@ internal sealed class CodeAnalysisModule
     private void ClearSnapshot()
     {
         _snapshotService.Clear();
-        _context?.Output.Info("[Code Analysis] Snapshot cleared.");
+        _context?.Output.Info(Properties.AppResources.CodeAnalysis_Snapshot_Cleared);
     }
 
     // ── Report pane ──────────────────────────────────────────────────────────
@@ -289,8 +290,8 @@ internal sealed class CodeAnalysisModule
             _reportPane!,
             new DocumentDescriptor
             {
-                Title   = "Code Analysis",
-                ToolTip = "Code Analysis Report",
+                Title   = Properties.AppResources.CodeAnalysis_Tab_Title,
+                ToolTip = Properties.AppResources.CodeAnalysis_Tab_ToolTip,
             });
         _docking.ShowDockablePanel(ReportTabUiId);
     }
@@ -319,9 +320,4 @@ internal sealed class CodeAnalysisModule
         return AppDomain.CurrentDomain.BaseDirectory;
     }
 
-    private static string ScoreToGrade(int score) => score switch
-    {
-        >= 93 => "A", >= 87 => "B+", >= 80 => "B",
-        >= 70 => "C", >= 60 => "D",  _ => "F",
-    };
 }

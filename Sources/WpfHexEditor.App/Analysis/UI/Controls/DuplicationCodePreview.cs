@@ -51,6 +51,7 @@ public sealed class DuplicationCodePreview : FrameworkElement
     // ── Snippet cache (bounded LRU) ──────────────────────────────────────────
 
     private sealed record CacheKey(string Path, DateTime Mtime, long Length, int StartLine, int Count);
+    private static readonly object _cacheLock = new();
     private static readonly Dictionary<CacheKey, string[]> _cache = new();
     private static readonly LinkedList<CacheKey>           _lru   = new();
     private const int MaxCacheEntries = 64;
@@ -66,23 +67,29 @@ public sealed class DuplicationCodePreview : FrameworkElement
         int count = Math.Max(0, endLine - startLine + 1);
         var key   = new CacheKey(path, info.LastWriteTimeUtc, info.Length, from, count);
 
-        if (_cache.TryGetValue(key, out var hit))
+        lock (_cacheLock)
         {
-            _lru.Remove(key); _lru.AddFirst(key);
-            return hit;
+            if (_cache.TryGetValue(key, out var hit))
+            {
+                _lru.Remove(key); _lru.AddFirst(key);
+                return hit;
+            }
         }
 
         string[] snippet;
         try { snippet = File.ReadLines(path).Skip(from).Take(count).ToArray(); }
         catch { return []; }
 
-        _cache[key] = snippet;
-        _lru.AddFirst(key);
-        while (_lru.Count > MaxCacheEntries)
+        lock (_cacheLock)
         {
-            var oldest = _lru.Last!.Value;
-            _lru.RemoveLast();
-            _cache.Remove(oldest);
+            _cache[key] = snippet;
+            _lru.AddFirst(key);
+            while (_lru.Count > MaxCacheEntries)
+            {
+                var oldest = _lru.Last!.Value;
+                _lru.RemoveLast();
+                _cache.Remove(oldest);
+            }
         }
         return snippet;
     }
@@ -189,7 +196,10 @@ public sealed class DuplicationCodePreview : FrameworkElement
     /// <summary>Drop all cached snippets — called when a fresh report arrives so stale entries don't survive analyses.</summary>
     internal static void InvalidateCache()
     {
-        _cache.Clear();
-        _lru.Clear();
+        lock (_cacheLock)
+        {
+            _cache.Clear();
+            _lru.Clear();
+        }
     }
 }
