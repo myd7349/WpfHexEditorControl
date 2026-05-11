@@ -258,7 +258,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
         DependencyNodes.Clear();
         DependencyEdges.Clear();
         var nodeIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var c in report.TopCouplings)
+        foreach (var c in TopCouplings)
         {
             if (nodeIds.Add(c.TypeName))
                 DependencyNodes.Add(new WpfHexEditor.App.Analysis.UI.Controls.DependencyNode
@@ -269,7 +269,7 @@ public sealed class CodeAnalysisReportViewModel : INotifyPropertyChanged
                     Weight = Math.Max(1, c.Ca + c.Ce),
                 });
         }
-        foreach (var c in report.TopCouplings)
+        foreach (var c in TopCouplings)
             foreach (var dep in c.DependsOn)
                 if (nodeIds.Contains(dep))
                     DependencyEdges.Add(new WpfHexEditor.App.Analysis.UI.Controls.DependencyEdge(c.TypeName, dep));

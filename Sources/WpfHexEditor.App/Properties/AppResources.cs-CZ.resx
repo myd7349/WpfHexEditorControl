@@ -752,6 +752,26 @@
   <data name="CodeAnalysis_History_Title" xml:space="preserve"><value>Historie skóre</value></data>
   <data name="CodeAnalysis_History_Summary" xml:space="preserve"><value>{0} běhů · posledních {1} dní · trend {2}</value></data>
   <data name="CodeAnalysis_History_NoData" xml:space="preserve"><value>Zatím žádná historie — spusťte analýzu znovu pro zahájení trendu</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Severity" xml:space="preserve"><value>Záv</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Lines" xml:space="preserve"><value>Řádky</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Tokens" xml:space="preserve"><value>Tokeny</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Occurrences" xml:space="preserve"><value>×</value></data>
+  <data name="CodeAnalysis_Duplication_Header_PrimaryFile" xml:space="preserve"><value>Soubor</value></data>
+  <data name="CodeAnalysis_Duplication_Filter_Placeholder" xml:space="preserve"><value>Filtrovat dle cesty…</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Lines" xml:space="preserve"><value>Třídit: řádky</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Tokens" xml:space="preserve"><value>Třídit: tokeny</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Occurrences" xml:space="preserve"><value>Třídit: výskyty</value></data>
+  <data name="CodeAnalysis_Duplication_Summary" xml:space="preserve"><value>{0} skupin klonů · {1} duplicitních řádků · {2:F1}%</value></data>
+  <data name="CodeAnalysis_Duplication_Preview_NoSelection" xml:space="preserve"><value>Vyberte skupinu klonů vlevo pro náhled duplikovaného kódu vedle sebe.</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Button" xml:space="preserve"><value>Exportovat…</value></data>
+  <data name="CodeAnalysis_Duplication_Export_FileName" xml:space="preserve"><value>clones.md</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Title" xml:space="preserve"><value># Zpráva o duplicitách kódu</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenA" xml:space="preserve"><value>Otevřít výskyt A</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenB" xml:space="preserve"><value>Otevřít výskyt B</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenAll" xml:space="preserve"><value>Otevřít vše v kartách ({0})</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown" xml:space="preserve"><value>Kopírovat skupinu jako Markdown</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>Navrhnout refaktoring extract (schránka)</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuppressFile" xml:space="preserve"><value>Potlačit WH0020 ve všech souborech</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Kopírovat jako Markdown</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>Kopírovat ID problému</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>Otevřít zdrojový soubor</value></data>

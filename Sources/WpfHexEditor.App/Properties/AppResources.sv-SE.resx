@@ -1096,6 +1096,26 @@
   <data name="CodeAnalysis_History_Title" xml:space="preserve"><value>Poänghistorik</value></data>
   <data name="CodeAnalysis_History_Summary" xml:space="preserve"><value>{0} körningar · senaste {1} dagar · trend {2}</value></data>
   <data name="CodeAnalysis_History_NoData" xml:space="preserve"><value>Ingen historik än — kör analysen igen för att starta en trend</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Severity" xml:space="preserve"><value>Allv</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Lines" xml:space="preserve"><value>Rader</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Tokens" xml:space="preserve"><value>Token</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Occurrences" xml:space="preserve"><value>×</value></data>
+  <data name="CodeAnalysis_Duplication_Header_PrimaryFile" xml:space="preserve"><value>Fil</value></data>
+  <data name="CodeAnalysis_Duplication_Filter_Placeholder" xml:space="preserve"><value>Filtrera efter filsökväg…</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Lines" xml:space="preserve"><value>Sortera: rader</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Tokens" xml:space="preserve"><value>Sortera: token</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Occurrences" xml:space="preserve"><value>Sortera: förekomster</value></data>
+  <data name="CodeAnalysis_Duplication_Summary" xml:space="preserve"><value>{0} klongrupper · {1} duplicerade rader · {2:F1}%</value></data>
+  <data name="CodeAnalysis_Duplication_Preview_NoSelection" xml:space="preserve"><value>Välj en klongrupp till vänster för att förhandsgranska duplicerad kod sida vid sida.</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Button" xml:space="preserve"><value>Exportera…</value></data>
+  <data name="CodeAnalysis_Duplication_Export_FileName" xml:space="preserve"><value>clones.md</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Title" xml:space="preserve"><value># Rapport om kodduplicering</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenA" xml:space="preserve"><value>Öppna förekomst A</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenB" xml:space="preserve"><value>Öppna förekomst B</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenAll" xml:space="preserve"><value>Öppna alla i flikar ({0})</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown" xml:space="preserve"><value>Kopiera grupp som Markdown</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>Föreslå extract-refaktor (urklipp)</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuppressFile" xml:space="preserve"><value>Undertryck WH0020 i alla filer</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Kopiera som Markdown</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>Kopiera problem-ID</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>Öppna källfil</value></data>

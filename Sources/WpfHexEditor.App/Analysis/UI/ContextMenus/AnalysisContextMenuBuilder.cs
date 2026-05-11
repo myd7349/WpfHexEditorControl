@@ -163,6 +163,71 @@ internal sealed class AnalysisContextMenuBuilder
         return menu;
     }
 
+    /// <summary>Phase 10B — enriched menu for the DuplicationGroupViewModel rows in the master grid.</summary>
+    internal ContextMenu BuildForDuplicationVm(DuplicationGroupViewModel dvm)
+    {
+        var menu = new ContextMenu();
+        var occs = dvm.Occurrences;
+
+        if (occs.Count > 0)
+        {
+            var a = occs[dvm.SelectedIndexA];
+            Add(menu, AppResources.CodeAnalysis_Duplication_Menu_OpenA,
+                () => AnalysisContextMenuActions.OpenFile(_docHost, a.FilePath, a.StartLine));
+        }
+        if (occs.Count > 1)
+        {
+            var b = occs[dvm.SelectedIndexB];
+            Add(menu, AppResources.CodeAnalysis_Duplication_Menu_OpenB,
+                () => AnalysisContextMenuActions.OpenFile(_docHost, b.FilePath, b.StartLine));
+        }
+        if (occs.Count > 0)
+        {
+            Add(menu, string.Format(AppResources.CodeAnalysis_Duplication_Menu_OpenAll, occs.Count),
+                () => { foreach (var o in occs) AnalysisContextMenuActions.OpenFile(_docHost, o.FilePath, o.StartLine); });
+        }
+        AddSeparator(menu);
+
+        Add(menu, AppResources.CodeAnalysis_Duplication_Menu_CopyMarkdown,
+            () => AnalysisContextMenuActions.Copy(FormatAsMarkdown(dvm)));
+        Add(menu, string.Format(AppResources.CodeAnalysis_ContextMenu_CopyLocations, occs.Count),
+            () => AnalysisContextMenuActions.Copy(string.Join("\n", occs.Select(o => $"{o.FilePath}:{o.StartLine}"))));
+
+        AddSeparator(menu);
+        Add(menu, AppResources.CodeAnalysis_Duplication_Menu_SuggestExtract,
+            () => AnalysisContextMenuActions.Copy(BuildExtractSuggestion(dvm)));
+        Add(menu, AppResources.CodeAnalysis_Duplication_Menu_SuppressFile,
+            () => SuppressInAllFiles(occs));
+        return menu;
+    }
+
+    private static string FormatAsMarkdown(DuplicationGroupViewModel d)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"## Clone group — {d.LineCount} lines · {d.OccurrenceCount} occurrences · {d.Severity}");
+        foreach (var o in d.Occurrences)
+            sb.AppendLine($"- `{o.FilePath}:{o.StartLine}-{o.EndLine}`");
+        return sb.ToString();
+    }
+
+    private static string BuildExtractSuggestion(DuplicationGroupViewModel d)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"// Suggested refactor for clone group ({d.LineCount} lines × {d.OccurrenceCount} occurrences):");
+        sb.AppendLine("// 1. Identify the common contract (inputs / outputs / side effects).");
+        sb.AppendLine("// 2. Extract a static helper or instance method on a shared base class.");
+        sb.AppendLine("// 3. Replace each occurrence below with a call to the new method:");
+        foreach (var o in d.Occurrences)
+            sb.AppendLine($"//    - {o.FilePath}:{o.StartLine}-{o.EndLine}");
+        return sb.ToString();
+    }
+
+    private static void SuppressInAllFiles(IReadOnlyList<DuplicationOccurrence> occs)
+    {
+        foreach (var unique in occs.Select(o => o.FilePath).Distinct(StringComparer.OrdinalIgnoreCase))
+            Suppressions.InlineSuppressionWriter.WriteInFile(unique, Models.RuleIds.DuplicationClone);
+    }
+
     // ── Dead symbol ────────────────────────────────────────────────────────
 
     internal ContextMenu BuildForDeadSymbol(DeadSymbol dead)

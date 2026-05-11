@@ -1096,6 +1096,26 @@
   <data name="CodeAnalysis_History_Title" xml:space="preserve"><value>점수 기록</value></data>
   <data name="CodeAnalysis_History_Summary" xml:space="preserve"><value>{0}회 실행 · 최근 {1}일 · 추세 {2}</value></data>
   <data name="CodeAnalysis_History_NoData" xml:space="preserve"><value>기록 없음 — 분석을 다시 실행하여 추세를 시작하세요</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Severity" xml:space="preserve"><value>심각</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Lines" xml:space="preserve"><value>줄</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Tokens" xml:space="preserve"><value>토큰</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Occurrences" xml:space="preserve"><value>×</value></data>
+  <data name="CodeAnalysis_Duplication_Header_PrimaryFile" xml:space="preserve"><value>파일</value></data>
+  <data name="CodeAnalysis_Duplication_Filter_Placeholder" xml:space="preserve"><value>파일 경로로 필터…</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Lines" xml:space="preserve"><value>정렬: 줄</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Tokens" xml:space="preserve"><value>정렬: 토큰</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Occurrences" xml:space="preserve"><value>정렬: 발생 횟수</value></data>
+  <data name="CodeAnalysis_Duplication_Summary" xml:space="preserve"><value>{0}개 복제 그룹 · {1}줄 중복 · {2:F1}%</value></data>
+  <data name="CodeAnalysis_Duplication_Preview_NoSelection" xml:space="preserve"><value>왼쪽에서 복제 그룹을 선택하여 중복된 코드를 나란히 미리 봅니다.</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Button" xml:space="preserve"><value>내보내기…</value></data>
+  <data name="CodeAnalysis_Duplication_Export_FileName" xml:space="preserve"><value>clones.md</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Title" xml:space="preserve"><value># 코드 중복 보고서</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenA" xml:space="preserve"><value>A 발생 열기</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenB" xml:space="preserve"><value>B 발생 열기</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenAll" xml:space="preserve"><value>탭에서 모두 열기 ({0})</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown" xml:space="preserve"><value>그룹을 Markdown으로 복사</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>추출 리팩터 제안 (클립보드)</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuppressFile" xml:space="preserve"><value>모든 파일에서 WH0020 표시 안 함</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Markdown으로 복사</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>문제 ID 복사</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>소스 파일 열기</value></data>

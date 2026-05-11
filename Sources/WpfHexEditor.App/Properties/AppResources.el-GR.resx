@@ -758,6 +758,26 @@
   <data name="CodeAnalysis_History_Title" xml:space="preserve"><value>Ιστορικό βαθμολογίας</value></data>
   <data name="CodeAnalysis_History_Summary" xml:space="preserve"><value>{0} εκτελέσεις · τελευταίες {1} ημέρες · τάση {2}</value></data>
   <data name="CodeAnalysis_History_NoData" xml:space="preserve"><value>Δεν υπάρχει ιστορικό ακόμη — εκτελέστε ξανά την ανάλυση για να ξεκινήσετε μια τάση</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Severity" xml:space="preserve"><value>Σοβ</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Lines" xml:space="preserve"><value>Γρ.</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Tokens" xml:space="preserve"><value>Σύμβολα</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Occurrences" xml:space="preserve"><value>×</value></data>
+  <data name="CodeAnalysis_Duplication_Header_PrimaryFile" xml:space="preserve"><value>Αρχείο</value></data>
+  <data name="CodeAnalysis_Duplication_Filter_Placeholder" xml:space="preserve"><value>Φιλτράρισμα κατά διαδρομή…</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Lines" xml:space="preserve"><value>Ταξιν.: γραμμές</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Tokens" xml:space="preserve"><value>Ταξιν.: σύμβολα</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Occurrences" xml:space="preserve"><value>Ταξιν.: εμφανίσεις</value></data>
+  <data name="CodeAnalysis_Duplication_Summary" xml:space="preserve"><value>{0} ομάδες κλώνων · {1} διπλές γραμμές · {2:F1}%</value></data>
+  <data name="CodeAnalysis_Duplication_Preview_NoSelection" xml:space="preserve"><value>Επιλέξτε μια ομάδα κλώνων αριστερά για προεπισκόπηση του διπλού κώδικα.</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Button" xml:space="preserve"><value>Εξαγωγή…</value></data>
+  <data name="CodeAnalysis_Duplication_Export_FileName" xml:space="preserve"><value>clones.md</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Title" xml:space="preserve"><value># Αναφορά επικάλυψης κώδικα</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenA" xml:space="preserve"><value>Άνοιγμα εμφάνισης A</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenB" xml:space="preserve"><value>Άνοιγμα εμφάνισης B</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenAll" xml:space="preserve"><value>Άνοιγμα όλων σε καρτέλες ({0})</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown" xml:space="preserve"><value>Αντιγραφή ομάδας ως Markdown</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>Πρόταση extract refactor (πρόχειρο)</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuppressFile" xml:space="preserve"><value>Καταστολή WH0020 σε όλα τα αρχεία</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Αντιγραφή ως Markdown</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>Αντιγραφή ID ζητήματος</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>Άνοιγμα αρχείου πηγής</value></data>

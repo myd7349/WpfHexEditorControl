@@ -1420,6 +1420,18 @@
   <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown"   xml:space="preserve"><value>Copy group as Markdown</value></data>
   <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>Suggest extract refactor (to clipboard)</value></data>
   <data name="CodeAnalysis_Duplication_Menu_SuppressFile"   xml:space="preserve"><value>Suppress WH0020 in all files</value></data>
+  <data name="PluginCmd_New_Description"   xml:space="preserve"><value>Scaffold a new plugin project from the official template.</value></data>
+  <data name="PluginCmd_New_Usage"         xml:space="preserve"><value>plugin-new &lt;name&gt; [author] [--path &lt;folder&gt;]</value></data>
+  <data name="PluginCmd_New_NameRequired"  xml:space="preserve"><value>Plugin name is required.</value></data>
+  <data name="PluginCmd_New_FolderNotFound" xml:space="preserve"><value>Target folder not found:</value></data>
+  <data name="PluginCmd_New_Failed"        xml:space="preserve"><value>Plugin scaffolding failed:</value></data>
+  <data name="PluginCmd_New_Success"       xml:space="preserve"><value>Plugin scaffolded at</value></data>
+  <data name="PluginCmd_New_NextStep"      xml:space="preserve"><value>Next: run 'plugin-pack' inside the new folder to build the .whplugin archive.</value></data>
+  <data name="PluginCmd_Pack_Description"  xml:space="preserve"><value>Pack a plugin folder into a .whplugin archive ready to ship.</value></data>
+  <data name="PluginCmd_Pack_Usage"        xml:space="preserve"><value>plugin-pack [folder]</value></data>
+  <data name="PluginCmd_Pack_FolderNotFound" xml:space="preserve"><value>Plugin folder not found:</value></data>
+  <data name="PluginCmd_Pack_Failed"       xml:space="preserve"><value>Plugin pack failed:</value></data>
+  <data name="PluginCmd_Pack_Success"      xml:space="preserve"><value>Plugin packed to</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown"      xml:space="preserve"><value>Copy as Markdown</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId"         xml:space="preserve"><value>Copy issue ID</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile"      xml:space="preserve"><value>Open source file</value></data>

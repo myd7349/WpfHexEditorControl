@@ -1096,6 +1096,26 @@
   <data name="CodeAnalysis_History_Title" xml:space="preserve"><value>स्कोर इतिहास</value></data>
   <data name="CodeAnalysis_History_Summary" xml:space="preserve"><value>{0} रन · पिछले {1} दिन · प्रवृत्ति {2}</value></data>
   <data name="CodeAnalysis_History_NoData" xml:space="preserve"><value>अभी कोई इतिहास नहीं — रुझान शुरू करने के लिए विश्लेषण फिर से चलाएँ</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Severity" xml:space="preserve"><value>गंभ</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Lines" xml:space="preserve"><value>लाइनें</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Tokens" xml:space="preserve"><value>टोकन</value></data>
+  <data name="CodeAnalysis_Duplication_Header_Occurrences" xml:space="preserve"><value>×</value></data>
+  <data name="CodeAnalysis_Duplication_Header_PrimaryFile" xml:space="preserve"><value>फ़ाइल</value></data>
+  <data name="CodeAnalysis_Duplication_Filter_Placeholder" xml:space="preserve"><value>फ़ाइल पथ से फ़िल्टर…</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Lines" xml:space="preserve"><value>क्रम: लाइनें</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Tokens" xml:space="preserve"><value>क्रम: टोकन</value></data>
+  <data name="CodeAnalysis_Duplication_Sort_Occurrences" xml:space="preserve"><value>क्रम: घटनाएँ</value></data>
+  <data name="CodeAnalysis_Duplication_Summary" xml:space="preserve"><value>{0} क्लोन समूह · {1} दोहराई गई लाइनें · {2:F1}%</value></data>
+  <data name="CodeAnalysis_Duplication_Preview_NoSelection" xml:space="preserve"><value>बाईं ओर एक क्लोन समूह चुनें और दोहराए गए कोड को साथ-साथ देखें।</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Button" xml:space="preserve"><value>निर्यात…</value></data>
+  <data name="CodeAnalysis_Duplication_Export_FileName" xml:space="preserve"><value>clones.md</value></data>
+  <data name="CodeAnalysis_Duplication_Export_Title" xml:space="preserve"><value># कोड दोहराव रिपोर्ट</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenA" xml:space="preserve"><value>घटना A खोलें</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenB" xml:space="preserve"><value>घटना B खोलें</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_OpenAll" xml:space="preserve"><value>सभी टैब में खोलें ({0})</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_CopyMarkdown" xml:space="preserve"><value>समूह को Markdown के रूप में कॉपी करें</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuggestExtract" xml:space="preserve"><value>एक्सट्रैक्ट रिफैक्टर सुझाएँ (क्लिपबोर्ड पर)</value></data>
+  <data name="CodeAnalysis_Duplication_Menu_SuppressFile" xml:space="preserve"><value>सभी फ़ाइलों में WH0020 दबाएँ</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyAsMarkdown" xml:space="preserve"><value>Markdown के रूप में कॉपी करें</value></data>
   <data name="CodeAnalysis_ContextMenu_CopyIssueId" xml:space="preserve"><value>समस्या ID कॉपी करें</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenSourceFile" xml:space="preserve"><value>स्रोत फ़ाइल खोलें</value></data>

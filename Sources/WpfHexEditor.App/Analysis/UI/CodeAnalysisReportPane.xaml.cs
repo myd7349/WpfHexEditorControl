@@ -70,6 +70,7 @@ public partial class CodeAnalysisReportPane : UserControl
             MethodMetrics m               => builder.BuildForMethod(m, null),
             IssueViewModel iv             => builder.BuildForIssue(iv),
             CouplingMetrics c             => builder.BuildForCoupling(c),
+            DuplicationGroupViewModel dvm => builder.BuildForDuplicationVm(dvm),
             DuplicationGroup d            => builder.BuildForDuplication(d),
             DeadSymbol ds                 => builder.BuildForDeadSymbol(ds),
             _                             => null,
@@ -319,5 +320,49 @@ public partial class CodeAnalysisReportPane : UserControl
             3 => "Info",
             _ => "All",
         };
+    }
+
+    // ── Duplication tab (Phase 10B) ──────────────────────────────────────────
+
+    private void OnDupFilterChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        => ApplyDupView();
+
+    private void OnDupSortChanged(object sender, SelectionChangedEventArgs e)
+        => ApplyDupView();
+
+    private void ApplyDupView()
+    {
+        if (DataContext is not CodeAnalysisReportViewModel vm) return;
+        var view = System.Windows.Data.CollectionViewSource.GetDefaultView(vm.DuplicationGroups);
+
+        string query = DupFilterBox?.Text?.Trim() ?? string.Empty;
+        view.Filter = string.IsNullOrEmpty(query)
+            ? null
+            : new Predicate<object>(o =>
+                o is DuplicationGroupViewModel d
+                && d.Occurrences.Any(occ => occ.FilePath.Contains(query, StringComparison.OrdinalIgnoreCase)));
+
+        view.SortDescriptions.Clear();
+        string prop = DupSortCombo?.SelectedIndex switch
+        {
+            1 => nameof(DuplicationGroupViewModel.TokenCount),
+            2 => nameof(DuplicationGroupViewModel.OccurrenceCount),
+            _ => nameof(DuplicationGroupViewModel.LineCount),
+        };
+        view.SortDescriptions.Add(new System.ComponentModel.SortDescription(prop,
+            System.ComponentModel.ListSortDirection.Descending));
+    }
+
+    private void OnDupExportClicked(object sender, RoutedEventArgs e)
+    {
+        if (_vm.CurrentReport is null) return;
+        var dlg = new SaveFileDialog
+        {
+            FileName = AppResources.CodeAnalysis_Duplication_Export_FileName,
+            Filter   = AppResources.CodeAnalysis_Export_Filter_Markdown,
+        };
+        if (dlg.ShowDialog() != true) return;
+        var content = Services.DuplicationReportExporter.Build(_vm);
+        File.WriteAllText(dlg.FileName, content, Encoding.UTF8);
     }
 }
