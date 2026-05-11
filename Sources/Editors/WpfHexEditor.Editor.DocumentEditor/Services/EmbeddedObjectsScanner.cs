@@ -131,8 +131,8 @@ public sealed class EmbeddedObjectEntry
     public string SizeText => SizeBytes < 0
         ? "—"
         : SizeBytes < 1024
-            ? $"{SizeBytes} B"
+            ? FormattableString.Invariant($"{SizeBytes} B")
             : SizeBytes < 1024 * 1024
-                ? $"{SizeBytes / 1024.0:F1} KB"
-                : $"{SizeBytes / 1024.0 / 1024.0:F2} MB";
+                ? FormattableString.Invariant($"{SizeBytes / 1024.0:F1} KB")
+                : FormattableString.Invariant($"{SizeBytes / 1024.0 / 1024.0:F2} MB");
 }

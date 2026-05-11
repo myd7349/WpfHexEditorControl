@@ -174,7 +174,11 @@ public static class DocumentClipboardService
         if (b.Attributes.TryGetValue(DocumentBlockAttributes.Italic,    out var it) && it is true) sb.Append("font-style:italic;");
         if (b.Attributes.TryGetValue(DocumentBlockAttributes.Underline, out var un) && un is true) sb.Append("text-decoration:underline;");
         if (b.Attributes.TryGetValue(DocumentBlockAttributes.Color,     out var c)  && c  is string cs && IsSafeColor(cs))
-            sb.Append("color:").Append(cs).Append(';');
+        {
+            sb.Append("color:");
+            if (cs.Length > 0 && cs[0] != '#') sb.Append('#');
+            sb.Append(cs).Append(';');
+        }
     }
 
     /// <summary>
@@ -189,11 +193,17 @@ public static class DocumentClipboardService
         return s.Length > 0 && s.Length < 200;
     }
 
-    /// <summary>Accepts <c>#RGB</c>/<c>#RRGGBB</c>/<c>#RRGGBBAA</c> only.</summary>
+    /// <summary>
+    /// Accepts hex color literals (with or without leading <c>#</c>) of length
+    /// 3/6/8 hex digits. DOCX/RTF loaders pass bare <c>RRGGBB</c> while the
+    /// renderer's resolver may normalize to <c>#RRGGBB</c> — both round-trip.
+    /// </summary>
     private static bool IsSafeColor(string s)
     {
-        if (s.Length is not (4 or 7 or 9) || s[0] != '#') return false;
-        for (int i = 1; i < s.Length; i++)
+        int start = s.Length > 0 && s[0] == '#' ? 1 : 0;
+        int digits = s.Length - start;
+        if (digits is not (3 or 6 or 8)) return false;
+        for (int i = start; i < s.Length; i++)
         {
             char ch = s[i];
             if (!((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')))
