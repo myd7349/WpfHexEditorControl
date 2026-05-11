@@ -291,7 +291,7 @@
                     <!-- Phase 3 — Radar visualization -->
                     <controls:ScoreRadarChart
                         Width="180" Height="180"
-                        Foreground="{DynamicResource DockForegroundBrush}"
+                        Foreground="{DynamicResource DockMenuForegroundBrush}"
                         ToolTip="{DynamicResource CodeAnalysis_Tooltip_Radar}"
                         Volume="{Binding VolumeScore,        Mode=OneWay}"
                         Complexity="{Binding ComplexityScore, Mode=OneWay}"
