@@ -9,6 +9,7 @@
 
 using WpfHexEditor.Editor.DocumentEditor.Core;
 using WpfHexEditor.Plugins.DocumentLoaders.Parsers.Docx;
+using WpfHexEditor.Plugins.DocumentLoaders.Parsers.Epub;
 using WpfHexEditor.Plugins.DocumentLoaders.Parsers.Odt;
 using WpfHexEditor.Plugins.DocumentLoaders.Parsers.Rtf;
 using WpfHexEditor.SDK.Contracts;
@@ -43,6 +44,7 @@ public sealed class DocumentLoadersPlugin : IWpfHexEditorPlugin
         context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Docx",    new DocxDocumentLoader());
         context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Odt",     new OdtDocumentLoader());
         context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".FlatOdt", new FlatOdtDocumentLoader());
+        context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Epub",    new EpubDocumentLoader());
 
         context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Rtf",  new RtfDocumentSaver());
         context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Docx", new DocxDocumentSaver());
