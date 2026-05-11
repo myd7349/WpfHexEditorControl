@@ -777,5 +777,47 @@
   <data name="CodeEd_Refs_ExpandAll" xml:space="preserve">
     <value>Expand all</value>
   </data>
+  <data name="CodeEditor_ContextMenuRefactor" xml:space="preserve">
+    <value>Refactor</value>
+  </data>
+  <data name="CodeEditor_RefactorRename" xml:space="preserve">
+    <value>Rename…</value>
+  </data>
+  <data name="CodeEditor_RefactorExtractMethod" xml:space="preserve">
+    <value>Extract Method…</value>
+  </data>
+  <data name="CodeEditor_RefactorExtractClass" xml:space="preserve">
+    <value>Extract Class…</value>
+  </data>
+  <data name="CodeEditor_RefactorIntroduceVariable" xml:space="preserve">
+    <value>Introduce Variable…</value>
+  </data>
+  <data name="CodeEditor_RefactorInlineMethod" xml:space="preserve">
+    <value>Inline Method…</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewTitle" xml:space="preserve">
+    <value>Refactoring Preview</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewColFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewColLine" xml:space="preserve">
+    <value>Line</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewColOld" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="CodeEditor_RefactorPreviewColNew" xml:space="preserve">
+    <value>Replacement</value>
+  </data>
+  <data name="CodeEditor_RenamePopupPlaceholder" xml:space="preserve">
+    <value>New name…</value>
+  </data>
 
 </root>

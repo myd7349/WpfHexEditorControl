@@ -3929,11 +3929,64 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             contextMenu.Opened += (_, _) => miWordHighlight.IsChecked = EnableWordHighlight;
             contextMenu.Items.Add(miWordHighlight);
 
+            // Refactor submenu (Rename / Extract Method / Extract Class /
+            // Introduce Variable / Inline Method). All wired through
+            // RefactoringMenuRequested so a host can present its own UI.
+            contextMenu.Items.Add(new Separator());
+            var miRefactor = new MenuItem
+            {
+                Header = CodeEditorResources.CodeEditor_ContextMenuRefactor,
+                Icon   = MakeMenuIcon(""),  // edit/pen glyph
+            };
+            void AddRefactorItem(string label, string kind)
+            {
+                var mi = new MenuItem { Header = label };
+                mi.Click += (_, _) => RefactoringMenuRequested?.Invoke(this, BuildRefactorEventArgs(kind));
+                miRefactor.Items.Add(mi);
+            }
+            AddRefactorItem(CodeEditorResources.CodeEditor_RefactorRename,            "rename");
+            AddRefactorItem(CodeEditorResources.CodeEditor_RefactorExtractMethod,     "extract-method");
+            AddRefactorItem(CodeEditorResources.CodeEditor_RefactorExtractClass,      "extract-class");
+            AddRefactorItem(CodeEditorResources.CodeEditor_RefactorIntroduceVariable, "introduce-variable");
+            AddRefactorItem(CodeEditorResources.CodeEditor_RefactorInlineMethod,      "inline-method");
+            contextMenu.Items.Add(miRefactor);
+
             // Set context menu
             ContextMenu = contextMenu;
 
             // Register command bindings
             RegisterContextMenuCommands();
+        }
+
+        /// <summary>Raised when the user picks an item under Refactor ▶.</summary>
+        public event EventHandler<RefactoringMenuRequestedEventArgs>? RefactoringMenuRequested;
+
+        private RefactoringMenuRequestedEventArgs BuildRefactorEventArgs(string kind)
+        {
+            // Use whatever the editor exposes; fall back to empty/zero when properties
+            // are unavailable in a given build configuration.
+            var args = new RefactoringMenuRequestedEventArgs(kind)
+            {
+                DocumentText    = TryReadString(nameof(RefactoringMenuRequestedEventArgs.DocumentText)),
+                FilePath        = TryReadString(nameof(RefactoringMenuRequestedEventArgs.FilePath)),
+                CaretOffset     = TryReadInt(nameof(RefactoringMenuRequestedEventArgs.CaretOffset)),
+                SelectionStart  = TryReadInt(nameof(RefactoringMenuRequestedEventArgs.SelectionStart)),
+                SelectionLength = TryReadInt(nameof(RefactoringMenuRequestedEventArgs.SelectionLength)),
+            };
+            return args;
+        }
+
+        private string TryReadString(string name)
+        {
+            // Look up a public instance property by name; fall back to "".
+            var p = GetType().GetProperty(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+            return p?.GetValue(this) as string ?? string.Empty;
+        }
+
+        private int TryReadInt(string name)
+        {
+            var p = GetType().GetProperty(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+            return p?.GetValue(this) is int n ? n : 0;
         }
 
         /// <summary>
