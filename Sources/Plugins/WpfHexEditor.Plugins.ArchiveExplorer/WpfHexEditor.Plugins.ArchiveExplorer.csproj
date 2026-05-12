@@ -37,7 +37,7 @@
     <!-- SharpCompress: pure-managed archive library supporting 7z, RAR, TAR, GZ, BZ2, XZ.
          ZIP is handled via System.IO.Compression (BCL, zero dep).
          SharpCompress is MIT-licensed and ships as a single managed DLL — no native code. -->
-    <PackageReference Include="SharpCompress" Version="0.38.0" />
+    <PackageReference Include="SharpCompress" Version="0.48.0" />
   </ItemGroup>
 
   <ItemGroup>
