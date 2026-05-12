@@ -18,6 +18,11 @@
                                        (blocks[].type/.valueType, variables[].type,
                                        assertions[].severity, detection.matchMode,
                                        fuzz.strategies[].mutation, repair[].action)
+    R14 whfmt-enum-values      (WARN) (same rule id as R11)
+                                       forensic.suspiciousPatterns[].severity +
+                                       forensic.riskLevel — union of the assertions
+                                       trio (error/warning/info) and the risk-level
+                                       vocabulary (critical/high/medium/low)
 
   Exit code = ERR count (0 if WARN-only).
 #>
@@ -66,6 +71,10 @@ $AllowedValueTypes      = @('uint8','uint16','uint32','uint64','int8','int16','i
                             'byte','ushort','uint','ulong','sbyte','short','int','long',
                             'single','float','double','utf-8','utf-16le','utf-16be')
 $AllowedSeverities      = @('error','warning','info')
+# Forensic uses both the assertions vocabulary AND the riskLevel vocabulary
+# (critical/high/medium/low). Allow-list = union of the 7 values observed in
+# the catalog. Catches typos like "warn"/"critcal" while tolerating both styles.
+$AllowedForensicSeverities = @('error','warning','info','critical','high','medium','low')
 $AllowedMatchModes      = @('any','best','all')
 $AllowedFuzzMutations   = @('corrupt_signature','enum_sweep','boundary_values',
                             'bit_flip','overflow','random_bytes')
@@ -261,6 +270,23 @@ function Invoke-R11EnumCheck($parsed, $rel) {
             }
             $i++
         }
+    }
+
+    # R14 — forensic.suspiciousPatterns[].severity (separate enum from assertions —
+    # the catalog mixes two conventions: error/warning/info AND critical/high/medium/low).
+    if ((Test-Prop $parsed 'forensic') -and $parsed.forensic -and (Test-Prop $parsed.forensic 'suspiciousPatterns')) {
+        $i = 0
+        foreach ($p in @($parsed.forensic.suspiciousPatterns)) {
+            if ($p -is [psobject] -and (Test-Prop $p 'severity') -and $p.severity) {
+                CheckOne ([string]$p.severity) "forensic.suspiciousPatterns[$i].severity" $AllowedForensicSeverities 'ForensicSeverity'
+            }
+            $i++
+        }
+    }
+
+    # R14 — forensic.riskLevel (top-level, vocabulary = critical/high/medium/low + the assertions trio).
+    if ((Test-Prop $parsed 'forensic') -and $parsed.forensic -and (Test-Prop $parsed.forensic 'riskLevel') -and $parsed.forensic.riskLevel) {
+        CheckOne ([string]$parsed.forensic.riskLevel) 'forensic.riskLevel' $AllowedForensicSeverities 'ForensicSeverity'
     }
 }
 
