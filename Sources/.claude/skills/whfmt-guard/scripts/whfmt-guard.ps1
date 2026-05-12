@@ -63,6 +63,25 @@ function Add-Finding($sev, $rule, $file, $detail) {
     $findings.Add([pscustomobject]@{ Sev=$sev; Rule=$rule; File=$file; Detail=$detail })
 }
 
+# R10 — locate the whfmt-validate CLI (built from Tools/whfmt.Validate). If present,
+# R10 delegates to the C# WhfmtExpressionValidator (full AST walk, R10-000…R10-003).
+# Otherwise the PowerShell identifier-scan fallback runs as before.
+function Find-WhfmtValidateBinary {
+    # Built locally? Look for the standard MSBuild output paths first.
+    $candidates = @(
+        (Join-Path $RepoRoot 'Sources/Tools/whfmt.Validate/bin/Debug/net8.0/whfmt-validate.dll'),
+        (Join-Path $RepoRoot 'Sources/Tools/whfmt.Validate/bin/Release/net8.0/whfmt-validate.dll')
+    )
+    foreach ($c in $candidates) {
+        if (Test-Path -LiteralPath $c) { return $c }
+    }
+    # Installed as a global tool?
+    $cmd = Get-Command 'whfmt' -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    return $null
+}
+$WhfmtCli = Find-WhfmtValidateBinary
+
 # ----- filter input -----
 $targets = @()
 foreach ($f in $Files) {
@@ -346,26 +365,54 @@ foreach ($path in $targets) {
         }
     }
 
-    # R10 — expression identifier references (lightweight scan). Full AST
-    # validation lives in C# WhfmtExpressionValidator; this is the pre-commit gate.
-    $declaredFns = @()
-    if ((Test-Prop $parsed 'functions') -and $parsed.functions) {
-        $declaredFns = Get-PropNames $parsed.functions
+    # R10 — expression identifier references. Two implementations:
+    #   - C# binary path: full AST walk via WhfmtExpressionValidator (R10-000…R10-003).
+    #   - PowerShell fallback: lightweight identifier-scan when the binary isn't built.
+    if ($WhfmtCli) {
+        try {
+            # whfmt lint-expressions --json <file>
+            $cliArgs = @('lint-expressions', '--json', $path)
+            if ($WhfmtCli -like '*.dll') {
+                $output = & dotnet $WhfmtCli @cliArgs 2>&1
+            } else {
+                $output = & $WhfmtCli @cliArgs 2>&1
+            }
+            foreach ($line in @($output)) {
+                $text = [string]$line
+                if (-not $text.StartsWith('{')) { continue }   # skip stderr garbage
+                try {
+                    $obj = ConvertFrom-Json -InputObject $text -ErrorAction Stop
+                    $sev = if ($obj.severity -eq 'Error') { 'WARN' } else { 'WARN' }  # R10 is WARN at the skill level
+                    Add-Finding $sev 'whfmt-expression-refs' $rel ("{0}: {1} [{2}]" -f $obj.path, $obj.message, $obj.ruleId)
+                } catch { }
+            }
+        } catch {
+            # Binary failed — fall back to PS scan silently.
+            Invoke-R10PowerShellFallback
+        }
+    } else {
+        Invoke-R10PowerShellFallback
     }
-    $known = [System.Collections.Generic.HashSet[string]]::new($ExprBuiltins)
-    foreach ($n in $declared)    { [void]$known.Add($n) }
-    foreach ($n in $declaredFns) { [void]$known.Add($n) }
 
-    foreach ($expr in (Get-ExprStrings $parsed)) {
-        # Strip string literals so identifiers inside quotes don't false-positive.
-        $stripped = [regex]::Replace($expr.Src, "'(?:[^'\\]|\\.)*'", "''")
-        $stripped = [regex]::Replace($stripped,  '"(?:[^"\\]|\\.)*"', '""')
-        $reported = [System.Collections.Generic.HashSet[string]]::new()
-        foreach ($m in [regex]::Matches($stripped, '(?<![.\w])([A-Za-z_][A-Za-z0-9_]*)')) {
-            $id = $m.Groups[1].Value
-            if ($known.Contains($id)) { continue }
-            if (-not $reported.Add($id)) { continue }
-            Add-Finding 'WARN' 'whfmt-expression-refs' $rel ("{0}: '{1}' not declared in variables{{}} / functions{{}} / builtins" -f $expr.Path, $id)
+    function Invoke-R10PowerShellFallback {
+        $declaredFns = @()
+        if ((Test-Prop $parsed 'functions') -and $parsed.functions) {
+            $declaredFns = Get-PropNames $parsed.functions
+        }
+        $known = [System.Collections.Generic.HashSet[string]]::new($ExprBuiltins)
+        foreach ($n in $declared)    { [void]$known.Add($n) }
+        foreach ($n in $declaredFns) { [void]$known.Add($n) }
+
+        foreach ($expr in (Get-ExprStrings $parsed)) {
+            $stripped = [regex]::Replace($expr.Src, "'(?:[^'\\]|\\.)*'", "''")
+            $stripped = [regex]::Replace($stripped,  '"(?:[^"\\]|\\.)*"', '""')
+            $reported = [System.Collections.Generic.HashSet[string]]::new()
+            foreach ($m in [regex]::Matches($stripped, '(?<![.\w])([A-Za-z_][A-Za-z0-9_]*)')) {
+                $id = $m.Groups[1].Value
+                if ($known.Contains($id)) { continue }
+                if (-not $reported.Add($id)) { continue }
+                Add-Finding 'WARN' 'whfmt-expression-refs' $rel ("{0}: '{1}' not declared in variables{{}} / functions{{}} / builtins" -f $expr.Path, $id)
+            }
         }
     }
     } catch {

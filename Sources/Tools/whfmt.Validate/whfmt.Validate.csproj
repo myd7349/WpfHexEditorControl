@@ -45,6 +45,13 @@
   <ItemGroup>
     <PackageReference Include="whfmt.FileFormatCatalog" Version="1.2.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <!-- Local project references for the v3 expression validator (Models/Validation/WhfmtExpressionValidator)
+         not yet shipped in the published 1.2.0 NuGet. Core.Contracts is added explicitly because the
+         local Core.Definitions build replaces the NuGet payload and we need its Contracts types too.
+         Once the next whfmt.FileFormatCatalog release lands, this whole block can revert to the
+         PackageReference above. -->
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.Contracts\WpfHexEditor.Core.Contracts.csproj" />
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.Definitions\WpfHexEditor.Core.Definitions.csproj" />
   </ItemGroup>
 
 </Project>
