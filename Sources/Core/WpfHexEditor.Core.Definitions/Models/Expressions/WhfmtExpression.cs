@@ -29,38 +29,42 @@
 
 namespace WpfHexEditor.Core.Definitions.Models.Expressions;
 
+// AST surface kept internal so the evaluator implementation can evolve
+// (bytecode lowering, alternative parsers) without ABI break.
+// Consumers go through WhfmtExpressionEvaluator.Evaluate(string) which returns object?.
+
 /// <summary>Base type for all expression AST nodes.</summary>
-public abstract record WhfmtExprNode;
+internal abstract record WhfmtExprNode;
 
 // -- Literals ---------------------------------------------------------------
 
-public sealed record NumberNode(double Value, bool IsInteger) : WhfmtExprNode;
-public sealed record StringNode(string Value) : WhfmtExprNode;
-public sealed record BoolNode(bool Value) : WhfmtExprNode;
-public sealed record NullNode : WhfmtExprNode { public static readonly NullNode Instance = new(); }
+internal sealed record NumberNode(double Value, bool IsInteger) : WhfmtExprNode;
+internal sealed record StringNode(string Value) : WhfmtExprNode;
+internal sealed record BoolNode(bool Value) : WhfmtExprNode;
+internal sealed record NullNode : WhfmtExprNode { public static readonly NullNode Instance = new(); }
 
 // -- Identifiers / member access -------------------------------------------
 
 /// <summary>Bare identifier — resolved against the variable store at eval time.</summary>
-public sealed record IdentifierNode(string Name) : WhfmtExprNode;
+internal sealed record IdentifierNode(string Name) : WhfmtExprNode;
 
 /// <summary>Member access: target.Member (e.g. "magic.length", "title.startsWith").</summary>
-public sealed record MemberNode(WhfmtExprNode Target, string Member) : WhfmtExprNode;
+internal sealed record MemberNode(WhfmtExprNode Target, string Member) : WhfmtExprNode;
 
 /// <summary>Indexer: target[index] (e.g. "nintendoLogo[0]").</summary>
-public sealed record IndexNode(WhfmtExprNode Target, WhfmtExprNode Index) : WhfmtExprNode;
+internal sealed record IndexNode(WhfmtExprNode Target, WhfmtExprNode Index) : WhfmtExprNode;
 
 /// <summary>Function or method call. When Target is a MemberNode, it's a method call.</summary>
-public sealed record CallNode(WhfmtExprNode Target, IReadOnlyList<WhfmtExprNode> Args) : WhfmtExprNode;
+internal sealed record CallNode(WhfmtExprNode Target, IReadOnlyList<WhfmtExprNode> Args) : WhfmtExprNode;
 
 // -- Unary -----------------------------------------------------------------
 
-public enum UnaryOp { Negate, Not, BitNot }
-public sealed record UnaryNode(UnaryOp Op, WhfmtExprNode Operand) : WhfmtExprNode;
+internal enum UnaryOp { Negate, Not, BitNot }
+internal sealed record UnaryNode(UnaryOp Op, WhfmtExprNode Operand) : WhfmtExprNode;
 
 // -- Binary ----------------------------------------------------------------
 
-public enum BinaryOp
+internal enum BinaryOp
 {
     // arithmetic
     Add, Sub, Mul, Div, Mod,
@@ -71,8 +75,8 @@ public enum BinaryOp
     // bitwise
     BitAnd, BitOr, BitXor, ShiftL, ShiftR,
 }
-public sealed record BinaryNode(BinaryOp Op, WhfmtExprNode Left, WhfmtExprNode Right) : WhfmtExprNode;
+internal sealed record BinaryNode(BinaryOp Op, WhfmtExprNode Left, WhfmtExprNode Right) : WhfmtExprNode;
 
 // -- Ternary ---------------------------------------------------------------
 
-public sealed record TernaryNode(WhfmtExprNode Cond, WhfmtExprNode Then, WhfmtExprNode Else) : WhfmtExprNode;
+internal sealed record TernaryNode(WhfmtExprNode Cond, WhfmtExprNode Then, WhfmtExprNode Else) : WhfmtExprNode;

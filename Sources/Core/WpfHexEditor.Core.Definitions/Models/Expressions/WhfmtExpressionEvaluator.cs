@@ -44,7 +44,7 @@ public sealed class WhfmtExpressionEvaluator
     public WhfmtFunctionRegistry Functions => _functions;
 
     /// <summary>Returns the cached AST for <paramref name="source"/>, parsing on first call.</summary>
-    public WhfmtExprNode Compile(string source)
+    internal WhfmtExprNode Compile(string source)
     {
         ArgumentException.ThrowIfNullOrEmpty(source);
         return _astCache.GetOrAdd(source, WhfmtExpressionParser.Parse);

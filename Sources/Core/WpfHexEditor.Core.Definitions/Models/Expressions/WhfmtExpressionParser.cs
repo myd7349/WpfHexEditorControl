@@ -24,7 +24,7 @@ internal sealed class WhfmtExpressionParser
         _tokens = tokens;
     }
 
-    public static WhfmtExprNode Parse(string source)
+    internal static WhfmtExprNode Parse(string source)
     {
         var tokens = WhfmtExpressionLexer.Tokenize(source);
         var p = new WhfmtExpressionParser(source, tokens);

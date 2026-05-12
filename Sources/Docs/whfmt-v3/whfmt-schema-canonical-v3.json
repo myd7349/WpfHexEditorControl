@@ -16,9 +16,12 @@
     "description": { "type": "string" },
     "category": {
       "type": "string",
+      "description": "Canonical category. v3.1 (2026-05): aligned to the on-disk category directories of FormatDefinitions/*.",
       "enum": ["3D", "Archives", "Audio", "CAD", "Certificates", "Crypto", "Data", "Database",
-               "Disk", "Documents", "Executables", "Game", "Images", "Medical", "Programming",
-               "Security", "System", "Video", "Other"]
+               "Disk", "Documents", "Executables", "Firmware", "Fonts", "Game", "GIS",
+               "Images", "IoT", "MachineLearning", "Medical", "Network", "Programming",
+               "RomHacking", "Science", "Security", "Subtitles", "Synalysis", "System",
+               "Text", "Video", "Virtualization", "Other"]
     },
     "author": { "type": "string" },
     "preferredEditor": {
