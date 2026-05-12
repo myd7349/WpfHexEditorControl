@@ -6,6 +6,7 @@
 
 using System.Text.Json;
 using WpfHexEditor.Core.Contracts;
+using WpfHexEditor.Core.Definitions.Models;
 
 namespace WpfHexEditor.Core.Definitions.Metadata;
 
@@ -223,6 +224,31 @@ public static class FormatMetadataExtensions
         using var doc = JsonDocument.Parse(catalog.GetJson(entry.ResourceKey), s_opts);
         return ParseExportTemplates(doc.RootElement);
     }
+
+    // ------------------------------------------------------------------
+    // Variables (P2 — handles both dict and typed-array schemas)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Returns all variable declarations from the <c>variables</c> block.
+    /// Returns an empty list when the block is absent.
+    /// <para>
+    /// Both whfmt v2 schemas are supported transparently:
+    /// dict (<c>"variables": { "magic": "" }</c>) is auto-migrated to typed form
+    /// by inferring the type from the literal initial value.
+    /// </para>
+    /// </summary>
+    public static IReadOnlyList<VariableDefinition> GetVariables(
+        this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
+        => WhfmtVariableParser.ParseDocument(catalog.GetJson(entry.ResourceKey));
+
+    /// <summary>
+    /// Builds a fresh <see cref="WhfmtVariableStore"/> populated with all
+    /// variable definitions from <paramref name="entry"/>.
+    /// </summary>
+    public static WhfmtVariableStore BuildVariableStore(
+        this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
+        => WhfmtVariableParser.BuildStore(catalog.GetJson(entry.ResourceKey));
 
     // ------------------------------------------------------------------
     // Technical details
