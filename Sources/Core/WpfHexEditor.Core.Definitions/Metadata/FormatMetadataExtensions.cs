@@ -250,6 +250,14 @@ public static class FormatMetadataExtensions
         this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
         => WhfmtVariableParser.BuildStore(catalog.GetJson(entry.ResourceKey));
 
+    /// <summary>
+    /// Builds a ready-to-use <see cref="Models.Expressions.WhfmtExpressionEvaluator"/>
+    /// with the entry's variables pre-loaded and the default function registry. Added P4.
+    /// </summary>
+    public static Models.Expressions.WhfmtExpressionEvaluator BuildEvaluator(
+        this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
+        => new(entry.BuildVariableStore(catalog));
+
     // ------------------------------------------------------------------
     // Technical details
     // ------------------------------------------------------------------
