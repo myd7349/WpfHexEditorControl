@@ -1,4 +1,4 @@
-# WpfDocking — Documentation
+# WpfDocking — Documentation (v0.9.8.0)
 
 ## Table of Contents
 

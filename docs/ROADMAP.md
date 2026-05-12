@@ -5,7 +5,9 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 
 > **Legend:** 🔧 In Progress · 🔜 Planned · ✅ Done (see CHANGELOG)
 >
-> 📅 *Last revised: 2026-05-09*
+> 📅 *Last revised: 2026-05-12*
+>
+> **Current IDE build:** `0.6.5.8` — new build-number scheme (reset after `0.6.5.225`); functional baseline unchanged.
 
 ---
 
@@ -323,6 +325,7 @@ Features internal to the `WPFHexaEditor` control itself — engine, ByteProvider
 
 | Feature | Version / Release |
 |---------|-------------------|
+| **Build-number scheme reset** — `WpfHexEditor.App` realigned from `0.6.5.225` to `0.6.5.8` to adopt a small monotonic build counter inside the `0.6.5.*` revision slot; no functional regression; published NuGet packages unchanged | [0.6.5.8] — 2026-05-12 |
 | **Code Analysis scope UX + SplitButton re-run** — scope label (Solution/Project/File) displayed in italic in toolbar after each run; SplitButton: left = re-run same scope, dropdown = Run Solution / Run Project… / Run File…; `_lastScope/_lastPath` persisted in `CodeAnalysisModule`; `SetScope` on `CodeAnalysisReportViewModel` | [0.6.5.225] — 2026-05-09 |
 | **Code Analysis Treemap context menu** — right-click raises `ContextMenuRequested` event with `FileMetrics`; 6 items: Open File (editor nav), Copy Path, Copy Metrics (clipboard), Run Analysis on File, Filter to This Project, Highlight Top 10 Hotspots (toggle dims non-critical tiles); 15 new AppResources keys × 28 satellite languages | [0.6.5.225] — 2026-05-09 |
 | **Code Analysis localization fixes** — `AppLocalizedDictionary` added to `UserControl.Resources.MergedDictionaries` in `CodeAnalysisReportPane.xaml`; fixes empty `DataGridTextColumn.Header` and logical-tree `DynamicResource` resolution; matches `WatchesPanel` / `AssemblyDetailPane` pattern | [0.6.5.225] — 2026-05-09 |

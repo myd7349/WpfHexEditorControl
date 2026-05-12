@@ -1,4 +1,4 @@
-# WpfTerminal — Documentation
+# WpfTerminal — Documentation (v0.9.7.1)
 
 ## Table of Contents
 

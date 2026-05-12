@@ -1,4 +1,4 @@
-# WpfCodeEditor — Documentation
+# WpfCodeEditor — Documentation (v0.9.9.0)
 
 ## Table of Contents
 

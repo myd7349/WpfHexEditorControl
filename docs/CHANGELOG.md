@@ -6,6 +6,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.6.5.8] — 2026-05-12 — Build-Number Scheme Reset
+
+### 🔧 Changed
+
+- **IDE build number reset** — `WpfHexEditor.App` `Version` / `AssemblyVersion` / `FileVersion` reset from `0.6.5.225` to `0.6.5.8` to adopt a new build-number scheme (small monotonic counter inside the `0.6.5.*` revision slot). No functional change versus `0.6.5.225`; all features documented under that release remain shipped.
+- **Docs sweep** — `ROADMAP.md` `Last revised` advanced to `2026-05-12`; current-build banner added; this CHANGELOG entry inserted as the new HEAD; published-package READMEs and guides verified against current `.csproj` versions (no NuGet package re-bumped — only the IDE shell version changed).
+
+### 📦 Versions in this build
+
+| Component | Version |
+|---|---|
+| `WpfHexEditor.App` (IDE shell) | **0.6.5.8** ← bumped this release |
+| `WPFHexaEditor` (NuGet) | 3.3.1 |
+| `WpfCodeEditor` (NuGet) | 0.9.9.0 |
+| `WpfDocking` (NuGet) | 0.9.8.0 |
+| `WpfTerminal` (NuGet) | 0.9.7.1 |
+| `WpfColorPicker` (NuGet) | 2.0.2 |
+| `WpfHexEditor.Core.ByteProvider` (NuGet) | 1.1.1 |
+| `WpfHexEditor.Core.BinaryAnalysis` (NuGet) | 1.0.1 |
+| `whfmt.FileFormatCatalog` (NuGet) | 1.3.2 |
+| `whfmt.Analysis` (NuGet) | 1.1.1 |
+| `whfmt.CodeGen` (NuGet) | 1.1.2 |
+| `whfmt.Fuzz` (NuGet) | 1.1.1 |
+| `whfmt.Validate` (NuGet) | 1.0.0 |
+| `WpfHexEditor.SDK` | 2.0.0 (frozen) |
+
+---
+
 ## [0.6.5.225] — 2026-05-09 — Code Analysis: Scope UX, SplitButton Re-run, Treemap Context Menu, Localization Fixes
 
 ### ✨ Added

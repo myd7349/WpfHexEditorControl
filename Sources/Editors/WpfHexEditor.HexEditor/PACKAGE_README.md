@@ -149,7 +149,7 @@ Merge once in `App.xaml` so themes and brushes resolve correctly:
 - **Fix**: Split-view focus border hidden when the split is closed (was leaving a stale frame around the empty secondary slot).
 - **Fix**: Breadcrumb bar synced in the secondary pane after layout reload.
 - **Fix**: All mutation types + initial paint + standalone-mode split correctly synced between primary and secondary editors.
-- **Fix**: Module panels now return singleton instances (matches Solution Explorer behaviour — prevents dual-cache stale-placeholder bug).
+- **Fix**: Module panels now return singleton instances — prevents the dual-cache stale-placeholder bug when reopening a tool panel after it was closed.
 - **No public API changes** — drop-in upgrade from 3.3.0.
 
 ## What's New in 3.3.0
@@ -157,7 +157,7 @@ Merge once in `App.xaml` so themes and brushes resolve correctly:
 - **New**: `HexEditorSplitHost` — drop-in split-view host wrapping a primary + optional secondary `HexEditor`; synchronized scrolling, mutations, and breadcrumb.
 - **New**: `HexEditorSettings` — auto-generated settings panel `UserControl`; exposes every `HexEditor` `DependencyProperty` with live binding, color picker, JSON export/import.
 - **New**: `IParsedFieldsPanel` integration API — `ConnectParsedFieldsPanel()` / `DisconnectParsedFieldsPanel()`, `GetByteProvider()`, `FindSelect(position, length)`.
-- **New**: Themed `IdeMessageBox` / `IDialogService` — replaces `MessageBox.Show` with a themed, injectable dialog service.
+- **New**: Themed `IdeMessageBox` / `IDialogService` — drop-in replacement for `MessageBox.Show`; injectable, themeable via `DynamicResource`, usable standalone in any WPF host.
 - **New**: +10 localizations — uk-UA, cs-CZ, vi-VN, hu-HU, ro-RO, id-ID, th-TH, el-GR, da-DK, fi-FI (now 28 languages total).
 - **Fix**: Split-view secondary pane — breadcrumb bar now syncs correctly; all mutation types (insert, delete, replace) propagated to secondary.
 - **Fix**: Focus border hidden when split panel is closed.
@@ -184,7 +184,7 @@ Merge once in `App.xaml` so themes and brushes resolve correctly:
 
 ## What's New in 3.1.2
 
-- **Fix**: Corrupted or malformed `.whfmt` files no longer crash the IDE — load failures are captured in `FormatLoadFailure` and surfaced in the StatusBar (`⚠ N whfmt failed to load`) instead of propagating exceptions.
+- **Fix**: Corrupted or malformed `.whfmt` files no longer crash the host application — load failures are captured in `FormatLoadFailure` and surfaced in the StatusBar (`⚠ N whfmt failed to load`) instead of propagating exceptions.
 - **Perf**: `EmbeddedFormatCatalog` singleton and lazy caches modernized — `LazyInitializer.EnsureInitialized` replaces manual double-checked lock; `GetAll()` / `GetCategories()` now return `IReadOnlySet<T>` backed by `FrozenSet<T>` for better thread safety and lookup performance.
 - **Test**: `MakeEntries(rethrow: true)` / `MakeCategories()` exposed as `public static` factory methods — enables `LoadResourcesTest` build gate.
 - **Feat**: New format definition `ROM_SNES_SRM` (SNES save RAM).
