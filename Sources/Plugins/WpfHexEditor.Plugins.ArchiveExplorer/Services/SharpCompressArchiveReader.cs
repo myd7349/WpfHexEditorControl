@@ -30,7 +30,7 @@ public sealed class SharpCompressArchiveReader : IArchiveReader
     public SharpCompressArchiveReader(string archivePath)
     {
         ArchivePath = archivePath;
-        _archive    = ArchiveFactory.Open(archivePath);
+        _archive    = ArchiveFactory.OpenArchive(archivePath);
         Format      = DetectFormat(_archive);
         _entries    = [.. _archive.Entries.Select(MapEntry)];
     }
