@@ -1,15 +1,58 @@
-# whfmt.FileFormatCatalog — Documentation
+# whfmt.FileFormatCatalog — Documentation (v1.3.2 / schema v3)
+
+> **What you get** — 799 embedded file-format definitions (789 `.whfmt` + 10 `.grammar`)
+> spanning 29 categories, a runtime expression engine that evaluates `.whfmt` assertions
+> live against parsed data, and a utility layer (matching, querying, metadata extraction,
+> summary rendering). Cross-platform `net8.0`, zero external NuGet dependencies, zero WPF.
 
 ## Table of Contents
 
-1. [Architecture](#architecture)
-2. [API Reference](#api-reference)
-3. [Utility Layer](#utility-layer)
-4. [Integration Guide — Level 1: Basic Detection](#level-1-basic-detection)
-5. [Integration Guide — Level 2: Routing and Syntax](#level-2-routing-and-syntax)
-6. [Integration Guide — Level 3: Full Pipeline](#level-3-full-pipeline)
-7. [Integration Guide — Level 4: Rich Metadata](#level-4-rich-metadata)
-8. [The .whfmt Format](#the-whfmt-format)
+1. [What's new in 1.3.2](#whats-new-in-132)
+2. [Architecture](#architecture)
+3. [API Reference](#api-reference)
+4. [Runtime Expression Engine](#runtime-expression-engine)
+5. [Utility Layer](#utility-layer)
+6. [Integration Guide — Level 1: Basic Detection](#level-1-basic-detection)
+7. [Integration Guide — Level 2: Routing and Syntax](#level-2-routing-and-syntax)
+8. [Integration Guide — Level 3: Full Pipeline](#level-3-full-pipeline)
+9. [Integration Guide — Level 4: Rich Metadata](#level-4-rich-metadata)
+10. [Integration Guide — Level 5: Live Assertions](#level-5-live-assertions)
+11. [The .whfmt Format (schema v3)](#the-whfmt-format-schema-v3)
+12. [Companion NuGet Packages](#companion-nuget-packages)
+13. [Migration from v2.x](#migration-from-v2x)
+
+---
+
+## What's new in 1.3.2
+
+**Pre-publication audit + Phase B blockers resolved + 2 catalog bug fixes.**
+
+- **Bug fix — `FormatMatcher.ScoreEntry` negative offsets**: signatures declared with
+  `offset: -4` (relative-from-end convention used by SHEBANG, FAT_BINARY, NE, LE,
+  TRUECRYPT, etc.) no longer throw `ArgumentOutOfRangeException`. The matcher now
+  normalises negative offsets to `header.Length + offset` and guards both bounds.
+- **Bug fix — assertion variable ingestion**: `.whfmt` variables of type `bool` or
+  `null` (e.g. `PNG.crc32Valid = false`) no longer crash downstream consumers.
+- **Schema v3 enum alignment** — `category` enum extended from 19 to 31 values to
+  match the 29 on-disk category directories (Firmware, Fonts, GIS, IoT, MachineLearning,
+  Network, RomHacking, Science, Subtitles, Synalysis, Text, Virtualization added).
+- **AST surface internalised** (B2) — `WhfmtExprNode` and the 11 record subtypes are
+  now `internal`. Consumers go through `WhfmtExpressionEvaluator.Evaluate(string)`
+  which returns `object?`. The evaluator implementation can now evolve (bytecode
+  lowering, alternative parsers) without an ABI break.
+- **New direct unit tests** (B3) — `GetJsonV3`, `FormatSummaryBuilder.BuildOneLiner` /
+  `BuildPlainText`, `GetDocumentationBundle`, `FormatMatcher.Match` / `GetTopMatches`
+  (covers the internal `ScoreEntry` via the public surface).
+- **Catalog cleanup Lots 1-7** (cumulative since 1.3.1): 131 `matchMode` normalisations,
+  32 block-type swaps (`blocks[].type = '<valueType>'` → `type='field' + valueType=X`),
+  20 endian-suffixed `valueType` splits (`uint32be` → `valueType: uint32, endianness: big`),
+  9 `formatId` collision renames (e.g. `DER` → `DER_CRYPTO`, `PAK` → `PAK_GAME`,
+  `YAML` → `YAML_LANG`), 8 Unix-style formats given fictive extensions
+  (APFS → `.apfs`, SHEBANG → `.sh`), and 12 exotic `valueType` mappings to canonical
+  (`uint24` → `uint32`, `vint` → `int64`, `filetime` → `int64`, etc.).
+
+See `Sources/Docs/whfmt-v3/audit-pre-publication/audit-SYNTHESE.md` in the repository
+for the full 4-axis audit report.
 
 ---
 
@@ -22,11 +65,13 @@ The package ships two assemblies:
 ```
 whfmt.FileFormatCatalog.nupkg
 └── lib/net8.0/
-    ├── WpfHexEditor.Core.Definitions.dll   — catalog engine + 790+ embedded resources
+    ├── WpfHexEditor.Core.Definitions.dll   — catalog engine + 799 embedded definitions
+    │                                         + runtime expression engine + utility layer
     └── WpfHexEditor.Core.Contracts.dll     — public types (interfaces, records, enums)
 ```
 
-Consumers only need to reference `WpfHexEditor.Core.Definitions`. `WpfHexEditor.Core.Contracts` is bundled and flows transitively — no separate package reference needed.
+Consumers reference `WpfHexEditor.Core.Definitions`. `WpfHexEditor.Core.Contracts` is
+bundled and flows transitively — no separate package reference needed.
 
 ### Type ownership
 
@@ -38,13 +83,19 @@ Consumers only need to reference `WpfHexEditor.Core.Definitions`. `WpfHexEditor.
 | `FormatSignature` | Core.Contracts | Immutable record — one magic-byte signature |
 | `FormatMatchResult` | Core.Contracts | Immutable record — scored detection result |
 | `MatchSource` | Core.Contracts | Flags enum — Extension / MagicBytes / MimeType / Combined |
-| `FormatCategory` | Core.Contracts | Enum — 27 known categories |
-| `SchemaName` | Core.Contracts | Enum — 5 known embedded schemas |
+| `FormatCategory` | Core.Contracts | Enum — 29 known categories (v3) |
+| `SchemaName` | Core.Contracts | Enum — embedded JSON schemas |
 | `FormatMatcher` | Core.Definitions | Stateless detection façade with confidence scoring |
 | `FormatFileAnalyzer` | Core.Definitions | I/O helper — file path / FileInfo / Stream / async |
 | `CatalogQuery` | Core.Definitions | Fluent query builder |
-| `FormatMetadataExtensions` | Core.Definitions | Extension methods — forensic, AI hints, assertions… |
-| `FormatSummaryBuilder` | Core.Definitions | Human-readable summaries — plain text / Markdown / dump |
+| `FormatMetadataExtensions` | Core.Definitions | Extension methods — forensic, AI hints, assertions, … |
+| `FormatSummaryBuilder` | Core.Definitions | Human-readable summaries — one-liner / plain / Markdown / dump |
+| `FormatAssertionEvaluator` | Core.Definitions | Bridge between expression engine and catalog assertions |
+| `WhfmtExpressionEvaluator` | Core.Definitions | Runtime expression engine (parser + evaluator + AST cache) |
+| `WhfmtVariableStore` | Core.Definitions | Typed variable bag consumed by the evaluator |
+| `WhfmtFunctionRegistry` / `IWhfmtFunction` | Core.Definitions | Extension point — register custom functions |
+| `WhfmtExpressionValidator` | Core.Definitions | Static expression validator (lint) — undeclared vars + unknown fns |
+| `WhfmtVersionMigrator` | Core.Definitions | In-memory v2 → v3 (PascalCase → camelCase) normaliser |
 
 ### Initialization and caching
 
@@ -61,18 +112,27 @@ First call to EmbeddedFormatCatalog.Instance
                     └── Stored as FrozenSet<EmbeddedFormatEntry>
 ```
 
-`GetJson(resourceKey)` uses a separate `Dictionary<string, string>` cache — each resource is read from the embedded stream exactly once, then served from memory on all subsequent calls.
+`GetJson(resourceKey)` uses a separate `Dictionary<string, string>` cache — each
+resource is read from the embedded stream exactly once, then served from memory on
+all subsequent calls.
 
-**Consequence:** the first call to `GetAll()` is the expensive one (~10–50 ms depending on hardware). All subsequent calls are O(1). Call `PreWarm()` on a background thread at startup to absorb this cost before the first user action.
+`GetJsonV3(resourceKey)` adds an extra in-memory pass through `WhfmtVersionMigrator.Migrate`
+to normalise legacy PascalCase root keys (`QualityMetrics`, `MimeTypes`, `Strength`, …)
+to v3 canonical camelCase. Falls back to raw JSON on migration error.
+
+**Consequence:** the first call to `GetAll()` is the expensive one (~10–50 ms depending
+on hardware). All subsequent calls are O(1). Call `PreWarm()` on a background thread
+at startup to absorb this cost before the first user action.
 
 ### Thread safety
 
-- `Instance` — safe to access from any thread (backed by `LazyInitializer`)
-- `GetAll()` / `GetCategories()` — safe; backed by immutable `FrozenSet<T>`
-- `GetJson()` — safe; uses `lock` + `TryAdd` pattern
+- `Instance` — safe (backed by `LazyInitializer`)
+- `GetAll()` / `GetCategories()` / `GetByName()` / `GetByFormatId()` — safe; backed by immutable `FrozenSet<T>` + frozen dictionaries
+- `GetJson()` / `GetJsonV3()` — safe (lock + TryAdd pattern, frozen migrator output)
 - `DetectFromBytes()` — safe; read-only enumeration over immutable entries
 - `FormatMatcher`, `FormatFileAnalyzer`, `CatalogQuery` — stateless; safe by construction
-- All other methods — safe; delegate to the above
+- `FormatAssertionEvaluator.EvaluateAll/One` — safe; pure functions over an evaluator instance
+- `WhfmtExpressionEvaluator` — **not thread-safe** by design (variable store is mutable). Create one per scope, or guard access with a lock.
 
 ### Dependency graph
 
@@ -100,9 +160,12 @@ Zero external NuGet dependencies. No WPF, no platform-specific APIs.
 | `GetByMimeType(string)` | `EmbeddedFormatEntry?` | First match by MIME type (case-insensitive) |
 | `GetByCategory(string)` | `IReadOnlyList<EmbeddedFormatEntry>` | All entries in a category (string overload) |
 | `GetByCategory(FormatCategory)` | `IReadOnlyList<EmbeddedFormatEntry>` | All entries in a category (enum overload) |
+| `GetByName(string)` | `EmbeddedFormatEntry?` | O(1) exact-name lookup (case-insensitive) |
+| `GetByFormatId(string)` | `EmbeddedFormatEntry?` | O(1) exact-formatId lookup (e.g. `"PNG"`, `"ZIP"`, `"DER_CRYPTO"`) |
 | `DetectFromBytes(ReadOnlySpan<byte>)` | `EmbeddedFormatEntry?` | Best match by magic-byte scoring |
 | `GetCompatibleEditorIds(string)` | `IReadOnlyList<string>` | Compatible editor IDs for a file path |
-| `GetJson(string)` | `string` | Full .whfmt JSON for a resource key (cached) |
+| `GetJson(string)` | `string` | Full `.whfmt` JSON for a resource key (cached, raw on-disk form) |
+| `GetJsonV3(string)` | `string` | Same as `GetJson`, post-run through `WhfmtVersionMigrator` (camelCase canonical) |
 | `GetSyntaxDefinitionJson(string)` | `string?` | Raw `syntaxDefinition` block JSON |
 | `GetSchemaJson(string)` | `string?` | Embedded schema JSON (string overload) |
 | `GetSchemaJson(SchemaName)` | `string?` | Embedded schema JSON (enum overload) |
@@ -115,25 +178,29 @@ Immutable positional record. All fields populated from the `.whfmt` header at ca
 
 | Field | Type | Notes |
 |---|---|---|
-| `ResourceKey` | `string` | Assembly manifest resource name — pass to `GetJson()` / `GetSyntaxDefinitionJson()` |
+| `ResourceKey` | `string` | Assembly manifest resource name — pass to `GetJson*()` / `GetSyntaxDefinitionJson()` |
 | `Name` | `string` | Human-readable format name, e.g. `"ZIP Archive"` |
+| `FormatId` | `string` | Stable canonical identifier (PascalCase), e.g. `"ZIP"`, `"DER_CRYPTO"` |
 | `Category` | `string` | Logical category, e.g. `"Archives"` |
 | `Description` | `string` | Short description of the format |
 | `Extensions` | `IReadOnlyList<string>` | File extensions with leading dot, e.g. `[".zip", ".jar"]` |
 | `MimeTypes` | `IReadOnlyList<string>?` | MIME types, e.g. `["application/zip"]`. Null when not declared. |
-| `Signatures` | `IReadOnlyList<FormatSignature>?` | Magic-byte signatures. Null when not declared. |
-| `QualityScore` | `int` | 0–100 completeness score from `QualityMetrics.CompletenessScore` |
+| `Signatures` | `IReadOnlyList<FormatSignature>?` | Magic-byte signatures (supports negative offsets in v1.3.2). Null when not declared. |
+| `MinFileSize` | `int` | Minimum bytes required for a magic-byte match to be valid (0 = no minimum) |
+| `MatchMode` | `string` | `"any"`, `"best"` (default), or `"all"` |
+| `MinimumScore` | `double` | Threshold below which a scored match is discarded |
+| `QualityScore` | `int` | 0–100 completeness score from `qualityMetrics.completenessScore` |
 | `Version` | `string` | Format spec version, e.g. `"1.14"`. Empty when not specified. |
 | `Author` | `string` | Author/organization. Empty when not specified. |
-| `Platform` | `string` | Target platform for ROM/game formats, e.g. `"Nintendo Entertainment System"`. Empty otherwise. |
-| `PreferredEditor` | `string?` | Recommended editor ID. Null when not declared. Typical values: `"hex-editor"`, `"code-editor"`, `"structure-editor"`. |
-| `IsTextFormat` | `bool` | True when `detection.isTextFormat` is set in the .whfmt file |
-| `HasSyntaxDefinition` | `bool` | True when the .whfmt file contains a `syntaxDefinition` block |
+| `Platform` | `string` | Target platform for ROM/game formats. Empty otherwise. |
+| `PreferredEditor` | `string?` | Recommended editor ID. Typical values: `"hex-editor"`, `"code-editor"`, `"structure-editor"`. |
+| `IsTextFormat` | `bool` | True when `detection.isTextFormat` is set |
+| `HasSyntaxDefinition` | `bool` | True when the `.whfmt` contains a `syntaxDefinition` block |
 | `DiffMode` | `string?` | Preferred diff algorithm: `"text"`, `"semantic"`, `"binary"`. Null when absent. |
 
 ### `FormatMatchResult`
 
-Immutable scored detection result. Produced by `FormatMatcher` and `FormatFileAnalyzer`.
+Immutable scored detection result.
 
 | Member | Type | Description |
 |---|---|---|
@@ -141,7 +208,7 @@ Immutable scored detection result. Produced by `FormatMatcher` and `FormatFileAn
 | `Confidence` | `double` | Normalised 0.0–1.0 confidence score |
 | `Source` | `MatchSource` | Which strategy produced this match |
 | `RawScore` | `double` | Accumulated signature weight before normalisation |
-| `IsConfirmed` | `bool` | True when Source == Combined (extension + magic bytes both matched) |
+| `IsConfirmed` | `bool` | True when `Source == Combined` (extension + magic bytes both matched) |
 
 ### `MatchSource` flags enum
 
@@ -152,38 +219,13 @@ Immutable scored detection result. Produced by `FormatMatcher` and `FormatFileAn
 | `MimeType` | Matched by MIME type string |
 | `Combined` | Extension + MagicBytes — highest confidence |
 
-### `FormatCategory` enum
+### `FormatCategory` enum (v3 — 29 on-disk categories + Other)
 
-| Value | Category string |
+| Group | Values |
 |---|---|
-| `Archives` | `"Archives"` |
-| `Audio` | `"Audio"` |
-| `CAD` | `"CAD"` |
-| `Certificates` | `"Certificates"` |
-| `Crypto` | `"Crypto"` |
-| `Data` | `"Data"` |
-| `Database` | `"Database"` |
-| `Disk` | `"Disk"` |
-| `Documents` | `"Documents"` |
-| `Executables` | `"Executables"` |
-| `Firmware` | `"Firmware"` |
-| `Fonts` | `"Fonts"` |
-| `GIS` | `"GIS"` |
-| `Game` | `"Game"` |
-| `Images` | `"Images"` |
-| `MachineLearning` | `"MachineLearning"` |
-| `Medical` | `"Medical"` |
-| `Network` | `"Network"` |
-| `Programming` | `"Programming"` |
-| `RomHacking` | `"RomHacking"` |
-| `Science` | `"Science"` |
-| `Subtitles` | `"Subtitles"` |
-| `Synalysis` | `"Synalysis"` |
-| `System` | `"System"` |
-| `Text` | `"Text"` |
-| `Video` | `"Video"` |
-| `_3D` | `"3D"` |
-| `Other` | `"Other"` |
+| Binary | `_3D`, `Archives`, `Audio`, `CAD`, `Certificates`, `Crypto`, `Data`, `Database`, `Disk`, `Documents`, `Executables`, `Firmware`, `Fonts`, `GIS`, `Game`, `Images`, `IoT`, `MachineLearning`, `Medical`, `Network`, `RomHacking`, `Science`, `Subtitles`, `Synalysis`, `System`, `Video`, `Virtualization` |
+| Text | `Programming`, `Text` |
+| Fallback | `Other` |
 
 > `FormatCategory._3D` maps to the string `"3D"` — the enum overload handles this automatically.
 
@@ -199,26 +241,166 @@ Immutable scored detection result. Produced by `FormatMatcher` and `FormatFileAn
 
 ---
 
+## Runtime Expression Engine
+
+`.whfmt` v3 promotes the file from a passive description to an **executable declarative
+program**. Three blocks contain expressions evaluated at runtime:
+
+- `assertions[].expression` — validation rules with severity (error / warning / info)
+- `blocks[].condition` / `blocks[].expression` — conditional and computed fields
+- `forensic.suspiciousPatterns[].condition` — forensic pattern triggers
+
+### Language
+
+A JS-flavoured expression subset (operators, member access, function calls, ternary).
+The full grammar is in `Models/Expressions/WhfmtExpression.cs`. Numeric coercion is
+JS-like (`"1" == 1` is true, `0 == false` is true).
+
+| Construct | Example |
+|---|---|
+| Literals | `42`, `0xFF`, `"text"`, `true`, `null` |
+| Arithmetic | `+ - * / %` |
+| Comparison | `== != < > <= >=` |
+| Logical | `&& \|\| !` |
+| Bitwise | `& \| ^ ~ << >>` |
+| Ternary | `a ? b : c` |
+| Member access | `magic.length` |
+| Indexer | `nintendoLogo[0]` |
+| Function call | `startsWith(magic, "PK")` |
+| Method call | `title.startsWith("PK")` |
+
+### `WhfmtExpressionEvaluator`
+
+```csharp
+using WpfHexEditor.Core.Definitions.Models.Expressions;
+using WpfHexEditor.Core.Definitions.Models.Functions;
+
+var store = new WhfmtVariableStore();
+store.Set("fileSize", 1024L);
+store.Set("magic", "PK");
+store.Set("compressionRatio", 25.3);
+
+var evaluator = new WhfmtExpressionEvaluator(store, WhfmtFunctionRegistry.CreateDefault());
+
+bool ok = evaluator.EvaluateBool("magic == 'PK' && fileSize > 0");   // true
+long v  = evaluator.EvaluateInt("fileSize / 2");                       // 512
+object? raw = evaluator.Evaluate("compressionRatio > 1000 ? 'bomb' : 'ok'");  // "ok"
+```
+
+The AST is cached per source string in a `ConcurrentDictionary`, so re-evaluation of
+the same expression with different variable values is allocation-free after the first
+parse.
+
+### `WhfmtVariableStore`
+
+| Member | Description |
+|---|---|
+| `Set(name, value)` | Store a value (boxed `object?`) |
+| `TryGet<T>(name, out value)` | Type-safe lookup with coercion |
+| `GetRaw(name)` | Raw stored object |
+| `Register(VariableDefinition)` | Pre-register a typed variable (used by `WhfmtVariableParser.BuildStore`) |
+| `Names` / `Count` / `Contains(name)` | Inspection |
+
+### `WhfmtFunctionRegistry` + `IWhfmtFunction`
+
+Built-ins shipped via `WhfmtFunctionRegistry.CreateDefault()`:
+
+| Name | Signature | Description |
+|---|---|---|
+| `startsWith(s, prefix)` | string × string → bool | |
+| `endsWith(s, suffix)` | string × string → bool | |
+| `contains(s, sub)` | string × string → bool | |
+| `length(s)` | string → int | |
+| `toLower(s)` / `toUpper(s)` | string → string | |
+| `substring(s, start, len?)` | string × int × int? → string | |
+| `min(a, b)` / `max(a, b)` | numeric × numeric → numeric | |
+| `abs(x)` | numeric → numeric | |
+| `floor(x)` / `ceil(x)` / `round(x)` | double → double | |
+| `now()` | → DateTimeOffset | UTC |
+
+Register a custom function:
+
+```csharp
+public sealed class CrcFunction : IWhfmtFunction
+{
+    public string Name => "crc32";
+    public object? Invoke(IReadOnlyList<object?> args) => Crc32.Compute((byte[])args[0]!);
+}
+
+evaluator.Functions.Register(new CrcFunction());
+evaluator.EvaluateInt("crc32(payload) == 0x12345678");
+```
+
+### `WhfmtExpressionValidator` (static lint)
+
+Used by `whfmt.Validate lint-expressions` and by the `whfmt-guard` skill. Catches
+parse errors, undeclared identifiers, and unknown function calls **without executing**.
+
+```csharp
+using WpfHexEditor.Core.Definitions.Models.Validation;
+
+var issues = WhfmtExpressionValidator.Validate(
+    expression: "fileSize > 0 && unknownVar < 100",
+    declaredVars: ["fileSize"],
+    declaredFns: ["startsWith"],
+    fnRegistry: WhfmtFunctionRegistry.CreateDefault());
+
+foreach (var issue in issues)
+    Console.WriteLine($"[{issue.Severity}] {issue.Code}: {issue.Message}");
+// [Warning] WH-EX-002: Undeclared identifier 'unknownVar'
+```
+
+### `FormatAssertionEvaluator` (bridge)
+
+The fastest way to run all the assertions of a `.whfmt` file against a parsed payload.
+
+```csharp
+using WpfHexEditor.Core.Definitions.Metadata;
+
+var entry = catalog.GetByFormatId("PNG")!;
+var rules = entry.GetAssertions(catalog);
+
+var store = new WhfmtVariableStore();
+store.Set("fileSize", data.Length);
+store.Set("pngSignature", "89504E470D0A1A0A");
+store.Set("crc32Valid", true);
+
+var evaluator = new WhfmtExpressionEvaluator(store);
+var results = FormatAssertionEvaluator.EvaluateAll(evaluator, rules);
+
+foreach (var r in results)
+    Console.WriteLine($"[{r.Status}] {r.Rule.Name}: {r.Error ?? "ok"}");
+// [Pass] magic valid: ok
+// [Fail] crc32 matches: expected true, got false
+```
+
+`AssertionStatus` is `Pass | Fail | Skipped` (skipped when a required variable was
+not provided — useful when running before all fields are parsed).
+
+---
+
 ## Utility Layer
 
 The utility layer sits on top of `IEmbeddedFormatCatalog` and covers four concerns:
-**matching with confidence scores**, **I/O-free file analysis**, **fluent filtering**, and **rich metadata extraction**.
-All utilities are cross-platform (`net8.0`, zero external dependencies).
+**matching with confidence scores**, **I/O-free file analysis**, **fluent filtering**,
+and **rich metadata extraction**. All utilities are cross-platform (`net8.0`, zero
+external dependencies).
 
 ### Namespaces
 
 ```csharp
 using WpfHexEditor.Core.Definitions.Matching;   // FormatMatcher, FormatFileAnalyzer
 using WpfHexEditor.Core.Definitions.Query;      // CatalogQuery, CatalogQueryExtensions
-using WpfHexEditor.Core.Definitions.Metadata;   // FormatMetadataExtensions, FormatSummaryBuilder
+using WpfHexEditor.Core.Definitions.Metadata;   // FormatMetadataExtensions, FormatSummaryBuilder, FormatAssertionEvaluator
+using WpfHexEditor.Core.Definitions.Models.Expressions;  // WhfmtExpressionEvaluator
+using WpfHexEditor.Core.Definitions.Models.Functions;    // WhfmtFunctionRegistry, IWhfmtFunction
 ```
 
----
+### `FormatMatcher` — scored detection façade
 
-### `FormatMatcher` — Scored detection façade
-
-`FormatMatcher` is a stateless class whose methods combine extension + magic-byte + MIME-type
-detection into a single `FormatMatchResult` with a normalised confidence score.
+`FormatMatcher` is a stateless class whose methods combine extension + magic-byte +
+MIME-type detection into a single `FormatMatchResult` with a normalised confidence
+score.
 
 #### Confidence scale
 
@@ -239,31 +421,21 @@ byte[] header = File.ReadAllBytes("myfile.zip")[..512];
 
 var result = FormatMatcher.Match(catalog, ".zip", header);
 // result.Entry.Name    → "ZIP Archive"
+// result.Entry.FormatId→ "ZIP"
 // result.Confidence    → 1.0
 // result.Source        → MatchSource.Combined
 // result.IsConfirmed   → true
 ```
 
-Match from a full file path (extension extracted automatically):
-
-```csharp
-var result = FormatMatcher.Match(catalog, @"C:\uploads\archive.zip", header);
-```
-
 #### Top-N ranked candidates
-
-Useful when debugging ambiguous files or building a "pick format" UI:
 
 ```csharp
 var candidates = FormatMatcher.GetTopMatches(catalog, header, maxResults: 5);
-
 foreach (var match in candidates)
     Console.WriteLine(match); // "ZIP Archive [MagicBytes] 99% (raw=1.00)"
 ```
 
 #### All entries for an extension
-
-Some extensions map to multiple formats (e.g. `.bin`). Get all candidates ranked by quality:
 
 ```csharp
 var all = FormatMatcher.GetMatchesByExtension(catalog, ".bin");
@@ -274,74 +446,34 @@ var all = FormatMatcher.GetMatchesByExtension(catalog, ".bin");
 
 ```csharp
 var result = FormatMatcher.MatchMime(catalog, "application/pdf");
-// result.Entry.Name   → "PDF Document"
-// result.Confidence   → 0.4   (MIME types are often ambiguous)
-// result.Source       → MatchSource.MimeType
 ```
 
----
+#### Signatures with negative offsets (v1.3.2)
+
+Some formats (SHEBANG, FAT_BINARY, NE, LE, TRUECRYPT) declare signatures relative to
+the end of the file:
+
+```jsonc
+"signatures": [
+  { "value": "55AA", "offset": -2, "weight": 1.0, "label": "MBR boot sector tail" }
+]
+```
+
+`FormatMatcher` normalises this to `header.Length - 2` at match time. Out-of-bounds
+offsets are silently skipped (do not throw).
 
 ### `FormatFileAnalyzer` — I/O without boilerplate
 
-`FormatFileAnalyzer` reads the first 512 bytes from a file (or stream) and delegates to
-`FormatMatcher`. It eliminates the byte-reading boilerplate from every call site.
-
-#### From a file path
+Reads the first 512 bytes from a file (or stream) and delegates to `FormatMatcher`.
 
 ```csharp
-using WpfHexEditor.Core.Definitions.Matching;
-
-var catalog = EmbeddedFormatCatalog.Instance;
-
 var result = FormatFileAnalyzer.Analyze(catalog, @"C:\files\document.pdf");
-Console.WriteLine(result?.Entry.Name);      // "PDF Document"
-Console.WriteLine(result?.Confidence);      // 1.0
-Console.WriteLine(result?.IsConfirmed);     // true
+// Also: FromStream, FromFileInfo, AnalyzeAsync, AnalyzeDirectory (batch)
 ```
 
-#### From a `FileInfo`
-
 ```csharp
-var fi = new FileInfo(@"C:\files\archive.7z");
-var result = FormatFileAnalyzer.Analyze(catalog, fi);
-```
-
-#### From a `Stream` (extension hint optional)
-
-```csharp
-using var stream = assembly.GetManifestResourceStream("MyApp.Resources.data.bin")!;
-var result = FormatFileAnalyzer.Analyze(catalog, stream, extension: ".bin");
-```
-
-#### Async — from a file path
-
-```csharp
-var result = await FormatFileAnalyzer.AnalyzeAsync(catalog, @"C:\uploads\file.unknown");
-if (result is null)
-    Console.WriteLine("Format not recognised.");
-else
-    Console.WriteLine($"{result.Entry.Name} ({result.Source}, {result.Confidence:P0})");
-```
-
-#### Async — from a stream
-
-```csharp
-await using var fs = File.OpenRead(uploadedFile);
-var result = await FormatFileAnalyzer.AnalyzeAsync(catalog, fs,
-    extension: Path.GetExtension(uploadedFile),
-    cancellationToken: ct);
-```
-
-#### Batch — scan a directory
-
-```csharp
-var catalog = EmbeddedFormatCatalog.Instance;
-
 foreach (var (path, match) in FormatFileAnalyzer.AnalyzeDirectory(
-    catalog,
-    directory: @"C:\Data",
-    searchPattern: "*.*",
-    recursive: true))
+    catalog, @"C:\Data", searchPattern: "*.*", recursive: true))
 {
     var name = match?.Entry.Name ?? "Unknown";
     var conf = match?.Confidence.ToString("P0") ?? "—";
@@ -349,19 +481,10 @@ foreach (var (path, match) in FormatFileAnalyzer.AnalyzeDirectory(
 }
 ```
 
----
-
-### `CatalogQuery` — Fluent filtering
-
-`CatalogQuery` is a composable query builder. Obtain one via the `.Query()` extension method
-on any `IEmbeddedFormatCatalog` instance.
-
-#### Basic example
+### `CatalogQuery` — fluent filtering
 
 ```csharp
 using WpfHexEditor.Core.Definitions.Query;
-
-var catalog = EmbeddedFormatCatalog.Instance;
 
 var highQualityDiskFormats = catalog
     .Query()
@@ -370,9 +493,6 @@ var highQualityDiskFormats = catalog
     .HasMagicBytes()
     .OrderByQuality()
     .Execute();
-
-foreach (var fmt in highQualityDiskFormats)
-    Console.WriteLine($"{fmt.Name,30}  {fmt.QualityScore}%");
 ```
 
 #### Filter methods
@@ -384,380 +504,102 @@ foreach (var fmt in highQualityDiskFormats)
 | `.WithMinQuality(int)` | Keep entries with QualityScore ≥ threshold |
 | `.PriorityOnly()` | Shortcut: QualityScore ≥ 85 |
 | `.HasMagicBytes()` | Only entries with at least one signature |
-| `.WithExtension(string)` | Only entries that handle a given extension (leading dot optional) |
-| `.TextFormatsOnly()` | Only text-based formats |
-| `.BinaryFormatsOnly()` | Only binary formats |
+| `.WithExtension(string)` | Only entries that handle a given extension |
+| `.TextFormatsOnly()` / `.BinaryFormatsOnly()` | Filter by `IsTextFormat` |
 | `.HasSyntaxDefinition()` | Only entries with a grammar block |
-| `.WithPreferredEditor(string)` | Exact editor ID match, e.g. `"code-editor"` |
-| `.HasPreferredEditor()` | Any non-null, non-empty preferred editor *(v1.1.1)* |
-| `.HasMimeType()` | Only entries that declare a MIME type |
-| `.HasPlatform()` | Only entries with a non-empty platform field |
-| `.ForPlatform(string)` | Platform substring match, e.g. `"Nintendo"` |
+| `.WithPreferredEditor(string)` / `.HasPreferredEditor()` | Editor routing filters |
+| `.HasMimeType()` / `.HasPlatform()` / `.ForPlatform(string)` | Metadata filters |
 | `.WithDiffMode(string)` | `"text"`, `"binary"`, or `"semantic"` |
-| `.WithName(string)` | Exact name match (case-insensitive) *(v1.1.1)* |
+| `.WithName(string)` / `.WithFormatId(string)` | Exact identity match |
 | `.Containing(string)` | Full-text search in name + description |
 | `.Where(predicate)` | Custom predicate |
 
-#### Ordering methods
-
-| Method | Description |
-|---|---|
-| `.OrderByQuality()` | Highest quality score first |
-| `.OrderByName()` | Alphabetical by name |
-| `.OrderByCategoryThenName()` | Category, then name within category |
-
-#### Terminal methods
+#### Ordering + terminal methods
 
 | Method | Returns | Description |
 |---|---|---|
+| `.OrderByQuality()` / `.OrderByName()` / `.OrderByCategoryThenName()` | `CatalogQuery` | Chainable ordering |
 | `.Execute()` | `IReadOnlyList<EmbeddedFormatEntry>` | All matching entries |
 | `.First()` | `EmbeddedFormatEntry?` | First match or null |
-| `.Count()` | `int` | Count without materialising the list |
-| `.Any()` | `bool` | True when at least one entry matches *(v1.1.1)* |
-| `.Select<T>(selector)` | `IReadOnlyList<T>` | Project each entry *(v1.1.1)* |
-| `.ToDictionary<K,V>(keySelector, valueSelector)` | `Dictionary<K,V>` | Build a dictionary; auto `OrdinalIgnoreCase` for string keys *(v1.1.1)* |
-| `.ToExtensionDictionary()` | `Dictionary<string, EmbeddedFormatEntry>` | Flat extension→entry map *(v1.1.1)* |
-| `.ToExtensionDictionary<V>(valueSelector)` | `Dictionary<string, V>` | Extension→value routing map *(v1.1.1)* |
-| `.GroupByCategory()` | `IReadOnlyDictionary<string, IReadOnlyList<EmbeddedFormatEntry>>` | Alphabetically sorted category groups *(v1.1.1)* |
+| `.Count()` / `.Any()` | `int` / `bool` | Counts |
+| `.Select<T>(selector)` | `IReadOnlyList<T>` | Project each entry |
+| `.ToDictionary<K,V>(keySel, valueSel)` | `Dictionary<K,V>` | Build a dictionary (auto OrdinalIgnoreCase for string keys) |
+| `.ToExtensionDictionary()` / `.ToExtensionDictionary<V>(selector)` | `Dictionary<string, T>` | Flat extension routing map |
+| `.GroupByCategory()` | `IReadOnlyDictionary<string, IReadOnlyList<EmbeddedFormatEntry>>` | Sorted category groups |
 
-#### Real-world examples
+### `FormatMetadataExtensions` — rich whfmt metadata
 
-**All code-editor grammars with a syntax definition:**
-
-```csharp
-var grammars = catalog
-    .Query()
-    .InCategory(FormatCategory.Programming)
-    .HasSyntaxDefinition()
-    .OrderByName()
-    .Execute();
-
-Console.WriteLine($"{grammars.Count} language grammars available.");
-```
-
-**ROM formats for Nintendo platforms:**
-
-```csharp
-var nintendoRoms = catalog
-    .Query()
-    .InCategory(FormatCategory.RomHacking)
-    .ForPlatform("Nintendo")
-    .OrderByQuality()
-    .Execute();
-```
-
-**Extension→editor routing map** (one line):
-
-```csharp
-// Build a lookup: file extension → preferred editor ID
-var editorMap = catalog.Query()
-    .HasPreferredEditor()
-    .ToExtensionDictionary(e => e.PreferredEditor!);
-
-var editor = editorMap.GetValueOrDefault(".cs"); // "code-editor"
-```
-
-**Group by category for a tree view:**
-
-```csharp
-foreach (var (category, entries) in catalog.Query().OrderByName().GroupByCategory())
-{
-    Console.WriteLine($"[{category}]");
-    foreach (var e in entries)
-        Console.WriteLine($"  {e.Name}");
-}
-```
-
-**Check if a name exists in the catalog:**
-
-```csharp
-bool exists = catalog.Query().WithName("ZIP Archive").Any();
-```
-
-**High-risk crypto formats:**
-
-```csharp
-var cryptoFormats = catalog.Query()
-    .InCategory(FormatCategory.Crypto)
-    .WithMinQuality(50)
-    .Execute();
-
-var highRisk = cryptoFormats
-    .Where(e => e.IsHighRisk(catalog))
-    .ToList();
-```
-
-**Structure-editor formats with export templates:**
-
-```csharp
-var structured = catalog
-    .Query()
-    .WithPreferredEditor("structure-editor")
-    .WithMinQuality(70)
-    .Execute()
-    .Where(e => e.GetExportTemplates(catalog).Count > 0)
-    .ToList();
-```
-
----
-
-### `FormatMetadataExtensions` — Rich whfmt metadata
-
-These extension methods on `EmbeddedFormatEntry` surface the deep metadata blocks from
-the full `.whfmt` JSON — forensic, AI hints, navigation, assertions, inspector groups,
-export templates, and technical details.
+Extension methods on `EmbeddedFormatEntry` that surface the deep metadata blocks.
 
 > All methods take the catalog as a second parameter to load the JSON on demand.
-> The JSON is cached by the catalog after the first call.
+> The JSON is cached after the first call.
 
-#### Bulk parse — `GetAllMetadata()` *(v1.1.1)*
+#### Bulk parse — `GetAllMetadata()`
 
 When you need **two or more metadata blocks** for the same entry, use `GetAllMetadata()` —
 it parses the `.whfmt` JSON exactly once and returns a `FormatMetadata` record with all blocks.
 
 ```csharp
 var meta = entry.GetAllMetadata(catalog);
-// meta.Forensic          → ForensicSummary?
-// meta.AiHints           → AiHints?
-// meta.Bookmarks         → IReadOnlyList<NavigationBookmark>
-// meta.Assertions        → IReadOnlyList<AssertionRule>
-// meta.InspectorGroups   → IReadOnlyList<InspectorGroup>
-// meta.ExportTemplates   → IReadOnlyList<ExportTemplate>
-// meta.TechnicalDetails  → TechnicalDetails?
-// meta.IsHighRisk        → bool (shortcut)
-// meta.SupportsEncryption→ bool (shortcut)
-
-// Much more efficient than chaining individual calls:
-// ❌ entry.GetForensicSummary(catalog) + entry.GetAiHints(catalog)  → 2 JSON parses
-// ✅ entry.GetAllMetadata(catalog)                                    → 1 JSON parse
+// meta.Forensic / meta.AiHints / meta.Bookmarks / meta.Assertions /
+// meta.InspectorGroups / meta.ExportTemplates / meta.TechnicalDetails
+// meta.IsHighRisk / meta.SupportsEncryption  (shortcuts)
 ```
 
-#### Forensic data
+#### Per-block accessors
+
+| Method | Returns |
+|---|---|
+| `.GetForensicSummary(catalog)` | `ForensicSummary?` |
+| `.GetAiHints(catalog)` | `AiHints?` |
+| `.GetNavigationBookmarks(catalog)` | `IReadOnlyList<NavigationBookmark>` |
+| `.GetAssertions(catalog)` | `IReadOnlyList<AssertionRule>` |
+| `.GetInspectorGroups(catalog)` | `IReadOnlyList<InspectorGroup>` |
+| `.GetExportTemplates(catalog)` | `IReadOnlyList<ExportTemplate>` |
+| `.GetTechnicalDetails(catalog)` | `TechnicalDetails?` |
+| `.GetSoftware(catalog)` | `IReadOnlyList<SoftwareReference>` |
+| `.GetUseCases(catalog)` | `IReadOnlyList<string>` |
+| `.GetReferences(catalog)` | `IReadOnlyList<DocReference>` |
+| `.GetFormatRelationships(catalog)` | `IReadOnlyList<FormatRelationship>` |
+| `.GetInspectorHeader(catalog)` | `InspectorHeader?` |
+| `.GetNavigationOverview(catalog)` | `NavigationOverview?` |
+| `.GetForensicNotes(catalog)` | `string?` |
+| `.GetDocumentationBundle(catalog)` | `(InspectorHeader?, NavigationOverview?, string?)` — 3-in-1 single parse |
+| `.GetDiffConfig(catalog)` | `DiffConfig?` (consumed by `whfmt.Analysis`) |
+| `.GetFuzzConfig(catalog)` | `FuzzConfig?` (consumed by `whfmt.Fuzz`) |
+| `.GetRepairs(catalog)` | `IReadOnlyList<RepairAction>` |
+| `.GetChecksums(catalog)` | `IReadOnlyList<ChecksumSpec>` |
+| `.IsHighRisk(catalog)` | `bool` shortcut |
+| `.SupportsEncryption(catalog)` | `bool` shortcut |
+
+### `FormatSummaryBuilder`
+
+Generates formatted summaries without WPF or MVVM dependency.
 
 ```csharp
-using WpfHexEditor.Core.Definitions.Metadata;
-
-var catalog = EmbeddedFormatCatalog.Instance;
-var entry = catalog.GetByExtension(".jks")!;  // Java KeyStore
-
-var forensic = entry.GetForensicSummary(catalog);
-// forensic.Category           → "crypto"
-// forensic.RiskLevel          → "medium"
-// forensic.IsHighRisk         → false
-// forensic.SuspiciousPatterns → list of SuspiciousPattern records
-
-foreach (var p in forensic!.SuspiciousPatterns)
-    Console.WriteLine($"⚠ {p.Name}: {p.Description}  (condition: {p.Condition})");
-
-// Quick boolean check:
-bool dangerous = entry.IsHighRisk(catalog);
-```
-
-#### AI analysis hints
-
-```csharp
-var ai = entry.GetAiHints(catalog);
-// ai.AnalysisContext       → "Java KeyStore format..."
-// ai.SuggestedInspections  → ["Check version field", "Inspect alias count", ...]
-// ai.KnownVulnerabilities  → []
-
-Console.WriteLine(ai?.AnalysisContext);
-foreach (var hint in ai?.SuggestedInspections ?? [])
-    Console.WriteLine($"  → {hint}");
-```
-
-#### Navigation bookmarks
-
-```csharp
-var apfs = catalog.GetByExtension("")
-    ?? catalog.Query().InCategory(FormatCategory.Disk).Containing("APFS").First()!;
-
-var bookmarks = apfs.GetNavigationBookmarks(catalog);
-// [
-//   NavigationBookmark("Object Header",        Offset=null, OffsetVar="currentOffset", Icon="header"),
-//   NavigationBookmark("NXSB Magic",           Offset=32,   OffsetVar=null,            Icon="signature"),
-//   NavigationBookmark("Container UUID",       Offset=72,   OffsetVar=null,            Icon="id"),
-// ]
-
-foreach (var b in bookmarks)
-    Console.WriteLine($"  [{b.Icon}] {b.Name} @ {b.Offset?.ToString("X4") ?? b.OffsetVar}");
-```
-
-#### Validation assertions
-
-```csharp
-var assertions = apfs.GetAssertions(catalog);
-// [
-//   AssertionRule("NXSB magic valid", "nxMagic == 'NXSB'", "error", "Invalid APFS magic"),
-//   AssertionRule("block size is power of 2", "nxBlockSize >= 512 && ...", "warning", null),
-// ]
-
-foreach (var a in assertions)
-    Console.WriteLine($"  [{a.Severity.ToUpperInvariant()}] {a.Name}: {a.Expression}");
-```
-
-#### Inspector groups
-
-```csharp
-var groups = apfs.GetInspectorGroups(catalog);
-// [
-//   InspectorGroup("Object Header",      "header", ["objChecksum","objOid","objXid",...]),
-//   InspectorGroup("Container Superblock","disk",  ["nxMagic","nxBlockSize",...]),
-//   InspectorGroup("Feature Flags",      "flag",  ["nxFeatures",...]),
-// ]
-
-foreach (var g in groups)
-    Console.WriteLine($"  [{g.Icon}] {g.Title}: {string.Join(", ", g.Fields)}");
-```
-
-#### Export templates
-
-```csharp
-var templates = apfs.GetExportTemplates(catalog);
-// [
-//   ExportTemplate("APFS Container Header (JSON)", "json", ["nxMagic","nxBlockSize",...]),
-//   ExportTemplate("APFS Summary (CSV)",           "csv",  ["nxMagic","nxBlockSize",...]),
-// ]
-
-foreach (var t in templates)
-    Console.WriteLine($"  Export as {t.Format.ToUpperInvariant()}: {t.Name}  ({t.Fields.Count} fields)");
-```
-
-#### Technical details
-
-```csharp
-var td = apfs.GetTechnicalDetails(catalog);
-// td.Endianness         → "little"
-// td.DataStructure      → "Copy-on-write B-tree filesystem..."
-// td.SupportsEncryption → true
-// td.Encryption         → "Per-file or per-volume encryption..."
-
-Console.WriteLine($"Endianness: {td?.Endianness}");
-Console.WriteLine($"Encrypted : {td?.SupportsEncryption}");
-
-// Quick boolean check:
-bool encrypted = apfs.SupportsEncryption(catalog);
-```
-
----
-
-### `FormatSummaryBuilder` — Human-readable summaries
-
-Generates formatted summaries without any WPF or MVVM dependency.
-
-#### One-liner (status bar / tooltip)
-
-```csharp
-using WpfHexEditor.Core.Definitions.Metadata;
-
-var entry = EmbeddedFormatCatalog.Instance.GetByExtension(".zip")!;
-
-string label = FormatSummaryBuilder.BuildOneLiner(entry);
-// "ZIP Archive (Archives) — .zip .jar .apk — Quality: 92%"
-```
-
-#### Plain text (multi-line)
-
-```csharp
-string text = FormatSummaryBuilder.BuildPlainText(entry);
-// Name        : ZIP Archive
-// Category    : Archives
-// Description : ZIP archive format (PKZIP)...
-// Extensions  : .zip  .jar  .apk
-// MIME        : application/zip
-// Quality     : 92/100
-// Signatures  :
-//    @   0  50 4B 03 04  weight=1.00
-//    @   0  50 4B 05 06  weight=0.80
-```
-
-Pass the catalog to include rich metadata in the output:
-
-```csharp
-string richText = FormatSummaryBuilder.BuildPlainText(entry, catalog);
-// … includes Forensic, AI context, TechnicalDetails
-```
-
-#### Markdown card
-
-```csharp
-string md = FormatSummaryBuilder.BuildMarkdown(entry, catalog);
-// ## ZIP Archive
-// > ZIP archive format (PKZIP)...
-// | Field | Value |
-// |---|---|
-// | Category | `Archives` |
-// | Extensions | `.zip` `.jar` `.apk` |
-// | MIME | `application/zip` |
-// | Quality | 92/100 |
-// ...
-// ### Magic Bytes
-// | Offset | Signature | Weight |
-// |---|---|---|
-// | `0x0000` | `50 4B 03 04` | 1.00 |
-// ...
-// ### Forensic (low risk)
-// ### Navigation Bookmarks
-// ### Validation Assertions
-```
-
-#### Diagnostic dump (debugging)
-
-```csharp
-string dump = FormatSummaryBuilder.BuildDiagnosticDump(entry, catalog);
-// === FORMAT DIAGNOSTIC DUMP ===
-// ResourceKey         : WpfHexEditor.Core.Definitions.FormatDefinitions.Archives.ZIP.whfmt
-// Name                : ZIP Archive
-// QualityScore        : 92
-// Forensic.RiskLevel  : low  (high=False)
-// Assertions (3):
-//   [ERROR] NXSB magic valid: nxMagic == 'NXSB'
-// Bookmarks (3):
-//   Object Header  offset=currentOffset  icon=header
-// ==============================
-```
-
-#### Signature formatting utility
-
-```csharp
-string hex = FormatSummaryBuilder.FormatHex("504B0304");
-// "50 4B 03 04"
+string oneLine  = FormatSummaryBuilder.BuildOneLiner(entry);
+string text     = FormatSummaryBuilder.BuildPlainText(entry, catalog);     // pass catalog for rich metadata
+string md       = FormatSummaryBuilder.BuildMarkdown(entry, catalog);
+string dump     = FormatSummaryBuilder.BuildDiagnosticDump(entry, catalog);
+string hexAscii = FormatSummaryBuilder.FormatHex("504B0304");              // "50 4B 03 04"
 ```
 
 ---
 
 ## Level 1: Basic Detection
 
-This level covers the most common scenario: identifying a file and deciding what to do with it.
-
-### Extension lookup
-
-The fastest lookup — no I/O, pure in-memory scan.
+### Extension / formatId / name lookup
 
 ```csharp
-using WpfHexEditor.Core.Definitions;
-using WpfHexEditor.Core.Contracts;
-
 var catalog = EmbeddedFormatCatalog.Instance;
 
-var entry = catalog.GetByExtension(".zip");
-// entry.Name          → "ZIP Archive"
-// entry.Category      → "Archives"
-// entry.Description   → "ZIP archive format (PKZIP)..."
-// entry.PreferredEditor → "hex-editor"
-// entry.MimeTypes[0]  → "application/zip"
-```
-
-Extensions are case-insensitive and the leading dot is optional:
-
-```csharp
-catalog.GetByExtension(".ZIP");  // same result
-catalog.GetByExtension("zip");   // same result
+var byExt   = catalog.GetByExtension(".zip");        // case-insensitive, dot optional
+var byId    = catalog.GetByFormatId("ZIP");          // O(1) — canonical id
+var byName  = catalog.GetByName("ZIP Archive");      // O(1) — exact-name lookup
+var byMime  = catalog.GetByMimeType("application/zip");
 ```
 
 ### Magic-byte detection
-
-Use when the extension is missing, untrusted, or ambiguous. Pass as many bytes as you can — at least 16, ideally 512.
 
 ```csharp
 byte[] header = new byte[512];
@@ -765,13 +607,9 @@ using (var fs = File.OpenRead(filePath))
     fs.Read(header, 0, header.Length);
 
 var entry = catalog.DetectFromBytes(header);
-if (entry is not null)
-    Console.WriteLine($"Detected: {entry.Name}");
 ```
 
-#### How scoring works
-
-Each entry's `Signatures` list is evaluated. For every signature where the bytes match at the declared offset, its `Weight` (0.0–1.0) is added to a running score. The entry with the highest total score wins. Entries with no signatures are skipped entirely.
+How scoring works:
 
 ```
 ZIP has 3 signatures:
@@ -782,21 +620,13 @@ ZIP has 3 signatures:
 A normal .zip file matches the first → score 1.0 → wins if no other format scores higher.
 ```
 
-### MIME type lookup
-
-```csharp
-var entry = catalog.GetByMimeType("image/png");
-// entry.Name       → "PNG Image"
-// entry.Extensions → [".png"]
-```
+Negative offsets (v1.3.2) and the `matchMode` rules (`any` / `best` / `all`) /
+`minimumScore` threshold / `minFileSize` floor are all honoured.
 
 ### Category browsing
 
 ```csharp
-// Enum overload — recommended
 var archives = catalog.GetByCategory(FormatCategory.Archives);
-
-// Iterate
 foreach (var fmt in archives)
     Console.WriteLine($"{fmt.Name}: {string.Join(", ", fmt.Extensions)}");
 ```
@@ -805,11 +635,10 @@ foreach (var fmt in archives)
 
 ## Level 2: Routing and Syntax
 
-This level covers editor routing and syntax highlighting integration.
-
 ### Editor routing
 
-`GetCompatibleEditorIds` returns all editor IDs that can open a given file. `"hex-editor"` is always included as the universal fallback.
+`GetCompatibleEditorIds` returns all editor IDs that can open a given file. `"hex-editor"`
+is always included as the universal fallback.
 
 ```csharp
 var editors = catalog.GetCompatibleEditorIds("report.pdf");
@@ -819,12 +648,10 @@ var editors2 = catalog.GetCompatibleEditorIds("main.cs");
 // ["hex-editor", "code-editor", "text-editor"]
 ```
 
-Routing logic applied internally:
-
 | Condition | Editor added |
 |---|---|
 | Always | `"hex-editor"` |
-| `PreferredEditor` is set | that value |
+| `PreferredEditor` set | that value |
 | `IsTextFormat == true` | `"code-editor"`, `"text-editor"` |
 | `Category == "Images"` | `"image-viewer"` |
 | `Category == "Audio"` | `"audio-viewer"` |
@@ -832,47 +659,25 @@ Routing logic applied internally:
 
 ### Registering grammars for a syntax engine
 
-`GetSyntaxDefinitionJson` returns the raw `syntaxDefinition` JSON block from the `.whfmt` file. Feed it into your tokenizer or highlighter.
-
 ```csharp
-var catalog = EmbeddedFormatCatalog.Instance;
-
-// Load all programming language grammars
-foreach (var entry in catalog.GetByCategory(FormatCategory.Programming)
-                              .Where(e => e.HasSyntaxDefinition))
+foreach (var entry in catalog.Query()
+                              .InCategory(FormatCategory.Programming)
+                              .HasSyntaxDefinition()
+                              .Execute())
 {
     string? grammar = catalog.GetSyntaxDefinitionJson(entry.ResourceKey);
     if (grammar is null) continue;
-
-    // Example: register with a hypothetical tokenizer registry
-    // MyTokenizer.Register(entry.Name, grammar);
-    Console.WriteLine($"  {entry.Name} → {entry.Extensions.FirstOrDefault()}");
+    // MyTokenizer.Register(entry.FormatId, grammar);
 }
 ```
 
-Available language grammars (57): Assembly, Batch, C, C++, C#, C# Script, Config/INI, CSON, CSS, Dart, DocBook, Dockerfile, `.env`, F#, FB2, FODT, Go, HCL/Terraform, HTML, iCal, Java, JavaScript, JSON, Kotlin, Lua, Markdown, MHT, MSBuild, NDJSON, Nginx, OpenDoc Flat, Perl, PHP, PowerShell, Python, RESW, RESX, Ruby, Rust, Shell, SourceMap, SQL, Swift, TOML, TypeScript, VB.NET, vCard, WAT, WebManifest, WHFMT, WML, XAML, XML, XMLMarkup, YAML. *(+22 new grammars in v1.1.0: Dockerfile, `.env`, Nginx, HCL/Terraform, WAT, MSBuild, SourceMap, WebManifest, CSON, NDJSON, iCal, vCard, DocBook, AbiWord, WML, FODT, FB2, MHT, OpenDoc Flat, Config/INI, RESW, RESX)*
+The catalog ships **57+ language grammars** (C#, Python, JS/TS, Go, Rust, Java, Kotlin,
+Swift, YAML, TOML, Markdown, Dockerfile, HCL/Terraform, WAT, MSBuild, iCal, vCard,
+DocBook, …). Each grammar's `syntaxDefinition` block contains tokenization rules,
+snippets, completion items, outline rules, diagnostic patterns, bracket pairs, and
+folding rules — consumed by the `WpfCodeEditor` standalone NuGet.
 
 ### Detecting extension spoofing
-
-```csharp
-bool IsExtensionSpoofed(string filePath)
-{
-    var byExtension = catalog.GetByExtension(Path.GetExtension(filePath));
-    if (byExtension is null) return false;
-
-    using var fs = File.OpenRead(filePath);
-    var header = new byte[512];
-    int read = fs.Read(header, 0, header.Length);
-    var byBytes = catalog.DetectFromBytes(header.AsSpan(0, read));
-
-    return byBytes is not null && byBytes.ResourceKey != byExtension.ResourceKey;
-}
-
-if (IsExtensionSpoofed(@"uploads\document.pdf"))
-    throw new SecurityException("File content does not match declared extension.");
-```
-
-Or use the confidence-aware version via `FormatMatcher`:
 
 ```csharp
 using WpfHexEditor.Core.Definitions.Matching;
@@ -888,136 +693,49 @@ bool spoofed = result is not null
 ### MIME negotiation for HTTP
 
 ```csharp
-// Extension → MIME (Content-Type header)
 string? GetContentType(string extension)
     => catalog.GetByExtension(extension)?.MimeTypes?.FirstOrDefault()
        ?? "application/octet-stream";
 
-// MIME → extension (download filename)
 string GetExtensionForMime(string mimeType)
-    => catalog.GetByMimeType(mimeType)?.Extensions.FirstOrDefault()
-       ?? ".bin";
-
-// In an ASP.NET controller:
-Response.ContentType = GetContentType(Path.GetExtension(fileName));
-```
-
-### Accessing embedded JSON schemas
-
-Use `SchemaName` enum for compile-time safety:
-
-```csharp
-// Get the whfmt schema to validate user-provided format definitions
-string? schema = catalog.GetSchemaJson(SchemaName.Whfmt);
-
-// Pass to a JSON schema validator (e.g. JsonSchema.Net)
-// var jsonSchema = JsonSchema.FromText(schema);
-// var result = jsonSchema.Evaluate(JsonNode.Parse(userWhfmt));
+    => catalog.GetByMimeType(mimeType)?.Extensions.FirstOrDefault() ?? ".bin";
 ```
 
 ---
 
 ## Level 3: Full Pipeline
 
-This level covers production-grade integration patterns.
-
-### File identification with `FormatFileAnalyzer` (recommended)
+### File identification (recommended path)
 
 ```csharp
 using WpfHexEditor.Core.Definitions.Matching;
 
 var catalog = EmbeddedFormatCatalog.Instance;
-
-// One line — no byte-reading boilerplate
-var result = FormatFileAnalyzer.Analyze(catalog, filePath);
+var result  = FormatFileAnalyzer.Analyze(catalog, filePath);
 
 if (result is null)
-{
     Console.WriteLine("Format not recognised.");
-}
 else
-{
-    Console.WriteLine($"Format    : {result.Entry.Name}");
-    Console.WriteLine($"Category  : {result.Entry.Category}");
-    Console.WriteLine($"Confidence: {result.Confidence:P0}");
-    Console.WriteLine($"Source    : {result.Source}");
-    Console.WriteLine($"Confirmed : {result.IsConfirmed}");
-}
+    Console.WriteLine($"{result.Entry.Name} ({result.Source}, {result.Confidence:P0}) — confirmed={result.IsConfirmed}");
 ```
 
-### File identification pipeline with fallback chain (low-level)
+### Dependency injection
 
 ```csharp
-public sealed class FileIdentifier
-{
-    private readonly IEmbeddedFormatCatalog _catalog;
-
-    public FileIdentifier(IEmbeddedFormatCatalog catalog) => _catalog = catalog;
-
-    public EmbeddedFormatEntry? Identify(string filePath)
-    {
-        // 1 — Fast path: extension lookup
-        var byExt = _catalog.GetByExtension(Path.GetExtension(filePath));
-        if (byExt?.Signatures is { Count: > 0 })
-        {
-            // Confirm with magic bytes when signatures are available
-            using var fs = File.OpenRead(filePath);
-            var header = new byte[512];
-            int read = fs.Read(header, 0, header.Length);
-            var byBytes = _catalog.DetectFromBytes(header.AsSpan(0, read));
-            if (byBytes is not null) return byBytes;
-        }
-
-        // 2 — Extension match without signatures (text formats, config files)
-        if (byExt is not null) return byExt;
-
-        // 3 — Pure magic-byte scan (no extension, or unknown extension)
-        {
-            using var fs = File.OpenRead(filePath);
-            var header = new byte[512];
-            int read = fs.Read(header, 0, header.Length);
-            return _catalog.DetectFromBytes(header.AsSpan(0, read));
-        }
-    }
-}
-```
-
-### Dependency injection setup
-
-`IEmbeddedFormatCatalog` is the injectable interface. Register the singleton in your DI container:
-
-```csharp
-// Microsoft.Extensions.DependencyInjection
 services.AddSingleton<IEmbeddedFormatCatalog>(EmbeddedFormatCatalog.Instance);
 
-// Then inject normally
 public class MyService(IEmbeddedFormatCatalog catalog) { ... }
 ```
 
 ### Background pre-warming
 
 ```csharp
-public static class AppStartup
-{
-    public static Task PreWarmCatalogAsync()
-        => Task.Run(() =>
-        {
-            // Forces singleton creation + full entry scan + JSON cache fill
-            EmbeddedFormatCatalog.Instance.PreWarm();
-        });
-}
-
-// In Program.cs or App.xaml.cs — fire and forget, don't await
-_ = AppStartup.PreWarmCatalogAsync();
+_ = Task.Run(EmbeddedFormatCatalog.Instance.PreWarm);
 ```
 
 ### Batch folder scanner with parallel processing
 
 ```csharp
-using WpfHexEditor.Core.Definitions.Matching;
-
-var catalog = EmbeddedFormatCatalog.Instance;
-
 var results = Directory
     .EnumerateFiles(@"C:\Data", "*.*", SearchOption.AllDirectories)
     .AsParallel()
@@ -1025,11 +743,8 @@ var results = Directory
     .Select(path =>
     {
         FormatMatchResult? match = null;
-        try { match = FormatFileAnalyzer.Analyze(catalog, path); }
-        catch { /* skip locked / inaccessible files */ }
-
-        return new
-        {
+        try { match = FormatFileAnalyzer.Analyze(catalog, path); } catch { }
+        return new {
             Path      = path,
             Name      = match?.Entry.Name ?? "Unknown",
             Category  = match?.Entry.Category ?? "Unknown",
@@ -1039,7 +754,6 @@ var results = Directory
     })
     .ToList();
 
-// Summary by category
 foreach (var g in results.GroupBy(r => r.Category).OrderByDescending(g => g.Count()))
     Console.WriteLine($"{g.Key,-20} {g.Count(),5} file(s)  spoofed: {g.Count(f => f.IsSpoofed)}");
 ```
@@ -1047,42 +761,19 @@ foreach (var g in results.GroupBy(r => r.Category).OrderByDescending(g => g.Coun
 ### Full syntax engine bootstrap
 
 ```csharp
-using WpfHexEditor.Core.Definitions.Query;
-
-public sealed class SyntaxEngineBootstrapper
+public sealed class SyntaxEngineBootstrapper(IEmbeddedFormatCatalog catalog)
 {
-    private readonly IEmbeddedFormatCatalog _catalog;
-    private readonly Dictionary<string, string> _grammarsByExtension = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _grammars =
+        catalog.Query()
+               .InCategory(FormatCategory.Programming)
+               .HasSyntaxDefinition()
+               .Execute()
+               .SelectMany(e => e.Extensions, (e, ext) => (ext, json: catalog.GetSyntaxDefinitionJson(e.ResourceKey)))
+               .Where(x => x.json is not null)
+               .GroupBy(x => x.ext, StringComparer.OrdinalIgnoreCase)
+               .ToDictionary(g => g.Key, g => g.First().json!, StringComparer.OrdinalIgnoreCase);
 
-    public SyntaxEngineBootstrapper(IEmbeddedFormatCatalog catalog)
-    {
-        _catalog = catalog;
-        LoadAll();
-    }
-
-    private void LoadAll()
-    {
-        // Fluent query — all programming language grammars
-        var entries = _catalog
-            .Query()
-            .InCategory(FormatCategory.Programming)
-            .HasSyntaxDefinition()
-            .Execute();
-
-        foreach (var entry in entries)
-        {
-            var grammar = _catalog.GetSyntaxDefinitionJson(entry.ResourceKey);
-            if (grammar is null) continue;
-            foreach (var ext in entry.Extensions)
-                _grammarsByExtension.TryAdd(ext, grammar);
-        }
-    }
-
-    public string? GetGrammar(string fileExtension)
-        => _grammarsByExtension.GetValueOrDefault(fileExtension);
-
-    public string GetWhfmtSchema()
-        => _catalog.GetSchemaJson(SchemaName.Whfmt) ?? throw new InvalidOperationException("Schema not found.");
+    public string? GetGrammar(string fileExtension) => _grammars.GetValueOrDefault(fileExtension);
 }
 ```
 
@@ -1090,66 +781,30 @@ public sealed class SyntaxEngineBootstrapper
 
 ## Level 4: Rich Metadata
 
-This level covers access to the deep metadata blocks embedded in each `.whfmt` file —
-forensic intelligence, AI hints, navigation, assertions, inspector groups, and export templates.
-
 ### Security scanner — detect high-risk formats
 
 ```csharp
-using WpfHexEditor.Core.Definitions.Metadata;
-using WpfHexEditor.Core.Definitions.Matching;
-using WpfHexEditor.Core.Definitions.Query;
-
-var catalog = EmbeddedFormatCatalog.Instance;
-
-// Identify file
 var result = FormatFileAnalyzer.Analyze(catalog, filePath);
 if (result is null) return;
 
-var entry = result.Entry;
-
-// Forensic check
-var forensic = entry.GetForensicSummary(catalog);
-if (forensic?.IsHighRisk == true)
+var meta = result.Entry.GetAllMetadata(catalog);    // single JSON parse, all blocks
+if (meta.IsHighRisk)
 {
-    Console.WriteLine($"⛔ HIGH RISK: {entry.Name} ({forensic.RiskLevel})");
-    foreach (var p in forensic.SuspiciousPatterns)
+    Console.WriteLine($"⛔ HIGH RISK: {result.Entry.Name} ({meta.Forensic!.RiskLevel})");
+    foreach (var p in meta.Forensic.SuspiciousPatterns)
         Console.WriteLine($"   ⚠ {p.Name}: {p.Description}");
 }
 
-// AI-assisted inspection hints
-var ai = entry.GetAiHints(catalog);
-if (ai?.SuggestedInspections.Count > 0)
-{
-    Console.WriteLine("Suggested inspections:");
-    foreach (var hint in ai.SuggestedInspections)
-        Console.WriteLine($"   → {hint}");
-}
-```
-
-### Binary validator — run format assertions
-
-```csharp
-// Get assertion rules for the detected format
-var assertions = entry.GetAssertions(catalog);
-
-Console.WriteLine($"Validation rules for {entry.Name} ({assertions.Count} assertions):");
-foreach (var a in assertions)
-    Console.WriteLine($"  [{a.Severity,-7}] {a.Name}: {a.Expression}");
-
-// assertions can be passed to a rule-engine / expression evaluator
-// e.g. MyRuleEngine.Evaluate(parsedFields, assertions);
+foreach (var hint in meta.AiHints?.SuggestedInspections ?? [])
+    Console.WriteLine($"   → {hint}");
 ```
 
 ### Structure viewer — build inspector groups
 
 ```csharp
-// Inspector groups define how parsed fields are visually organised
-var groups = entry.GetInspectorGroups(catalog);
-
-foreach (var group in groups)
+foreach (var group in entry.GetInspectorGroups(catalog))
 {
-    Console.WriteLine($"[{group.Icon}] {group.Title}");
+    Console.WriteLine($"[{group.Icon}] {group.Name}");
     foreach (var field in group.Fields)
         Console.WriteLine($"    {field}");
 }
@@ -1158,9 +813,7 @@ foreach (var group in groups)
 ### Export pipeline — enumerate available templates
 
 ```csharp
-var templates = entry.GetExportTemplates(catalog);
-
-foreach (var tmpl in templates)
+foreach (var tmpl in entry.GetExportTemplates(catalog))
 {
     Console.WriteLine($"Export: {tmpl.Name} [{tmpl.Format.ToUpperInvariant()}]");
     Console.WriteLine($"  Fields: {string.Join(", ", tmpl.Fields)}");
@@ -1170,180 +823,261 @@ foreach (var tmpl in templates)
 ### Navigation — jump to known offsets
 
 ```csharp
-var bookmarks = entry.GetNavigationBookmarks(catalog);
-
-foreach (var b in bookmarks)
+foreach (var b in entry.GetNavigationBookmarks(catalog))
 {
-    var position = b.Offset.HasValue
-        ? $"0x{b.Offset:X4}"
-        : $"${b.OffsetVar}";
-    Console.WriteLine($"  [{b.Icon,-12}] {b.Name,-25} @ {position}");
+    var pos = b.Offset.HasValue ? $"0x{b.Offset:X4}" : $"${b.OffsetVar}";
+    Console.WriteLine($"  [{b.Icon,-12}] {b.Name,-25} @ {pos}");
 }
 ```
 
-### Diagnostic report — full entry dump
+### Diagnostic report / Markdown card
 
 ```csharp
-using WpfHexEditor.Core.Definitions.Metadata;
-
-var entry = catalog.GetByExtension(".jks")!;
 string dump = FormatSummaryBuilder.BuildDiagnosticDump(entry, catalog);
-Console.WriteLine(dump);
-```
-
-### Format report — Markdown card for documentation
-
-```csharp
-var entry = catalog.Query()
-    .InCategory(FormatCategory.Disk)
-    .Containing("APFS")
-    .First()!;
-
-string markdown = FormatSummaryBuilder.BuildMarkdown(entry, catalog);
-File.WriteAllText("apfs-format-card.md", markdown);
-```
-
-### All-in-one: catalogue of high-quality formats with rich metadata
-
-```csharp
-using WpfHexEditor.Core.Definitions.Query;
-using WpfHexEditor.Core.Definitions.Metadata;
-
-var catalog = EmbeddedFormatCatalog.Instance;
-
-var formats = catalog
-    .Query()
-    .WithMinQuality(80)
-    .HasMagicBytes()
-    .OrderByQuality()
-    .Execute();
-
-Console.WriteLine($"{"Format",-30} {"Category",-15} {"Q",3}  {"Risk",-8}  {"Assertions",10}  {"Exports",7}");
-Console.WriteLine(new string('-', 85));
-
-foreach (var fmt in formats)
-{
-    var forensic   = fmt.GetForensicSummary(catalog);
-    var assertions = fmt.GetAssertions(catalog);
-    var exports    = fmt.GetExportTemplates(catalog);
-
-    Console.WriteLine(
-        $"{fmt.Name,-30} {fmt.Category,-15} {fmt.QualityScore,3}  " +
-        $"{(forensic?.RiskLevel ?? "—"),-8}  {assertions.Count,10}  {exports.Count,7}");
-}
+string md   = FormatSummaryBuilder.BuildMarkdown(entry, catalog);
+File.WriteAllText("apfs-format-card.md", md);
 ```
 
 ---
 
-## The .whfmt Format
+## Level 5: Live Assertions
 
-A `.whfmt` file is a JSONC document (JSON with `//` comments and trailing commas allowed) that describes a binary or text file format. Here is an annotated example:
+This level shows how the expression engine and `FormatAssertionEvaluator` work
+together to validate a parsed file against the `.whfmt` rules.
+
+### End-to-end PNG validation
+
+```csharp
+using WpfHexEditor.Core.Definitions;
+using WpfHexEditor.Core.Definitions.Metadata;
+using WpfHexEditor.Core.Definitions.Models.Expressions;
+using WpfHexEditor.Core.Definitions.Models.Functions;
+
+var catalog = EmbeddedFormatCatalog.Instance;
+var entry   = catalog.GetByFormatId("PNG")!;
+
+// 1) Build the variable store from the parsed file.
+byte[] data = File.ReadAllBytes("photo.png");
+var store = new WhfmtVariableStore();
+store.Set("fileSize",       (long)data.Length);
+store.Set("pngSignature",   Convert.ToHexString(data.AsSpan(0, 8)));
+store.Set("ihdrChunkLength",BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(8, 4)));
+store.Set("imageWidth",     BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(16, 4)));
+store.Set("imageHeight",    BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(20, 4)));
+store.Set("crc32Valid",     true);  // computed elsewhere
+
+// 2) Run all assertions in one pass.
+var evaluator = new WhfmtExpressionEvaluator(store, WhfmtFunctionRegistry.CreateDefault());
+var results   = FormatAssertionEvaluator.EvaluateAll(evaluator, entry.GetAssertions(catalog));
+
+// 3) Surface failures.
+var failures = results.Where(r => r.Status == AssertionStatus.Fail).ToList();
+if (failures.Count == 0)
+{
+    Console.WriteLine("✓ PNG file passes all assertions.");
+}
+else
+{
+    Console.WriteLine($"✗ {failures.Count} assertion failure(s):");
+    foreach (var f in failures)
+        Console.WriteLine($"   [{f.Rule.Severity}] {f.Rule.Name}: {f.Rule.Message ?? f.Rule.Expression}");
+}
+```
+
+### Pre-flight static lint
+
+Before running an assertion against real data, lint the expression itself:
+
+```csharp
+var rules = entry.GetAssertions(catalog);
+var declaredVars = new[] { "fileSize", "pngSignature", "ihdrChunkLength",
+                           "imageWidth", "imageHeight", "crc32Valid" };
+
+foreach (var rule in rules)
+{
+    var issues = WhfmtExpressionValidator.Validate(
+        rule.Expression, declaredVars,
+        declaredFns: [],
+        fnRegistry: WhfmtFunctionRegistry.CreateDefault());
+    foreach (var i in issues)
+        Console.WriteLine($"  [{i.Severity}] {rule.Name}: {i.Code} — {i.Message}");
+}
+```
+
+This is exactly what `whfmt.Validate lint-expressions` does in CI to catch broken
+`.whfmt` files before they ship.
+
+---
+
+## The .whfmt Format (schema v3)
+
+A `.whfmt` file is a JSONC document (JSON with `//` and `/* */` comments and trailing
+commas allowed) that describes a binary or text file format. **All root keys are
+camelCase in v3.** Legacy PascalCase root keys (`QualityMetrics`, `MimeTypes`, …) are
+still accepted via `WhfmtVersionMigrator` but will be removed in v4.
+
+Annotated example:
 
 ```jsonc
 {
-  // Root identification fields
-  "formatName": "ZIP Archive",           // Human-readable name
-  "version": "1.14",                     // Format spec version
-  "category": "Archives",               // Must match a FormatCategory value
-  "description": "...",                 // Short description
-  "author": "WPFHexaEditor Team",
-  "preferredEditor": "hex-editor",      // "hex-editor" | "code-editor" | "structure-editor" | etc.
-  "diffMode": "binary",                 // "text" | "semantic" | "binary"
+  // Root identification
+  "formatName": "ZIP Archive",            // Human-readable name
+  "formatId":   "ZIP",                    // Canonical PascalCase identifier (unique across the catalog)
+  "version":    "1.14",                   // Format spec version
+  "category":   "Archives",               // Must match a FormatCategory enum value
+  "description":"...",
+  "author":     "WPFHexaEditor Team",
+  "preferredEditor": "hex-editor",        // hex-editor | code-editor | structure-editor | image-viewer | audio-viewer
+  "diffMode":   "binary",                 // text | semantic | binary
 
   // File association
-  "extensions": [ ".zip", ".jar", ".apk" ],
-  "MimeTypes":  [ "application/zip" ],
+  "extensions": [".zip", ".jar", ".apk"],
+  "mimeTypes":  ["application/zip"],
 
-  // Detection rules
+  // Detection
   "detection": {
     "signatures": [
-      { "value": "504B0304", "offset": 0, "weight": 1.0 },  // hex bytes, byte offset, confidence
-      { "value": "504B0506", "offset": 0, "weight": 0.8 }
+      { "value": "504B0304", "offset":  0, "weight": 1.0, "label": "Local File Header"        },
+      { "value": "504B0506", "offset":  0, "weight": 0.8, "label": "End of Central Directory" },
+      { "value": "55AA",     "offset": -2, "weight": 0.5, "label": "Tail marker (negative offset)" }
     ],
-    "matchMode": "any",                  // "any" | "all"
-    "required": true,                   // whether a signature match is mandatory
-    "EntropyHint": { "min": 5.0, "max": 8.0 },
-    "isTextFormat": false               // true for plain-text formats (CSV, INI, etc.)
+    "matchMode":    "best",               // any | best (default) | all
+    "minimumScore": 0.5,                  // discard scored matches below this threshold
+    "minFileSize":  22,                   // skip when header shorter than this
+    "strength":     "Strong",             // Strong | Medium | Weak — informational only
+    "isTextFormat": false,
+    "validation": {
+      "minFileSize": 22,
+      "maxSignatureOffset": 0,
+      "discriminator": {                  // NEW in v3 — resolves magic collisions
+        "offset": 4, "length": 2, "endian": "little",
+        "values": { "0103": "ZIP", "0203": "ZIP_NESTED" }
+      }
+    }
   },
 
-  // Quality metadata
-  "QualityMetrics": {
-    "CompletenessScore": 90             // 0–100
+  // Typed variables (v3 preferred form) — consumed by the runtime expression engine
+  "variables": [
+    { "name": "fileSize",       "type": "uint64", "offset": 0,        "length": 8 },
+    { "name": "magic",          "type": "ascii",  "offset": 0,        "length": 4 },
+    { "name": "compressionMethod", "type": "uint16", "offset": 8,    "length": 2, "endian": "little" }
+  ],
+  // … or the dict form (still accepted):
+  // "variables": { "fileSize": 0, "magic": "", "compressionMethod": 0 }
+
+  // Named function registry — v3 executable form (or doc-string)
+  "functions": {
+    "crc32":     { "params": ["bytes"], "returns": "uint32", "builtIn": "crc32" },
+    "validateMagic": { "params": [], "returns": "bool", "body": "magic == 'PK'" }
   },
+
+  // Block layout (signature/field/conditional/loop/repeating/pointer/bitfield/union)
+  "blocks": [
+    { "type": "signature", "name": "magic",  "offset": 0,  "length": 4, "valueType": "ascii" },
+    { "type": "field",     "name": "compressionMethod",
+                                            "offset": 8,  "length": 2, "valueType": "uint16", "endianness": "little",
+                           "valueMap": { "0": "Store", "8": "Deflate" } },
+    { "type": "conditional",
+      "name": "encryptionHeader",
+      "condition": "(flags & 1) != 0",      // expression engine
+      "trueLabel": "encrypted",
+      "falseLabel":"plain" }
+  ],
+
+  // Runtime assertions — evaluated by FormatAssertionEvaluator
+  "assertions": [
+    { "name": "magic valid",    "expression": "magic == 'PK'",     "severity": "error",
+      "message": "Missing ZIP magic bytes" },
+    { "name": "compression OK", "expression": "compressionMethod == 0 || compressionMethod == 8",
+      "severity": "warning" }
+  ],
+
+  // Quality
+  "qualityMetrics": { "completenessScore": 92 },
 
   // Forensic intelligence
   "forensic": {
-    "category": "archive",
-    "riskLevel": "low",                 // "low" | "medium" | "high" | "critical"
+    "category":  "archive",
+    "riskLevel": "low",                     // low | medium | high | critical
     "suspiciousPatterns": [
-      {
-        "name": "Zip bomb",
-        "description": "Deeply nested archives with extreme compression ratio",
-        "condition": "compressionRatio > 1000"
-      }
+      { "name": "Zip bomb", "description": "Nested archives with extreme ratio",
+        "condition": "compressionRatio > 1000" }
     ]
   },
 
-  // AI-assisted analysis hints
+  // AI hints
   "aiHints": {
-    "analysisContext": "ZIP is a widely-used container format...",
-    "suggestedInspections": [
-      "Check local file header counts",
-      "Verify central directory offset"
-    ]
+    "analysisContext":      "ZIP is a widely-used container format…",
+    "suggestedInspections": [ "Check local file header counts", "Verify central directory offset" ]
   },
 
-  // Navigation bookmarks
+  // Navigation
   "navigation": {
-    "bookmarks": [
-      { "name": "Local File Header", "offset": 0,  "icon": "signature" },
+    "entryPoint": "Local File Header",
+    "structure":  [ "Local File Header[]", "Central Directory", "End of Central Directory" ],
+    "bookmarks":  [
+      { "name": "Local File Header", "offset": 0,           "icon": "signature" },
       { "name": "Central Directory", "offsetVar": "cdOffset", "icon": "directory" }
     ]
   },
 
-  // Validation assertions
-  "assertions": [
-    {
-      "name": "Magic bytes valid",
-      "expression": "signature == 'PK'",
-      "severity": "error",
-      "message": "Missing ZIP magic bytes"
-    }
-  ],
-
-  // Inspector layout (field grouping for UI)
+  // Inspector layout
   "inspector": {
+    "badge": "📦",
+    "primaryField": "compressionMethod",
+    "showQualityScore": true,
     "groups": [
-      {
-        "title": "File Header",
-        "icon": "header",
-        "fields": ["signature", "version", "flags", "compression"]
-      }
+      { "name": "File Header", "icon": "header",
+        "fields": ["signature", "version", "flags", "compression"] }
     ]
   },
 
   // Export templates
   "exportTemplates": [
-    {
-      "name": "ZIP Summary (JSON)",
-      "format": "json",
-      "fields": ["signature", "version", "compression", "crc32"]
-    }
+    { "name": "ZIP Summary (JSON)", "format": "json",
+      "fields": ["signature", "version", "compression", "crc32"] }
   ],
 
   // Technical details
-  "TechnicalDetails": {
-    "endianness": "little",
-    "compressionMethod": "DEFLATE / Store / BZip2 / LZMA",
-    "supportsEncryption": true,
-    "encryption": "Traditional PKWARE, AES-256"
+  "technicalDetails": {
+    "endianness":          "little",
+    "compressionMethod":   "DEFLATE / Store / BZip2 / LZMA",
+    "supportsEncryption":  true,
+    "encryption":          "Traditional PKWARE, AES-256"
   },
 
-  // Optional: syntax grammar block (only for text/code formats)
+  // Diff / Fuzz / Repair / Migration — consumed by companion NuGets
+  "diff":  { "keyFields": ["centralDirectoryEntries"], "ignoreFields": ["timestamp"], "groupBy": "entry" },
+  "fuzz":  { "preserveChecksums": true, "maxMutationsPerFile": 5,
+             "strategies": [
+               { "field": "compressionMethod", "mutation": "enum_sweep",     "weight": 1.0 },
+               { "field": "fileSize",          "mutation": "boundary_values","weight": 0.7 }
+             ] },
+  "repair": [
+    { "name": "Fix central directory offset", "trigger": "centralDirOffset > fileSize",
+      "action": "recompute", "target": "centralDirOffset", "algorithm": "scan_for_eocd" }
+  ],
+  "migration": [
+    { "from": "ZIP 1.0", "to": "ZIP 1.14",
+      "changes": [ { "field": "version", "changeType": "increment", "value": 14 } ] }
+  ],
+
+  // Cross-format relationships
+  "formatRelationships": [
+    { "format": "JAR", "relationship": "ZIP-based container" },
+    { "format": "APK", "relationship": "ZIP-based Android package" }
+  ],
+
+  // Syntax grammar block (only for text/code formats) — consumed by WpfCodeEditor
   "syntaxDefinition": {
-    "name": "...",
-    "scopeName": "source.example",
-    "patterns": [ ]                     // tokenizer rules
+    "id": "example", "name": "Example",
+    "extensions": [".ex"],
+    "lineCommentPrefix": "//",
+    "rules":           [ /* tokenizer rules */ ],
+    "snippets":        [ /* trigger → body */ ],
+    "completions":     [ /* keyword/symbol completions */ ],
+    "outlineRules":    [ /* symbol list patterns */ ],
+    "diagnosticRules": [ /* pattern-based diagnostics */ ]
   }
 }
 ```
@@ -1352,23 +1086,31 @@ A `.whfmt` file is a JSONC document (JSON with `//` comments and trailing commas
 
 | Field | API surface |
 |---|---|
-| `formatName` | `EmbeddedFormatEntry.Name` |
+| `formatName` / `formatId` | `EmbeddedFormatEntry.Name` / `.FormatId` / `GetByName()` / `GetByFormatId()` |
 | `category` | `EmbeddedFormatEntry.Category` / `GetByCategory()` / `.Query().InCategory()` |
 | `extensions` | `EmbeddedFormatEntry.Extensions` / `GetByExtension()` / `.Query().WithExtension()` |
-| `MimeTypes` | `EmbeddedFormatEntry.MimeTypes` / `GetByMimeType()` / `FormatMatcher.MatchMime()` |
+| `mimeTypes` | `EmbeddedFormatEntry.MimeTypes` / `GetByMimeType()` / `FormatMatcher.MatchMime()` |
 | `detection.signatures` | `EmbeddedFormatEntry.Signatures` / `DetectFromBytes()` / `FormatMatcher.Match()` |
+| `detection.matchMode` / `minimumScore` / `minFileSize` | `FormatMatcher` scoring honours all three |
 | `preferredEditor` | `EmbeddedFormatEntry.PreferredEditor` / `GetCompatibleEditorIds()` |
 | `detection.isTextFormat` | `EmbeddedFormatEntry.IsTextFormat` / `.Query().TextFormatsOnly()` |
-| `syntaxDefinition` | `EmbeddedFormatEntry.HasSyntaxDefinition` / `GetSyntaxDefinitionJson()` / `.Query().HasSyntaxDefinition()` |
+| `syntaxDefinition` | `.HasSyntaxDefinition` / `GetSyntaxDefinitionJson()` / `.Query().HasSyntaxDefinition()` |
 | `diffMode` | `EmbeddedFormatEntry.DiffMode` / `.Query().WithDiffMode()` |
-| `QualityMetrics.CompletenessScore` | `EmbeddedFormatEntry.QualityScore` / `.Query().WithMinQuality()` |
-| `forensic` | `entry.GetForensicSummary(catalog)` / `entry.IsHighRisk(catalog)` |
+| `qualityMetrics.completenessScore` | `EmbeddedFormatEntry.QualityScore` / `.Query().WithMinQuality()` |
+| `variables` | `WhfmtVariableParser.BuildStore(json)` → `WhfmtVariableStore` |
+| `functions` | feeds `WhfmtFunctionRegistry` (built-ins + user-defined) |
+| `assertions` | `entry.GetAssertions(catalog)` + `FormatAssertionEvaluator.EvaluateAll` |
+| `forensic` | `entry.GetForensicSummary(catalog)` / `.IsHighRisk(catalog)` |
 | `aiHints` | `entry.GetAiHints(catalog)` |
 | `navigation.bookmarks` | `entry.GetNavigationBookmarks(catalog)` |
-| `assertions` | `entry.GetAssertions(catalog)` |
 | `inspector.groups` | `entry.GetInspectorGroups(catalog)` |
 | `exportTemplates` | `entry.GetExportTemplates(catalog)` |
-| `TechnicalDetails` | `entry.GetTechnicalDetails(catalog)` / `entry.SupportsEncryption(catalog)` |
+| `technicalDetails` | `entry.GetTechnicalDetails(catalog)` / `.SupportsEncryption(catalog)` |
+| `diff` | `entry.GetDiffConfig(catalog)` (consumed by `whfmt.Analysis`) |
+| `fuzz` | `entry.GetFuzzConfig(catalog)` (consumed by `whfmt.Fuzz`) |
+| `repair` / `checksums` | `entry.GetRepairs(catalog)` / `.GetChecksums(catalog)` |
+| `formatRelationships` | `entry.GetFormatRelationships(catalog)` |
+| `software` / `useCases` / `references` | `entry.GetSoftware/UseCases/References(catalog)` |
 
 ### Validating your own .whfmt files
 
@@ -1377,4 +1119,85 @@ string? schema = EmbeddedFormatCatalog.Instance.GetSchemaJson(SchemaName.Whfmt);
 // Pass to JsonSchema.Net, Newtonsoft.Json.Schema, or any JSON Schema validator
 ```
 
-The embedded schema (`whfmt.schema.json`) is the authoritative v2.4 schema used internally to validate all 790+ bundled definitions at build time.
+The embedded schema (`whfmt.schema.json`) is the authoritative v3 schema. The canonical
+draft lives in the repo at `Sources/Docs/whfmt-v3/whfmt-schema-canonical-v3.json`.
+
+### Canonical category list (29 + Other)
+
+```
+3D, Archives, Audio, CAD, Certificates, Crypto, Data, Database, Disk,
+Documents, Executables, Firmware, Fonts, GIS, Game, Images, IoT,
+MachineLearning, Medical, Network, Programming, RomHacking, Science,
+Subtitles, Synalysis, System, Text, Video, Virtualization, Other
+```
+
+---
+
+## Companion NuGet Packages
+
+The catalog is the ground truth. Several companion packages consume it for higher-level tasks:
+
+| Package | Version | Role |
+|---|---|---|
+| `whfmt.FileFormatCatalog` | 1.3.2 | This package — catalog + expression engine + utilities |
+| `whfmt.Analysis` | 1.1.1 | Field-level semantic diff between two binary files using `diff` blocks |
+| `whfmt.Fuzz` | 1.1.1 | Format-aware mutation engine driven by `fuzz` strategies |
+| `whfmt.CodeGen` | 1.1.2 | Generates strongly-typed parsers (C# / F# / Rust / VB.NET) from `.whfmt` |
+| `whfmt.Validate` | 1.0.0 | `dotnet tool install -g whfmt.Validate` — `validate`, `list`, `info`, `repair`, `lint-expressions` CLI |
+| `WpfHexEditor.Core.ByteProvider` | 1.1.1 | Cross-platform byte provider + undo/search engine |
+| `WpfHexEditor.Core.BinaryAnalysis` | 1.0.1 | Entropy / data inspector / Intel HEX / S-Record / 010 templates |
+
+All companion packages depend on `whfmt.FileFormatCatalog ≥ 1.3.2`.
+
+---
+
+## Migration from v2.x
+
+### Drop-in upgrade
+
+`v1.3.x` is wire-compatible with `v1.2.x` for the public API surface. The only
+breaking change since v1.2.0 is:
+
+- **`WhfmtExprNode` and AST records are now `internal`** — if you depended on them
+  directly (unlikely), migrate to `WhfmtExpressionEvaluator.Evaluate(string)` which
+  returns `object?`. This was an intentional decoupling so the parser/evaluator can
+  evolve without ABI breaks.
+
+### PascalCase → camelCase normalisation
+
+If you load `.whfmt` files from disk (not from the embedded catalog), the deprecated
+PascalCase root keys (`QualityMetrics`, `MimeTypes`, `Strength`, `EntropyHint`,
+`MinimumScore`, `Software`, `UseCases`, `TechnicalDetails`) are still accepted via
+`WhfmtVersionMigrator`. To future-proof, run the migrator manually:
+
+```csharp
+using WpfHexEditor.Core.Definitions.Models;
+
+string oldJson = File.ReadAllText("legacy.whfmt");
+string v3Json  = WhfmtVersionMigrator.Migrate(oldJson);
+// Or preview the renames without applying:
+IReadOnlyList<string> renames = WhfmtVersionMigrator.DryRun(oldJson);
+```
+
+`v4` will remove these aliases. Plan accordingly.
+
+### Schema v3 highlights vs v2.4/v2.5
+
+| Concept | v2.x | v3 |
+|---|---|---|
+| Root key case | mixed (PascalCase + camelCase) | **camelCase only** (PascalCase deprecated) |
+| `formatId` | not required | **required** + unique across catalog |
+| Categories | 19 in schema enum | **29 + Other** (matches on-disk dirs) |
+| Block types | open string | **15 known types** (signature/field/header/data/conditional/computeFromVariables/loop/repeating/action/sentinel/union/nested/pointer/bitfield/metadata) |
+| `valueType` | mixed with endianness suffix (`uint32be`) | **base type + `endianness` field** (`{ "valueType": "uint32", "endianness": "big" }`) |
+| Variables | dict form only | dict **or** typed array (preferred) |
+| Functions | doc-string only | **executable descriptors** (params, returns, body, builtIn) |
+| Assertions | doc-string only | **evaluated at runtime** via expression engine |
+| Detection | `matchMode` informal | normalised to `any | best | all`, with `minimumScore`, `minFileSize`, `discriminator` |
+| Negative offsets | undefined behaviour | **supported** (offset-from-end convention) |
+
+---
+
+## License
+
+GNU AGPL v3.0 — see [LICENSE.txt](https://github.com/abbaye/WpfHexEditorIDE/blob/master/LICENSE.txt).
