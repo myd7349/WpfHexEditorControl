@@ -327,7 +327,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         {
             var fields = new System.Collections.Generic.List<ParsedFieldViewModel>();
 
-            void Add(string name, string? value, string icon = "â„¹", string? desc = null)
+            void Add(string name, string? value, string icon = "ℹ", string? desc = null)
             {
                 if (string.IsNullOrWhiteSpace(value) || value == "N/A") return;
                 fields.Add(new ParsedFieldViewModel
@@ -344,27 +344,27 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
                 });
             }
 
-            Add("Category",      _enrichedVm.FormatCategory,          "ðŸ·");
-            Add("MIME Types",    _enrichedVm.MimeTypesDisplay,         "ðŸ“„");
-            Add("Extensions",    _enrichedVm.ExtensionsDisplay,        "ðŸ”–");
-            Add("Software",      _enrichedVm.SoftwareDisplay,          "ðŸ’¾");
-            Add("Use Cases",     _enrichedVm.UseCasesDisplay,          "ðŸ“‹");
-            Add("Doc Level",     _enrichedVm.DocumentationLevel,       "ðŸ“š");
-            Add("Quality",       _enrichedVm.CompletenessScoreDisplay, "â­");
+            Add("Category",      _enrichedVm.FormatCategory,          "🏷");
+            Add("MIME Types",    _enrichedVm.MimeTypesDisplay,         "📄");
+            Add("Extensions",    _enrichedVm.ExtensionsDisplay,        "🔖");
+            Add("Software",      _enrichedVm.SoftwareDisplay,          "💾");
+            Add("Use Cases",     _enrichedVm.UseCasesDisplay,          "📋");
+            Add("Doc Level",     _enrichedVm.DocumentationLevel,       "📚");
+            Add("Quality",       _enrichedVm.CompletenessScoreDisplay, "⭐");
             if (_enrichedVm.HasDetectionInfo)
-                Add("Signature", _enrichedVm.SignatureHex,             "ðŸ”", "Magic bytes");
+                Add("Signature", _enrichedVm.SignatureHex,             "🔏", "Magic bytes");
             if (_enrichedVm.HasRelatedFormats)
-                Add("Related",   _enrichedVm.RelatedFormatsDisplay,    "ðŸ”—");
+                Add("Related",   _enrichedVm.RelatedFormatsDisplay,    "🔗");
             if (_enrichedVm.HasTechnicalDetails)
-                Add("Technical", _enrichedVm.TechnicalSummary,         "âš™");
+                Add("Technical", _enrichedVm.TechnicalSummary,         "⚙");
             if (_enrichedVm.HasSpecifications)
-                Add("Specs",      _enrichedVm.SpecificationsDisplay,                           "ðŸ“‘");
+                Add("Specs",      _enrichedVm.SpecificationsDisplay,                           "📑");
             if (_enrichedVm.HasWebLinks)
-                Add("References", string.Join(" Â· ", _enrichedVm.WebLinks.Select(u =>
+                Add("References", string.Join(" · ", _enrichedVm.WebLinks.Select(u =>
                 {
                     if (Uri.TryCreate(u, UriKind.Absolute, out var uri)) return uri.Host;
-                    return u.Length > 40 ? u[..37] + "â€¦" : u;
-                })), "ðŸŒ");
+                    return u.Length > 40 ? u[..37] + "…" : u;
+                })), "🌐");
 
             if (_enrichedVm.HasNavigationStructure)
                 Add("Structure",   _enrichedVm.NavigationStructure, "🧭", "Ordered top-level sections");  // 🧭
@@ -2235,7 +2235,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             foreach (var field in ParsedFields)
             {
                 var indent = new string(' ', field.IndentLevel * 2);
-                var bookmark = field.IsBookmarked ? "â­ " : "";
+                var bookmark = field.IsBookmarked ? "⭐ " : "";
                 var name = EscapeMarkdown(field.Name);
                 var value = EscapeMarkdown(field.FormattedValue);
                 var type = EscapeMarkdown(field.ValueType);
