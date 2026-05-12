@@ -36,6 +36,25 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
     // -- Lazy cache ------------------------------------------------------------
     private IReadOnlySet<EmbeddedFormatEntry> Entries => LazyInitializer.EnsureInitialized(ref field, () => MakeEntries());
     private IReadOnlySet<string> Categories => LazyInitializer.EnsureInitialized(ref field, () => MakeCategories(Entries));
+    private IReadOnlyDictionary<string, EmbeddedFormatEntry> ByName =>
+        LazyInitializer.EnsureInitialized(ref field, () => BuildByName(Entries));
+    private IReadOnlyDictionary<string, EmbeddedFormatEntry> ByFormatId =>
+        LazyInitializer.EnsureInitialized(ref field, () => BuildByFormatId(Entries));
+
+    private static IReadOnlyDictionary<string, EmbeddedFormatEntry> BuildByName(IReadOnlySet<EmbeddedFormatEntry> entries)
+    {
+        var dict = new Dictionary<string, EmbeddedFormatEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var e in entries) dict.TryAdd(e.Name, e);
+        return dict;
+    }
+
+    private static IReadOnlyDictionary<string, EmbeddedFormatEntry> BuildByFormatId(IReadOnlySet<EmbeddedFormatEntry> entries)
+    {
+        var dict = new Dictionary<string, EmbeddedFormatEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var e in entries)
+            if (!string.IsNullOrEmpty(e.FormatId)) dict.TryAdd(e.FormatId, e);
+        return dict;
+    }
 
     /// <summary>
     /// Thread-safe cache: embedded resource key → raw JSON text.
@@ -143,6 +162,16 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         return GetAll().FirstOrDefault(e =>
             e.Extensions.Any(x => x.Equals(ext, StringComparison.OrdinalIgnoreCase)));
     }
+
+    /// <inheritdoc/>
+    public EmbeddedFormatEntry? GetByName(string name)
+        => string.IsNullOrEmpty(name) ? null
+         : ByName.TryGetValue(name, out var e) ? e : null;
+
+    /// <inheritdoc/>
+    public EmbeddedFormatEntry? GetByFormatId(string formatId)
+        => string.IsNullOrEmpty(formatId) ? null
+         : ByFormatId.TryGetValue(formatId, out var e) ? e : null;
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetCompatibleEditorIds(string filePath)

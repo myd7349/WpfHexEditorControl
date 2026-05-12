@@ -28,7 +28,7 @@ namespace WpfHexEditor.Tests.Unit
         public void Software_StringArray_IsRead()
         {
             // ROM_GBC declares Software as a string array (e.g. "BGB", "Gambatte", ...).
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var sw = gbc.GetSoftware(Cat);
             Assert.IsTrue(sw.Count > 0, "ROM_GBC should declare at least one software");
@@ -40,7 +40,7 @@ namespace WpfHexEditor.Tests.Unit
         public void Software_ObjectArray_IsRead()
         {
             // A_OUT declares "software" (camelCase) as array of {name,url,role} objects.
-            var aout = Cat.Query().WithFormatId("A_OUT").First();
+            var aout = Cat.GetByFormatId("A_OUT");
             Assert.IsNotNull(aout);
             var sw = aout.GetSoftware(Cat);
             Assert.IsTrue(sw.Count > 0, "A_OUT should declare software entries");
@@ -54,7 +54,7 @@ namespace WpfHexEditor.Tests.Unit
         [TestMethod]
         public void UseCases_ReadsPascalCase()
         {
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var uc = gbc.GetUseCases(Cat);
             Assert.IsTrue(uc.Count > 0, "ROM_GBC should declare use cases");
@@ -66,7 +66,7 @@ namespace WpfHexEditor.Tests.Unit
         public void References_NamedObjectSchema_IsRead()
         {
             // ROM_GBC declares references as { specifications: [...], WebLinks: [...] }
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var refs = gbc.GetReferences(Cat);
             Assert.IsTrue(refs.Count > 0);
@@ -79,7 +79,7 @@ namespace WpfHexEditor.Tests.Unit
         public void References_StringArraySchema_IsRead()
         {
             // A_OUT declares references as a flat string array (all entries are URLs).
-            var aout = Cat.Query().WithFormatId("A_OUT").First();
+            var aout = Cat.GetByFormatId("A_OUT");
             Assert.IsNotNull(aout);
             var refs = aout.GetReferences(Cat);
             Assert.IsTrue(refs.Count > 0);
@@ -92,7 +92,7 @@ namespace WpfHexEditor.Tests.Unit
         public void References_MixedStringArray_DistinguishesUrls()
         {
             // ANALYZE.whfmt has a mix: "Analyze 7.5 Format Specification (Mayo Clinic BIR)" + URL.
-            var analyze = Cat.Query().WithFormatId("ANALYZE").First();
+            var analyze = Cat.GetByFormatId("ANALYZE");
             Assert.IsNotNull(analyze);
             var refs = analyze.GetReferences(Cat);
             Assert.IsTrue(refs.Any(r => r.IsWebLink));
@@ -105,7 +105,7 @@ namespace WpfHexEditor.Tests.Unit
         public void FormatRelationships_ArraySchema_IsRead()
         {
             // A_OUT uses the array-of-objects schema (format/relationship).
-            var aout = Cat.Query().WithFormatId("A_OUT").First();
+            var aout = Cat.GetByFormatId("A_OUT");
             Assert.IsNotNull(aout);
             var rel = aout.GetFormatRelationships(Cat);
             Assert.IsTrue(rel.Count > 0);
@@ -116,7 +116,7 @@ namespace WpfHexEditor.Tests.Unit
         public void FormatRelationships_DictSchema_IsRead()
         {
             // ROM_GBC uses the dict schema { category, extensions, relatedFormats: [...] }.
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var rel = gbc.GetFormatRelationships(Cat);
             // category and extensions are skipped; relatedFormats values are emitted.
@@ -130,7 +130,7 @@ namespace WpfHexEditor.Tests.Unit
         public void InspectorHeader_BadgeAndPrimaryField_AreRead()
         {
             // ROM_GBC declares badge="title", primaryField="cgbFlag", showQualityScore=true.
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var hdr = gbc.GetInspectorHeader(Cat);
             Assert.IsNotNull(hdr);
@@ -145,7 +145,7 @@ namespace WpfHexEditor.Tests.Unit
         public void NavigationOverview_EntryPointAndStructure_AreRead()
         {
             // A_OUT declares { entryPoint: "Header", structure: [...], notes: "..." }.
-            var aout = Cat.Query().WithFormatId("A_OUT").First();
+            var aout = Cat.GetByFormatId("A_OUT");
             Assert.IsNotNull(aout);
             var nav = aout.GetNavigationOverview(Cat);
             Assert.IsNotNull(nav);
@@ -160,7 +160,7 @@ namespace WpfHexEditor.Tests.Unit
         public void ForensicNotes_AreRead()
         {
             // A_OUT declares forensic.notes describing rootkit suspicion.
-            var aout = Cat.Query().WithFormatId("A_OUT").First();
+            var aout = Cat.GetByFormatId("A_OUT");
             Assert.IsNotNull(aout);
             var notes = aout.GetForensicNotes(Cat);
             Assert.IsFalse(string.IsNullOrEmpty(notes));

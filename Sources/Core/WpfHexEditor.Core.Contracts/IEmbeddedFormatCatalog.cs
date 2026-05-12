@@ -203,6 +203,24 @@ public interface IEmbeddedFormatCatalog
     EmbeddedFormatEntry? GetByExtension(string extension);
 
     /// <summary>
+    /// O(1) lookup by <see cref="EmbeddedFormatEntry.Name"/> (case-insensitive).
+    /// Default implementation falls back to a linear scan for legacy implementations;
+    /// <see cref="EmbeddedFormatCatalog"/> overrides with a dictionary lookup.
+    /// </summary>
+    EmbeddedFormatEntry? GetByName(string name)
+        => GetAll().FirstOrDefault(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// O(1) lookup by <see cref="EmbeddedFormatEntry.FormatId"/> (case-insensitive).
+    /// Default implementation falls back to a linear scan for legacy implementations;
+    /// <see cref="EmbeddedFormatCatalog"/> overrides with a dictionary lookup.
+    /// </summary>
+    EmbeddedFormatEntry? GetByFormatId(string formatId)
+        => GetAll().FirstOrDefault(e =>
+            !string.IsNullOrEmpty(e.FormatId) &&
+            e.FormatId.Equals(formatId, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
     /// Returns the set of editor factory IDs that are semantically compatible with
     /// <paramref name="filePath"/> based on its whfmt format entry.
     /// <para>

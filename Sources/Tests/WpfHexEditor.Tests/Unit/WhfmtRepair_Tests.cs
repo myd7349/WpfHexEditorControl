@@ -22,7 +22,7 @@ namespace WpfHexEditor.Tests.Unit
         public void Repair_ROM_GBC_DeclaresHeaderChecksumFix()
         {
             // ROM_GBC.whfmt declares one repair: FixHeaderChecksum.
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var repairs = gbc.GetRepairs(Cat);
             Assert.IsTrue(repairs.Count >= 1, "ROM_GBC should declare at least one repair");

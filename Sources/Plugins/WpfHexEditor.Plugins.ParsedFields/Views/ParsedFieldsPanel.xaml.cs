@@ -283,7 +283,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             if (string.IsNullOrEmpty(formatName)) return;
 
             var catalog = EmbeddedFormatCatalog.Instance;
-            var entry   = catalog.Query().WithName(formatName).First();
+            var entry   = catalog.GetByName(formatName);
             if (entry is null) return;
 
             var (hdr, nav, forensic) = entry.GetDocumentationBundle(catalog);

@@ -238,7 +238,7 @@ public sealed class WhfmtFormatDetailVm : ViewModelBase
             // Piste A — documentary fields from the v3 extension methods.
             // The embedded catalog can resolve by name; user-loaded formats won't
             // have an EmbeddedFormatEntry and are skipped (empty lists).
-            var entry = embCatalog.Query().WithName(item.Name).First();
+            var entry = embCatalog.GetByName(item.Name);
             if (entry is not null)
             {
                 SoftwareDisplay      = entry.GetSoftware(embCatalog);
@@ -277,7 +277,7 @@ public sealed class WhfmtFormatDetailVm : ViewModelBase
 
         // For user formats there's no resource key — try file path via FindFormat
         // For built-in formats, IEmbeddedFormatCatalog.GetJson(resourceKey) is the source
-        var entry = emb.Query().WithName(Name).First();
+        var entry = emb.GetByName(Name);
         if (entry?.ResourceKey is not null)
         {
             RawJson = emb.GetJson(entry.ResourceKey);

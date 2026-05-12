@@ -23,7 +23,7 @@ namespace WpfHexEditor.Tests.Unit
         [TestMethod]
         public void Diff_ROM_GBC_DeclaresKeyAndIgnoreFields()
         {
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var diff = gbc.GetDiffConfig(Cat);
             Assert.IsNotNull(diff);
@@ -60,7 +60,7 @@ namespace WpfHexEditor.Tests.Unit
         [TestMethod]
         public void Fuzz_ROM_GBC_DeclaresStrategies()
         {
-            var gbc = Cat.Query().WithFormatId("ROM_GBC").First();
+            var gbc = Cat.GetByFormatId("ROM_GBC");
             Assert.IsNotNull(gbc);
             var fuzz = gbc.GetFuzzConfig(Cat);
             Assert.IsNotNull(fuzz);
