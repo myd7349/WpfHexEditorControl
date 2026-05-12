@@ -4,13 +4,16 @@
 
 .DESCRIPTION
   Rules:
-    R1 whfmt-jsonc-parse      (ERR)  JSONC parse, /* */ header tolerated
-    R2 whfmt-version-monotone (ERR)  version >= HEAD version
-    R3 whfmt-schema-required  (ERR)  formatName/formatId/extensions/category/description
-    R4 whfmt-id-uniqueness    (ERR)  formatId unique across catalog
-    R5 whfmt-magic-collision  (WARN) sig+offset+ext overlap with another file
-    R6 whfmt-strength-enum    (WARN) detection.strength in allowed set
-    R7 whfmt-placeholder-drift(WARN) {{var}} not in variables{}
+    R1  whfmt-jsonc-parse      (ERR)  JSONC parse, /* */ header tolerated
+    R2  whfmt-version-monotone (ERR)  version >= HEAD version
+    R3  whfmt-schema-required  (ERR)  formatName/formatId/extensions/category/description
+    R4  whfmt-id-uniqueness    (ERR)  formatId unique across catalog
+    R5  whfmt-magic-collision  (WARN) sig+offset+ext overlap with another file
+    R6  whfmt-strength-enum    (WARN) detection.strength in allowed set
+    R7  whfmt-placeholder-drift(WARN) {{var}} not in variables{}
+    R10 whfmt-expression-refs  (WARN) expression references undeclared identifier
+                                       (lightweight identifier-scan; full AST
+                                       validation lives in C# whfmt.Validate)
 
   Exit code = ERR count (0 if WARN-only).
 #>
@@ -40,6 +43,20 @@ if (-not (Test-Path $CatalogRoot)) {
 
 $AllowedStrengths = @('None','Weak','Medium','Strong','VeryStrong')
 $RequiredFields   = @('formatName','formatId','extensions','category','description')
+
+# R10 — built-in functions + reserved keywords known to the whfmt expression engine.
+# Identifiers in expressions that are NOT in this set AND not declared in
+# variables{} / functions{} are flagged.
+$ExprBuiltins = @(
+    # built-in functions registered in WhfmtBuiltinFunctions
+    'min','max','abs','length','hex','toUpper','toLower',
+    # string instance methods (called as receiver.method())
+    'startsWith','endsWith','includes','contains','trim',
+    # literal keywords
+    'true','false','null',
+    # member accessor (e.g. someString.length) — already covered by 'length' above
+    'length'
+)
 
 $findings = New-Object System.Collections.Generic.List[object]
 function Add-Finding($sev, $rule, $file, $detail) {
@@ -246,9 +263,22 @@ foreach ($path in $targets) {
     }
 
     # R7 — placeholder drift
+    # Variables can come in two schemas:
+    #   - dict   : { "magic": "" }                 → names are property names
+    #   - typed[]: [ { "name": "magic", ... } ]    → names are .name of each item
     $declared = @()
     if ((Test-Prop $parsed 'variables') -and $parsed.variables) {
-        $declared = Get-PropNames $parsed.variables
+        $vars = $parsed.variables
+        if ($vars -is [System.Collections.IEnumerable] -and -not ($vars -is [string]) -and -not ($vars -is [System.Collections.IDictionary]) -and -not ($vars -is [psobject] -and $vars.PSObject.Properties.Count -gt 0 -and -not ($vars -is [System.Array]))) {
+            # Likely typed-array: iterate elements and pull .name
+            foreach ($v in @($vars)) {
+                if ((Test-Prop $v 'name') -and $v.name) { $declared += [string]$v.name }
+            }
+        }
+        if ($declared.Count -eq 0) {
+            # Fall back to dict-schema: property names
+            $declared = Get-PropNames $vars
+        }
     }
     $texts = @()
     if ((Test-Prop $parsed 'description') -and $parsed.description) {
@@ -270,6 +300,91 @@ foreach ($path in $targets) {
     foreach ($v in $referenced) {
         if ($declared -notcontains $v) {
             Add-Finding 'WARN' 'whfmt-placeholder-drift' $rel "{{$v}} referenced but not declared in variables{}"
+        }
+    }
+
+    # R10 — expression identifier references (lightweight scan).
+    # Walks every expression-bearing string in the .whfmt and flags identifiers
+    # that are NOT in the declared variables{}, functions{} keys, or the built-in
+    # set $ExprBuiltins. Full AST validation lives in C# WhfmtExpressionValidator
+    # (whfmt.Validate / Models/Validation) — this PowerShell pass is the fast
+    # pre-commit gate. Severity = WARN to avoid breaking the build on legitimate
+    # member accesses we can't statically resolve (e.g. dynamic byte[] indexing).
+    $declaredFns = @()
+    if ((Test-Prop $parsed 'functions') -and $parsed.functions) {
+        $declaredFns = Get-PropNames $parsed.functions
+    }
+    $known = @{}
+    foreach ($n in $declared)     { $known[$n] = $true }
+    foreach ($n in $declaredFns)  { $known[$n] = $true }
+    foreach ($n in $ExprBuiltins) { $known[$n] = $true }
+
+    # Heuristic: a string is "prose" (not an expression) when it contains words
+    # separated only by whitespace, with no operator characters at all. We skip
+    # prose to avoid false positives — many forensic suspiciousPatterns[].condition
+    # fields in the catalog are English descriptions, not executable conditions.
+    function Test-LooksLikeExpression([string]$s) {
+        if (-not $s) { return $false }
+        # Must contain at least one operator typical of expressions (== != < > && || + - * etc.).
+        # Plain : alone is too weak (HTTP headers in prose use it).
+        $hasOp = ($s -match '==|!=|<=|>=|<<|>>|&&|\|\||[<>+\-*/%^~?()\[\]]|(?<![A-Za-z])(?:&|\|)(?![A-Za-z])')
+        if (-not $hasOp) { return $false }
+        # Reject prose: 4+ ASCII words separated by spaces with no operator between them.
+        # Heuristic: ratio of letters to operators. If letters >> ops by 20× and word count high, treat as prose.
+        $letters = ([regex]::Matches($s, '[A-Za-z]')).Count
+        $opChars = ([regex]::Matches($s, '[=<>!&|+\-*/%^~?()\[\]]')).Count
+        if ($opChars -eq 0) { return $false }
+        if ($letters -gt 80 -and ($letters / [Math]::Max($opChars,1)) -gt 25) { return $false }
+        return $true
+    }
+
+    function Get-ExprStrings($p) {
+        $out = @()
+        if ((Test-Prop $p 'assertions') -and $p.assertions) {
+            foreach ($a in @($p.assertions)) {
+                if ((Test-Prop $a 'expression') -and $a.expression) {
+                    $out += [pscustomobject]@{ Src=[string]$a.expression; Path='assertions[].expression' }
+                }
+            }
+        }
+        if ((Test-Prop $p 'blocks') -and $p.blocks) {
+            foreach ($b in @($p.blocks)) {
+                if ((Test-Prop $b 'expression') -and $b.expression) {
+                    $out += [pscustomobject]@{ Src=[string]$b.expression; Path='blocks[].expression' }
+                }
+                if ((Test-Prop $b 'condition') -and $b.condition) {
+                    $out += [pscustomobject]@{ Src=[string]$b.condition; Path='blocks[].condition' }
+                }
+            }
+        }
+        if ((Test-Prop $p 'forensic') -and $p.forensic -and (Test-Prop $p.forensic 'suspiciousPatterns')) {
+            foreach ($s in @($p.forensic.suspiciousPatterns)) {
+                if ($s -is [psobject] -and (Test-Prop $s 'condition') -and $s.condition) {
+                    # Skip prose-style conditions to avoid drowning the report
+                    # in false positives from documentary entries.
+                    if (Test-LooksLikeExpression $s.condition) {
+                        $out += [pscustomobject]@{ Src=[string]$s.condition; Path='forensic.suspiciousPatterns[].condition' }
+                    }
+                }
+            }
+        }
+        return $out
+    }
+
+    foreach ($expr in (Get-ExprStrings $parsed)) {
+        # Strip string literals so identifiers inside quotes don't false-positive.
+        $src = $expr.Src
+        $stripped = [regex]::Replace($src, "'(?:[^'\\]|\\.)*'", "''")
+        $stripped = [regex]::Replace($stripped, '"(?:[^"\\]|\\.)*"', '""')
+        # Skip member accesses (right side of a dot): identifier preceded by '.'
+        # is a method/property on the receiver and resolved at eval time.
+        $reported = @{}
+        foreach ($m in [regex]::Matches($stripped, '(?<![.\w])([A-Za-z_][A-Za-z0-9_]*)')) {
+            $id = $m.Groups[1].Value
+            if ($known.ContainsKey($id)) { continue }
+            if ($reported.ContainsKey($id)) { continue }
+            $reported[$id] = $true
+            Add-Finding 'WARN' 'whfmt-expression-refs' $rel ("{0}: '{1}' not declared in variables{{}} / functions{{}} / builtins" -f $expr.Path, $id)
         }
     }
     } catch {
