@@ -178,8 +178,10 @@ public static class FormatMatcher
             try { bytes = Convert.FromHexString(sig.Value); }
             catch (FormatException) { continue; }
 
-            if (sig.Offset + bytes.Length > header.Length) continue;
-            if (header.Slice(sig.Offset, bytes.Length).SequenceEqual(bytes))
+            // Negative offset = relative from end of file (e.g. -4 means "last 4 bytes").
+            int absOffset = sig.Offset < 0 ? header.Length + sig.Offset : sig.Offset;
+            if (absOffset < 0 || absOffset + bytes.Length > header.Length) continue;
+            if (header.Slice(absOffset, bytes.Length).SequenceEqual(bytes))
             {
                 matched++;
                 score += sig.Weight;
