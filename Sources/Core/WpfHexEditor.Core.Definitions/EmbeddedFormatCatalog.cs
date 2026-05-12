@@ -272,6 +272,7 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         var root = doc.RootElement;
 
         var name        = GetString(root, "formatName") ?? ExtractNameFromKey(resourceKey);
+        var formatId    = GetString(root, "formatId")   ?? "";
         var description = GetString(root, "description") ?? "";
         var category    = GetString(root, "category")    ?? ExtractCategoryFromKey(resourceKey);
         var version     = GetString(root, "version")     ?? "";
@@ -319,25 +320,38 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
             foreach (var m in mt.EnumerateArray())
                 if (m.GetString() is { } ms) mimeTypes.Add(ms);
 
-        // Signatures (detection.signatures)
+        // Signatures: prefer new schema (detection.signatures[]), fall back to legacy
+        // single-signature schema (detection.signature/offset/weight) — normalized into
+        // the same FormatSignature list so downstream consumers see a single shape.
         var signatures = new List<FormatSignature>();
-        if (root.TryGetProperty("detection", out var det2) &&
-            det2.TryGetProperty("signatures", out var sigs) &&
-            sigs.ValueKind == JsonValueKind.Array)
-            foreach (var sig in sigs.EnumerateArray())
+        if (root.TryGetProperty("detection", out var det2))
+        {
+            if (det2.TryGetProperty("signatures", out var sigs) && sigs.ValueKind == JsonValueKind.Array)
             {
-                var val    = sig.TryGetProperty("value",  out var v) ? v.GetString() ?? "" : "";
-                var off    = sig.TryGetProperty("offset", out var o) ? o.GetInt32()       : 0;
-                var weight = sig.TryGetProperty("weight", out var w) ? w.GetDouble()      : 1.0;
+                foreach (var sig in sigs.EnumerateArray())
+                {
+                    var val    = sig.TryGetProperty("value",  out var v) ? v.GetString() ?? "" : "";
+                    var off    = sig.TryGetProperty("offset", out var o) ? o.GetInt32()       : 0;
+                    var weight = sig.TryGetProperty("weight", out var w) ? w.GetDouble()      : 1.0;
+                    if (val.Length > 0) signatures.Add(new FormatSignature(val, off, weight));
+                }
+            }
+            else if (det2.TryGetProperty("signature", out var legacySig) && legacySig.ValueKind == JsonValueKind.String)
+            {
+                var val    = legacySig.GetString() ?? "";
+                var off    = det2.TryGetProperty("offset", out var o2) && o2.ValueKind == JsonValueKind.Number ? o2.GetInt32() : 0;
+                var weight = det2.TryGetProperty("weight", out var w2) && w2.ValueKind == JsonValueKind.Number ? w2.GetDouble() : 1.0;
                 if (val.Length > 0) signatures.Add(new FormatSignature(val, off, weight));
             }
+        }
 
         return new EmbeddedFormatEntry(
             resourceKey, name, category, description, extensions,
             quality, version, author, platform, preferredEditor,
             isTextFormat, hasSyntaxDef, diffMode,
             mimeTypes.Count > 0 ? mimeTypes : null,
-            signatures.Count > 0 ? signatures : null);
+            signatures.Count > 0 ? signatures : null,
+            formatId);
     }
 
     private static string? GetString(JsonElement root, string property)

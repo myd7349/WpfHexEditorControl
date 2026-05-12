@@ -125,6 +125,13 @@ public sealed class CatalogQuery
     public CatalogQuery WithName(string name)
         => Where(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Keeps only entries whose <c>formatId</c> matches <paramref name="formatId"/> (case-insensitive).
+    /// Added in P1 — stable identifier survives renames of the human-readable Name.
+    /// </summary>
+    public CatalogQuery WithFormatId(string formatId)
+        => Where(e => e.FormatId.Equals(formatId, StringComparison.OrdinalIgnoreCase));
+
     // ------------------------------------------------------------------
     // Full-text search
     // ------------------------------------------------------------------

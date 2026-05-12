@@ -139,7 +139,12 @@ public sealed record EmbeddedFormatEntry(
     /// <summary>MIME types declared in the .whfmt file (e.g. ["application/zip"]).</summary>
     IReadOnlyList<string>? MimeTypes = null,
     /// <summary>Magic byte signatures for binary detection. Each entry: hex value + byte offset.</summary>
-    IReadOnlyList<FormatSignature>? Signatures = null);
+    IReadOnlyList<FormatSignature>? Signatures = null,
+    /// <summary>
+    /// Canonical format identifier from the <c>formatId</c> field, e.g. "CSharp", "ROM_GBC".
+    /// Empty string when absent. Added in whfmt v3 (P1). Stable across renames of <see cref="Name"/>.
+    /// </summary>
+    string FormatId = "");
 
 /// <summary>
 /// Read-only catalog of the embedded format definitions shipped with the assembly.

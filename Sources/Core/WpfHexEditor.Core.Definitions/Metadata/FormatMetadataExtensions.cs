@@ -301,8 +301,13 @@ public static class FormatMetadataExtensions
         if (!ins.TryGetProperty("groups", out var groups) || groups.ValueKind != JsonValueKind.Array) return [];
         var list = new List<InspectorGroup>(groups.GetArrayLength());
         foreach (var g in groups.EnumerateArray())
-            list.Add(new InspectorGroup(Str(g, "title"), StrN(g, "icon"),
+        {
+            // P1: accept both "title" (legacy) and "name" (v3 canonical) for group label.
+            var title = Str(g, "title");
+            if (string.IsNullOrEmpty(title)) title = Str(g, "name");
+            list.Add(new InspectorGroup(title, StrN(g, "icon"),
                 g.TryGetProperty("fields", out var f) ? ReadStringArray(f) : []));
+        }
         return list;
     }
 
