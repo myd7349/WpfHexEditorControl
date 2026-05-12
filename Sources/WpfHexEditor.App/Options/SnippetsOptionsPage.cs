@@ -24,10 +24,15 @@ namespace WpfHexEditor.App.Options;
 /// <summary>IDE options page — user-defined Code Snippets.</summary>
 public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
 {
+    private const string DefaultTrigger  = "new";
+    private const string DefaultBody     = "$cursor";
+    private const string GlobalLanguage  = "*";
+
     private readonly UserSnippetStore _store;
     private readonly DataGrid         _grid;
     private readonly TextBox          _bodyEditor;
     private readonly ObservableCollection<StoredSnippet> _rows = [];
+    private string _lastPersistedSignature = string.Empty;
 
     public event EventHandler? Changed;
 
@@ -144,16 +149,17 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
                 Body        = s.Body,
                 Description = s.Description,
             });
+        _lastPersistedSignature = ComputeSignature(_rows);
     }
 
     private void OnAdd()
     {
         var snippet = new StoredSnippet
         {
-            LanguageId  = "*",
-            Trigger     = "new",
+            LanguageId  = GlobalLanguage,
+            Trigger     = DefaultTrigger,
             Description = CodeEditorResources.Snippets_Page_DefaultDescription,
-            Body        = "$cursor",
+            Body        = DefaultBody,
         };
         _rows.Add(snippet);
         _grid.SelectedItem = snippet;
@@ -180,9 +186,29 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
         if (_grid.SelectedItem is StoredSnippet selected)
             selected.Body = _bodyEditor.Text ?? string.Empty;
 
-        // Snapshot _rows up-front so concurrent UI edits during the (locked)
-        // disk write don't bleed half-mutated state into the store.
-        _store.ReplaceAll(_rows.ToList());
+        // CellEditEnding and LostFocus can both fire for the same user gesture.
+        // Compute a content signature and skip the disk write when nothing
+        // actually changed since the last persist.
+        var snapshot  = _rows.ToList();
+        var signature = ComputeSignature(snapshot);
+        if (signature == _lastPersistedSignature) return;
+
+        _store.ReplaceAll(snapshot);
+        _lastPersistedSignature = signature;
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static string ComputeSignature(IReadOnlyList<StoredSnippet> rows)
+    {
+        if (rows.Count == 0) return "0";
+        var sb = new System.Text.StringBuilder(rows.Count * 32);
+        foreach (var s in rows)
+        {
+            sb.Append(s.LanguageId).Append('')
+              .Append(s.Trigger).Append('')
+              .Append(s.Description).Append('')
+              .Append(s.Body).Append('');
+        }
+        return sb.ToString();
     }
 }
