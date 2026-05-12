@@ -264,45 +264,37 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         public void SetEnrichedFormat(FormatDefinition? format)
         {
             _enrichedVm.CurrentFormat = format;
-            // Piste A — surface the v3 documentary fields (Navigation/Inspector/Forensic.Notes)
-            // that aren't carried by the legacy FormatDefinition model. Resolved by name
-            // against the embedded catalog; user-loaded formats fall through silently.
             EnrichV3Fields(format?.FormatName);
             RemoveEnrichedFields();
             if (format != null)
                 InjectEnrichedFields();
         }
 
+        // Resolves the v3 documentary bundle (Navigation/Inspector/Forensic.Notes)
+        // that the legacy FormatDefinition doesn't carry. user-loaded formats and
+        // unknown names fall through to empty, which clears the VM.
         private void EnrichV3Fields(string? formatName)
         {
-            if (string.IsNullOrEmpty(formatName))
-            {
-                _enrichedVm.NavigationStructure = string.Empty;
-                _enrichedVm.NavigationNotes     = string.Empty;
-                _enrichedVm.InspectorBadge      = string.Empty;
-                _enrichedVm.ForensicNotes       = string.Empty;
-                return;
-            }
+            _enrichedVm.NavigationStructure = string.Empty;
+            _enrichedVm.NavigationNotes     = string.Empty;
+            _enrichedVm.InspectorBadge      = string.Empty;
+            _enrichedVm.ForensicNotes       = string.Empty;
+
+            if (string.IsNullOrEmpty(formatName)) return;
 
             var catalog = EmbeddedFormatCatalog.Instance;
             var entry   = catalog.Query().WithName(formatName).First();
-            if (entry is null)
+            if (entry is null) return;
+
+            var (hdr, nav, forensic) = entry.GetDocumentationBundle(catalog);
+            if (nav is not null)
             {
-                _enrichedVm.NavigationStructure = string.Empty;
-                _enrichedVm.NavigationNotes     = string.Empty;
-                _enrichedVm.InspectorBadge      = string.Empty;
-                _enrichedVm.ForensicNotes       = string.Empty;
-                return;
+                _enrichedVm.NavigationStructure = nav.Structure is { Count: > 0 } s
+                    ? string.Join(" → ", s) : string.Empty;
+                _enrichedVm.NavigationNotes = nav.Notes ?? string.Empty;
             }
-
-            var nav = entry.GetNavigationOverview(catalog);
-            _enrichedVm.NavigationStructure = nav?.Structure is { Count: > 0 } s ? string.Join(" → ", s) : string.Empty;
-            _enrichedVm.NavigationNotes     = nav?.Notes ?? string.Empty;
-
-            var hdr = entry.GetInspectorHeader(catalog);
-            _enrichedVm.InspectorBadge      = hdr?.Badge ?? string.Empty;
-
-            _enrichedVm.ForensicNotes       = entry.GetForensicNotes(catalog) ?? string.Empty;
+            if (hdr is not null) _enrichedVm.InspectorBadge = hdr.Badge ?? string.Empty;
+            if (forensic is not null) _enrichedVm.ForensicNotes = forensic;
         }
 
         /// <summary>
@@ -374,15 +366,14 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
                     return u.Length > 40 ? u[..37] + "â€¦" : u;
                 })), "ðŸŒ");
 
-            // Piste A — v3 fields from EmbeddedFormatCatalog extensions
             if (_enrichedVm.HasNavigationStructure)
-                Add("Structure",   _enrichedVm.NavigationStructure, "*", "Ordered top-level sections");
+                Add("Structure",   _enrichedVm.NavigationStructure, "🧭", "Ordered top-level sections");  // 🧭
             if (_enrichedVm.HasNavigationNotes)
-                Add("Nav Notes",   _enrichedVm.NavigationNotes,     "i");
+                Add("Nav Notes",   _enrichedVm.NavigationNotes,     "📝");                                 // 📝
             if (_enrichedVm.HasInspectorBadge)
-                Add("Badge Field", _enrichedVm.InspectorBadge,      "*", "Variable shown as inspector badge");
+                Add("Badge Field", _enrichedVm.InspectorBadge,      "🏷", "Variable shown as inspector badge"); // 🏷
             if (_enrichedVm.HasForensicNotes)
-                Add("Forensic",    _enrichedVm.ForensicNotes,       "!");
+                Add("Forensic",    _enrichedVm.ForensicNotes,       "🔍");                                 // 🔍
 
             // Insert in reverse so they stay in declaration order at the top
             for (int i = fields.Count - 1; i >= 0; i--)

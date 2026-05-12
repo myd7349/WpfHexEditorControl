@@ -51,7 +51,6 @@ namespace WpfHexEditor.Core.ViewModels
         private string _signatureHex;
         private string _offsetDisplay;
         private bool _isRequired;
-        // Piste A — v3 extensions surfaced from the embedded catalog.
         private string _navigationStructure  = string.Empty;
         private string _navigationNotes      = string.Empty;
         private string _inspectorBadge       = string.Empty;
@@ -257,9 +256,9 @@ namespace WpfHexEditor.Core.ViewModels
         public bool HasDetectionInfo => _currentFormat?.Detection != null &&
                                          !string.IsNullOrEmpty(_currentFormat.Detection.Signature);
 
-        // Piste A — surfaced from the v3 catalog extensions (Navigation/Inspector/Forensic.Notes).
-        // Populated by hosts that have IEmbeddedFormatCatalog access (Core doesn't reference
-        // Core.Definitions to avoid a cycle); the panel populates these via direct setters.
+        // Documentary fields surfaced from .whfmt navigation / inspector / forensic blocks.
+        // Populated externally by hosts with IEmbeddedFormatCatalog access; Core deliberately
+        // does not reference Core.Definitions to avoid a cycle, hence the host-driven setters.
         public string NavigationStructure
         {
             get => _navigationStructure;

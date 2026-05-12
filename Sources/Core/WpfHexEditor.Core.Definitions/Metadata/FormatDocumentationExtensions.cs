@@ -192,11 +192,7 @@ public static class FormatDocumentationExtensions
         this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
     {
         using var doc = JsonDocument.Parse(catalog.GetJson(entry.ResourceKey), WhfmtJsonOptions.Jsonc);
-        var root = doc.RootElement;
-        if (!root.TryGetProperty("inspector", out var ins) || ins.ValueKind != JsonValueKind.Object)
-            return null;
-        bool showQs = ins.TryGetProperty("showQualityScore", out var sqs) && sqs.ValueKind == JsonValueKind.True;
-        return new InspectorHeader(StrN(ins, "badge"), StrN(ins, "primaryField"), showQs);
+        return ReadInspectorHeader(doc.RootElement);
     }
 
     // ----- Navigation overview ------------------------------------------------
@@ -209,16 +205,7 @@ public static class FormatDocumentationExtensions
         this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
     {
         using var doc = JsonDocument.Parse(catalog.GetJson(entry.ResourceKey), WhfmtJsonOptions.Jsonc);
-        var root = doc.RootElement;
-        if (!root.TryGetProperty("navigation", out var nav) || nav.ValueKind != JsonValueKind.Object)
-            return null;
-        var entryPoint = StrN(nav, "entryPoint");
-        var notes      = StrN(nav, "notes");
-        var structure  = nav.TryGetProperty("structure", out var st) && st.ValueKind == JsonValueKind.Array
-            ? ReadStringArray(st)
-            : (IReadOnlyList<string>)[];
-        if (entryPoint is null && notes is null && structure.Count == 0) return null;
-        return new NavigationOverview(entryPoint, structure, notes);
+        return ReadNavigationOverview(doc.RootElement);
     }
 
     // ----- Forensic notes (A_OUT-style free-form string) ----------------------
@@ -231,7 +218,49 @@ public static class FormatDocumentationExtensions
         this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
     {
         using var doc = JsonDocument.Parse(catalog.GetJson(entry.ResourceKey), WhfmtJsonOptions.Jsonc);
+        return ReadForensicNotes(doc.RootElement);
+    }
+
+    // ----- Single-parse bundle (callers needing 2+ of the above) --------------
+
+    /// <summary>
+    /// Returns inspector header + navigation overview + forensic notes in a single
+    /// JSON parse. Use when a caller (e.g. the Parsed Fields panel) needs the
+    /// whole documentary bundle for one format — three times faster than calling
+    /// the individual <c>GetInspectorHeader</c> / <c>GetNavigationOverview</c> /
+    /// <c>GetForensicNotes</c> methods, which would re-parse the JSON each call.
+    /// </summary>
+    public static (InspectorHeader? Inspector, NavigationOverview? Navigation, string? ForensicNotes)
+        GetDocumentationBundle(this EmbeddedFormatEntry entry, IEmbeddedFormatCatalog catalog)
+    {
+        using var doc = JsonDocument.Parse(catalog.GetJson(entry.ResourceKey), WhfmtJsonOptions.Jsonc);
         var root = doc.RootElement;
+        return (ReadInspectorHeader(root), ReadNavigationOverview(root), ReadForensicNotes(root));
+    }
+
+    private static InspectorHeader? ReadInspectorHeader(JsonElement root)
+    {
+        if (!root.TryGetProperty("inspector", out var ins) || ins.ValueKind != JsonValueKind.Object)
+            return null;
+        bool showQs = ins.TryGetProperty("showQualityScore", out var sqs) && sqs.ValueKind == JsonValueKind.True;
+        return new InspectorHeader(StrN(ins, "badge"), StrN(ins, "primaryField"), showQs);
+    }
+
+    private static NavigationOverview? ReadNavigationOverview(JsonElement root)
+    {
+        if (!root.TryGetProperty("navigation", out var nav) || nav.ValueKind != JsonValueKind.Object)
+            return null;
+        var entryPoint = StrN(nav, "entryPoint");
+        var notes      = StrN(nav, "notes");
+        var structure  = nav.TryGetProperty("structure", out var st) && st.ValueKind == JsonValueKind.Array
+            ? ReadStringArray(st)
+            : (IReadOnlyList<string>)[];
+        if (entryPoint is null && notes is null && structure.Count == 0) return null;
+        return new NavigationOverview(entryPoint, structure, notes);
+    }
+
+    private static string? ReadForensicNotes(JsonElement root)
+    {
         if (!root.TryGetProperty("forensic", out var f)) return null;
         return StrN(f, "notes");
     }
