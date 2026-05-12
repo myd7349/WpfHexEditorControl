@@ -117,7 +117,8 @@ public sealed class CodeEditorFactory : IEditorFactory
     /// Builds the SnippetManager for <paramref name="language"/> by layering
     /// three tiers in increasing priority:
     ///  1. Built-in <see cref="DefaultSnippetPack"/> shipped with the IDE.
-    ///  2. <c>.whlang</c> language-specific snippets (override the defaults).
+    ///  2. <see cref="LanguageDefinition.Snippets"/> contributed by the
+    ///     language registration code (overrides the defaults).
     ///  3. User-defined snippets persisted in
     ///     <see cref="UserSnippetStore"/> (final override).
     /// </summary>

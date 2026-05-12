@@ -3,8 +3,8 @@
 // File: Snippets/DefaultSnippetPack.cs
 // Description:
 //     Built-in snippets shipped with the IDE. Loaded as the baseline tier
-//     by CodeEditorFactory before .whlang language-specific snippets and
-//     user-defined snippets (last-tier wins on trigger collisions).
+//     by CodeEditorFactory before LanguageDefinition.Snippets and the
+//     UserSnippetStore (last-tier wins on trigger collisions).
 //
 //     Bodies use $cursor to mark the final caret position and the
 //     ${Variable} tokens recognised by SnippetVariableExpander.
