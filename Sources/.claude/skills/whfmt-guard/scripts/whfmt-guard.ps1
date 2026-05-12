@@ -14,6 +14,10 @@
     R10 whfmt-expression-refs  (WARN) expression references undeclared identifier
                                        (lightweight identifier-scan; full AST
                                        validation lives in C# whfmt.Validate)
+    R11 whfmt-enum-values      (WARN) closed-set field has unrecognized value
+                                       (blocks[].type/.valueType, variables[].type,
+                                       assertions[].severity, detection.matchMode,
+                                       fuzz.strategies[].mutation, repair[].action)
 
   Exit code = ERR count (0 if WARN-only).
 #>
@@ -43,6 +47,33 @@ if (-not (Test-Path $CatalogRoot)) {
 
 $AllowedStrengths = @('None','Weak','Medium','Strong','VeryStrong')
 $RequiredFields   = @('formatName','formatId','extensions','category','description')
+
+# R11 — closed-set enum allow-lists. SYNC with the C# runtime contracts:
+#   blocks[].type            → StructureEditor/Models/BlockType (15 values)
+#   blocks[].valueType       → Models/WhfmtValueType (14 canonical + aliases)
+#   assertions[].severity    → Models/Validation/WhfmtIssueSeverity (mirrors error/warning/info)
+#   detection.matchMode      → EmbeddedFormatCatalog.DetectFromBytes
+#   fuzz.strategies[].mutation → Metadata/FormatDiffFuzzExtensions/FuzzMutation
+#   repair[].action          → Metadata/FormatRepairExtensions/RepairAction (free-form;
+#                              this allow-list is empirical from the catalog).
+$AllowedBlockTypes      = @('signature','field','metadata','header','data','conditional',
+                            'computeFromVariables','loop','repeating','action','sentinel',
+                            'union','nested','pointer','bitfield')
+$AllowedValueTypes      = @('uint8','uint16','uint32','uint64','int8','int16','int32','int64',
+                            'float32','float64','ascii','utf8','utf16le','utf16be','bytes','hex',
+                            # aliases recognized by WhfmtValueTypes.Parse:
+                            'u8','u16','u32','u64','i8','i16','i32','i64','f32','f64',
+                            'byte','ushort','uint','ulong','sbyte','short','int','long',
+                            'single','float','double','utf-8','utf-16le','utf-16be')
+$AllowedSeverities      = @('error','warning','info')
+$AllowedMatchModes      = @('any','best','all')
+$AllowedFuzzMutations   = @('corrupt_signature','enum_sweep','boundary_values',
+                            'bit_flip','overflow','random_bytes')
+# Empirical: actions observed in the catalog (grep "action": "X"). Add new values
+# here when the C# RepairAction interface gains support — the runtime accepts
+# any string today so this is a lint-level check, not a runtime contract.
+$AllowedRepairActions   = @('recompute_checksum','rebuild_index','set_value',
+                            'truncate','zero_field')
 
 # R10 — built-in functions + reserved keywords known to the whfmt expression engine.
 # Identifiers in expressions that are NOT in this set AND not declared in
@@ -158,6 +189,79 @@ function Get-ExprStrings($p) {
         }
     }
     return ,$out
+}
+
+# R11 — closed-set enum validation. Walks the parsed document and flags any
+# value found at a known-closed enum path that isn't in the canonical allow-list.
+# All comparisons are case-insensitive (-contains on lowercased value vs lowercased list).
+function Invoke-R11EnumCheck($parsed, $rel) {
+    function CheckOne([string]$value, [string]$path, $allowed, [string]$enumName) {
+        if (-not $value) { return }
+        if ($allowed -notcontains $value.ToLowerInvariant() -and $allowed -notcontains $value) {
+            $sample = if ($allowed.Count -gt 6) { ($allowed[0..5] -join ', ') + ', ...' } else { $allowed -join ', ' }
+            Add-Finding 'WARN' 'whfmt-enum-values' $rel ("{0}: '{1}' not in {2} allow-list ({3})" -f $path, $value, $enumName, $sample)
+        }
+    }
+
+    # blocks[].type and blocks[].valueType
+    if ((Test-Prop $parsed 'blocks') -and $parsed.blocks) {
+        $i = 0
+        foreach ($b in @($parsed.blocks)) {
+            if ((Test-Prop $b 'type')      -and $b.type)      { CheckOne ([string]$b.type)      "blocks[$i].type"      $AllowedBlockTypes 'BlockType' }
+            if ((Test-Prop $b 'valueType') -and $b.valueType) { CheckOne ([string]$b.valueType) "blocks[$i].valueType" $AllowedValueTypes 'ValueType' }
+            $i++
+        }
+    }
+
+    # variables[] typed-array — type field per item
+    if ((Test-Prop $parsed 'variables') -and ($parsed.variables -is [System.Array] -or
+        ($parsed.variables -is [System.Collections.IList] -and -not ($parsed.variables -is [System.Collections.IDictionary])))) {
+        $i = 0
+        foreach ($v in @($parsed.variables)) {
+            if ($v -is [psobject] -and (Test-Prop $v 'type') -and $v.type) {
+                CheckOne ([string]$v.type) "variables[$i].type" $AllowedValueTypes 'ValueType'
+            }
+            $i++
+        }
+    }
+
+    # assertions[].severity
+    if ((Test-Prop $parsed 'assertions') -and $parsed.assertions) {
+        $i = 0
+        foreach ($a in @($parsed.assertions)) {
+            if ((Test-Prop $a 'severity') -and $a.severity) {
+                CheckOne ([string]$a.severity) "assertions[$i].severity" $AllowedSeverities 'Severity'
+            }
+            $i++
+        }
+    }
+
+    # detection.matchMode
+    if ((Test-Prop $parsed 'detection') -and $parsed.detection -and (Test-Prop $parsed.detection 'matchMode')) {
+        CheckOne ([string]$parsed.detection.matchMode) 'detection.matchMode' $AllowedMatchModes 'MatchMode'
+    }
+
+    # fuzz.strategies[].mutation
+    if ((Test-Prop $parsed 'fuzz') -and $parsed.fuzz -and (Test-Prop $parsed.fuzz 'strategies')) {
+        $i = 0
+        foreach ($s in @($parsed.fuzz.strategies)) {
+            if ($s -is [psobject] -and (Test-Prop $s 'mutation') -and $s.mutation) {
+                CheckOne ([string]$s.mutation) "fuzz.strategies[$i].mutation" $AllowedFuzzMutations 'FuzzMutation'
+            }
+            $i++
+        }
+    }
+
+    # repair[].action
+    if ((Test-Prop $parsed 'repair') -and $parsed.repair) {
+        $i = 0
+        foreach ($r in @($parsed.repair)) {
+            if ($r -is [psobject] -and (Test-Prop $r 'action') -and $r.action) {
+                CheckOne ([string]$r.action) "repair[$i].action" $AllowedRepairActions 'RepairAction'
+            }
+            $i++
+        }
+    }
 }
 
 # R10 PowerShell fallback when the C# whfmt-validate binary isn't built. Same
@@ -389,6 +493,9 @@ foreach ($path in $targets) {
             Add-Finding 'WARN' 'whfmt-placeholder-drift' $rel "{{$v}} referenced but not declared in variables{}"
         }
     }
+
+    # R11 — closed-set enum validation (per-file).
+    Invoke-R11EnumCheck $parsed $rel
 
     # R10 PS fallback only (per-file scan). The C# binary path runs in a single
     # batched call AFTER the foreach loop — see post-loop section below.

@@ -54,6 +54,7 @@ regressions before they reach CI.
 | `whfmt-strength-enum`      | warn     | `detection.strength` not in {None, Weak, Medium, Strong, VeryStrong}. Prevents `SignatureStrength` converter surprises. |
 | `whfmt-placeholder-drift`  | warn     | `{{var}}` token used in `description` or `blocks[].description` but `var` not declared in `variables{}`. |
 | `whfmt-expression-refs`    | warn     | Identifier in `assertions[].expression`, `blocks[].expression`, `blocks[].condition`, or `forensic.suspiciousPatterns[].condition` is not in `variables{}` / `functions{}` / built-ins. Full AST validation lives in C# `WhfmtExpressionValidator`. |
+| `whfmt-enum-values`        | warn     | Closed-set field has an unrecognized value. Checks: `blocks[].type` (15 types), `blocks[].valueType` + `variables[].type` (canonical + aliases), `assertions[].severity` (error/warning/info), `detection.matchMode` (any/best/all), `fuzz.strategies[].mutation` (6 mutation kinds), `repair[].action`. Catches typos like `"fild"` for `"field"` or `"warn"` for `"warning"`. |
 
 ## What this skill does NOT do
 
