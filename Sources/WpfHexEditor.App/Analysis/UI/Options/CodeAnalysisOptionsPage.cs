@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
 using WpfHexEditor.App.Analysis.Models;
 using WpfHexEditor.App.Analysis.Services;
 using WpfHexEditor.Core.Options;
@@ -126,6 +128,11 @@ public sealed class CodeAnalysisOptionsPage : UserControl, IOptionsPage
                 Margin     = new Thickness(0, 4, 0, 4),
                 Content    = categoryPanel,
             };
+            // WPF's default Expander header ignores inherited Foreground — set explicitly
+            // so the label follows the dock theme instead of going black on dark surfaces.
+            expander.SetResourceReference(Control.ForegroundProperty, "DockMenuForegroundBrush");
+            expander.SetResourceReference(Control.BorderBrushProperty, "DockBorderBrush");
+            TextElement.SetForeground(expander, (Brush)Application.Current.FindResource("DockMenuForegroundBrush"));
 
             foreach (var rule in group)
                 categoryPanel.Children.Add(BuildRuleRow(rule));

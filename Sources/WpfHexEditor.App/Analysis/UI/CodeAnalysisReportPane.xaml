@@ -500,7 +500,11 @@
                         <Expander Grid.Row="0"
                                   Header="{DynamicResource CodeAnalysis_Cycles_Title}"
                                   IsExpanded="True"
-                                  Margin="0,0,0,8">
+                                  Margin="0,0,0,8"
+                                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                  Background="Transparent"
+                                  BorderBrush="{DynamicResource DockBorderBrush}"
+                                  TextElement.Foreground="{DynamicResource DockMenuForegroundBrush}">
                             <Border Padding="4"
                                     BorderThickness="1"
                                     BorderBrush="{DynamicResource DockBorderBrush}"
