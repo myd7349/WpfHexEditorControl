@@ -18,6 +18,18 @@
              d:DesignHeight="300" d:DesignWidth="280"
              Background="{DynamicResource RES_BackgroundBrush}"
              Foreground="{DynamicResource RES_ForegroundBrush}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resxlocaSvc:ResxLocalizationLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- Simple bool→FontWeight converter declared as a static resource below -->
+        <local:BoolToFontWeightConverter x:Key="BoolToWeight"
+            xmlns:local="clr-namespace:WpfHexEditor.Plugins.ResxLocalization.Panels"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
 
     <Grid>
         <Grid.RowDefinitions>
@@ -99,16 +111,4 @@
                        Foreground="{DynamicResource RES_CommentForegroundBrush}"/>
         </Border>
     </Grid>
-
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <resxlocaSvc:ResxLocalizationLocalizedDictionary/>
-            </ResourceDictionary.MergedDictionaries>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <!-- Simple bool→FontWeight converter declared as a static resource below -->
-        <local:BoolToFontWeightConverter x:Key="BoolToWeight"
-            xmlns:local="clr-namespace:WpfHexEditor.Plugins.ResxLocalization.Panels"/>
-        </ResourceDictionary>
-    </UserControl.Resources>
 </UserControl>

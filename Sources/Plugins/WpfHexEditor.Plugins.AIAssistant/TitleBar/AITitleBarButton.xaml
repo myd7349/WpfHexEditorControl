@@ -11,29 +11,6 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Border x:Name="ButtonBorder" CornerRadius="2" Padding="4,0"
-            Background="{DynamicResource CA_TitleBarButtonBackgroundBrush}"
-            MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"
-            MouseLeftButtonDown="OnLeftClick" MouseRightButtonDown="OnRightClick">
-        <Grid>
-            <!-- Claude icon (sparkle glyph) -->
-            <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="16"
-                       Foreground="{DynamicResource CA_AccentBrandingBrush}"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-            <!-- Status badge (bottom-right) -->
-            <Ellipse x:Name="StatusBadge" Width="8" Height="8"
-                     HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                     Margin="0,0,2,4"
-                     Fill="{DynamicResource CA_TitleBarBadgeIdleBrush}"/>
-
-            <!-- CLI badge text (shown when connected via CLI) -->
-            <TextBlock x:Name="CliBadgeText" Text="{StaticResource AIAssistant_CliBadge}" FontSize="7" FontWeight="Bold"
-                       HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                       Margin="1,0,0,3" Visibility="Collapsed"
-                       Foreground="{DynamicResource DockTabActiveBrush}"/>
-        </Grid>
-    </Border>
 
     <UserControl.ContextMenu>
         <ContextMenu>
@@ -70,4 +47,28 @@
             </MenuItem>
         </ContextMenu>
     </UserControl.ContextMenu>
+
+    <Border x:Name="ButtonBorder" CornerRadius="2" Padding="4,0"
+            Background="{DynamicResource CA_TitleBarButtonBackgroundBrush}"
+            MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"
+            MouseLeftButtonDown="OnLeftClick" MouseRightButtonDown="OnRightClick">
+        <Grid>
+            <!-- Claude icon (sparkle glyph) -->
+            <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                       Foreground="{DynamicResource CA_AccentBrandingBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <!-- Status badge (bottom-right) -->
+            <Ellipse x:Name="StatusBadge" Width="8" Height="8"
+                     HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                     Margin="0,0,2,4"
+                     Fill="{DynamicResource CA_TitleBarBadgeIdleBrush}"/>
+
+            <!-- CLI badge text (shown when connected via CLI) -->
+            <TextBlock x:Name="CliBadgeText" Text="{StaticResource AIAssistant_CliBadge}" FontSize="7" FontWeight="Bold"
+                       HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                       Margin="1,0,0,3" Visibility="Collapsed"
+                       Foreground="{DynamicResource DockTabActiveBrush}"/>
+        </Grid>
+    </Border>
 </UserControl>

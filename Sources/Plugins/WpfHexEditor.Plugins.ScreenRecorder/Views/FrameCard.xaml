@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     Project: WpfHexEditor.Plugins.ScreenRecorder
     File: Views/FrameCard.xaml
     Description: Single frame card in the timeline strip.
@@ -10,13 +10,6 @@
              xmlns:svc="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Services"
              Width="100" Margin="2,4"
              Cursor="Hand">
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <svc:ScreenRecorderLocalizedDictionary/>
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </UserControl.Resources>
     <UserControl.Style>
         <Style TargetType="UserControl">
             <Setter Property="Background" Value="Transparent"/>
@@ -27,6 +20,32 @@
             </Style.Triggers>
         </Style>
     </UserControl.Style>
+    <UserControl.ContextMenu>
+        <!-- ContextMenu lives outside the visual tree; bind via PlacementTarget.DataContext
+             which is the FrameCardViewModel. Timeline commands are delegated from there. -->
+        <ContextMenu>
+            <MenuItem Header="{StaticResource ScreenRecorder_DuplicateFrame}"
+                      Command="{Binding PlacementTarget.DataContext.DuplicateCommand,
+                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <MenuItem Header="{StaticResource ScreenRecorder_InsertBlank}"
+                      Command="{Binding PlacementTarget.DataContext.InsertBlankCommand,
+                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <Separator/>
+            <MenuItem Header="{StaticResource ScreenRecorder_SetDelay}" />
+            <Separator/>
+            <MenuItem Header="{StaticResource ScreenRecorder_DeleteSelected}"
+                      Command="{Binding PlacementTarget.DataContext.DeleteCommand,
+                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+        </ContextMenu>
+    </UserControl.ContextMenu>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <svc:ScreenRecorderLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <Border Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}"
             BorderBrush="{DynamicResource DockBorderBrush}"
@@ -73,23 +92,4 @@
             </Grid>
         </StackPanel>
     </Border>
-
-    <UserControl.ContextMenu>
-        <!-- ContextMenu lives outside the visual tree; bind via PlacementTarget.DataContext
-             which is the FrameCardViewModel. Timeline commands are delegated from there. -->
-        <ContextMenu>
-            <MenuItem Header="{StaticResource ScreenRecorder_DuplicateFrame}"
-                      Command="{Binding PlacementTarget.DataContext.DuplicateCommand,
-                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-            <MenuItem Header="{StaticResource ScreenRecorder_InsertBlank}"
-                      Command="{Binding PlacementTarget.DataContext.InsertBlankCommand,
-                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-            <Separator/>
-            <MenuItem Header="{StaticResource ScreenRecorder_SetDelay}" />
-            <Separator/>
-            <MenuItem Header="{StaticResource ScreenRecorder_DeleteSelected}"
-                      Command="{Binding PlacementTarget.DataContext.DeleteCommand,
-                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-        </ContextMenu>
-    </UserControl.ContextMenu>
 </UserControl>
