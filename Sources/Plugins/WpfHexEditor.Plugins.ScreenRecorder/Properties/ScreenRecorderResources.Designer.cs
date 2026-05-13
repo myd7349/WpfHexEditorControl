@@ -17,6 +17,8 @@ internal static class ScreenRecorderResources
         new("WpfHexEditor.Plugins.ScreenRecorder.Properties.ScreenRecorderResources",
             typeof(ScreenRecorderResources).Assembly);
 
+    internal static ResourceManager ResourceManager => _rm;
+
     private static string Get(string key) =>
         _rm.GetString(key, CultureInfo.CurrentUICulture) ?? key;
 

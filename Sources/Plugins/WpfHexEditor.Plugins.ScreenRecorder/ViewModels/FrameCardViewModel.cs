@@ -4,7 +4,9 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using WpfHexEditor.SDK.Commands;
 
 namespace WpfHexEditor.Plugins.ScreenRecorder.ViewModels;
 
@@ -18,6 +20,11 @@ public sealed class FrameCardViewModel : INotifyPropertyChanged
     // Full-resolution bitmap stored externally (ZipEntry path); thumbnail held here.
     public BitmapSource? Thumbnail  { get; }
     public string?       SourcePath { get; init; }  // path inside .whscr ZIP
+
+    // Delegated context-menu commands wired by TimelineViewModel.
+    public ICommand? DuplicateCommand  { get; set; }
+    public ICommand? InsertBlankCommand { get; set; }
+    public ICommand? DeleteCommand     { get; set; }
 
     public int Index
     {

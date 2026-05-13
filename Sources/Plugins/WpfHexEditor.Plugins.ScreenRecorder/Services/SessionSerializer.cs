@@ -20,8 +20,11 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.Services;
 
 public static class SessionSerializer
 {
-    // "WHSC" + "R1" + 0x00 0x00
     private static readonly byte[] Magic = [0x57, 0x48, 0x53, 0x43, 0x52, 0x31, 0x00, 0x00];
+
+    private const string ManifestEntry  = "manifest.json";
+    private const string FrameMetaEntry = "frames/meta.json";
+    private const string FramePathFmt   = "frames/{0:D4}.png";
 
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
 
@@ -79,7 +82,7 @@ public static class SessionSerializer
             }
         };
 
-        var entry = zip.CreateEntry("manifest.json", CompressionLevel.Fastest);
+        var entry = zip.CreateEntry(ManifestEntry, CompressionLevel.Fastest);
         await using var s = entry.Open();
         await JsonSerializer.SerializeAsync(s, manifest, JsonOpts, ct);
     }
@@ -94,7 +97,7 @@ public static class SessionSerializer
             Timestamp = f.Timestamp
         }).ToList();
 
-        var entry = zip.CreateEntry("frames/meta.json", CompressionLevel.Fastest);
+        var entry = zip.CreateEntry(FrameMetaEntry, CompressionLevel.Fastest);
         await using var s = entry.Open();
         await JsonSerializer.SerializeAsync(s, metas, JsonOpts, ct);
     }
@@ -104,10 +107,20 @@ public static class SessionSerializer
         foreach (var frame in session.Frames)
         {
             ct.ThrowIfCancellationRequested();
-            var entryName = $"frames/{frame.Index:D4}.png";
-            var entry     = zip.CreateEntry(entryName, CompressionLevel.NoCompression); // PNG already compressed
+            // Encode to in-memory buffer on UI thread (BitmapSource is UI-thread-bound),
+            // then write the buffer to the ZipEntry on the current (async) thread.
+            var pngBytes = await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(frame.Bitmap));
+                using var ms = new MemoryStream();
+                encoder.Save(ms);
+                return ms.ToArray();
+            });
+
+            var entry = zip.CreateEntry(string.Format(FramePathFmt, frame.Index), CompressionLevel.NoCompression);
             await using var s = entry.Open();
-            await EncodePngAsync(frame.Bitmap, s);
+            await s.WriteAsync(pngBytes, ct);
         }
     }
 
@@ -122,7 +135,7 @@ public static class SessionSerializer
 
     private static async Task<SessionManifest> ReadManifestAsync(ZipArchive zip, CancellationToken ct)
     {
-        var entry = zip.GetEntry("manifest.json")
+        var entry = zip.GetEntry(ManifestEntry)
             ?? throw new InvalidDataException(".whscr archive is missing manifest.json.");
         await using var s = entry.Open();
         return await JsonSerializer.DeserializeAsync<SessionManifest>(s, cancellationToken: ct)
@@ -131,7 +144,7 @@ public static class SessionSerializer
 
     private static async Task<List<FrameMeta>> ReadFrameMetaAsync(ZipArchive zip, CancellationToken ct)
     {
-        var entry = zip.GetEntry("frames/meta.json");
+        var entry = zip.GetEntry(FrameMetaEntry);
         if (entry is null) return [];
         await using var s = entry.Open();
         return await JsonSerializer.DeserializeAsync<List<FrameMeta>>(s, cancellationToken: ct) ?? [];
@@ -139,7 +152,7 @@ public static class SessionSerializer
 
     private static async Task<BitmapSource> ReadFramePngAsync(ZipArchive zip, int index, CancellationToken ct)
     {
-        var entry = zip.GetEntry($"frames/{index:D4}.png")
+        var entry = zip.GetEntry(string.Format(FramePathFmt, index))
             ?? throw new InvalidDataException($"Missing frame {index:D4}.png in archive.");
 
         await using var s   = entry.Open();
@@ -154,14 +167,6 @@ public static class SessionSerializer
             return decoder.Frames[0];
         });
     }
-
-    private static Task EncodePngAsync(BitmapSource bitmap, Stream target) =>
-        System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-        {
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            encoder.Save(target);
-        }).Task;
 
     private static CaptureSession BuildSession(SessionManifest m) => new()
     {

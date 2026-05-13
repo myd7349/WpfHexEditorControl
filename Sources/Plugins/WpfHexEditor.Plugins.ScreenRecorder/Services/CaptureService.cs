@@ -23,15 +23,17 @@ public sealed class CaptureService : IDisposable
     public event EventHandler?               SessionStopped;
 
     public CaptureSession? CurrentSession  { get; private set; }
-    public bool            IsSessionActive  => CurrentSession is not null && !_paused && !_stopped;
-    public bool            IsPaused         => _paused;
+    public bool            IsSessionActive  => _state == SessionState.Active;
+    public bool            IsPaused         => _state == SessionState.Paused;
 
     private DispatcherTimer? _timer;
     private readonly Stopwatch _elapsed = new();
-    private int     _frameIndex;
-    private bool    _paused;
-    private bool    _stopped;
-    private IntPtr  _overlayHwnd;
+    private int          _frameIndex;
+    private SessionState _state = SessionState.Stopped;
+    private bool         _capturingFrame;
+    private IntPtr       _overlayHwnd;
+
+    private enum SessionState { Stopped, Active, Paused }
 
     public void SetOverlayHwnd(IntPtr hwnd) => _overlayHwnd = hwnd;
 
@@ -39,10 +41,10 @@ public sealed class CaptureService : IDisposable
     {
         StopSession();
 
-        CurrentSession = session;
-        _frameIndex    = 0;
-        _paused        = false;
-        _stopped       = false;
+        CurrentSession  = session;
+        _frameIndex     = 0;
+        _state          = SessionState.Active;
+        _capturingFrame = false;
         _elapsed.Restart();
 
         if (session.Mode is RecordingMode.TimedInterval or RecordingMode.Both)
@@ -51,15 +53,24 @@ public sealed class CaptureService : IDisposable
 
     public void PauseSession()
     {
-        if (CurrentSession is null || _stopped) return;
-        _paused = !_paused;
-        if (_paused) { _timer?.Stop(); _elapsed.Stop(); }
-        else         { _timer?.Start(); _elapsed.Start(); }
+        if (_state == SessionState.Stopped) return;
+        if (_state == SessionState.Active)
+        {
+            _state = SessionState.Paused;
+            _timer?.Stop();
+            _elapsed.Stop();
+        }
+        else
+        {
+            _state = SessionState.Active;
+            _timer?.Start();
+            _elapsed.Start();
+        }
     }
 
     public void StopSession()
     {
-        _stopped = true;
+        _state = SessionState.Stopped;
         _timer?.Stop();
         _timer = null;
         _elapsed.Stop();
@@ -71,8 +82,8 @@ public sealed class CaptureService : IDisposable
 
     public void TriggerManualCapture()
     {
-        if (CurrentSession is null || _paused || _stopped) return;
-        if (CurrentSession.Mode is RecordingMode.TimedInterval) return;
+        if (_state != SessionState.Active) return;
+        if (CurrentSession?.Mode is RecordingMode.TimedInterval) return;
         _ = CaptureOneFrameAsync();
     }
 
@@ -92,25 +103,31 @@ public sealed class CaptureService : IDisposable
         _timer.Start();
     }
 
-    private void OnTimerTick(object? sender, EventArgs e) => _ = CaptureOneFrameAsync();
-
-    // ── Core capture ──────────────────────────────────────────────────────────
+    private void OnTimerTick(object? sender, EventArgs e)
+    {
+        if (!_capturingFrame) _ = CaptureOneFrameAsync();
+    }
 
     private async Task CaptureOneFrameAsync()
     {
-        if (CurrentSession is null || _paused || _stopped) return;
+        if (_state != SessionState.Active || CurrentSession is null) return;
         if (_frameIndex >= ScreenRecorderOptions.Instance.MaxFrames) { StopSession(); return; }
 
-        var session = CurrentSession;
-        var bitmap  = await FrameCaptureEngine.CaptureRegionAsync(session.Region, _overlayHwnd);
+        _capturingFrame = true;
+        try
+        {
+            var session = CurrentSession;
+            var bitmap  = await FrameCaptureEngine.CaptureRegionAsync(session.Region, _overlayHwnd);
 
-        if (_stopped) return; // session cancelled during async gap
+            if (_state != SessionState.Active) return;
 
-        var delay   = session.GlobalDelay;
-        var thumb   = FrameCaptureEngine.CreateThumbnail(bitmap);
-        var frame   = new CaptureFrame(_frameIndex++, bitmap, delay, null, DateTimeOffset.UtcNow);
-
-        session.AddFrame(frame);
-        FrameCaptured?.Invoke(this, frame);
+            var frame = new CaptureFrame(_frameIndex++, bitmap, session.GlobalDelay, null, DateTimeOffset.UtcNow);
+            session.AddFrame(frame);
+            FrameCaptured?.Invoke(this, frame);
+        }
+        finally
+        {
+            _capturingFrame = false;
+        }
     }
 }

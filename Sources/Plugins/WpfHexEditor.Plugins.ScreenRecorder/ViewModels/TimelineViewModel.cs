@@ -56,8 +56,16 @@ public sealed class TimelineViewModel : INotifyPropertyChanged
 
     public void AddFrame(FrameCardViewModel frame)
     {
+        WireContextMenuCommands(frame);
         Frames.Add(frame);
         SelectedFrame = frame;
+    }
+
+    private void WireContextMenuCommands(FrameCardViewModel frame)
+    {
+        frame.DuplicateCommand   = DuplicateFrameCommand;
+        frame.InsertBlankCommand = InsertBlankCommand;
+        frame.DeleteCommand      = DeleteSelectedCommand;
     }
 
     public void MoveFrame(int fromIndex, int toIndex)
@@ -83,6 +91,7 @@ public sealed class TimelineViewModel : INotifyPropertyChanged
     {
         var idx = SelectedFrame is null ? Frames.Count : Frames.IndexOf(SelectedFrame) + 1;
         var blank = new FrameCardViewModel(idx, null, _globalDelay);
+        WireContextMenuCommands(blank);
         Frames.Insert(Math.Min(idx, Frames.Count), blank);
         RenumberFrames();
         SelectedFrame = blank;
@@ -93,6 +102,7 @@ public sealed class TimelineViewModel : INotifyPropertyChanged
         if (SelectedFrame is null) return;
         var idx  = Frames.IndexOf(SelectedFrame) + 1;
         var copy = SelectedFrame.Clone(idx);
+        WireContextMenuCommands(copy);
         Frames.Insert(Math.Min(idx, Frames.Count), copy);
         RenumberFrames();
         SelectedFrame = copy;

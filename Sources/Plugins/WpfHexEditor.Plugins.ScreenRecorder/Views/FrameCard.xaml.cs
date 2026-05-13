@@ -21,17 +21,18 @@ public partial class FrameCard : System.Windows.Controls.UserControl
 
         if (DataContext is not FrameCardViewModel vm) return;
 
+        var timeline = FindParentTimeline();
         if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             vm.IsSelected = !vm.IsSelected;
         else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-            SelectRange(vm);
+            SelectRange(vm, timeline);
         else
         {
-            ClearOtherSelections(vm);
+            ClearOtherSelections(vm, timeline);
             vm.IsSelected = true;
         }
 
-        NotifyTimelineOfSelection(vm);
+        timeline?.OnFrameCardSelected(vm);
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
@@ -50,12 +51,6 @@ public partial class FrameCard : System.Windows.Controls.UserControl
             DragDrop.DoDragDrop(this, vm, DragDropEffects.Move);
     }
 
-    private void NotifyTimelineOfSelection(FrameCardViewModel vm)
-    {
-        if (FindParentTimeline() is TimelineStrip strip)
-            strip.OnFrameCardSelected(vm);
-    }
-
     private TimelineStrip? FindParentTimeline()
     {
         var p = Parent as DependencyObject;
@@ -67,16 +62,16 @@ public partial class FrameCard : System.Windows.Controls.UserControl
         return null;
     }
 
-    private void ClearOtherSelections(FrameCardViewModel current)
+    private static void ClearOtherSelections(FrameCardViewModel current, TimelineStrip? timeline)
     {
-        if (FindParentTimeline()?.DataContext is not TimelineViewModel tvm) return;
+        if (timeline?.DataContext is not TimelineViewModel tvm) return;
         foreach (var f in tvm.Frames)
             if (f != current) f.IsSelected = false;
     }
 
-    private void SelectRange(FrameCardViewModel current)
+    private static void SelectRange(FrameCardViewModel current, TimelineStrip? timeline)
     {
-        if (FindParentTimeline()?.DataContext is not TimelineViewModel tvm) return;
+        if (timeline?.DataContext is not TimelineViewModel tvm) return;
         var anchor = tvm.Frames.FirstOrDefault(f => f.IsSelected);
         if (anchor is null) { current.IsSelected = true; return; }
 

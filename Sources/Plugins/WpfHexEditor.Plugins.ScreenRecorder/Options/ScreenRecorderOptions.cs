@@ -17,8 +17,8 @@ public sealed class ScreenRecorderOptions
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WpfHexEditor", "ScreenRecorder", "settings.json");
 
-    private static ScreenRecorderOptions? _instance;
-    public  static ScreenRecorderOptions   Instance => _instance ??= Load();
+    private static Lazy<ScreenRecorderOptions> _lazy = new(Load);
+    public  static ScreenRecorderOptions Instance => _lazy.Value;
 
     // ── Capture ───────────────────────────────────────────────────────────────
     public string      HotkeyCapture    { get; set; } = "F9";
@@ -59,7 +59,7 @@ public sealed class ScreenRecorderOptions
         return new();
     }
 
-    public static void Reload() => _instance = Load();
+    public static void Reload() => _lazy = new Lazy<ScreenRecorderOptions>(Load);
 
     public void Save()
     {

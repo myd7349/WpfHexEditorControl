@@ -10,9 +10,18 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:views="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Views"
+             xmlns:svc="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Services"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="900"
              Background="{DynamicResource Panel_Background}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <svc:ScreenRecorderLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
