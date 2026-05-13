@@ -10,6 +10,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 using WpfHexEditor.App.Properties;
 using WpfHexEditor.Core.Options;
 using WpfHexEditor.Docking.Core;
@@ -49,6 +50,7 @@ public sealed class DockingOptionsPage : UserControl, IOptionsPage
     private readonly TextBlock _floatDefaultHeightLabel;
 
     private readonly TextBox   _profileDirBox;
+    private readonly Button    _profileDirBrowse;
 
     // Active Panel Highlight
     private readonly ComboBox  _highlightModeCombo;
@@ -106,7 +108,15 @@ public sealed class DockingOptionsPage : UserControl, IOptionsPage
         (_floatDefaultWidthSlider,  _floatDefaultWidthLabel)  = MakeSlider(200, 800, 10);
         (_floatDefaultHeightSlider, _floatDefaultHeightLabel) = MakeSlider(150, 600, 10);
 
-        _profileDirBox = new TextBox { Margin = new Thickness(0, 4, 0, 4) };
+        _profileDirBox    = new TextBox { Margin = new Thickness(0, 4, 0, 4) };
+        _profileDirBrowse = new Button
+        {
+            Content = "...",
+            Width   = 28,
+            Margin  = new Thickness(4, 4, 0, 4),
+            ToolTip = "Browse for folder",
+        };
+        _profileDirBrowse.Click += OnBrowseProfileDir;
 
         // Panel corner radius slider (0–12 px, step 1)
         (_cornerRadiusSlider, _cornerRadiusLabel) = MakeSlider(0, 12, 1);
@@ -156,7 +166,7 @@ public sealed class DockingOptionsPage : UserControl, IOptionsPage
 
         // Layout Profiles
         root.Children.Add(SectionHeader("LAYOUT PROFILES"));
-        root.Children.Add(MakeLabeledRow("Profile directory:", _profileDirBox));
+        root.Children.Add(MakeProfileDirRow());
         root.Children.Add(Hint("Leave empty to use the default AppData location."));
 
         Content = new ScrollViewer
@@ -283,10 +293,41 @@ public sealed class DockingOptionsPage : UserControl, IOptionsPage
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    private void OnBrowseProfileDir(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog
+        {
+            Title            = "Select layout profiles folder",
+            InitialDirectory = string.IsNullOrWhiteSpace(_profileDirBox.Text) ? null : _profileDirBox.Text.Trim(),
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            _profileDirBox.Text = dlg.FolderName;
+            if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static TextBlock SectionHeader(string title) => OptionsPageHelper.SectionHeader(title);
     private static TextBlock Hint(string text)           => OptionsPageHelper.Hint(text);
+
+    private Grid MakeProfileDirRow()
+    {
+        var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var label = new TextBlock { Text = "Profile directory:", VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(label, 0);
+        Grid.SetColumn(_profileDirBox, 1);
+        Grid.SetColumn(_profileDirBrowse, 2);
+        grid.Children.Add(label);
+        grid.Children.Add(_profileDirBox);
+        grid.Children.Add(_profileDirBrowse);
+        return grid;
+    }
 
     private static Grid MakeLabeledRow(string labelText, Control control)
     {
