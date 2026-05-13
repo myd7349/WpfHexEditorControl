@@ -103,10 +103,12 @@
   <!-- Properties panel -->
   <data name="ScreenRecorder_Properties" xml:space="preserve"><value>Properties</value></data>
   <data name="ScreenRecorder_CaptureRegion" xml:space="preserve"><value>Capture Region</value></data>
+  <data name="ScreenRecorder_FullScreen" xml:space="preserve"><value>Full Screen</value></data>
   <data name="ScreenRecorder_OutputScale" xml:space="preserve"><value>Output Scale</value></data>
   <data name="ScreenRecorder_LoopCount" xml:space="preserve"><value>Loop Count (0=infinite)</value></data>
   <data name="ScreenRecorder_RepeatLastFrame" xml:space="preserve"><value>Repeat Last Frame (ms)</value></data>
   <data name="ScreenRecorder_Interval" xml:space="preserve"><value>Interval (ms)</value></data>
+  <data name="ScreenRecorder_RegionSummary" xml:space="preserve"><value>Full Screen</value></data>
 
   <!-- Options page -->
   <data name="ScreenRecorder_Options" xml:space="preserve"><value>Screen Recorder</value></data>

@@ -4,6 +4,7 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using WpfHexEditor.Plugins.ScreenRecorder.Models;
 
 namespace WpfHexEditor.Plugins.ScreenRecorder.ViewModels;
@@ -11,6 +12,13 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.ViewModels;
 public sealed class PropertiesViewModel : INotifyPropertyChanged
 {
     private CaptureRegion _captureRegion;
+
+    public ICommand? SelectRegionCommand { get; set; }
+    public ICommand? ResetRegionCommand  { get; set; }
+
+    public string RegionSummary => _captureRegion.IsEmpty
+        ? "Full Screen"
+        : $"{_captureRegion.Width} × {_captureRegion.Height}  @  ({_captureRegion.X}, {_captureRegion.Y})";
     private double        _outputScale    = 1.0;
     private int           _loopCount;
     private int           _repeatLastFrameDelay = 1000;
@@ -19,7 +27,7 @@ public sealed class PropertiesViewModel : INotifyPropertyChanged
     public CaptureRegion CaptureRegion
     {
         get => _captureRegion;
-        set { if (_captureRegion == value) return; _captureRegion = value; OnPropertyChanged(); }
+        set { if (_captureRegion == value) return; _captureRegion = value; OnPropertyChanged(); OnPropertyChanged(nameof(RegionSummary)); }
     }
 
     public double OutputScale

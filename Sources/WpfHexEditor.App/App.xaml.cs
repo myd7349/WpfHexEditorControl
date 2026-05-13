@@ -56,22 +56,26 @@ public partial class App : Application
         AppSettingsService.Instance.Load();
 
         var cultureName = AppSettingsService.Instance.Current.PreferredLanguage;
-        if (string.IsNullOrWhiteSpace(cultureName)) return;
 
-        try
+        CultureInfo culture;
+        if (string.IsNullOrWhiteSpace(cultureName))
         {
-            var culture = new CultureInfo(cultureName);
-            // Also set the UI thread's CurrentUICulture directly so that resx string lookups
-            // on the UI thread (e.g. in plugin InitializeAsync dispatched via Dispatcher.InvokeAsync)
-            // use the correct language — DefaultThreadCurrentUICulture only covers new threads.
-            System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
-            System.Threading.Thread.CurrentThread.CurrentCulture   = culture;
-            LocalizedResourceDictionary.ChangeCulture(culture);
+            // No preference set — use the OS culture but still seed LocalizedResourceDictionary
+            // so that plugin dictionaries constructed later share the same static _currentCulture.
+            culture = CultureInfo.CurrentUICulture;
         }
-        catch (CultureNotFoundException)
+        else
         {
-            // Unknown culture name stored in settings — ignore, keep system default.
+            try   { culture = new CultureInfo(cultureName); }
+            catch (CultureNotFoundException) { return; }
         }
+
+        // Always set the UI thread's CurrentUICulture and seed _currentCulture so that
+        // plugin LocalizedResourceDictionary instances created after this point (lazy tab
+        // opens) see the correct culture, even when preferredLanguage is empty.
+        System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
+        System.Threading.Thread.CurrentThread.CurrentCulture   = culture;
+        LocalizedResourceDictionary.ChangeCulture(culture);
     }
 
     private static void ParseCommandLine(string[] args)

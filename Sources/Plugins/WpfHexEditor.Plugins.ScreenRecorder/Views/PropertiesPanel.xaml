@@ -1,8 +1,8 @@
 <!--
     Project: WpfHexEditor.Plugins.ScreenRecorder
     File: Views/PropertiesPanel.xaml
-    Description: Collapsible right panel: capture region, output scale, loop count,
-                 repeat-last-frame delay, and timer interval.
+    Description: Collapsible right panel: capture region picker, output scale slider,
+                 GIF loop count, repeat-last-frame delay, and timer interval spinners.
 -->
 <UserControl x:Class="WpfHexEditor.Plugins.ScreenRecorder.Views.PropertiesPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -15,116 +15,133 @@
             <ResourceDictionary.MergedDictionaries>
                 <svc:ScreenRecorderLocalizedDictionary/>
             </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="PropLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize"           Value="11"/>
+                <Setter Property="Foreground"         Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="VerticalAlignment"  Value="Center"/>
+            </Style>
+
+            <Style x:Key="PropValueStyle" TargetType="TextBlock">
+                <Setter Property="FontSize"           Value="11"/>
+                <Setter Property="FontWeight"         Value="SemiBold"/>
+                <Setter Property="Foreground"         Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="VerticalAlignment"  Value="Center"/>
+            </Style>
+
+            <Style x:Key="SpinBoxStyle" TargetType="TextBox">
+                <Setter Property="FontSize"                Value="11"/>
+                <Setter Property="Padding"                 Value="4,2"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="TextAlignment"           Value="Right"/>
+                <Setter Property="MinWidth"                Value="56"/>
+                <Setter Property="MaxWidth"                Value="72"/>
+            </Style>
+
+            <Style x:Key="UnitLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize"          Value="10"/>
+                <Setter Property="Foreground"        Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="Opacity"           Value="0.65"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Margin"            Value="3,0,0,0"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Expander Header="{StaticResource ScreenRecorder_Properties}"
+    <Expander Header="{DynamicResource ScreenRecorder_Properties}"
               IsExpanded="True"
               Foreground="{DynamicResource DockMenuForegroundBrush}">
-        <StackPanel Margin="8,4">
-            <!-- Capture Region -->
-            <TextBlock Text="{StaticResource ScreenRecorder_CaptureRegion}"
-                       FontSize="11" FontWeight="SemiBold"
-                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                       Margin="0,4,0,2"/>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="X:" FontSize="10"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center" Margin="0,0,4,2"/>
-                <TextBox   Grid.Row="0" Grid.Column="1"
-                           Text="{Binding CaptureRegion.X, Mode=OneWay}"
-                           IsReadOnly="True" FontSize="10" Padding="2,1" Margin="0,0,6,2"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="Y:" FontSize="10"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center" Margin="0,0,4,2"/>
-                <TextBox   Grid.Row="0" Grid.Column="3"
-                           Text="{Binding CaptureRegion.Y, Mode=OneWay}"
-                           IsReadOnly="True" FontSize="10" Padding="2,1" Margin="0,0,0,2"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="W:" FontSize="10"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox   Grid.Row="1" Grid.Column="1"
-                           Text="{Binding CaptureRegion.Width, Mode=OneWay}"
-                           IsReadOnly="True" FontSize="10" Padding="2,1" Margin="0,0,6,0"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="H:" FontSize="10"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox   Grid.Row="1" Grid.Column="3"
-                           Text="{Binding CaptureRegion.Height, Mode=OneWay}"
-                           IsReadOnly="True" FontSize="10" Padding="2,1"/>
-            </Grid>
+        <StackPanel Margin="8,6,8,8">
+
+            <!-- ── Capture Region ──────────────────────────────────────── -->
+            <TextBlock Text="{DynamicResource ScreenRecorder_CaptureRegion}"
+                       Style="{StaticResource PropLabelStyle}"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,4"/>
+
+            <!-- Summary chip -->
+            <Border Background="{DynamicResource DockBorderBrush}"
+                    CornerRadius="3"
+                    Padding="6,3"
+                    Margin="0,0,0,4">
+                <TextBlock Text="{Binding RegionSummary, Mode=OneWay}"
+                           Style="{StaticResource PropValueStyle}"
+                           FontFamily="Consolas"
+                           FontSize="10"/>
+            </Border>
+
+            <!-- Region action buttons -->
+            <UniformGrid Rows="1" Columns="2" Margin="0,0,0,4">
+                <Button Content="{DynamicResource ScreenRecorder_SelectRegion}"
+                        Command="{Binding SelectRegionCommand}"
+                        Style="{DynamicResource PM_ActionButtonStyle}"
+                        FontSize="10" Padding="4,3" Margin="0,0,2,0"/>
+                <Button Content="{DynamicResource ScreenRecorder_FullScreen}"
+                        Command="{Binding ResetRegionCommand}"
+                        Style="{DynamicResource PM_ActionButtonStyle}"
+                        FontSize="10" Padding="4,3" Margin="2,0,0,0"/>
+            </UniformGrid>
 
             <Separator Margin="0,6"/>
 
-            <!-- Output Scale -->
-            <DockPanel Margin="0,0,0,4">
+            <!-- ── Output Scale ────────────────────────────────────────── -->
+            <DockPanel Margin="0,0,0,2">
                 <TextBlock DockPanel.Dock="Left"
-                           Text="{StaticResource ScreenRecorder_OutputScale}"
-                           FontSize="11"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,6,0"/>
-                <TextBox DockPanel.Dock="Right" Width="50"
-                         Text="{Binding OutputScale, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:P0}}"
-                         FontSize="11" Padding="2,1" VerticalContentAlignment="Center"/>
+                           Text="{DynamicResource ScreenRecorder_OutputScale}"
+                           Style="{StaticResource PropLabelStyle}"/>
+                <TextBlock DockPanel.Dock="Right"
+                           Style="{StaticResource PropValueStyle}"
+                           FontFamily="Consolas" FontSize="10"
+                           Text="{Binding OutputScale, Mode=OneWay, StringFormat={}{0:P0}}"
+                           MinWidth="34" TextAlignment="Right"/>
             </DockPanel>
+            <Slider Minimum="0.25" Maximum="1.0"
+                    SmallChange="0.05" LargeChange="0.25"
+                    TickFrequency="0.25" TickPlacement="BottomRight"
+                    IsSnapToTickEnabled="False"
+                    Value="{Binding OutputScale}"
+                    Margin="0,0,0,6"/>
 
-            <!-- Loop Count -->
-            <DockPanel Margin="0,0,0,4">
+            <Separator Margin="0,0,0,6"/>
+
+            <!-- ── Loop Count ──────────────────────────────────────────── -->
+            <DockPanel Margin="0,0,0,5">
                 <TextBlock DockPanel.Dock="Left"
-                           Text="{StaticResource ScreenRecorder_LoopCount}"
-                           FontSize="11"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,6,0"/>
-                <TextBox DockPanel.Dock="Right" Width="50"
+                           Text="{DynamicResource ScreenRecorder_LoopCount}"
+                           Style="{StaticResource PropLabelStyle}"/>
+                <TextBox DockPanel.Dock="Right"
+                         Style="{StaticResource SpinBoxStyle}"
                          Text="{Binding LoopCount, UpdateSourceTrigger=PropertyChanged}"
-                         FontSize="11" Padding="2,1" VerticalContentAlignment="Center"
                          ToolTip="0 = infinite loop"/>
             </DockPanel>
 
-            <!-- Repeat Last Frame Delay -->
-            <DockPanel Margin="0,0,0,4">
+            <!-- ── Repeat Last Frame ───────────────────────────────────── -->
+            <DockPanel Margin="0,0,0,5">
                 <TextBlock DockPanel.Dock="Left"
-                           Text="{StaticResource ScreenRecorder_RepeatLastFrame}"
-                           FontSize="11"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,6,0"/>
-                <TextBlock DockPanel.Dock="Right" Text="ms"
-                           FontSize="10" Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center" Margin="2,0,0,0"/>
-                <TextBox DockPanel.Dock="Right" Width="50"
-                         Text="{Binding RepeatLastFrameDelay, UpdateSourceTrigger=PropertyChanged}"
-                         FontSize="11" Padding="2,1" VerticalContentAlignment="Center"/>
+                           Text="{DynamicResource ScreenRecorder_RepeatLastFrame}"
+                           Style="{StaticResource PropLabelStyle}"/>
+                <TextBlock DockPanel.Dock="Right"
+                           Text="ms"
+                           Style="{StaticResource UnitLabelStyle}"/>
+                <TextBox DockPanel.Dock="Right"
+                         Style="{StaticResource SpinBoxStyle}"
+                         Text="{Binding RepeatLastFrameDelay, UpdateSourceTrigger=PropertyChanged}"/>
             </DockPanel>
 
-            <!-- Timer Interval -->
+            <!-- ── Timer Interval ─────────────────────────────────────── -->
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left"
-                           Text="{StaticResource ScreenRecorder_Interval}"
-                           FontSize="11"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,6,0"/>
-                <TextBlock DockPanel.Dock="Right" Text="ms"
-                           FontSize="10" Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           VerticalAlignment="Center" Margin="2,0,0,0"/>
-                <TextBox DockPanel.Dock="Right" Width="50"
+                           Text="{DynamicResource ScreenRecorder_Interval}"
+                           Style="{StaticResource PropLabelStyle}"/>
+                <TextBlock DockPanel.Dock="Right"
+                           Text="ms"
+                           Style="{StaticResource UnitLabelStyle}"/>
+                <TextBox DockPanel.Dock="Right"
+                         Style="{StaticResource SpinBoxStyle}"
                          Text="{Binding TimerInterval, UpdateSourceTrigger=PropertyChanged}"
-                         FontSize="11" Padding="2,1" VerticalContentAlignment="Center"
-                         ToolTip="Min 80ms"/>
+                         ToolTip="Min 80 ms"/>
             </DockPanel>
+
         </StackPanel>
     </Expander>
 </UserControl>

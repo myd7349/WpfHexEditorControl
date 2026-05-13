@@ -77,10 +77,12 @@ internal static class ScreenRecorderResources
     // Properties panel
     public static string ScreenRecorder_Properties       => Get(nameof(ScreenRecorder_Properties));
     public static string ScreenRecorder_CaptureRegion    => Get(nameof(ScreenRecorder_CaptureRegion));
+    public static string ScreenRecorder_FullScreen       => Get(nameof(ScreenRecorder_FullScreen));
     public static string ScreenRecorder_OutputScale      => Get(nameof(ScreenRecorder_OutputScale));
     public static string ScreenRecorder_LoopCount        => Get(nameof(ScreenRecorder_LoopCount));
     public static string ScreenRecorder_RepeatLastFrame  => Get(nameof(ScreenRecorder_RepeatLastFrame));
     public static string ScreenRecorder_Interval         => Get(nameof(ScreenRecorder_Interval));
+    public static string ScreenRecorder_RegionSummary    => Get(nameof(ScreenRecorder_RegionSummary));
 
     // Options page
     public static string ScreenRecorder_Options                    => Get(nameof(ScreenRecorder_Options));

@@ -72,6 +72,8 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         Hud        = new CaptureHudViewModel();
 
         Timeline.Preview = Preview;
+        Properties.SelectRegionCommand = new RelayCommand(_ => _ = SelectRegionAsync());
+        Properties.ResetRegionCommand  = new RelayCommand(_ => Properties.CaptureRegion = default);
 
         _captureService                = new CaptureService();
         _captureService.FrameCaptured  += OnFrameCaptured;
