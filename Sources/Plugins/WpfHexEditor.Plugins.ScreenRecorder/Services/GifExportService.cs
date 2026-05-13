@@ -54,12 +54,10 @@ public static class GifExportService
         // Build the output GIF stream.
         WriteGif89aStream(output, rawFrames, frames, options);
         progress?.Report(100);
-        await output.FlushAsync(ct);
     }
 
     // ── Encoding ─────────────────────────────────────────────────────────────
 
-    // GIF uses GifBitmapEncoder + Indexed8 quantization — distinct from FrameCaptureEngine.EncodePngOnUiThreadAsync.
     private static Task<byte[]> EncodeFrameOnUiThreadAsync(BitmapSource bitmap) =>
         System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
