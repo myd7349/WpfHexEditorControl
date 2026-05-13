@@ -93,7 +93,7 @@ public sealed class SnippetBodyHighlightBox : UserControl
         _updating  = true;
         SetValue(TextProperty, trimmed);
         _updating  = false;
-        RebuildHighlight(plain);
+        RebuildHighlight(trimmed);
         TextChanged?.Invoke(this, new TextChangedEventArgs(
             System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
             UndoAction.None));
