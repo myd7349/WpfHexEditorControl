@@ -9,19 +9,22 @@
 //     IPluginWithOptions wires the Options page into the IDE settings panel.
 // ==========================================================
 
+using System.Text.Json;
 using System.Windows;
+using WpfHexEditor.Core.Localization.Services;
 using WpfHexEditor.Plugins.ScreenRecorder.Properties;
 using WpfHexEditor.Plugins.ScreenRecorder.Services;
 using WpfHexEditor.Plugins.ScreenRecorder.ViewModels;
 using WpfHexEditor.Plugins.ScreenRecorder.Views;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
 
 namespace WpfHexEditor.Plugins.ScreenRecorder;
 
-public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptions
+public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptions, IWorkspacePersistable
 {
     private const string DocUiId      = "WpfHexEditor.Plugins.ScreenRecorder.Document";
     private const string CmdCapture   = "ScreenRecorder.CaptureFrame";
@@ -49,6 +52,10 @@ public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptio
     {
         _context = context;
 
+        // Sync with IDE language (overrides OS locale that may differ from IDE setting).
+        if (LocalizationService.Instance is { } loc)
+            LocalizedResourceDictionary.ChangeCulture(loc.CurrentCulture);
+
         FileAssociationService.RegisterIfNeeded();
         context.UIRegistry.RegisterMenuItem(
             $"{Id}.Menu.Show",
@@ -63,6 +70,7 @@ public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptio
             });
 
         RegisterCommands(context);
+        context.CapabilityRegistry.RegisterWorkspacePersistable(Id, this);
         return Task.CompletedTask;
     }
 
@@ -77,6 +85,23 @@ public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptio
         _vm           = null;
         _documentOpen = false;
         _context      = null;
+        return Task.CompletedTask;
+    }
+
+    // ── Workspace persistence (IWorkspacePersistable) ─────────────────────────
+
+    public object? CaptureWorkspaceState()
+        => _documentOpen ? new { isOpen = true } : null;
+
+    public Task RestoreWorkspaceStateAsync(string json, CancellationToken ct = default)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("isOpen", out var prop) && prop.GetBoolean())
+                Application.Current.Dispatcher.BeginInvoke(OpenOrFocusDocument);
+        }
+        catch (JsonException) { }
         return Task.CompletedTask;
     }
 
