@@ -54,8 +54,8 @@ public sealed class HexDiffPanel : UserControl
             CanUserAddRows      = false,
             CanUserDeleteRows   = false,
             IsReadOnly          = true,
-            VirtualizingPanel.IsVirtualizing = true,
         };
+        VirtualizingPanel.SetIsVirtualizing(grid, true);
         grid.Columns.Add(new DataGridTextColumn { Header = "Offset",   Binding = new Binding(nameof(DiffRecord.Offset))  { StringFormat = "{0:X8}" }, Width = 90 });
         grid.Columns.Add(new DataGridTextColumn { Header = "Kind",     Binding = new Binding(nameof(DiffRecord.Kind)),     Width = 90 });
         grid.Columns.Add(new DataGridTextColumn { Header = "File A",   Binding = new Binding(nameof(DiffRecord.OldByte)) { StringFormat = "{0:X2}" }, Width = 60 });

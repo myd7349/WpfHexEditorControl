@@ -68,7 +68,7 @@ public sealed class ByteFrequencyPanel : UserControl
 }
 
 /// <summary>16×16 grid of colored cells representing byte frequency.</summary>
-file sealed class HeatmapGrid : FrameworkElement
+internal sealed class HeatmapGrid : FrameworkElement
 {
     private FrequencyResult? _data;
     private readonly DrawingVisual _visual = new();

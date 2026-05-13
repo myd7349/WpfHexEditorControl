@@ -39,8 +39,8 @@ public sealed class FileCarverPanel : UserControl
             CanUserAddRows      = false,
             CanUserDeleteRows   = false,
             IsReadOnly          = true,
-            VirtualizingPanel.IsVirtualizing = true,
         };
+        VirtualizingPanel.SetIsVirtualizing(grid, true);
         grid.Columns.Add(new DataGridTextColumn { Header = "Offset",     Binding = new Binding(nameof(CarvedEntry.Offset))     { StringFormat = "{0:X8}" }, Width = 90 });
         grid.Columns.Add(new DataGridTextColumn { Header = "Format",     Binding = new Binding(nameof(CarvedEntry.FormatName)),  Width = 160 });
         grid.Columns.Add(new DataGridTextColumn { Header = "Confidence", Binding = new Binding(nameof(CarvedEntry.Confidence))  { StringFormat = "{0:P0}" }, Width = 90 });

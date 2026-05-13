@@ -46,8 +46,8 @@ public sealed class StringExtractionPanel : UserControl
             CanUserAddRows      = false,
             CanUserDeleteRows   = false,
             IsReadOnly          = true,
-            VirtualizingPanel.IsVirtualizing = true,
         };
+        VirtualizingPanel.SetIsVirtualizing(grid, true);
         grid.Columns.Add(MakeCol("Offset",   nameof(StringRun.Offset),   80,  "X8"));
         grid.Columns.Add(MakeCol("Length",   nameof(StringRun.Length),   60));
         grid.Columns.Add(MakeCol("Encoding", nameof(StringRun.Encoding), 70));

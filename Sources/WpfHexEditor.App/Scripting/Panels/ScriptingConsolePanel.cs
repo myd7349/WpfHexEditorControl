@@ -3,6 +3,7 @@
 // Description  : Dockable Scripting Console panel — code-behind-only UserControl.
 // Architecture : Multiline input + Run/Cancel/Clear toolbar + scrollable output log.
 
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
