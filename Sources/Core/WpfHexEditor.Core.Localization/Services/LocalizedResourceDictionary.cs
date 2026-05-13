@@ -38,13 +38,7 @@ public class LocalizedResourceDictionary : ResourceDictionary
 {
     // ─── Static culture state ────────────────────────────────────────────────
 
-    // Default to en-US — the neutral/authoring language of all resource files.
-    // When the host app has a saved preferredLanguage, it calls ChangeCulture() before
-    // any plugin dictionary is constructed, overwriting this value.
-    // Without this default, plugin tabs opened lazily would inherit the OS UI culture
-    // (e.g. es-MX) and display strings in that language even when the IDE shows English
-    // because it falls back to the neutral en-US satellite.
-    private static CultureInfo _currentCulture = new CultureInfo("en-US");
+    private static CultureInfo _currentCulture = CultureInfo.CurrentUICulture;
 
     /// <summary>Fired after all registered dictionaries have been refreshed.</summary>
     public static event EventHandler<CultureChangedEventArgs>? CultureChanged;
@@ -142,17 +136,70 @@ public class LocalizedResourceDictionary : ResourceDictionary
         if (baseSet is null)
             return;
 
+        // Resolve the best culture this specific manager can actually serve.
+        // Walking up from _currentCulture (e.g. es-MX → es → en-US) and stopping at
+        // the first culture for which a satellite exists prevents a plugin that ships
+        // an "es" satellite from displaying Spanish when CommonResources only has en-US
+        // (i.e. when the IDE itself would show English for that OS locale).
+        var effectiveCulture = ResolveManagerCulture(manager, _currentCulture);
+
         foreach (System.Collections.DictionaryEntry entry in baseSet)
         {
             if (entry.Key is not string key)
                 continue;
 
             string? value;
-            try { value = manager.GetString(key, _currentCulture); }
+            try { value = manager.GetString(key, effectiveCulture); }
             catch (MissingManifestResourceException) { value = null; }
             catch (Exception) { value = null; }
 
             this[key] = value ?? entry.Value?.ToString() ?? string.Empty;
         }
+    }
+
+    // ─── Culture resolution ──────────────────────────────────────────────────
+
+    // Cache: maps (manager identity, requested culture name) → effective culture name.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(int, string), string>
+        _cultureCache = new();
+
+    /// <summary>
+    /// Finds the most specific culture that both <paramref name="manager"/> AND
+    /// <see cref="CommonResources"/> can serve for <paramref name="requested"/>.
+    /// Walking up the parent chain (e.g. es-MX → es → en-US) and returning the
+    /// first match in CommonResources ensures plugin satellite languages never
+    /// diverge from the IDE's effective display language.
+    /// </summary>
+    private static CultureInfo ResolveManagerCulture(ResourceManager manager, CultureInfo requested)
+    {
+        var cacheKey = (System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(manager), requested.Name);
+        if (_cultureCache.TryGetValue(cacheKey, out var cached))
+            return new CultureInfo(cached);
+
+        var commonRm = CommonResources.ResourceManager;
+        var culture   = requested;
+
+        while (!culture.Equals(CultureInfo.InvariantCulture))
+        {
+            // A culture is usable only if CommonResources also has a satellite for it.
+            // This keeps all assemblies in sync: if the IDE shows en-US for es-MX,
+            // every plugin falls back to en-US regardless of its own satellite list.
+            bool commonHas = false;
+            try { commonHas = commonRm.GetResourceSet(culture, createIfNotExists: true, tryParents: false) is not null; }
+            catch { }
+
+            if (commonHas)
+            {
+                _cultureCache[cacheKey] = culture.Name;
+                return culture;
+            }
+
+            culture = culture.Parent;
+        }
+
+        // No common satellite found → use en-US (the IDE's neutral language).
+        var fallback = new CultureInfo("en-US");
+        _cultureCache[cacheKey] = fallback.Name;
+        return fallback;
     }
 }

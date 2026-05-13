@@ -6,9 +6,7 @@
 
 using System.Globalization;
 using System.IO;
-using System.Resources;
 using System.Windows;
-using WpfHexEditor.Core.Localization.Properties;
 using WpfHexEditor.Core.Localization.Services;
 using WpfHexEditor.Core.Options;
 using LocalizationService = WpfHexEditor.Core.Localization.Services.LocalizationService;
@@ -59,53 +57,24 @@ public partial class App : Application
 
         var cultureName = AppSettingsService.Instance.Current.PreferredLanguage;
 
-        CultureInfo culture;
         if (string.IsNullOrWhiteSpace(cultureName))
         {
-            // "System default": resolve the culture the IDE will actually display.
-            // We probe CommonResources — if no satellite exists for the OS locale,
-            // the IDE falls back to en-US (the neutral assembly language).
-            // Calling ChangeCulture() with that effective culture ensures plugin
-            // dictionaries that DO have a satellite for the OS locale (e.g. es)
-            // also fall back consistently instead of displaying a different language.
-            culture = ResolveEffectiveCulture(CultureInfo.CurrentUICulture);
+            // System default: seed ChangeCulture with the OS locale so that
+            // LocalizedResourceDictionary._currentCulture is set before
+            // InitializeComponent() parses App.xaml. The per-manager fallback
+            // in ResolveManagerCulture() handles cases where a plugin satellite
+            // exists for the OS locale but CommonResources does not.
+            LocalizedResourceDictionary.ChangeCulture(CultureInfo.CurrentUICulture);
+            return;
         }
-        else
-        {
-            try   { culture = new CultureInfo(cultureName); }
-            catch (CultureNotFoundException) { return; }
-        }
+
+        CultureInfo culture;
+        try   { culture = new CultureInfo(cultureName); }
+        catch (CultureNotFoundException) { return; }
 
         System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
         System.Threading.Thread.CurrentThread.CurrentCulture   = culture;
         LocalizedResourceDictionary.ChangeCulture(culture);
-    }
-
-    /// <summary>
-    /// Returns the culture the IDE will actually display for <paramref name="osCulture"/>.
-    /// Probes CommonResources satellites: if none exists for the OS locale (or its neutral parent),
-    /// the IDE falls back to en-US — so we return en-US to keep all plugins in sync.
-    /// </summary>
-    private static CultureInfo ResolveEffectiveCulture(CultureInfo osCulture)
-    {
-        var rm = CommonResources.ResourceManager;
-
-        // Try exact locale (e.g. es-MX), then neutral (e.g. es).
-        var probes = new[] { osCulture, osCulture.Parent };
-        foreach (var probe in probes)
-        {
-            if (probe.Equals(CultureInfo.InvariantCulture)) break;
-            try
-            {
-                var set = rm.GetResourceSet(probe, createIfNotExists: true, tryParents: false);
-                if (set is not null) return probe;
-            }
-            catch (MissingManifestResourceException) { }
-            catch { }
-        }
-
-        // No CommonResources satellite → IDE shows en-US (the neutral assembly language).
-        return new CultureInfo("en-US");
     }
 
     private static void ParseCommandLine(string[] args)
