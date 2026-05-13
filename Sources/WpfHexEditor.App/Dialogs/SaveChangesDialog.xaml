@@ -9,7 +9,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:s="clr-namespace:System;assembly=mscorlib"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
-        Title="{StaticResource App_SaveChanges_Title}"
+        Title="{DynamicResource App_SaveChanges_Title}"
         Width="460" SizeToContent="Height"
         MinWidth="360" MinHeight="160"
         Background="{DynamicResource DockWindowBackgroundBrush}">
@@ -39,7 +39,7 @@
 
         <!-- Master "Select All" (visible only when multiple files) -->
         <CheckBox x:Name="SelectAllCheck"
-                  Content="{StaticResource App_SaveChanges_SelectAll}"
+                  Content="{DynamicResource App_SaveChanges_SelectAll}"
                   IsThreeState="False"
                   Visibility="Collapsed"
                   Margin="0,0,0,4"
@@ -69,7 +69,7 @@
                 </Style>
             </StackPanel.Resources>
 
-            <Button Content="{StaticResource App_SaveChanges_Save}"
+            <Button Content="{DynamicResource App_SaveChanges_Save}"
                     IsDefault="True"
                     Click="OnSaveClicked">
                 <Button.Style>
@@ -82,8 +82,8 @@
                 </Button.Style>
             </Button>
 
-            <Button Content="{StaticResource App_SaveChanges_DontSave}" Click="OnDontSaveClicked" />
-            <Button Content="{StaticResource App_SaveChanges_Cancel}"   IsCancel="True" Click="OnCancelClicked" />
+            <Button Content="{DynamicResource App_SaveChanges_DontSave}" Click="OnDontSaveClicked" />
+            <Button Content="{DynamicResource App_SaveChanges_Cancel}"   IsCancel="True" Click="OnCancelClicked" />
 
         </StackPanel>
     </StackPanel>

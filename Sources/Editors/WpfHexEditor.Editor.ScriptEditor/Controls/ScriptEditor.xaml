@@ -33,7 +33,7 @@
                            VerticalAlignment="Center"
                            FontSize="11"
                            Foreground="{DynamicResource TE_LineNumberForeground}"
-                           Text="{StaticResource SCR_F5Help}" />
+                           Text="{DynamicResource SCR_F5Help}" />
             </StackPanel>
         </Border>
 
@@ -76,7 +76,7 @@
                        Margin="8,0"
                        FontSize="11"
                        Foreground="{DynamicResource TE_LineNumberForeground}"
-                       Text="{StaticResource SCR_StatusReady}" />
+                       Text="{DynamicResource SCR_StatusReady}" />
         </Border>
     </Grid>
 </UserControl>
