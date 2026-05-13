@@ -29,7 +29,7 @@
     <PluginMenuContributionsJson>[{"commandId":"View.ClassDiagram","label":"_Class Diagram","parentPath":"View","group":"ClassDiagram","category":"Designers","iconGlyph":"\uE8A5"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>false</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
-    <PluginPermAccessNetwork>false</PluginPermAccessNetwork>
+    <PluginPermAccessNetwork>true</PluginPermAccessNetwork>
     <PluginPermRegisterMenus>true</PluginPermRegisterMenus>
     <PluginPermWriteOutput>true</PluginPermWriteOutput>
   </PropertyGroup>

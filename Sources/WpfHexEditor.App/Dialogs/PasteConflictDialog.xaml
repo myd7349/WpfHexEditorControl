@@ -9,7 +9,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:appSvc="clr-namespace:WpfHexEditor.App.Services"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
-        Title="{StaticResource App_PasteConflict_Title}"
+        Title="{DynamicResource App_PasteConflict_Title}"
         Width="420" SizeToContent="Height"
         MinWidth="340"
         Background="{DynamicResource DockWindowBackgroundBrush}">

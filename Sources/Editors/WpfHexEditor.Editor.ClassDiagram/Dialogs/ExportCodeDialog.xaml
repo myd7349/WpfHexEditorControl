@@ -6,7 +6,7 @@
         xmlns:options="clr-namespace:WpfHexEditor.Editor.ClassDiagram.Core.CodeGen.Options;assembly=WpfHexEditor.Editor.ClassDiagram.Core"
         xmlns:abs="clr-namespace:WpfHexEditor.Editor.ClassDiagram.Core.CodeGen.Abstractions;assembly=WpfHexEditor.Editor.ClassDiagram.Core"
              xmlns:cdSvc="clr-namespace:WpfHexEditor.Editor.ClassDiagram.Services"
-        Title="{StaticResource ExportCode_Title}"
+        Title="{DynamicResource ExportCode_Title}"
         Width="900" Height="640"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"

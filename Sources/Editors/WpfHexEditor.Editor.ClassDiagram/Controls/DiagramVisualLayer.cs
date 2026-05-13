@@ -748,10 +748,10 @@ public sealed class DiagramVisualLayer : FrameworkElement
             var tgt = _doc.FindById(rel.TargetId);
             if (src is null || tgt is null) continue;
 
-            Point p1 = NearestEdgePoint(new Rect(src.X, src.Y, src.Width, src.Height),
-                                         new Rect(tgt.X, tgt.Y, tgt.Width, tgt.Height));
-            Point p2 = NearestEdgePoint(new Rect(tgt.X, tgt.Y, tgt.Width, tgt.Height),
-                                         new Rect(src.X, src.Y, src.Width, src.Height));
+            Point p1 = NearestEdgePoint(new Rect(src.X, src.Y, ComputeNodeWidth(src), ComputeNodeHeight(src)),
+                                         new Rect(tgt.X, tgt.Y, ComputeNodeWidth(tgt), ComputeNodeHeight(tgt)));
+            Point p2 = NearestEdgePoint(new Rect(tgt.X, tgt.Y, ComputeNodeWidth(tgt), ComputeNodeHeight(tgt)),
+                                         new Rect(src.X, src.Y, ComputeNodeWidth(src), ComputeNodeHeight(src)));
 
             if (PointToSegmentDistance(pt, p1, p2) <= 6.0)
                 return rel;
@@ -1147,8 +1147,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
             var tgt = _doc.FindById(rel.TargetId);
             if (src is null || tgt is null) continue;
 
-            var srcRect = new Rect(src.X, src.Y, src.Width, src.Height);
-            var tgtRect = new Rect(tgt.X, tgt.Y, tgt.Width, tgt.Height);
+            var srcRect = new Rect(src.X, src.Y, ComputeNodeWidth(src), ComputeNodeHeight(src));
+            var tgtRect = new Rect(tgt.X, tgt.Y, ComputeNodeWidth(tgt), ComputeNodeHeight(tgt));
 
             // Viewport culling: skip arrows whose bounding box is entirely offscreen
             if (vp.HasValue)
@@ -1258,8 +1258,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
         var tgt = _doc.FindById(rel.TargetId);
         if (src is null || tgt is null) return;
 
-        var srcRect = new Rect(src.X, src.Y, src.Width, src.Height);
-        var tgtRect = new Rect(tgt.X, tgt.Y, tgt.Width, tgt.Height);
+        var srcRect = new Rect(src.X, src.Y, ComputeNodeWidth(src), ComputeNodeHeight(src));
+        var tgtRect = new Rect(tgt.X, tgt.Y, ComputeNodeWidth(tgt), ComputeNodeHeight(tgt));
         Point p1 = NearestEdgePoint(srcRect, tgtRect);
         Point p2 = NearestEdgePoint(tgtRect, srcRect);
 
@@ -1398,8 +1398,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
             var nodes = grp.ToList();
             double minX = nodes.Min(n => n.X) - SwimLanePad;
             double minY = nodes.Min(n => n.Y) - SwimLanePad - 16;  // space for header
-            double maxX = nodes.Max(n => n.X + n.Width)  + SwimLanePad;
-            double maxY = nodes.Max(n => n.Y + n.Height) + SwimLanePad;
+            double maxX = nodes.Max(n => n.X + ComputeNodeWidth(n))  + SwimLanePad;
+            double maxY = nodes.Max(n => n.Y + ComputeNodeHeight(n)) + SwimLanePad;
 
             var laneRect = new Rect(minX, minY, maxX - minX, maxY - minY);
             dc.DrawRoundedRectangle(laneBrush, lanePen, laneRect, 4, 4);
@@ -1428,8 +1428,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
             var nodes = grp.ToList();
             double minX = nodes.Min(n => n.X) - SwimLanePad;
             double minY = nodes.Min(n => n.Y) - SwimLanePad - 16;
-            double maxX = nodes.Max(n => n.X + n.Width)  + SwimLanePad;
-            double maxY = nodes.Max(n => n.Y + n.Height) + SwimLanePad;
+            double maxX = nodes.Max(n => n.X + ComputeNodeWidth(n))  + SwimLanePad;
+            double maxY = nodes.Max(n => n.Y + ComputeNodeHeight(n)) + SwimLanePad;
 
             if (new Rect(minX, minY, maxX - minX, maxY - minY).Contains(pt))
                 return grp.Key;

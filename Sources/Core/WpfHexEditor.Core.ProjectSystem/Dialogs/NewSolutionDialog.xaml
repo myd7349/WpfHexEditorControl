@@ -9,7 +9,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:psSvc="clr-namespace:WpfHexEditor.Core.ProjectSystem.Services"
-        Title="{StaticResource PS_NewSolutionTitle}"
+        Title="{DynamicResource PS_NewSolutionTitle}"
         Width="520" Height="240"
         MinWidth="400" MinHeight="200"
         Background="{DynamicResource DockWindowBackgroundBrush}">

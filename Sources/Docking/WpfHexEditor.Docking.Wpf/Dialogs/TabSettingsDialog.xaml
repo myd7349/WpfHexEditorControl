@@ -20,7 +20,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:WpfHexEditor.Shell"
         xmlns:dockSvc="clr-namespace:WpfHexEditor.Shell.Services"
-        Title="{StaticResource Docking_TabSettings_Title}"
+        Title="{DynamicResource Docking_TabSettings_Title}"
         Width="420" SizeToContent="Height"
         Background="{DynamicResource DockBackgroundBrush}"
         Foreground="{DynamicResource DockForegroundBrush}">

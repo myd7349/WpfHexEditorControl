@@ -14,7 +14,7 @@
 <Window x:Class="WpfHexEditor.Core.WorkspaceTemplates.Views.NewProjectDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{StaticResource NewProject_Title}"
+        Title="{DynamicResource NewProject_Title}"
         Width="760" Height="520"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"

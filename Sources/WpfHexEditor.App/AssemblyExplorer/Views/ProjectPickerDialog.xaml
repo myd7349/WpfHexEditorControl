@@ -14,7 +14,7 @@
                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:asmSvc="clr-namespace:WpfHexEditor.App.AssemblyExplorer.Services"
                         xmlns:local="clr-namespace:WpfHexEditor.App.AssemblyExplorer.Views"
-                        Title="{StaticResource AsmExplorer_ExtractToProject}"
+                        Title="{DynamicResource AsmExplorer_ExtractToProject}"
                         Width="360"
                         Height="260"
                         ResizeMode="NoResize"

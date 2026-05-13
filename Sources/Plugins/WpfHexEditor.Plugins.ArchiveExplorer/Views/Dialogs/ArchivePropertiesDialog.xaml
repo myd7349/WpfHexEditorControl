@@ -11,7 +11,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:aeSvc="clr-namespace:WpfHexEditor.Plugins.ArchiveExplorer.Services"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
-        Title="{StaticResource AE_EntryPropertiesTitle}"
+        Title="{DynamicResource AE_EntryPropertiesTitle}"
         Width="380" SizeToContent="Height"
         ResizeMode="NoResize"
         Background="{DynamicResource DockWindowBackgroundBrush}">

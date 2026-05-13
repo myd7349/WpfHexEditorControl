@@ -14,7 +14,7 @@
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:hexSvc="clr-namespace:WpfHexEditor.HexEditor.Services"
         mc:Ignorable="d"
-        Title="{StaticResource FindAndReplaceDialogTitle}" Height="400" Width="600"
+        Title="{DynamicResource FindAndReplaceDialogTitle}" Height="400" Width="600"
         ResizeMode="CanResize"
         Background="{DynamicResource BackgroundBrush}">
 

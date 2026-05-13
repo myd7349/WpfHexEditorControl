@@ -14,7 +14,7 @@
 <Window x:Class="WpfHexEditor.App.Build.ConfigurationManagerDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        ToolTip="{StaticResource APP_ConfigMgrTitle}"
+        ToolTip="{DynamicResource APP_ConfigMgrTitle}"
         Width="640" Height="400"
         MinWidth="520" MinHeight="300"
         ResizeMode="CanResize"

@@ -15,7 +15,7 @@
     xmlns:p="clr-namespace:WpfHexEditor.Core.Properties;assembly=WpfHexEditor.Core"
     xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
              xmlns:hexSvc="clr-namespace:WpfHexEditor.HexEditor.Services"
-    Title="{StaticResource EnterHexValueMsgString}"
+    Title="{DynamicResource EnterHexValueMsgString}"
     Width="420"
     Height="260"
     x:ClassModifier="public"

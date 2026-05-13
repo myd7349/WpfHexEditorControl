@@ -11,7 +11,7 @@
         xmlns:ce="clr-namespace:WpfHexEditor.Editor.CodeEditor.Controls;assembly=WpfHexEditor.Editor.CodeEditor"
              xmlns:appSvc="clr-namespace:WpfHexEditor.App.Services"
         xmlns:pb="clr-namespace:WpfHexEditor.ProgressBar.Controls;assembly=WpfHexEditor.ProgressBar"
-        Title="{StaticResource App_ImportFormat_Title}"
+        Title="{DynamicResource App_ImportFormat_Title}"
         Width="980" Height="580"
         MinWidth="680" MinHeight="420"
         ResizeMode="CanResizeWithGrip"

@@ -16,7 +16,7 @@
         xmlns:models="clr-namespace:WpfHexEditor.Core.Search.Models;assembly=WpfHexEditor.Core"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         mc:Ignorable="d"
-        Title="{StaticResource HE_SearchDialogTitle}"
+        Title="{DynamicResource HE_SearchDialogTitle}"
         Height="460" Width="560"
         MinHeight="380" MinWidth="480"
         ResizeMode="CanResizeWithGrip"

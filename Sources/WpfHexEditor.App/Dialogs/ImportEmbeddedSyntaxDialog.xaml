@@ -10,7 +10,7 @@
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:ce="clr-namespace:WpfHexEditor.Editor.CodeEditor.Controls;assembly=WpfHexEditor.Editor.CodeEditor"
              xmlns:appSvc="clr-namespace:WpfHexEditor.App.Services"
-        Title="{StaticResource App_ImportSyntax_Title}"
+        Title="{DynamicResource App_ImportSyntax_Title}"
         Width="880" Height="820"
         MinWidth="640" MinHeight="620"
         ResizeMode="CanResizeWithGrip"

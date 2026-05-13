@@ -12,7 +12,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
     xmlns:hexSvc="clr-namespace:WpfHexEditor.HexEditor.Services"
-    Title="{StaticResource GoToPositionTitle}"
+    Title="{DynamicResource GoToPositionTitle}"
     Width="380"
     Height="210"
     x:ClassModifier="public"

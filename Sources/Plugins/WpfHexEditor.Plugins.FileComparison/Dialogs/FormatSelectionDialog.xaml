@@ -18,7 +18,7 @@
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:fcSvc="clr-namespace:WpfHexEditor.Plugins.FileComparison.Services"
         mc:Ignorable="d"
-        Title="{StaticResource FileComparison_FormatSelectionTitle}"
+        Title="{DynamicResource FileComparison_FormatSelectionTitle}"
         Height="500" Width="650"
         Background="{DynamicResource DockWindowBackgroundBrush}">
 

@@ -9,7 +9,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:psSvc="clr-namespace:WpfHexEditor.Core.ProjectSystem.Services"
-        Title="{StaticResource PS_NewProjectTitle}"
+        Title="{DynamicResource PS_NewProjectTitle}"
         Width="720" Height="520"
         MinWidth="580" MinHeight="420"
         ResizeMode="CanResizeWithGrip"

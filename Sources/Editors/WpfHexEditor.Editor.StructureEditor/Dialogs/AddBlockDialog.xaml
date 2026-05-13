@@ -7,7 +7,7 @@
 <Window x:Class="WpfHexEditor.Editor.StructureEditor.Dialogs.AddBlockDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{StaticResource StructureEditor_AddBlockTitle}"
+        Title="{DynamicResource StructureEditor_AddBlockTitle}"
         Width="380" Height="180"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"

@@ -12,7 +12,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:psSvc="clr-namespace:WpfHexEditor.Core.ProjectSystem.Services"
-        Title="{StaticResource PS_AddExistingItemTitle}"
+        Title="{DynamicResource PS_AddExistingItemTitle}"
         Width="580" Height="540"
         MinWidth="480" MinHeight="460"
         ResizeMode="CanResizeWithGrip"

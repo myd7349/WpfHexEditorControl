@@ -1798,14 +1798,25 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
     private async Task OpenAIGeneratedDiagramAsync(IIDEHostContext context)
     {
+        var cfg = ClassDiagramAIGenerator.LoadProviderConfig();
+        bool hasProvider = cfg is not null && (cfg.ProviderId == "ollama" || !string.IsNullOrEmpty(cfg.ApiKey));
+
+        string apiHint = hasProvider
+            ? $"✔ {cfg!.ProviderId} · {cfg.ModelId}"
+            : "⚠ No AI provider configured — skeleton fallback will be used · Configure in AI Assistant settings";
+        var iconColor = new System.Windows.Media.SolidColorBrush(
+            hasProvider
+            ? System.Windows.Media.Color.FromRgb(0xA0, 0x70, 0xD0)
+            : System.Windows.Media.Color.FromRgb(0xE0, 0xA0, 0x30));
+
         string? prompt = IdeInputDialog.Show(
             "Describe the classes to generate:",
             "✨ AI Generate Diagram",
-            placeholder: "e.g. Repository pattern for User entity",
-            hint:        "Powered by Claude API · API key from AI Assistant settings",
+            placeholder:  "e.g. Repository pattern for User entity",
+            hint:         apiHint,
             confirmLabel: "Generate",
-            iconGlyph:   "",
-            iconColor:   new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xA0, 0x70, 0xD0)));
+            iconGlyph:    "✨",
+            iconColor:    iconColor);
 
         if (string.IsNullOrWhiteSpace(prompt)) return;
 
