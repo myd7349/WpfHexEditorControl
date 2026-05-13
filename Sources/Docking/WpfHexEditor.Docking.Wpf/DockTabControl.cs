@@ -116,7 +116,7 @@ public class DockTabControl : TabControl
 
     // ── Highlight mode ─────────────────────────────────────────────────────────
 
-    private ActivePanelHighlightMode _highlightMode = ActivePanelHighlightMode.FullBorder;
+    private ActivePanelHighlightMode _highlightMode = ActivePanelHighlightMode.Glow;
 
     /// <summary>
     /// Updates the SelectionBorder thickness on every tab item to match the active
