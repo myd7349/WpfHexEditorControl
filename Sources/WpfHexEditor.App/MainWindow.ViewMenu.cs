@@ -219,6 +219,105 @@ public partial class MainWindow
             IsBuiltIn:         true,
             HeaderResourceKey: null));
 
+        // Binary Analysis panels
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.BaStrings,
+            Header:            "_String Extraction",
+            GestureText:       null,
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowStringExtraction()),
+            CommandParameter:  null,
+            Group:             "Binary Analysis",
+            Category:          ViewMenuClassifier.Analysis,
+            DockSide:          "Bottom",
+            ToolTip:           "Extract readable ASCII and UTF-16 strings from the active file",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.BaHash,
+            Header:            "_Hash Inspector",
+            GestureText:       null,
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowHashInspector()),
+            CommandParameter:  null,
+            Group:             "Binary Analysis",
+            Category:          ViewMenuClassifier.Analysis,
+            DockSide:          "Bottom",
+            ToolTip:           "Compute MD5/SHA1/SHA256/SHA512 over the whole file or selection",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.BaCarver,
+            Header:            "_File Carver",
+            GestureText:       null,
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowFileCarver()),
+            CommandParameter:  null,
+            Group:             "Binary Analysis",
+            Category:          ViewMenuClassifier.Analysis,
+            DockSide:          "Bottom",
+            ToolTip:           "Detect and extract embedded files using format signatures",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.BaSigDb,
+            Header:            "_Signature Database",
+            GestureText:       null,
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowSignatureDb()),
+            CommandParameter:  null,
+            Group:             "Binary Analysis",
+            Category:          ViewMenuClassifier.Analysis,
+            DockSide:          "Bottom",
+            ToolTip:           "Manage custom hex-pattern signatures and test them on the active file",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.BaFrequency,
+            Header:            "Byte _Frequency",
+            GestureText:       null,
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowByteFrequency()),
+            CommandParameter:  null,
+            Group:             "Binary Analysis",
+            Category:          ViewMenuClassifier.Analysis,
+            DockSide:          "Bottom",
+            ToolTip:           "Byte frequency heatmap and Shannon entropy",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.HexDiff,
+            Header:            "_Hex Diff…",
+            GestureText:       "Ctrl+Alt+H",
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowHexDiff()),
+            CommandParameter:  null,
+            Group:             "Binary Analysis",
+            Category:          ViewMenuClassifier.Analysis,
+            DockSide:          "Bottom",
+            ToolTip:           "Byte-level diff of two binary files with patch export",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
+        _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
+            Id:                CommandIds.View.ScriptingConsole,
+            Header:            "_Scripting Console",
+            GestureText:       "Ctrl+Alt+S",
+            IconGlyph:         "",
+            Command:           new RelayCommand(_ => OnShowScriptingConsole()),
+            CommandParameter:  null,
+            Group:             "Core IDE",
+            Category:          ViewMenuClassifier.CoreIDE,
+            DockSide:          "Bottom",
+            ToolTip:           "Interactive C# REPL with access to IDE services (HexEditor, Documents, Output…)",
+            IsBuiltIn:         true,
+            HeaderResourceKey: null));
+
         // Analysis
         _viewMenuOrganizer.RegisterBuiltInEntry(new ViewMenuEntry(
             Id:                CommandIds.View.EntropyAnalysis,
