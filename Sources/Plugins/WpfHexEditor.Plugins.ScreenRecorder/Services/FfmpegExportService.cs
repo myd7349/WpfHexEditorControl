@@ -45,7 +45,7 @@ public static class FfmpegExportService
 
             // Step 2: run ffmpeg (80–100%).
             ct.ThrowIfCancellationRequested();
-            await RunFfmpegAsync(_resolvedFfmpegPath!, tempDir, options.OutputPath, fps, ct);
+            await RunFfmpegAsync(_resolvedFfmpegPath ?? "ffmpeg", tempDir, options.OutputPath, fps, ct);
             progress?.Report(100);
         }
         finally

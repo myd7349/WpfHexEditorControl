@@ -62,7 +62,7 @@ public sealed class FrameCardViewModel : INotifyPropertyChanged
     }
 
     public FrameCardViewModel Clone(int newIndex) =>
-        new(newIndex, Thumbnail, _delay) { SourcePath = SourcePath, _label = _label };
+        new(newIndex, Thumbnail, _delay) { SourcePath = SourcePath, Label = _label };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? p = null)

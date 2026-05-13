@@ -84,10 +84,11 @@ public sealed class CaptureService : IDisposable
     {
         if (_state != SessionState.Active) return;
         if (CurrentSession?.Mode is RecordingMode.TimedInterval) return;
+        if (_capturingFrame) return;
         _ = CaptureOneFrameAsync();
     }
 
-    public TimeSpan Elapsed => _elapsed.Elapsed;
+    public TimeSpan Elapsed => _state == SessionState.Stopped ? TimeSpan.Zero : _elapsed.Elapsed;
 
     public void Dispose() => StopSession();
 

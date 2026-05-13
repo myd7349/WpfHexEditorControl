@@ -46,8 +46,6 @@ public sealed class PropertiesViewModel : INotifyPropertyChanged
         set { if (_timerInterval == value) return; _timerInterval = Math.Max(80, value); OnPropertyChanged(); }
     }
 
-    public void ApplyRegion(CaptureRegion region) => CaptureRegion = region;
-
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));

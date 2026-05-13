@@ -31,8 +31,6 @@ public static class FrameCaptureEngine
     public static BitmapSource ScaleBitmap(BitmapSource source, double scale)
     {
         if (Math.Abs(scale - 1.0) < 0.001) return source;
-        var w = (int)(source.PixelWidth  * scale);
-        var h = (int)(source.PixelHeight * scale);
         var scaled = new TransformedBitmap(source, new ScaleTransform(scale, scale));
         scaled.Freeze();
         return scaled;

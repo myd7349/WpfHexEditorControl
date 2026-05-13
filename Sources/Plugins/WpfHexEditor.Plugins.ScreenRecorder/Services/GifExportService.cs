@@ -54,10 +54,12 @@ public static class GifExportService
         // Build the output GIF stream.
         WriteGif89aStream(output, rawFrames, frames, options);
         progress?.Report(100);
+        await output.FlushAsync(ct);
     }
 
     // ── Encoding ─────────────────────────────────────────────────────────────
 
+    // GIF uses GifBitmapEncoder + Indexed8 quantization — distinct from FrameCaptureEngine.EncodePngOnUiThreadAsync.
     private static Task<byte[]> EncodeFrameOnUiThreadAsync(BitmapSource bitmap) =>
         System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
@@ -112,9 +114,10 @@ public static class GifExportService
     }
 
     // Scan for Image Descriptor marker (0x2C) — signature-based, never fixed offset.
+    // Start at i=6 to skip the GIF header ("GIF87a") where 0x2C cannot appear as a descriptor.
     private static int FindImageDescriptor(byte[] raw)
     {
-        for (var i = 1; i < raw.Length; i++)
+        for (var i = 6; i < raw.Length; i++)
             if (raw[i] == 0x2C) return i;
         return -1;
     }

@@ -120,7 +120,7 @@ public static class SessionSerializer
     private static void ValidateMagic(Stream stream)
     {
         var buf = new byte[Magic.Length];
-        if (stream.Read(buf, 0, buf.Length) < buf.Length || !buf.AsSpan(0, 4).SequenceEqual(Magic.AsSpan(0, 4)))
+        if (stream.Read(buf, 0, buf.Length) < buf.Length || !buf.AsSpan(0, 6).SequenceEqual(Magic.AsSpan(0, 6)))
             throw new InvalidDataException("Not a valid .whscr file (bad magic signature).");
     }
 

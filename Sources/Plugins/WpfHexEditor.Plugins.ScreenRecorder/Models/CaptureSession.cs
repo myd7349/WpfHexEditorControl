@@ -20,12 +20,4 @@ public sealed class CaptureSession
     public void AddFrame(CaptureFrame frame) => _frames.Add(frame);
     public void RemoveAt(int index)          => _frames.RemoveAt(index);
     public void Clear()                      => _frames.Clear();
-
-    public void ReorderFrame(int fromIndex, int toIndex)
-    {
-        if (fromIndex == toIndex) return;
-        var item = _frames[fromIndex];
-        _frames.RemoveAt(fromIndex);
-        _frames.Insert(Math.Min(toIndex, _frames.Count), item);
-    }
 }

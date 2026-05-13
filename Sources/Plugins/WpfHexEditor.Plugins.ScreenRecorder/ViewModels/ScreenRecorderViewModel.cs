@@ -107,8 +107,8 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
             OutputScale          = Properties.OutputScale
         };
 
-        ShowOverlay(region);
         _captureService.StartSession(session);
+        ShowOverlay(region);
         IsSessionActive = true;
         Hud.IsRecording = true;
     }
@@ -158,7 +158,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
     {
         var region = await RegionSelectorService.SelectRegionAsync();
         if (region is { IsEmpty: false } r)
-            Properties.ApplyRegion(r);
+            Properties.CaptureRegion = r;
     }
 
     // ── Session serialization ──────────────────────────────────────────────────
@@ -193,6 +193,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         var session  = await SessionSerializer.LoadAsync(_sessionPath);
 
         Timeline.Frames.Clear();
+        Timeline.SelectedFrame = null;
         foreach (var frame in session.Frames)
         {
             var thumb = FrameCaptureEngine.CreateThumbnail(frame.Bitmap);
@@ -200,7 +201,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
             Timeline.AddFrame(card);
         }
 
-        Properties.ApplyRegion(session.Region);
+        Properties.CaptureRegion = session.Region;
         Properties.OutputScale          = session.OutputScale;
         Properties.LoopCount            = session.LoopCount;
         Properties.RepeatLastFrameDelay = session.RepeatLastFrameDelay;
