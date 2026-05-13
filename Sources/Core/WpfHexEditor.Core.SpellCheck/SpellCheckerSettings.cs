@@ -92,6 +92,13 @@ public sealed class SpellCheckerSettings
         catch { }
     }
 
+    /// <summary>Single allocation used as the default-values reference; never mutated.</summary>
+    [JsonIgnore]
+    public static SpellCheckerSettings Defaults { get; } = new();
+
+    [JsonIgnore]
+    public string UserDictPath => Path.Combine(DictionariesPath, "userdict.txt");
+
     public bool IsLanguagePromptSuppressed(string languageCode) =>
         SuppressedLanguagePrompts.Contains(languageCode);
 

@@ -106,22 +106,14 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
 
     private void OnBrowseDictPathClick(object sender, RoutedEventArgs e)
     {
-        // Use a dummy OpenFileDialog pointed at a placeholder file so the user
-        // can navigate to the desired folder without requiring WinForms.
-        var dlg = new OpenFileDialog
+        var dlg = new OpenFolderDialog
         {
-            Title            = TryFindResource("SpellCheck_BrowseDictPathTitle") as string ?? "Select dictionaries folder",
-            Filter           = "Folder|*.nofile",
-            FileName         = "Select Folder",
-            CheckFileExists  = false,
-            CheckPathExists  = true,
-            ValidateNames    = false,
-            InitialDirectory = Directory.Exists(TxtDictPath.Text) ? TxtDictPath.Text : string.Empty
+            Title              = TryFindResource("SpellCheck_BrowseDictPathTitle") as string ?? "Select dictionaries folder",
+            InitialDirectory   = Directory.Exists(TxtDictPath.Text) ? TxtDictPath.Text : string.Empty,
+            Multiselect        = false
         };
         if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-        var folder = Path.GetDirectoryName(dlg.FileName);
-        if (string.IsNullOrEmpty(folder)) return;
-        TxtDictPath.Text = folder;
+        TxtDictPath.Text = dlg.FolderName;
         OnDictPathChanged(sender, e);
     }
 
@@ -146,14 +138,16 @@ public sealed partial class SpellCheckerOptionsPage : UserControl, WpfHexEditor.
         UpdateConfidenceLabel();
     }
 
+    private void OnSliderDragCompleted(object sender, RoutedEventArgs e) => _vm?.SaveSliderSettings();
+
     private void UpdateDebounceLabel() =>
-        TxtDebounceValue.Text = $"{_vm?.AnalysisDebounceMs ?? 800} ms";
+        TxtDebounceValue.Text = $"{_vm?.AnalysisDebounceMs ?? SpellCheckerSettings.Defaults.AnalysisDebounceMs} ms";
 
     private void UpdateMaxSuggestionsLabel() =>
-        TxtMaxSuggestionsValue.Text = $"{_vm?.MaxSuggestions ?? 5}";
+        TxtMaxSuggestionsValue.Text = $"{_vm?.MaxSuggestions ?? SpellCheckerSettings.Defaults.MaxSuggestions}";
 
     private void UpdateConfidenceLabel() =>
-        TxtConfidenceValue.Text = $"{_vm?.DetectionConfidencePercent ?? 4} %";
+        TxtConfidenceValue.Text = $"{_vm?.DetectionConfidencePercent ?? SpellCheckerSettings.Defaults.DetectionConfidencePercent} %";
 
     private async void OnDownloadClick(object sender, RoutedEventArgs e)
     {

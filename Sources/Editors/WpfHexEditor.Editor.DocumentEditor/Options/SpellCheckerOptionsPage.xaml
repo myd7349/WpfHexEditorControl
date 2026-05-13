@@ -305,7 +305,8 @@
                         IsSnapToTickEnabled="True"
                         Width="160"
                         VerticalAlignment="Center"
-                        ValueChanged="OnDebounceChanged"/>
+                        ValueChanged="OnDebounceChanged"
+                        Thumb.DragCompleted="OnSliderDragCompleted"/>
                 <TextBlock x:Name="TxtDebounceValue"
                            Foreground="{DynamicResource PFP_SubTextBrush}"
                            FontSize="11"
@@ -334,7 +335,8 @@
                     IsSnapToTickEnabled="True"
                     Width="160"
                     VerticalAlignment="Center"
-                    ValueChanged="OnMaxSuggestionsChanged"/>
+                    ValueChanged="OnMaxSuggestionsChanged"
+                    Thumb.DragCompleted="OnSliderDragCompleted"/>
         </Grid>
         <TextBlock x:Name="TxtMaxSuggestionsValue"
                    Foreground="{DynamicResource PFP_SubTextBrush}"
@@ -360,7 +362,8 @@
                         IsSnapToTickEnabled="True"
                         Width="160"
                         VerticalAlignment="Center"
-                        ValueChanged="OnConfidenceChanged"/>
+                        ValueChanged="OnConfidenceChanged"
+                        Thumb.DragCompleted="OnSliderDragCompleted"/>
                 <TextBlock x:Name="TxtConfidenceValue"
                            Foreground="{DynamicResource PFP_SubTextBrush}"
                            FontSize="11"

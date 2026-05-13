@@ -27,6 +27,7 @@ internal sealed class SpellCheckService : IDisposable
     private readonly ISpellChecker        _checker;
     private readonly DictionaryManager    _dictManager;
     private readonly SpellCheckLayer      _layer;
+    private readonly SpellCheckerSettings _settings;
     private readonly DispatcherTimer      _debounce;
     private DocumentCanvasRenderer?       _renderer;
     private CancellationTokenSource       _cts = new();
@@ -67,14 +68,12 @@ internal sealed class SpellCheckService : IDisposable
         @"|^(.)\1{3,}$",                                   // repeated single char artefacts (wwwww)
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private readonly SpellCheckerSettings _settings;
-
     public SpellCheckService(ISpellChecker checker, DictionaryManager dictManager, SpellCheckLayer layer, SpellCheckerSettings settings)
     {
         _checker     = checker;
         _dictManager = dictManager;
         _layer       = layer;
-        _settings     = settings;
+        _settings    = settings;
         _ignoredWords = new HashSet<string>(settings.IgnoredWords, StringComparer.OrdinalIgnoreCase);
 
         _debounce = new DispatcherTimer(DispatcherPriority.Background)

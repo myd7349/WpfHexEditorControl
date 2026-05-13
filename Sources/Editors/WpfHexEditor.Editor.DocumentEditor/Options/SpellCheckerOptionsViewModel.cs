@@ -8,7 +8,6 @@
 // ==========================================================
 
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -42,21 +41,21 @@ internal sealed class SpellCheckerOptionsViewModel : INotifyPropertyChanged
     public int AnalysisDebounceMs
     {
         get => _analysisDebounceMs;
-        set { if (_analysisDebounceMs == value) return; _analysisDebounceMs = Math.Clamp(value, 100, 5000); OnPropertyChanged(); _settings.AnalysisDebounceMs = _analysisDebounceMs; _settings.Save(); }
+        set { if (_analysisDebounceMs == value) return; _analysisDebounceMs = Math.Clamp(value, 100, 5000); OnPropertyChanged(); _settings.AnalysisDebounceMs = _analysisDebounceMs; }
     }
 
     private int _maxSuggestions;
     public int MaxSuggestions
     {
         get => _maxSuggestions;
-        set { if (_maxSuggestions == value) return; _maxSuggestions = Math.Clamp(value, 1, 20); OnPropertyChanged(); _settings.MaxSuggestions = _maxSuggestions; _settings.Save(); }
+        set { if (_maxSuggestions == value) return; _maxSuggestions = Math.Clamp(value, 1, 20); OnPropertyChanged(); _settings.MaxSuggestions = _maxSuggestions; }
     }
 
     private int _detectionConfidencePercent;
     public int DetectionConfidencePercent
     {
         get => _detectionConfidencePercent;
-        set { if (_detectionConfidencePercent == value) return; _detectionConfidencePercent = Math.Clamp(value, 1, 50); OnPropertyChanged(); _settings.DetectionConfidencePercent = _detectionConfidencePercent; _settings.Save(); }
+        set { if (_detectionConfidencePercent == value) return; _detectionConfidencePercent = Math.Clamp(value, 1, 50); OnPropertyChanged(); _settings.DetectionConfidencePercent = _detectionConfidencePercent; }
     }
 
     private string _mirrorUrl = string.Empty;
@@ -75,7 +74,7 @@ internal sealed class SpellCheckerOptionsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<string> IgnoredWords { get; } = [];
 
-    public string UserDictPath => System.IO.Path.Combine(_settings.DictionariesPath, "userdict.txt");
+    public string UserDictPath => _settings.UserDictPath;
 
     public SpellCheckerOptionsViewModel(SpellCheckerSettings settings, DictionaryManager dictManager)
     {
@@ -123,15 +122,19 @@ internal sealed class SpellCheckerOptionsViewModel : INotifyPropertyChanged
 
     public void RemoveIgnoredWord(string word) => IgnoredWords.Remove(word);
 
+    /// <summary>Persist slider-bound settings in one write (call on LostMouseCapture).</summary>
+    public void SaveSliderSettings() => _settings.Save();
+
     public void ResetAdvancedToDefaults()
     {
-        var def = new SpellCheckerSettings();
+        var def = SpellCheckerSettings.Defaults;
         MultiLanguageMode          = def.MultiLanguageMode;
         AnalysisDebounceMs         = def.AnalysisDebounceMs;
         MaxSuggestions             = def.MaxSuggestions;
         DetectionConfidencePercent = def.DetectionConfidencePercent;
         MirrorUrl                  = def.MirrorUrl;
         DictionariesPath           = def.DictionariesPath;
+        _settings.Save();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
