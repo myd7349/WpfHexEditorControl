@@ -72,6 +72,7 @@ public partial class MainWindow
     private WpfHexEditor.App.Services.DebuggerServiceImpl?      _debuggerService;
     private WpfHexEditor.App.Debug.DebugModule?                 _debugModule;
     private WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule? _assemblyExplorerModule;
+    private WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule?    _binaryAnalysisModule;
     private WpfHexEditor.App.Analysis.CodeAnalysisModule?       _codeAnalysisModule;
     private WpfHexEditor.App.Services.ScriptingServiceImpl?     _scriptingService;
     private WpfHexEditor.App.Services.TabGroupService?          _tabGroupService;
@@ -499,6 +500,10 @@ public partial class MainWindow
             // Panels/ViewModels/decompiler backend are built in EnsureActivated on first use.
             _assemblyExplorerModule = new WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule();
             await _assemblyExplorerModule.InitializeAsync(hostContext).ConfigureAwait(true);
+
+            // Binary Analysis module — #110 strings, #111 hash, #112 carver, #118 sig db, #119 freq heatmap.
+            _binaryAnalysisModule = new WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule();
+            await _binaryAnalysisModule.InitializeAsync(hostContext).ConfigureAwait(true);
 
             // Code Analysis module — provides OVERKILL analysis with full IDE integration
             // (status bar badge, Tools menu, Solution/Project/File context menus, Error Panel, Options pages).
@@ -1337,6 +1342,7 @@ public partial class MainWindow
         _lspBridgeService = null;
         _assemblyExplorerModule?.Shutdown();
         _assemblyExplorerModule = null;
+        _binaryAnalysisModule = null;
         _debugModule?.Shutdown();
         _debugModule = null;
         if (_debuggerService is not null)

@@ -132,6 +132,9 @@ public sealed class CodeEditorFactory : IEditorFactory
         foreach (var def in language.Snippets)
             mgr.Register(new Snippet(def.Trigger, def.Body, def.Description));
 
+        foreach (var def in UserLanguageSnippetStore.Instance.GetForLanguage(language.Id))
+            mgr.Register(new Snippet(def.Trigger, def.Body, def.Description));
+
         foreach (var us in SharedUserSnippets.GetForLanguage(language.Id))
             mgr.Register(new Snippet(us.Trigger, us.Body, us.Description));
 
