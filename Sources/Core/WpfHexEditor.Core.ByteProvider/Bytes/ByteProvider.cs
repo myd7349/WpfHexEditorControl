@@ -20,6 +20,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using WpfHexEditor.Core.Interfaces;
+using WpfHexEditor.Core.IO;
+using WpfHexEditor.Core.Metrics;
 using WpfHexEditor.Core.Search.Models;
 
 namespace WpfHexEditor.Core.Bytes
@@ -41,7 +44,7 @@ namespace WpfHexEditor.Core.Bytes
     /// - PositionMapper: Virtual↔Physical conversion with cache
     /// - ByteReader: Intelligent byte reading with multi-layer caching
     /// </summary>
-    public sealed partial class ByteProvider : IDisposable
+    public sealed partial class ByteProvider : IByteProvider
     {
         #region Services
 
@@ -50,12 +53,15 @@ namespace WpfHexEditor.Core.Bytes
         private readonly PositionMapper _positionMapper;
         private readonly ByteReader _byteReader;
         private readonly UndoRedoManager _undoRedoManager;
+        private readonly ByteProviderOptions _options;
+        private readonly Metrics.IByteProviderMetrics _metrics;
 
-        // Batching support to avoid repeated cache invalidations
+        // Owns the MemoryMappedFileProvider when the file exceeds the MMF threshold.
+        // Kept alive so the underlying map stays open as long as the stream is in use.
+        private IO.MemoryMappedFileProvider? _mmfProvider;
+
         private bool _batchMode = false;
         private bool _batchDirty = false;
-
-        // Undo/Redo recording control
         private bool _recordUndo = true;
 
         #endregion
@@ -65,7 +71,7 @@ namespace WpfHexEditor.Core.Bytes
         /// <summary>
         /// Gets the file path (if opened from file).
         /// </summary>
-        public string FilePath => _fileProvider.FilePath;
+        public string? FilePath => _mmfProvider?.FilePath ?? _fileProvider.FilePath;
 
         /// <summary>
         /// Gets whether a file/stream is currently open.
@@ -135,35 +141,59 @@ namespace WpfHexEditor.Core.Bytes
 
         #region Events
 
-        /// <summary>
-        /// Fired when all changes have been cleared (after save or explicit clear).
-        /// Listeners should refresh their views to remove modification indicators.
-        /// </summary>
-        public event EventHandler ChangesCleared;
+        /// <summary>Fired when all changes have been cleared (after save or explicit clear).</summary>
+        public event EventHandler? ChangesCleared;
 
-        /// <summary>
-        /// Raise the ChangesCleared event.
-        /// </summary>
-        private void OnChangesCleared()
+        /// <summary>Fired when one or more bytes are modified at a virtual position.</summary>
+        public event EventHandler<ByteModifiedEventArgs>? ByteModified;
+
+        /// <summary>Fired when bytes are inserted at a virtual position.</summary>
+        public event EventHandler<BytesInsertedEventArgs>? BytesInserted;
+
+        /// <summary>Fired when bytes are deleted starting at a virtual position.</summary>
+        public event EventHandler<BytesDeletedEventArgs>? BytesDeleted;
+
+        /// <summary>Fired after a successful save operation.</summary>
+        public event EventHandler<SaveCompletedEventArgs>? SaveCompleted;
+
+        private void OnChangesCleared() => ChangesCleared?.Invoke(this, EventArgs.Empty);
+        private void OnByteModified(long pos, byte oldValue, byte newValue) =>
+            ByteModified?.Invoke(this, new ByteModifiedEventArgs(pos, oldValue, newValue));
+        private void OnBytesModified(long pos, byte[] oldValues, byte[] newValues) =>
+            ByteModified?.Invoke(this, new ByteModifiedEventArgs(pos, oldValues, newValues));
+
+        private void OnBytesInserted(long pos, byte[] bytes) =>
+            BytesInserted?.Invoke(this, new BytesInsertedEventArgs(pos, bytes));
+        private void OnBytesDeleted(long pos, long count) =>
+            BytesDeleted?.Invoke(this, new BytesDeletedEventArgs(pos, count));
+        private void OnSaveCompleted(string filePath, long bytesWritten, long elapsedMs)
         {
-            ChangesCleared?.Invoke(this, EventArgs.Empty);
+            SaveCompleted?.Invoke(this, new SaveCompletedEventArgs(filePath, bytesWritten, elapsedMs));
+            _metrics.OnSave(filePath, bytesWritten, elapsedMs);
         }
 
         #endregion
 
         #region Constructor
 
-        public ByteProvider()
+        /// <summary>Create a ByteProvider with default options.</summary>
+        public ByteProvider() : this(ByteProviderOptions.Default) { }
+
+        /// <summary>Create a ByteProvider with custom <paramref name="options"/>.</summary>
+        public ByteProvider(ByteProviderOptions options)
         {
+            _options = options ?? ByteProviderOptions.Default;
+            _metrics = _options.Metrics;
             _fileProvider = new FileProvider();
             _editsManager = new EditsManager();
             _positionMapper = new PositionMapper(_editsManager);
             _byteReader = new ByteReader(_fileProvider, _editsManager, _positionMapper);
-            _undoRedoManager = new UndoRedoManager();
-
-            // Enable caching for maximum performance
+            _undoRedoManager = new UndoRedoManager { MaxUndoStackSize = _options.MaxUndoDepth };
             _positionMapper.EnableCache();
         }
+
+        /// <summary>Options used to create this provider.</summary>
+        public ByteProviderOptions Options => _options;
 
         #endregion
 
@@ -171,11 +201,29 @@ namespace WpfHexEditor.Core.Bytes
 
         /// <summary>
         /// Open a file for reading/writing.
+        /// Files larger than <see cref="ByteProviderOptions.MemoryMapThresholdBytes"/> are
+        /// automatically opened via memory-mapped I/O for faster random access.
         /// </summary>
         public void OpenFile(string filePath, bool readOnly = false)
         {
-            _fileProvider.OpenFile(filePath, readOnly);
+            CloseMmfProvider();
+
+            long fileSize = new FileInfo(filePath).Length;
+            if (fileSize >= _options.MemoryMapThresholdBytes)
+            {
+                _mmfProvider = new IO.MemoryMappedFileProvider();
+                _mmfProvider.OpenFile(filePath, readOnly);
+                _fileProvider.OpenStream(_mmfProvider.Stream!, readOnly);
+                // Patch FilePath on FileProvider since OpenStream doesn't set it.
+                // We store the path via the MMF provider for display purposes.
+            }
+            else
+            {
+                _fileProvider.OpenFile(filePath, readOnly);
+            }
+
             ClearAllEdits();
+            _metrics.OnFileOpened(FilePath, PhysicalLength);
         }
 
         /// <summary>
@@ -185,6 +233,7 @@ namespace WpfHexEditor.Core.Bytes
         {
             _fileProvider.OpenStream(stream, readOnly);
             ClearAllEdits();
+            _metrics.OnFileOpened(null, PhysicalLength);
         }
 
         /// <summary>
@@ -195,6 +244,7 @@ namespace WpfHexEditor.Core.Bytes
         {
             _fileProvider.OpenMemory(data, readOnly);
             ClearAllEdits();
+            _metrics.OnFileOpened(null, PhysicalLength);
         }
 
         /// <summary>
@@ -202,8 +252,16 @@ namespace WpfHexEditor.Core.Bytes
         /// </summary>
         public void Close()
         {
+            _metrics.OnFileClosed(FilePath);
             _fileProvider.Close();
+            CloseMmfProvider();
             ClearAllEdits();
+        }
+
+        private void CloseMmfProvider()
+        {
+            _mmfProvider?.Dispose();
+            _mmfProvider = null;
         }
 
         #endregion
@@ -252,19 +310,21 @@ namespace WpfHexEditor.Core.Bytes
         /// </summary>
         public void ModifyByte(long virtualPosition, byte value)
         {
-            if (_recordUndo)
+            byte oldValue = 0;
+            if (_recordUndo || ByteModified != null)
             {
-                // Read old value for undo
-                var (oldValue, success) = GetByte(virtualPosition);
-                if (!success)
-                    return; // Can't modify invalid position
-
-                // Record undo operation
-                _undoRedoManager.RecordModify(virtualPosition, new[] { oldValue }, new[] { value });
+                var (read, success) = GetByte(virtualPosition);
+                if (!success) return;
+                oldValue = read;
             }
+
+            if (_recordUndo)
+                _undoRedoManager.RecordModify(virtualPosition, new[] { oldValue }, new[] { value });
 
             ModifyByteInternal(virtualPosition, value);
             InvalidateCaches();
+            OnByteModified(virtualPosition, oldValue, value);
+            _metrics.OnByteModified(virtualPosition);
         }
 
         /// <summary>
@@ -358,23 +418,19 @@ namespace WpfHexEditor.Core.Bytes
             if (values == null || values.Length == 0)
                 return;
 
+            byte[] oldValues = (_recordUndo || ByteModified != null)
+                ? GetBytes(startVirtualPosition, values.Length)
+                : Array.Empty<byte>();
+
             if (_recordUndo)
-            {
-                // Read old values for undo
-                byte[] oldValues = GetBytes(startVirtualPosition, values.Length);
-
-                // Record undo operation
                 _undoRedoManager.RecordModify(startVirtualPosition, oldValues, values);
-            }
 
-            // Batch modify without invalidating cache each time
             for (int i = 0; i < values.Length; i++)
-            {
                 ModifyByteInternal(startVirtualPosition + i, values[i]);
-            }
 
-            // Invalidate caches ONCE at the end
             InvalidateCaches();
+            OnBytesModified(startVirtualPosition, oldValues, values);
+            _metrics.OnByteModified(startVirtualPosition);
         }
 
         /// <summary>
@@ -405,6 +461,8 @@ namespace WpfHexEditor.Core.Bytes
 
             _editsManager.InsertBytes(physicalPos.Value, bytes);
             InvalidateCaches();
+            OnBytesInserted(virtualPosition, bytes);
+            _metrics.OnBytesInserted(virtualPosition, bytes.Length);
         }
 
         /// <summary>
@@ -420,8 +478,7 @@ namespace WpfHexEditor.Core.Bytes
         /// </summary>
         public void DeleteByte(long virtualPosition)
         {
-            if (IsReadOnly)
-                throw new InvalidOperationException("File is read-only");
+            if (IsReadOnly) throw new InvalidOperationException("File is read-only");
 
             // Convert to physical position (needed both for undo recording and actual deletion)
             var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPosition, _fileProvider.Length);
@@ -497,13 +554,12 @@ namespace WpfHexEditor.Core.Bytes
 
             // Invalidate other caches (respects batch mode)
             if (!_batchMode)
-            {
                 _byteReader.ClearLineCache();
-            }
             else
-            {
-                _batchDirty = true; // Mark for end-of-batch invalidation
-            }
+                _batchDirty = true;
+
+            OnBytesDeleted(virtualPosition, 1);
+            _metrics.OnBytesDeleted(virtualPosition, 1);
         }
 
         /// <summary>
@@ -573,13 +629,12 @@ namespace WpfHexEditor.Core.Bytes
 
             // Invalidate other caches at the end
             if (!_batchMode)
-            {
                 _byteReader.ClearLineCache();
-            }
             else
-            {
                 _batchDirty = true;
-            }
+
+            OnBytesDeleted(startVirtualPosition, count);
+            _metrics.OnBytesDeleted(startVirtualPosition, count);
         }
 
         #endregion
@@ -606,33 +661,29 @@ namespace WpfHexEditor.Core.Bytes
             bool hasInsertions = _editsManager.TotalInsertedBytesCount > 0;
             bool hasDeletions = _editsManager.DeletedCount > 0;
 
+            var sw = SaveCompleted != null ? System.Diagnostics.Stopwatch.StartNew() : null;
+            long bytesWritten = VirtualLength;
+
             if (!hasInsertions && !hasDeletions)
             {
                 // FAST PATH: Write only modified bytes in-place
-                // 10-100x faster for files with only byte modifications
                 foreach (var kvp in _editsManager.GetAllModifiedBytes())
                 {
-                    long physicalPos = kvp.Key;
-                    byte newValue = kvp.Value;
-
-                    if (!_fileProvider.WriteByte(physicalPos, newValue))
-                    {
-                        throw new IOException($"Failed to write byte at physical position 0x{physicalPos:X}");
-                    }
+                    if (!_fileProvider.WriteByte(kvp.Key, kvp.Value))
+                        throw new IOException($"Failed to write byte at physical position 0x{kvp.Key:X}");
                 }
 
                 _fileProvider.Flush();
-
-                // Clear edits AND undo/redo history after successful save
-                // ClearAllEdits also calls OnChangesCleared() to refresh view
                 ClearAllEdits();
             }
             else
             {
                 // FULL REWRITE: Needed for insertions/deletions
                 SaveAs(FilePath, true);
-                // Note: OnChangesCleared() is called inside OpenFile() at the end of SaveAs
             }
+
+            sw?.Stop();
+            OnSaveCompleted(FilePath!, bytesWritten, sw?.ElapsedMilliseconds ?? 0);
         }
 
         /// <summary>
@@ -2143,6 +2194,7 @@ namespace WpfHexEditor.Core.Bytes
             if (!_disposed)
             {
                 _fileProvider?.Dispose();
+                CloseMmfProvider();
                 _disposed = true;
             }
         }

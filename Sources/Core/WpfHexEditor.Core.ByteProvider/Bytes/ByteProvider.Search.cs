@@ -61,8 +61,12 @@ namespace WpfHexEditor.Core.Bytes
             if (!IsOpen)
                 return SearchResult.CreateError("No file is open");
 
+            var sw = _metrics is not Metrics.NullByteProviderMetrics ? System.Diagnostics.Stopwatch.StartNew() : null;
             var engine = GetSearchEngine();
-            return engine.Search(options, cancellationToken);
+            var result = engine.Search(options, cancellationToken);
+            sw?.Stop();
+            _metrics.OnSearchCompleted(result.Matches.Count, sw?.ElapsedMilliseconds ?? 0);
+            return result;
         }
 
         /// <summary>
