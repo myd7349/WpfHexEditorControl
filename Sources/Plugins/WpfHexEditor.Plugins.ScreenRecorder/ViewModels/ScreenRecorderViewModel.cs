@@ -113,13 +113,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         Hud.IsRecording = true;
     }
 
-    private void StopCapture()
-    {
-        _captureService.StopSession();
-        HideOverlay();
-        IsSessionActive = false;
-        Hud.IsRecording = false;
-    }
+    private void StopCapture() => _captureService.StopSession();
 
     private void OnFrameCaptured(object? sender, CaptureFrame frame)
     {
@@ -147,8 +141,11 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
 
     private void ShowOverlay(CaptureRegion region)
     {
-        _overlay ??= new Overlay.CaptureOverlayWindow();
-        _overlay.Closed += (_, _) => _overlay = null;
+        if (_overlay is null)
+        {
+            _overlay = new Overlay.CaptureOverlayWindow();
+            _overlay.Closed += (_, _) => _overlay = null;
+        }
         _overlay.ShowOverlay(region, Hud);
         _captureService.SetOverlayHwnd(_overlay.OverlayHwnd);
     }
@@ -213,7 +210,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
 
     private async Task ExportGifAsync()
     {
-        var dlg = new SaveFileDialog { Title = "Export GIF", Filter = "GIF (*.gif)|*.gif", DefaultExt = ".gif" };
+        var dlg = new SaveFileDialog { Title = ScreenRecorderResources.ScreenRecorder_ExportGif, Filter = "GIF (*.gif)|*.gif", DefaultExt = ".gif" };
         if (dlg.ShowDialog() != true) return;
 
         var options = new ExportOptions(dlg.FileName, Properties.OutputScale, Properties.LoopCount, Properties.RepeatLastFrameDelay);
@@ -227,7 +224,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         // we strip the filename and use the directory.
         var dlg = new SaveFileDialog
         {
-            Title      = "Select export folder (filename will be ignored)",
+            Title      = ScreenRecorderResources.ScreenRecorder_ExportPng,
             Filter     = "PNG Sequence|*.png",
             FileName   = "frames",
             DefaultExt = ".png"
@@ -241,7 +238,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
 
     private async Task ExportMp4Async()
     {
-        var dlg = new SaveFileDialog { Title = "Export MP4", Filter = "MP4 (*.mp4)|*.mp4", DefaultExt = ".mp4" };
+        var dlg = new SaveFileDialog { Title = ScreenRecorderResources.ScreenRecorder_ExportMp4, Filter = "MP4 (*.mp4)|*.mp4", DefaultExt = ".mp4" };
         if (dlg.ShowDialog() != true) return;
 
         var options = new ExportOptions(dlg.FileName, Properties.OutputScale);
@@ -261,12 +258,8 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
             RepeatLastFrameDelay = Properties.RepeatLastFrameDelay,
             OutputScale          = Properties.OutputScale
         };
-        // Frames are re-built from the timeline (thumbnails hold the full bitmap from capture).
-        foreach (var card in Timeline.Frames)
-        {
-            if (card.Thumbnail is null) continue;
-            session.AddFrame(new CaptureFrame(card.Index, card.Thumbnail, card.Delay, card.Label, DateTimeOffset.UtcNow));
-        }
+        foreach (var frame in BuildFrameList())
+            session.AddFrame(frame);
         return session;
     }
 

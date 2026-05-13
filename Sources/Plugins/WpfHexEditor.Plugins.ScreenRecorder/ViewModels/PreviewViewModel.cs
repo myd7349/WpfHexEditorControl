@@ -81,9 +81,6 @@ public sealed class PreviewViewModel : INotifyPropertyChanged
     public void Zoom1To1() { _zoomLevel = 1.0; FitToContainer = false; OnPropertyChanged(nameof(ZoomLevel)); }
     public void ZoomFit()  { FitToContainer = true; OnPropertyChanged(nameof(ZoomLevel)); }
 
-    // Called from PreviewPane on Ctrl+scroll
-    public void AdjustZoom(bool zoomIn) { if (zoomIn) ZoomIn(); else ZoomOut(); }
-
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));

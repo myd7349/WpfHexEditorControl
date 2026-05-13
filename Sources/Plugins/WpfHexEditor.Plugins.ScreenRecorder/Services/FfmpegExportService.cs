@@ -18,11 +18,12 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.Services;
 
 public static class FfmpegExportService
 {
-    private static bool? _isAvailable;
+    private static bool?   _isAvailable;
+    private static string? _resolvedFfmpegPath;
 
     public static bool IsAvailable => _isAvailable ??= CheckAvailable();
 
-    public static void RefreshAvailability() => _isAvailable = null;
+    public static void RefreshAvailability() { _isAvailable = null; _resolvedFfmpegPath = null; }
 
     public static async Task ExportAsync(
         IReadOnlyList<CaptureFrame> frames,
@@ -44,7 +45,7 @@ public static class FfmpegExportService
 
             // Step 2: run ffmpeg (80–100%).
             ct.ThrowIfCancellationRequested();
-            await RunFfmpegAsync(tempDir, options.OutputPath, fps, ct);
+            await RunFfmpegAsync(_resolvedFfmpegPath!, tempDir, options.OutputPath, fps, ct);
             progress?.Report(100);
         }
         finally
@@ -58,10 +59,14 @@ public static class FfmpegExportService
 
     private static bool CheckAvailable()
     {
-        var path = ScreenRecorderOptions.Instance.FfmpegPath;
-        if (!string.IsNullOrWhiteSpace(path) && File.Exists(path)) return true;
+        var configured = ScreenRecorderOptions.Instance.FfmpegPath;
+        if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
+        {
+            _resolvedFfmpegPath = configured;
+            return true;
+        }
 
-        // Probe via process — ffmpeg exits 1 if given no args but prints version to stderr.
+        // Probe via process — ffmpeg exits 0 when given -version.
         try
         {
             using var p = Process.Start(new ProcessStartInfo("ffmpeg", "-version")
@@ -72,15 +77,14 @@ public static class FfmpegExportService
                 CreateNoWindow         = true
             });
             p?.WaitForExit(3000);
-            return p?.ExitCode == 0;
+            if (p?.ExitCode == 0) { _resolvedFfmpegPath = "ffmpeg"; return true; }
+            return false;
         }
         catch { return false; }
     }
 
-    private static async Task RunFfmpegAsync(string framesDir, string outputPath, int fps, CancellationToken ct)
+    private static async Task RunFfmpegAsync(string ffmpeg, string framesDir, string outputPath, int fps, CancellationToken ct)
     {
-        var ffmpeg  = ScreenRecorderOptions.Instance.FfmpegPath;
-        if (string.IsNullOrWhiteSpace(ffmpeg)) ffmpeg = "ffmpeg";
 
         var args = $"-y -framerate {fps} -i \"{Path.Combine(framesDir, "%04d.png")}\" " +
                    $"-c:v libx264 -pix_fmt yuv420p -movflags +faststart \"{outputPath}\"";

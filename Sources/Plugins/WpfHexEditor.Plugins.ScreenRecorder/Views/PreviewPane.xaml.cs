@@ -18,7 +18,7 @@ public partial class PreviewPane : System.Windows.Controls.UserControl
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
         if (DataContext is not PreviewViewModel vm) return;
 
-        vm.AdjustZoom(e.Delta > 0);
+        if (e.Delta > 0) vm.ZoomIn(); else vm.ZoomOut();
         e.Handled = true;
     }
 }

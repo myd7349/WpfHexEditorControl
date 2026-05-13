@@ -107,16 +107,7 @@ public static class SessionSerializer
         foreach (var frame in session.Frames)
         {
             ct.ThrowIfCancellationRequested();
-            // Encode to in-memory buffer on UI thread (BitmapSource is UI-thread-bound),
-            // then write the buffer to the ZipEntry on the current (async) thread.
-            var pngBytes = await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(frame.Bitmap));
-                using var ms = new MemoryStream();
-                encoder.Save(ms);
-                return ms.ToArray();
-            });
+            var pngBytes = await FrameCaptureEngine.EncodePngOnUiThreadAsync(frame.Bitmap);
 
             var entry = zip.CreateEntry(string.Format(FramePathFmt, frame.Index), CompressionLevel.NoCompression);
             await using var s = entry.Open();

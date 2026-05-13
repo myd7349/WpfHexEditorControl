@@ -10,6 +10,7 @@
 //     The hide/show cycle for the overlay is <20 ms — imperceptible at >=80 ms intervals.
 // ==========================================================
 
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -44,6 +45,16 @@ public static class FrameCaptureEngine
         thumb.Freeze();
         return thumb;
     }
+
+    public static Task<byte[]> EncodePngOnUiThreadAsync(BitmapSource bitmap) =>
+        Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using var ms = new MemoryStream();
+            encoder.Save(ms);
+            return ms.ToArray();
+        }).Task;
 
     // ── Win32 screen capture ──────────────────────────────────────────────────
 

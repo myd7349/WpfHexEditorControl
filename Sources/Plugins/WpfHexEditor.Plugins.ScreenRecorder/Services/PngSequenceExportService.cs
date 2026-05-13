@@ -6,7 +6,6 @@
 // ==========================================================
 
 using System.IO;
-using System.Windows.Media.Imaging;
 using WpfHexEditor.Plugins.ScreenRecorder.Models;
 
 namespace WpfHexEditor.Plugins.ScreenRecorder.Services;
@@ -32,20 +31,10 @@ public static class PngSequenceExportService
                 : frame.Bitmap;
 
             var filePath = Path.Combine(options.OutputPath, $"{frame.Index:D4}.png");
-            var bytes    = await EncodePngAsync(scaled);
+            var bytes    = await FrameCaptureEngine.EncodePngOnUiThreadAsync(scaled);
             await File.WriteAllBytesAsync(filePath, bytes, ct);
 
             progress?.Report((i + 1) * 100 / frames.Count);
         }
     }
-
-    private static Task<byte[]> EncodePngAsync(BitmapSource bitmap) =>
-        System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-        {
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            using var ms = new MemoryStream();
-            encoder.Save(ms);
-            return ms.ToArray();
-        }).Task;
 }
