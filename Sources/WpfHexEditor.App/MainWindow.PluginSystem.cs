@@ -74,6 +74,7 @@ public partial class MainWindow
     private WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule? _assemblyExplorerModule;
     private WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule?    _binaryAnalysisModule;
     private WpfHexEditor.App.HexDiff.HexDiffModule?                  _hexDiffModule;
+    private WpfHexEditor.App.Scripting.ScriptingModule?              _scriptingModule;
     private WpfHexEditor.App.Analysis.CodeAnalysisModule?       _codeAnalysisModule;
     private WpfHexEditor.App.Services.ScriptingServiceImpl?     _scriptingService;
     private WpfHexEditor.App.Services.TabGroupService?          _tabGroupService;
@@ -509,6 +510,10 @@ public partial class MainWindow
             // Hex Diff module — byte-level diff of two binary files with patch export.
             _hexDiffModule = new WpfHexEditor.App.HexDiff.HexDiffModule();
             await _hexDiffModule.InitializeAsync(hostContext).ConfigureAwait(true);
+
+            // Scripting Console module — interactive Roslyn C# REPL with IDE globals.
+            _scriptingModule = new WpfHexEditor.App.Scripting.ScriptingModule();
+            await _scriptingModule.InitializeAsync(hostContext).ConfigureAwait(true);
 
             // Code Analysis module — provides OVERKILL analysis with full IDE integration
             // (status bar badge, Tools menu, Solution/Project/File context menus, Error Panel, Options pages).
@@ -1351,6 +1356,8 @@ public partial class MainWindow
         _binaryAnalysisModule = null;
         _hexDiffModule?.Shutdown();
         _hexDiffModule = null;
+        _scriptingModule?.Shutdown();
+        _scriptingModule = null;
         _debugModule?.Shutdown();
         _debugModule = null;
         if (_debuggerService is not null)
