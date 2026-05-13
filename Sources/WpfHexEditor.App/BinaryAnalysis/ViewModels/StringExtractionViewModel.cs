@@ -7,6 +7,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using WpfHexEditor.App.BinaryAnalysis.Services;
+using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.Core.ViewModels;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
@@ -93,4 +94,14 @@ public sealed class StringExtractionViewModel : ViewModelBase
     }
 
     public void Cancel() => _cts?.Cancel();
+
+    public void NavigateToOffset(StringRun run)
+    {
+        if (_context is null) return;
+        _context.IDEEvents.Publish(new NavigateToOffsetEvent
+        {
+            Offset = run.Offset,
+            Source = "BinaryAnalysis.StringExtraction",
+        });
+    }
 }

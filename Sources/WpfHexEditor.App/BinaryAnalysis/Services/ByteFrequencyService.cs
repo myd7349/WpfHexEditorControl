@@ -53,16 +53,16 @@ public static class ByteFrequencyService
         return h;
     }
 
-    /// <summary>Exports frequency data as CSV: Byte,Count,Percent</summary>
+    /// <summary>Exports frequency data as CSV: Byte(hex),Byte(dec),Count,Percent</summary>
     public static string ToCsv(FrequencyResult result)
     {
-        var sb = new StringBuilder("Byte,Count,Percent\r\n", 256 * 30);
+        var sb = new StringBuilder("Byte(hex),Byte(dec),Count,Percent\r\n", 256 * 32);
         for (int i = 0; i < 256; i++)
         {
             double pct = result.TotalBytes > 0
                 ? (double)result.Counts[i] / result.TotalBytes * 100.0
                 : 0.0;
-            sb.Append($"0x{i:X2},{result.Counts[i]},{pct:F4}\r\n");
+            sb.Append($"0x{i:X2},{i},{result.Counts[i]},{pct:F4}\r\n");
         }
         return sb.ToString();
     }

@@ -54,6 +54,10 @@ public sealed class StringExtractionPanel : UserControl
         grid.Columns.Add(MakeCol("Value",    nameof(StringRun.Value),    0));
 
         grid.ItemsSource = _vm.Results;
+        grid.MouseDoubleClick += (_, _) =>
+        {
+            if (grid.SelectedItem is StringRun run) _vm.NavigateToOffset(run);
+        };
 
         var root = new DockPanel();
         DockPanel.SetDock(toolbar, Dock.Top);

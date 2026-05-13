@@ -45,6 +45,7 @@ public sealed class FileCarverPanel : UserControl
         grid.Columns.Add(new DataGridTextColumn { Header = "Format",     Binding = new Binding(nameof(CarvedEntry.FormatName)),  Width = 160 });
         grid.Columns.Add(new DataGridTextColumn { Header = "Confidence", Binding = new Binding(nameof(CarvedEntry.Confidence))  { StringFormat = "{0:P0}" }, Width = 90 });
         grid.Columns.Add(new DataGridTextColumn { Header = "Source",     Binding = new Binding(nameof(CarvedEntry.Source)),      Width = 90 });
+        grid.Columns.Add(new DataGridTextColumn { Header = "Est. Size",  Binding = new Binding(nameof(CarvedEntry.EstSize))     { StringFormat = "{0:N0}" }, Width = 90 });
         grid.Columns.Add(new DataGridTemplateColumn
         {
             Header       = "Extract",
