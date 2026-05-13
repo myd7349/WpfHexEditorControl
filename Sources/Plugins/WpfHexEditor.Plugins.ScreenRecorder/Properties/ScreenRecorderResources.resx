@@ -93,6 +93,9 @@
   <data name="ScreenRecorder_FrameLabel" xml:space="preserve"><value>Frame {0}</value></data>
 
   <!-- Preview -->
+  <data name="ScreenRecorder_ZoomIn" xml:space="preserve"><value>Zoom In</value></data>
+  <data name="ScreenRecorder_ZoomOut" xml:space="preserve"><value>Zoom Out</value></data>
+  <data name="ScreenRecorder_Zoom1To1" xml:space="preserve"><value>1:1 (Actual Size)</value></data>
   <data name="ScreenRecorder_ZoomFit" xml:space="preserve"><value>Zoom to Fit</value></data>
   <data name="ScreenRecorder_Zoom100" xml:space="preserve"><value>1:1</value></data>
   <data name="ScreenRecorder_NoFrameSelected" xml:space="preserve"><value>No frame selected</value></data>

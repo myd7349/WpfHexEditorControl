@@ -67,6 +67,9 @@ internal static class ScreenRecorderResources
     public static string ScreenRecorder_FrameLabel       => Get(nameof(ScreenRecorder_FrameLabel));
 
     // Preview
+    public static string ScreenRecorder_ZoomIn           => Get(nameof(ScreenRecorder_ZoomIn));
+    public static string ScreenRecorder_ZoomOut          => Get(nameof(ScreenRecorder_ZoomOut));
+    public static string ScreenRecorder_Zoom1To1         => Get(nameof(ScreenRecorder_Zoom1To1));
     public static string ScreenRecorder_ZoomFit          => Get(nameof(ScreenRecorder_ZoomFit));
     public static string ScreenRecorder_Zoom100          => Get(nameof(ScreenRecorder_Zoom100));
     public static string ScreenRecorder_NoFrameSelected  => Get(nameof(ScreenRecorder_NoFrameSelected));
