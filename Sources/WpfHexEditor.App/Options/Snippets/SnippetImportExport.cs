@@ -8,18 +8,13 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using Microsoft.Win32;
+using WpfHexEditor.Editor.CodeEditor.Properties;
 using WpfHexEditor.Editor.CodeEditor.Snippets;
 
 namespace WpfHexEditor.App.Options.Snippets;
 
 public static class SnippetImportExport
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented        = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private const string Filter = "Snippet files (*.json)|*.json|All files (*.*)|*.*";
 
     /// <summary>
@@ -29,7 +24,11 @@ public static class SnippetImportExport
     public static (bool Ok, IReadOnlyList<StoredSnippet> Snippets, string? Error)
         TryImport(Window owner)
     {
-        var dlg = new OpenFileDialog { Filter = Filter, Title = "Import Snippets" };
+        var dlg = new OpenFileDialog
+        {
+            Filter = Filter,
+            Title  = CodeEditorResources.Snippets_Page_ImportTitle,
+        };
         if (dlg.ShowDialog(owner) != true)
             return (false, [], null);
 
@@ -45,10 +44,10 @@ public static class SnippetImportExport
     {
         var dlg = new SaveFileDialog
         {
-            Filter           = Filter,
-            Title            = "Export Snippets",
-            DefaultExt       = ".json",
-            FileName         = "snippets",
+            Filter     = Filter,
+            Title      = CodeEditorResources.Snippets_Page_ExportTitle,
+            DefaultExt = ".json",
+            FileName   = "snippets",
         };
         if (dlg.ShowDialog(owner) != true)
             return (false, null);
@@ -61,7 +60,7 @@ public static class SnippetImportExport
         try
         {
             var json = File.ReadAllText(path);
-            var list = JsonSerializer.Deserialize<List<StoredSnippet>>(json, JsonOptions);
+            var list = JsonSerializer.Deserialize<List<StoredSnippet>>(json, UserSnippetStore.JsonOptions);
             return list is null
                 ? (false, [], "File contained no valid snippets.")
                 : (true, list, null);
@@ -76,7 +75,7 @@ public static class SnippetImportExport
     {
         try
         {
-            File.WriteAllText(path, JsonSerializer.Serialize(snippets, JsonOptions));
+            File.WriteAllText(path, JsonSerializer.Serialize(snippets, UserSnippetStore.JsonOptions));
             return (true, null);
         }
         catch (Exception ex)

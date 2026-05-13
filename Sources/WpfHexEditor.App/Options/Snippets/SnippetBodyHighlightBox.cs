@@ -30,6 +30,7 @@ public sealed class SnippetBodyHighlightBox : UserControl
     private readonly RichTextBox     _rtb;
     private readonly DispatcherTimer _debounce;
     private bool                     _updating;
+    private string?                  _lastPlain;
 
     public event TextChangedEventHandler? TextChanged;
 
@@ -40,9 +41,9 @@ public sealed class SnippetBodyHighlightBox : UserControl
         {
             Interval = TimeSpan.FromMilliseconds(50),
         };
-        _debounce.Tick    += OnDebounceTick;
-        _rtb.TextChanged  += OnRtbTextChanged;
-        Unloaded          += OnUnloaded;
+        _debounce.Tick   += OnDebounceTick;
+        _rtb.TextChanged += OnRtbTextChanged;
+        Unloaded         += OnUnloaded;
         Content = _rtb;
     }
 
@@ -80,17 +81,22 @@ public sealed class SnippetBodyHighlightBox : UserControl
         if (_updating) return;
         _debounce.Stop();
         _debounce.Start();
-        TextChanged?.Invoke(this, e);
     }
 
     private void OnDebounceTick(object? sender, EventArgs e)
     {
         _debounce.Stop();
-        var plain = new TextRange(_rtb.Document.ContentStart, _rtb.Document.ContentEnd).Text;
-        _updating = true;
-        SetValue(TextProperty, plain.TrimEnd('\r', '\n'));
-        _updating = false;
+        var plain   = new TextRange(_rtb.Document.ContentStart, _rtb.Document.ContentEnd).Text;
+        var trimmed = plain.TrimEnd('\r', '\n');
+        if (trimmed == _lastPlain) return;
+        _lastPlain = trimmed;
+        _updating  = true;
+        SetValue(TextProperty, trimmed);
+        _updating  = false;
         RebuildHighlight(plain);
+        TextChanged?.Invoke(this, new TextChangedEventArgs(
+            System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+            UndoAction.None));
     }
 
     private static void OnTextPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -98,6 +104,7 @@ public sealed class SnippetBodyHighlightBox : UserControl
         var box = (SnippetBodyHighlightBox)d;
         if (box._updating) return;
         var text = (string?)e.NewValue ?? string.Empty;
+        box._lastPlain = text;
         box.RebuildHighlight(text);
     }
 
@@ -106,11 +113,9 @@ public sealed class SnippetBodyHighlightBox : UserControl
         _updating = true;
         try
         {
-            var caret    = _rtb.CaretPosition;
-            var offset   = caret.GetOffsetToPosition(_rtb.Document.ContentStart);
-            var doc      = BuildDocument(text);
-            _rtb.Document = doc;
-            TryRestoreCaret(Math.Abs(offset));
+            var offset = _rtb.Document.ContentStart.GetOffsetToPosition(_rtb.CaretPosition);
+            _rtb.Document = BuildDocument(text);
+            TryRestoreCaret(offset);
         }
         finally
         {
@@ -153,7 +158,7 @@ public sealed class SnippetBodyHighlightBox : UserControl
             var pos = _rtb.Document.ContentStart.GetPositionAtOffset(offset);
             if (pos is not null) _rtb.CaretPosition = pos;
         }
-        catch { /* best-effort */ }
+        catch (ArgumentException) { /* best-effort — offset out of range after rebuild */ }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)

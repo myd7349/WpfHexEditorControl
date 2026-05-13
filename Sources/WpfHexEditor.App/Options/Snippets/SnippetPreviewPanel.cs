@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using WpfHexEditor.Editor.CodeEditor.Properties;
 using WpfHexEditor.Editor.CodeEditor.Snippets;
+using static WpfHexEditor.Editor.CodeEditor.Snippets.SnippetBodyTokenizer;
 
 namespace WpfHexEditor.App.Options.Snippets;
 
@@ -62,7 +63,7 @@ public sealed class SnippetPreviewPanel : UserControl
             return;
         }
         var expanded = SnippetVariableExpander.Expand(body, BuildMockContext());
-        _previewBox.Text = expanded.Replace("$cursor", "|");
+        _previewBox.Text = expanded.Replace(CursorMarker, "|");
     }
 
     private static SnippetVariableContext BuildMockContext() => new()

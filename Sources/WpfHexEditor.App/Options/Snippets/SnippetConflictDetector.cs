@@ -23,8 +23,9 @@ public static class SnippetConflictDetector
     {
         return snippets
             .GroupBy(s => (s.LanguageId, s.Trigger), StringComparer_LanguageTrigger.Instance)
-            .Where(g => g.Count() > 1)
-            .Select(g => new SnippetConflict(g.Key.LanguageId, g.Key.Trigger, g.Count()))
+            .Select(g => (g.Key, Count: g.Count()))
+            .Where(t => t.Count > 1)
+            .Select(t => new SnippetConflict(t.Key.LanguageId, t.Key.Trigger, t.Count))
             .ToList();
     }
 }

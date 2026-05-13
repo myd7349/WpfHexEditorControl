@@ -14,13 +14,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using WpfHexEditor.App.Options.Snippets;
 using WpfHexEditor.App.Properties;
 using WpfHexEditor.Core.Options;
 using WpfHexEditor.Editor.CodeEditor.Properties;
 using WpfHexEditor.Editor.CodeEditor.Snippets;
 using WpfHexEditor.Editor.Core.Dialogs;
+using static WpfHexEditor.Editor.CodeEditor.Snippets.SnippetBodyTokenizer;
 
 namespace WpfHexEditor.App.Options;
 
@@ -28,7 +28,7 @@ namespace WpfHexEditor.App.Options;
 public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
 {
     private const string DefaultTrigger  = "new";
-    private const string DefaultBody     = "$cursor";
+    private const string DefaultBody     = CursorMarker;
     private const string GlobalLanguage  = "*";
 
     private readonly UserSnippetStore   _store;
@@ -112,10 +112,10 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
 
     private StackPanel BuildToolbar()
     {
-        var addBtn    = MakeButton(CodeEditorResources.Snippets_Page_Add,    () => OnAdd());
-        var removeBtn = MakeButton(CodeEditorResources.Snippets_Page_Remove, () => OnRemove());
-        var importBtn = MakeButton(CodeEditorResources.Snippets_Page_Import, () => OnImport());
-        var exportBtn = MakeButton(CodeEditorResources.Snippets_Page_Export, () => OnExport());
+        var addBtn    = MakeButton(CodeEditorResources.Snippets_Page_Add,    OnAdd);
+        var removeBtn = MakeButton(CodeEditorResources.Snippets_Page_Remove, OnRemove);
+        var importBtn = MakeButton(CodeEditorResources.Snippets_Page_Import, OnImport);
+        var exportBtn = MakeButton(CodeEditorResources.Snippets_Page_Export, OnExport);
 
         var sep = new Separator { Width = 12, Opacity = 0 };
 
@@ -242,8 +242,7 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
         else
         {
             foreach (var s in imported)
-                if (!_rows.Any(r => string.Equals(r.Trigger, s.Trigger, StringComparison.OrdinalIgnoreCase)
-                                 && string.Equals(r.LanguageId, s.LanguageId, StringComparison.OrdinalIgnoreCase)))
+                if (!_rows.Any(r => UserSnippetStore.SameKey(r, s)))
                     _rows.Add(s);
         }
         Persist();
@@ -252,7 +251,7 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
     private void OnExport()
     {
         var owner = Window.GetWindow(this);
-        var (ok, error) = SnippetImportExport.TryExport(_rows.ToList(), owner!);
+        var (ok, error) = SnippetImportExport.TryExport(_rows, owner!);
         if (!ok && error is not null)
             IdeMessageBox.Show(string.Format(CodeEditorResources.Snippets_Page_ExportError, error),
                 CodeEditorResources.Snippets_Page_ExportTitle, MessageBoxButton.OK, MessageBoxImage.Warning, owner);
@@ -265,11 +264,10 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
         if (_grid.SelectedItem is StoredSnippet selected)
             selected.Body = _bodyEditor.Text ?? string.Empty;
 
-        var snapshot  = _rows.ToList();
-        var signature = ComputeSignature(snapshot);
+        var signature = ComputeSignature(_rows);
         if (signature == _lastPersistedSignature) return;
 
-        _store.ReplaceAll(snapshot);
+        _store.ReplaceAll(_rows);
         _lastPersistedSignature = signature;
         UpdateConflictBanner();
         Changed?.Invoke(this, EventArgs.Empty);
@@ -277,7 +275,7 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
 
     private void UpdateConflictBanner()
     {
-        var conflicts = SnippetConflictDetector.DetectConflicts(_rows.ToList());
+        var conflicts = SnippetConflictDetector.DetectConflicts(_rows);
         if (conflicts.Count == 0)
         {
             _conflictBanner.Visibility = Visibility.Collapsed;
@@ -292,13 +290,7 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
     {
         _rows.Clear();
         foreach (var s in _store.GetAll())
-            _rows.Add(new StoredSnippet
-            {
-                LanguageId  = s.LanguageId,
-                Trigger     = s.Trigger,
-                Body        = s.Body,
-                Description = s.Description,
-            });
+            _rows.Add(UserSnippetStore.Clone(s));
         _lastPersistedSignature = ComputeSignature(_rows);
     }
 

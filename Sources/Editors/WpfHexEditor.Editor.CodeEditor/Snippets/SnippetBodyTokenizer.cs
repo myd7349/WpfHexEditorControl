@@ -16,6 +16,9 @@ public readonly record struct SnippetBodyToken(SnippetTokenKind Kind, string Tex
 /// <summary>Splits a snippet body into <see cref="SnippetBodyToken"/> segments.</summary>
 public static class SnippetBodyTokenizer
 {
+    /// <summary>The literal token that marks the final caret position after expansion.</summary>
+    public const string CursorMarker = "$cursor";
+
     private static readonly Regex TokenRegex = new(
         @"(\$cursor|\$\{([A-Za-z_][A-Za-z0-9_]*)\})",
         RegexOptions.Compiled);
@@ -37,7 +40,7 @@ public static class SnippetBodyTokenizer
             if (m.Index > pos)
                 result.Add(new SnippetBodyToken(SnippetTokenKind.PlainText, body[pos..m.Index]));
 
-            var kind = m.Value == "$cursor"
+            var kind = m.Value == CursorMarker
                 ? SnippetTokenKind.CursorMarker
                 : SnippetTokenKind.Variable;
 

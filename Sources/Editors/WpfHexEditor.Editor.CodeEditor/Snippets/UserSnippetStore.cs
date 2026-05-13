@@ -30,7 +30,7 @@ public sealed class UserSnippetStore
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WpfHexEditor", "snippets.json");
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    internal static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented        = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -93,7 +93,7 @@ public sealed class UserSnippetStore
         lock (_lock) SaveAll(list);
     }
 
-    private static StoredSnippet Clone(StoredSnippet s) => new()
+    internal static StoredSnippet Clone(StoredSnippet s) => new()
     {
         LanguageId  = s.LanguageId,
         Trigger     = s.Trigger,
@@ -103,7 +103,7 @@ public sealed class UserSnippetStore
 
     private List<StoredSnippet> EnsureLoaded() => _cache ??= Load();
 
-    private static bool SameKey(StoredSnippet a, StoredSnippet b)
+    internal static bool SameKey(StoredSnippet a, StoredSnippet b)
         => string.Equals(a.LanguageId, b.LanguageId, StringComparison.OrdinalIgnoreCase)
         && string.Equals(a.Trigger,    b.Trigger,    StringComparison.Ordinal);
 
