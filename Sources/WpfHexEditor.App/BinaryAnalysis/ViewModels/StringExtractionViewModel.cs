@@ -20,7 +20,6 @@ public sealed class StringExtractionViewModel : ViewModelBase
     private bool _isBusy;
     private int _minLength = 4;
     private string _filter = string.Empty;
-    private StringEncoding _encodingFilter = StringEncoding.Ascii;
     private bool _showAscii = true;
     private bool _showUtf16 = true;
 
@@ -41,7 +40,7 @@ public sealed class StringExtractionViewModel : ViewModelBase
     public string Filter
     {
         get => _filter;
-        set { _filter = value; OnPropertyChanged(); ApplyFilter(); }
+        set { _filter = value; OnPropertyChanged(); }
     }
 
     public bool ShowAscii
@@ -64,6 +63,7 @@ public sealed class StringExtractionViewModel : ViewModelBase
         if (!_context.HexEditor.IsActive) return;
 
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         IsBusy = true;
         Results.Clear();
@@ -93,9 +93,4 @@ public sealed class StringExtractionViewModel : ViewModelBase
     }
 
     public void Cancel() => _cts?.Cancel();
-
-    private void ApplyFilter()
-    {
-        // Re-run only if already have results to filter; otherwise wait for next Run.
-    }
 }

@@ -59,6 +59,7 @@ public sealed class HashInspectorViewModel : ViewModelBase
     private async Task ComputeAsync(HexEditorStream stream, long offset, long length, string label)
     {
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         IsBusy = true;
         StatusText = label;

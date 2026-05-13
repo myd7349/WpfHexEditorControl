@@ -53,6 +53,16 @@ internal sealed class BinaryAnalysisModule
         return Task.CompletedTask;
     }
 
+    public void Shutdown()
+    {
+        if (_context is not null)
+        {
+            _context.HexEditor.FileOpened          -= OnFileOpened;
+            _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
+            _context = null;
+        }
+    }
+
     public UIElement? GetPanel(string contentId)
     {
         EnsureActivated();

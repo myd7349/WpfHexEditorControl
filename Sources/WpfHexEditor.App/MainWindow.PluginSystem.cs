@@ -1342,6 +1342,7 @@ public partial class MainWindow
         _lspBridgeService = null;
         _assemblyExplorerModule?.Shutdown();
         _assemblyExplorerModule = null;
+        _binaryAnalysisModule?.Shutdown();
         _binaryAnalysisModule = null;
         _debugModule?.Shutdown();
         _debugModule = null;

@@ -44,6 +44,7 @@ public sealed class ByteFrequencyViewModel : ViewModelBase
         if (_context is null || IsBusy || !_context.HexEditor.IsActive) return;
 
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         IsBusy = true;
         StatusText = "Analyzing…";

@@ -55,12 +55,6 @@ public sealed class StringExtractionPanel : UserControl
 
         grid.ItemsSource = _vm.Results;
 
-        // Navigate to offset on double-click — wired in SetContext once we have the event bus
-        grid.MouseDoubleClick += (_, _) =>
-        {
-            // Handled by BinaryAnalysisModule after SetContext
-        };
-
         var root = new DockPanel();
         DockPanel.SetDock(toolbar, Dock.Top);
         root.Children.Add(toolbar);

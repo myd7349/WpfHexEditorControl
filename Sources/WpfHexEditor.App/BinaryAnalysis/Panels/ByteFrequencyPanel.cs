@@ -73,6 +73,10 @@ file sealed class HeatmapGrid : FrameworkElement
     private FrequencyResult? _data;
     private readonly DrawingVisual _visual = new();
 
+    // Cached resources — allocated once, reused across every Redraw call.
+    private static readonly Typeface s_typeface = new("Consolas");
+    private static readonly string[] s_labels = Enumerable.Range(0, 256).Select(i => $"{i:X2}").ToArray();
+
     public HeatmapGrid()
     {
         AddVisualChild(_visual);
@@ -98,6 +102,7 @@ file sealed class HeatmapGrid : FrameworkElement
         using var dc = _visual.RenderOpen();
         if (_data is null) return;
 
+        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
         int maxCount = _data.Counts.Max();
         for (int i = 0; i < 256; i++)
         {
@@ -107,17 +112,17 @@ file sealed class HeatmapGrid : FrameworkElement
             double y = row * CellSize + 1;
             double t = maxCount > 0 ? (double)_data.Counts[i] / maxCount : 0.0;
             var brush = new SolidColorBrush(InterpolateColor(t));
+            brush.Freeze();
             dc.DrawRectangle(brush, null, new Rect(x, y, CellSize - 1, CellSize - 1));
 
-            // Byte label
             var ft = new FormattedText(
-                $"{i:X2}",
+                s_labels[i],
                 System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight,
-                new Typeface("Consolas"),
+                s_typeface,
                 7,
                 t > 0.6 ? Brushes.Black : Brushes.DarkGray,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                dpi);
             dc.DrawText(ft, new Point(x + 2, y + 2));
         }
     }
