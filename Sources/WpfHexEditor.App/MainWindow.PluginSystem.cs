@@ -73,6 +73,7 @@ public partial class MainWindow
     private WpfHexEditor.App.Debug.DebugModule?                 _debugModule;
     private WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule? _assemblyExplorerModule;
     private WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule?    _binaryAnalysisModule;
+    private WpfHexEditor.App.HexDiff.HexDiffModule?                  _hexDiffModule;
     private WpfHexEditor.App.Analysis.CodeAnalysisModule?       _codeAnalysisModule;
     private WpfHexEditor.App.Services.ScriptingServiceImpl?     _scriptingService;
     private WpfHexEditor.App.Services.TabGroupService?          _tabGroupService;
@@ -504,6 +505,10 @@ public partial class MainWindow
             // Binary Analysis module — #110 strings, #111 hash, #112 carver, #118 sig db, #119 freq heatmap.
             _binaryAnalysisModule = new WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule();
             await _binaryAnalysisModule.InitializeAsync(hostContext).ConfigureAwait(true);
+
+            // Hex Diff module — byte-level diff of two binary files with patch export.
+            _hexDiffModule = new WpfHexEditor.App.HexDiff.HexDiffModule();
+            await _hexDiffModule.InitializeAsync(hostContext).ConfigureAwait(true);
 
             // Code Analysis module — provides OVERKILL analysis with full IDE integration
             // (status bar badge, Tools menu, Solution/Project/File context menus, Error Panel, Options pages).
@@ -1344,6 +1349,8 @@ public partial class MainWindow
         _assemblyExplorerModule = null;
         _binaryAnalysisModule?.Shutdown();
         _binaryAnalysisModule = null;
+        _hexDiffModule?.Shutdown();
+        _hexDiffModule = null;
         _debugModule?.Shutdown();
         _debugModule = null;
         if (_debuggerService is not null)

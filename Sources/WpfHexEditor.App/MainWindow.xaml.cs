@@ -1688,6 +1688,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             FormatCatalogDocContentId      => CreateFormatCatalogContent(),
             _ when item.ContentId.StartsWith("panel-ba-")
                                                                     => GetOrDeferModulePanel(item, () => _binaryAnalysisModule?.GetPanel(item.ContentId), () => _binaryAnalysisModule is not null),
+            WpfHexEditor.App.HexDiff.HexDiffModule.ContentId
+                                                                    => GetOrDeferModulePanel(item, () => _hexDiffModule?.GetPanel(item.ContentId), () => _hexDiffModule is not null),
             _ when item.ContentId.StartsWith("panel-dbg-")
                                                                     => GetOrBuildDebugPanelShell(item),
             _ when WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule.IsKnownContentIdStatic(item.ContentId)
