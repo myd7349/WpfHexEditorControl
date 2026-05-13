@@ -594,4 +594,25 @@
     <value>Ανάπτυξη όλων</value>
   </data>
 
+  <data name="Snippets_Page_Title" xml:space="preserve"><value>Code Snippets</value></data>
+  <data name="Snippets_Page_Add" xml:space="preserve"><value>+ Add</value></data>
+  <data name="Snippets_Page_Remove" xml:space="preserve"><value>— Remove</value></data>
+  <data name="Snippets_Page_ColLanguage" xml:space="preserve"><value>Language</value></data>
+  <data name="Snippets_Page_ColTrigger" xml:space="preserve"><value>Trigger</value></data>
+  <data name="Snippets_Page_ColDescription" xml:space="preserve"><value>Description</value></data>
+  <data name="Snippets_Page_BodyLabel" xml:space="preserve"><value>Body — use $cursor for the caret position; supports ${Variable} tokens.</value></data>
+  <data name="Snippets_Page_VariablesHint" xml:space="preserve"><value>Available variables: ${FileName}, ${FileNameBase}, ${FilePath}, ${FileExt}, ${FileDir}, ${SelectedText}, ${CurrentLine}, ${LineNumber}, ${CursorPosition}, ${Indent}, ${ProjectName}, ${ClipboardText}, ${Date}, ${Time}, ${Year}, ${UserName}, ${MachineName}.</value></data>
+  <data name="Snippets_Page_DefaultDescription" xml:space="preserve"><value>New snippet</value></data>
+  <data name="Snippets_Page_Import" xml:space="preserve"><value>Import…</value></data>
+  <data name="Snippets_Page_Export" xml:space="preserve"><value>Export…</value></data>
+  <data name="Snippets_Page_ImportTitle" xml:space="preserve"><value>Import Snippets</value></data>
+  <data name="Snippets_Page_ExportTitle" xml:space="preserve"><value>Export Snippets</value></data>
+  <data name="Snippets_Page_ImportSuccess" xml:space="preserve"><value>{0} snippet(s) imported successfully.</value></data>
+  <data name="Snippets_Page_ImportError" xml:space="preserve"><value>Failed to import snippets: {0}</value></data>
+  <data name="Snippets_Page_ExportError" xml:space="preserve"><value>Failed to export snippets: {0}</value></data>
+  <data name="Snippets_Page_ConflictWarning" xml:space="preserve"><value>Conflict: {0} snippet(s) share the same trigger. Only the last one will expand.</value></data>
+  <data name="Snippets_Page_PreviewLabel" xml:space="preserve"><value>Preview</value></data>
+  <data name="Snippets_Page_VarPickerLabel" xml:space="preserve"><value>Insert variable</value></data>
+  <data name="Snippets_Page_ImportMergePrompt" xml:space="preserve"><value>Replace all existing snippets with the imported ones? Choose No to merge (skip duplicates).</value></data>
+  <data name="Snippets_Page_ImportMergeTitle" xml:space="preserve"><value>Import Snippets — Replace or Merge?</value></data>
 </root>

@@ -4,8 +4,9 @@
 // Description  : Options page for viewing and editing user-defined code
 //                snippets persisted via UserSnippetStore.
 // Architecture : Code-behind-only UserControl implementing IOptionsPage.
-//                Mirrors the KeyboardShortcutsPage pattern — no XAML file,
-//                DataGrid + body editor TextBox + Add/Remove buttons.
+//                Phase 2 adds: syntax-highlighted body editor, variable
+//                picker chips, live preview panel, conflict detection,
+//                and import/export.
 //////////////////////////////////////////////
 
 using System;
@@ -14,10 +15,12 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WpfHexEditor.App.Options.Snippets;
 using WpfHexEditor.App.Properties;
 using WpfHexEditor.Core.Options;
 using WpfHexEditor.Editor.CodeEditor.Properties;
 using WpfHexEditor.Editor.CodeEditor.Snippets;
+using WpfHexEditor.Editor.Core.Dialogs;
 
 namespace WpfHexEditor.App.Options;
 
@@ -28,9 +31,13 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
     private const string DefaultBody     = "$cursor";
     private const string GlobalLanguage  = "*";
 
-    private readonly UserSnippetStore _store;
-    private readonly DataGrid         _grid;
-    private readonly TextBox          _bodyEditor;
+    private readonly UserSnippetStore   _store;
+    private readonly DataGrid           _grid;
+    private readonly SnippetBodyHighlightBox _bodyEditor;
+    private readonly SnippetVariablePicker   _varPicker;
+    private readonly SnippetPreviewPanel     _previewPanel;
+    private readonly Border                  _conflictBanner;
+    private readonly TextBlock               _conflictText;
     private readonly ObservableCollection<StoredSnippet> _rows = [];
     private string _lastPersistedSignature = string.Empty;
 
@@ -42,29 +49,102 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
     {
         _store = store;
 
-        // -- Toolbar ---------------------------------------------------------
-        var addBtn = new Button
-        {
-            Content = CodeEditorResources.Snippets_Page_Add,
-            Margin  = new Thickness(0, 0, 6, 0),
-            Padding = new Thickness(10, 3, 10, 3),
-        };
-        addBtn.Click += (_, _) => OnAdd();
+        var toolbar = BuildToolbar();
+        _grid       = BuildGrid();
 
-        var removeBtn = new Button
+        (var bodyLabel, _bodyEditor, _varPicker, _previewPanel) = BuildBodySection();
+        (_conflictBanner, _conflictText) = BuildConflictBanner();
+
+        var root = new StackPanel { Margin = new Thickness(8) };
+        root.Children.Add(toolbar);
+        root.Children.Add(_grid);
+        root.Children.Add(bodyLabel);
+        root.Children.Add(_bodyEditor);
+        root.Children.Add(_varPicker);
+        root.Children.Add(_previewPanel);
+        root.Children.Add(_conflictBanner);
+
+        Content = root;
+        ReloadRows();
+    }
+
+    private (TextBlock label, SnippetBodyHighlightBox editor,
+             SnippetVariablePicker picker, SnippetPreviewPanel preview)
+        BuildBodySection()
+    {
+        var label = new TextBlock
         {
-            Content = CodeEditorResources.Snippets_Page_Remove,
-            Margin  = new Thickness(0, 0, 6, 0),
-            Padding = new Thickness(10, 3, 10, 3),
+            Text       = CodeEditorResources.Snippets_Page_BodyLabel,
+            Margin     = new Thickness(0, 8, 0, 4),
+            FontWeight = FontWeights.SemiBold,
         };
-        removeBtn.Click += (_, _) => OnRemove();
+        var editor = new SnippetBodyHighlightBox();
+        editor.TextChanged += (_, _) => OnBodyTextChanged();
+
+        var picker = new SnippetVariablePicker();
+        picker.VariableChosen += varName => editor.InsertAtCaret($"${{{varName}}}");
+
+        return (label, editor, picker, new SnippetPreviewPanel());
+    }
+
+    private static (Border banner, TextBlock text) BuildConflictBanner()
+    {
+        var text   = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var banner = new Border
+        {
+            Visibility      = Visibility.Collapsed,
+            Margin          = new Thickness(0, 4, 0, 0),
+            Padding         = new Thickness(8, 4, 8, 4),
+            BorderThickness = new Thickness(1),
+            Child           = text,
+        };
+        banner.SetResourceReference(Border.BackgroundProperty,   "Opt_WarnBrush");
+        banner.SetResourceReference(Border.BorderBrushProperty,  "Opt_WarnBorder");
+        return (banner, text);
+    }
+
+    // ── IOptionsPage ─────────────────────────────────────────────────────────
+
+    public void Load(AppSettings settings) => ReloadRows();
+    public void Flush(AppSettings settings) { }
+
+    // ── Toolbar ──────────────────────────────────────────────────────────────
+
+    private StackPanel BuildToolbar()
+    {
+        var addBtn    = MakeButton(CodeEditorResources.Snippets_Page_Add,    () => OnAdd());
+        var removeBtn = MakeButton(CodeEditorResources.Snippets_Page_Remove, () => OnRemove());
+        var importBtn = MakeButton(CodeEditorResources.Snippets_Page_Import, () => OnImport());
+        var exportBtn = MakeButton(CodeEditorResources.Snippets_Page_Export, () => OnExport());
+
+        var sep = new Separator { Width = 12, Opacity = 0 };
 
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
         toolbar.Children.Add(addBtn);
         toolbar.Children.Add(removeBtn);
+        toolbar.Children.Add(sep);
+        toolbar.Children.Add(importBtn);
+        toolbar.Children.Add(exportBtn);
+        return toolbar;
+    }
 
-        // -- DataGrid --------------------------------------------------------
-        _grid = new DataGrid
+    private static Button MakeButton(string label, Action onClick)
+    {
+        var btn = new Button
+        {
+            Content = label,
+            Margin  = new Thickness(0, 0, 6, 0),
+            Padding = new Thickness(10, 3, 10, 3),
+        };
+        btn.Click += (_, _) => onClick();
+        return btn;
+    }
+
+    // ── Grid ─────────────────────────────────────────────────────────────────
+
+    private DataGrid BuildGrid()
+    {
+        var grid = new DataGrid
         {
             AutoGenerateColumns = false,
             CanUserAddRows      = false,
@@ -74,83 +154,23 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
             ItemsSource         = _rows,
             Height              = 220,
         };
-        _grid.Columns.Add(MakeTextColumn(CodeEditorResources.Snippets_Page_ColLanguage,    nameof(StoredSnippet.LanguageId),  100));
-        _grid.Columns.Add(MakeTextColumn(CodeEditorResources.Snippets_Page_ColTrigger,     nameof(StoredSnippet.Trigger),     120));
-        _grid.Columns.Add(MakeTextColumn(CodeEditorResources.Snippets_Page_ColDescription, nameof(StoredSnippet.Description), 260));
-        _grid.SelectionChanged += OnSelectionChanged;
-        _grid.CellEditEnding   += (_, _) => Persist();
-
-        // -- Body editor + variables hint ------------------------------------
-        var bodyLabel = new TextBlock
-        {
-            Text        = CodeEditorResources.Snippets_Page_BodyLabel,
-            Margin      = new Thickness(0, 8, 0, 4),
-            FontWeight  = FontWeights.SemiBold,
-        };
-        _bodyEditor = new TextBox
-        {
-            AcceptsReturn = true,
-            AcceptsTab    = true,
-            Height        = 140,
-            TextWrapping  = TextWrapping.NoWrap,
-            VerticalScrollBarVisibility   = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-        };
-        _bodyEditor.SetResourceReference(TextBox.FontFamilyProperty, "CE_FontFamily");
-        _bodyEditor.SetResourceReference(TextBox.FontSizeProperty,   "CE_FontSize");
-        _bodyEditor.LostFocus += (_, _) => Persist();
-
-        var varsHint = new TextBlock
-        {
-            Text         = CodeEditorResources.Snippets_Page_VariablesHint,
-            TextWrapping = TextWrapping.Wrap,
-            Opacity      = 0.7,
-            FontSize     = 11,
-            Margin       = new Thickness(0, 4, 0, 0),
-        };
-
-        // -- Layout ---------------------------------------------------------
-        var root = new StackPanel { Margin = new Thickness(8) };
-        root.Children.Add(toolbar);
-        root.Children.Add(_grid);
-        root.Children.Add(bodyLabel);
-        root.Children.Add(_bodyEditor);
-        root.Children.Add(varsHint);
-
-        Content = root;
-
-        ReloadRows();
+        grid.Columns.Add(MakeTextColumn(CodeEditorResources.Snippets_Page_ColLanguage,    nameof(StoredSnippet.LanguageId),  100));
+        grid.Columns.Add(MakeTextColumn(CodeEditorResources.Snippets_Page_ColTrigger,     nameof(StoredSnippet.Trigger),     120));
+        grid.Columns.Add(MakeTextColumn(CodeEditorResources.Snippets_Page_ColDescription, nameof(StoredSnippet.Description), 260));
+        grid.SelectionChanged += OnSelectionChanged;
+        grid.CellEditEnding   += (_, _) => Persist();
+        return grid;
     }
-
-    // ── IOptionsPage ─────────────────────────────────────────────────────────
-    // Snippet data lives in its own JSON file (UserSnippetStore), not in
-    // AppSettings — Load/Flush are no-ops; persistence happens inside Persist().
-
-    public void Load(AppSettings settings) => ReloadRows();
-    public void Flush(AppSettings settings) { /* nothing to push back into AppSettings */ }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static DataGridTextColumn MakeTextColumn(string header, string binding, double width) => new()
     {
         Header  = header,
-        Binding = new System.Windows.Data.Binding(binding) { UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged },
+        Binding = new System.Windows.Data.Binding(binding)
+            { UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged },
         Width   = width,
     };
 
-    private void ReloadRows()
-    {
-        _rows.Clear();
-        foreach (var s in _store.GetAll())
-            _rows.Add(new StoredSnippet
-            {
-                LanguageId  = s.LanguageId,
-                Trigger     = s.Trigger,
-                Body        = s.Body,
-                Description = s.Description,
-            });
-        _lastPersistedSignature = ComputeSignature(_rows);
-    }
+    // ── Event handlers ───────────────────────────────────────────────────────
 
     private void OnAdd()
     {
@@ -171,31 +191,115 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
     {
         if (_grid.SelectedItem is not StoredSnippet selected) return;
         _rows.Remove(selected);
-        _bodyEditor.Clear();
+        _bodyEditor.Text = string.Empty;
         Persist();
     }
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_grid.SelectedItem is StoredSnippet s)
-            _bodyEditor.Text = s.Body;
+        if (_grid.SelectedItem is not StoredSnippet s) return;
+        _bodyEditor.Text = s.Body;
+        _previewPanel.Refresh(s.Body);
     }
+
+    private void OnBodyTextChanged()
+    {
+        if (_grid.SelectedItem is StoredSnippet selected)
+            selected.Body = _bodyEditor.Text ?? string.Empty;
+        _previewPanel.Refresh(_bodyEditor.Text ?? string.Empty);
+        UpdateConflictBanner();
+    }
+
+    private void OnImport()
+    {
+        var owner = Window.GetWindow(this);
+        var (ok, imported, error) = SnippetImportExport.TryImport(owner!);
+        if (!ok)
+        {
+            if (error is not null)
+                IdeMessageBox.Show(string.Format(CodeEditorResources.Snippets_Page_ImportError, error),
+                    CodeEditorResources.Snippets_Page_ImportTitle, MessageBoxButton.OK, MessageBoxImage.Warning, owner);
+            return;
+        }
+
+        var merge = IdeMessageBox.Show(
+            CodeEditorResources.Snippets_Page_ImportMergePrompt,
+            CodeEditorResources.Snippets_Page_ImportMergeTitle,
+            MessageBoxButton.YesNo, MessageBoxImage.Question, owner);
+
+        ApplyImport(imported, replaceAll: merge == MessageBoxResult.Yes);
+        IdeMessageBox.Show(string.Format(CodeEditorResources.Snippets_Page_ImportSuccess, imported.Count),
+            CodeEditorResources.Snippets_Page_ImportTitle, MessageBoxButton.OK, MessageBoxImage.Information, owner);
+    }
+
+    private void ApplyImport(System.Collections.Generic.IReadOnlyList<StoredSnippet> imported, bool replaceAll)
+    {
+        if (replaceAll)
+        {
+            _rows.Clear();
+            foreach (var s in imported) _rows.Add(s);
+        }
+        else
+        {
+            foreach (var s in imported)
+                if (!_rows.Any(r => string.Equals(r.Trigger, s.Trigger, StringComparison.OrdinalIgnoreCase)
+                                 && string.Equals(r.LanguageId, s.LanguageId, StringComparison.OrdinalIgnoreCase)))
+                    _rows.Add(s);
+        }
+        Persist();
+    }
+
+    private void OnExport()
+    {
+        var owner = Window.GetWindow(this);
+        var (ok, error) = SnippetImportExport.TryExport(_rows.ToList(), owner!);
+        if (!ok && error is not null)
+            IdeMessageBox.Show(string.Format(CodeEditorResources.Snippets_Page_ExportError, error),
+                CodeEditorResources.Snippets_Page_ExportTitle, MessageBoxButton.OK, MessageBoxImage.Warning, owner);
+    }
+
+    // ── Persistence & helpers ────────────────────────────────────────────────
 
     private void Persist()
     {
         if (_grid.SelectedItem is StoredSnippet selected)
             selected.Body = _bodyEditor.Text ?? string.Empty;
 
-        // CellEditEnding and LostFocus can both fire for the same user gesture.
-        // Compute a content signature and skip the disk write when nothing
-        // actually changed since the last persist.
         var snapshot  = _rows.ToList();
         var signature = ComputeSignature(snapshot);
         if (signature == _lastPersistedSignature) return;
 
         _store.ReplaceAll(snapshot);
         _lastPersistedSignature = signature;
+        UpdateConflictBanner();
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void UpdateConflictBanner()
+    {
+        var conflicts = SnippetConflictDetector.DetectConflicts(_rows.ToList());
+        if (conflicts.Count == 0)
+        {
+            _conflictBanner.Visibility = Visibility.Collapsed;
+            return;
+        }
+        _conflictText.Text = string.Format(
+            CodeEditorResources.Snippets_Page_ConflictWarning, conflicts.Count);
+        _conflictBanner.Visibility = Visibility.Visible;
+    }
+
+    private void ReloadRows()
+    {
+        _rows.Clear();
+        foreach (var s in _store.GetAll())
+            _rows.Add(new StoredSnippet
+            {
+                LanguageId  = s.LanguageId,
+                Trigger     = s.Trigger,
+                Body        = s.Body,
+                Description = s.Description,
+            });
+        _lastPersistedSignature = ComputeSignature(_rows);
     }
 
     private static string ComputeSignature(IReadOnlyList<StoredSnippet> rows)
@@ -204,10 +308,10 @@ public sealed class SnippetsOptionsPage : UserControl, IOptionsPage
         var sb = new System.Text.StringBuilder(rows.Count * 32);
         foreach (var s in rows)
         {
-            sb.Append(s.LanguageId).Append('')
-              .Append(s.Trigger).Append('')
-              .Append(s.Description).Append('')
-              .Append(s.Body).Append('');
+            sb.Append(s.LanguageId).Append('\x01')
+              .Append(s.Trigger).Append('\x01')
+              .Append(s.Description).Append('\x01')
+              .Append(s.Body).Append('\x01');
         }
         return sb.ToString();
     }
