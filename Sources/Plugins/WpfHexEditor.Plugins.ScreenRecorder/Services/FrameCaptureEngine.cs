@@ -22,8 +22,42 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.Services;
 
 public static class FrameCaptureEngine
 {
-    public static Task<BitmapSource> CaptureRegionAsync(CaptureRegion region, IntPtr excludeHwnd = default) =>
-        Application.Current.Dispatcher.InvokeAsync(() => CaptureRegion(region, excludeHwnd)).Task;
+    public static async Task<BitmapSource> CaptureRegionAsync(CaptureRegion region, IntPtr excludeHwnd = default)
+    {
+        // Hide overlay on UI thread, then BitBlt on a thread-pool thread to avoid
+        // blocking WPF rendering during capture, then create BitmapSource back on UI thread.
+        var wasVisible = false;
+        if (excludeHwnd != IntPtr.Zero)
+            wasVisible = await Application.Current.Dispatcher.InvokeAsync(() => IsWindowVisible(excludeHwnd));
+
+        if (wasVisible)
+            await Application.Current.Dispatcher.InvokeAsync(() => ShowWindow(excludeHwnd, SW_HIDE));
+
+        // Small delay so the hide takes effect before we BitBlt.
+        if (wasVisible) await Task.Delay(20);
+
+        try
+        {
+            // BitBlt runs on a thread-pool thread — GDI calls are safe off-UI-thread.
+            var hBitmap = await Task.Run(() => BitBltToHBitmap(region));
+
+            // BitmapSource must be created on the UI thread (Dispatcher).
+            return await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var bmp = Imaging.CreateBitmapSourceFromHBitmap(
+                    hBitmap, IntPtr.Zero, Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+                DeleteObject(hBitmap);
+                bmp.Freeze();
+                return bmp;
+            });
+        }
+        finally
+        {
+            if (wasVisible)
+                await Application.Current.Dispatcher.InvokeAsync(() => ShowWindow(excludeHwnd, SW_SHOW));
+        }
+    }
 
     public static Task<BitmapSource> CaptureElementAsync(UIElement element, double dpi = 96) =>
         Application.Current.Dispatcher.InvokeAsync(() => RenderElement(element, dpi)).Task;
@@ -56,27 +90,13 @@ public static class FrameCaptureEngine
 
     // ── Win32 screen capture ──────────────────────────────────────────────────
 
-    private static BitmapSource CaptureRegion(CaptureRegion region, IntPtr excludeHwnd)
+    // Returns a raw HBITMAP (caller must DeleteObject). Safe to call off-UI-thread.
+    private static IntPtr BitBltToHBitmap(CaptureRegion r)
     {
-        var wasVisible = excludeHwnd != IntPtr.Zero && IsWindowVisible(excludeHwnd);
-        if (wasVisible) ShowWindow(excludeHwnd, SW_HIDE);
-
-        try
-        {
-            return BitBltCapture(region);
-        }
-        finally
-        {
-            if (wasVisible) ShowWindow(excludeHwnd, SW_SHOW);
-        }
-    }
-
-    private static BitmapSource BitBltCapture(CaptureRegion r)
-    {
-        var desktopDc  = GetDC(IntPtr.Zero);
-        var memDc      = CreateCompatibleDC(desktopDc);
-        var hBitmap    = CreateCompatibleBitmap(desktopDc, r.Width, r.Height);
-        var oldBitmap  = SelectObject(memDc, hBitmap);
+        var desktopDc = GetDC(IntPtr.Zero);
+        var memDc     = CreateCompatibleDC(desktopDc);
+        var hBitmap   = CreateCompatibleBitmap(desktopDc, r.Width, r.Height);
+        var oldBitmap = SelectObject(memDc, hBitmap);
 
         BitBlt(memDc, 0, 0, r.Width, r.Height, desktopDc, r.X, r.Y, SRCCOPY);
 
@@ -84,12 +104,7 @@ public static class FrameCaptureEngine
         DeleteDC(memDc);
         ReleaseDC(IntPtr.Zero, desktopDc);
 
-        var bmp = Imaging.CreateBitmapSourceFromHBitmap(
-            hBitmap, IntPtr.Zero, Int32Rect.Empty,
-            BitmapSizeOptions.FromEmptyOptions());
-        DeleteObject(hBitmap);
-        bmp.Freeze();
-        return bmp;
+        return hBitmap;
     }
 
     private static BitmapSource RenderElement(UIElement element, double dpi)

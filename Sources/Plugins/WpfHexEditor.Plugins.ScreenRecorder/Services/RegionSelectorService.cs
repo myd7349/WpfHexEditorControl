@@ -12,19 +12,26 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.Services;
 
 public static class RegionSelectorService
 {
-    public static Task<CaptureRegion?> SelectRegionAsync() =>
-        Application.Current.Dispatcher.InvokeAsync(() =>
+    public static async Task<CaptureRegion?> SelectRegionAsync()
+    {
+        // Must run on UI thread — minimize IDE first so user can draw over any app.
+        await Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            var main         = Application.Current.MainWindow;
-            var prevState    = main?.WindowState ?? WindowState.Normal;
-            var prevTopmost  = main?.Topmost ?? false;
-
-            // Hide the IDE so the user can select a region over any application.
+            var main = Application.Current.MainWindow;
             if (main is not null)
             {
-                main.Topmost      = false;
-                main.WindowState  = WindowState.Minimized;
+                main.Topmost     = false;
+                main.WindowState = WindowState.Minimized;
             }
+        });
+
+        // Give Windows time to actually hide the IDE window before showing the selector.
+        await Task.Delay(350);
+
+        return await Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            var main      = Application.Current.MainWindow;
+            var prevState = main?.WindowState ?? WindowState.Normal;
 
             try
             {
@@ -35,10 +42,8 @@ public static class RegionSelectorService
             finally
             {
                 if (main is not null)
-                {
                     main.WindowState = prevState;
-                    main.Topmost     = prevTopmost;
-                }
             }
-        }).Task;
+        });
+    }
 }

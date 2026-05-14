@@ -83,8 +83,23 @@ public sealed class CaptureService : IDisposable
     public void TriggerManualCapture()
     {
         if (_state != SessionState.Active) return;
+        // TimedInterval-only: manual trigger disabled. Screenshot and Both: allowed.
         if (CurrentSession?.Mode is RecordingMode.TimedInterval) return;
         if (_capturingFrame) return;
+        _ = CaptureOneFrameAsync();
+    }
+
+    // Starts a one-shot Screenshot session if none is active, then captures a frame.
+    // Used by F9 when pressed without a running session.
+    public void StartScreenshotAndCapture(CaptureRegion region)
+    {
+        if (_state == SessionState.Active) { TriggerManualCapture(); return; }
+        StartSession(new CaptureSession
+        {
+            Mode        = RecordingMode.Screenshot,
+            Region      = region,
+            GlobalDelay = ScreenRecorderOptions.Instance.TimerInterval
+        });
         _ = CaptureOneFrameAsync();
     }
 

@@ -72,10 +72,16 @@ public partial class CaptureOverlayWindow : Window
 
     private void ApplyRegion(CaptureRegion r)
     {
-        Left   = r.X;
-        Top    = r.Y;
-        Width  = r.Width;
-        Height = r.Height;
+        // CaptureRegion is in physical pixels; WPF Left/Top/Width/Height need logical units.
+        var src  = PresentationSource.FromVisual(this) ??
+                   PresentationSource.FromVisual(Application.Current.MainWindow);
+        var dpiX = src?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        var dpiY = src?.CompositionTarget?.TransformToDevice.M22 ?? 1.0;
+
+        Left   = r.X      / dpiX;
+        Top    = r.Y      / dpiY;
+        Width  = r.Width  / dpiX;
+        Height = r.Height / dpiY;
     }
 
     [DllImport("user32.dll")] private static extern int  GetWindowLong(IntPtr hwnd, int idx);

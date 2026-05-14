@@ -82,7 +82,7 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         StartCaptureCommand = new RelayCommand(_ => StartCapture(),  _ => !IsSessionActive);
         StopCaptureCommand  = new RelayCommand(_ => StopCapture(),   _ => IsSessionActive);
         PauseCaptureCommand = new RelayCommand(_ => _captureService.PauseSession(), _ => IsSessionActive);
-        CaptureFrameCommand = new RelayCommand(_ => _captureService.TriggerManualCapture(), _ => IsSessionActive);
+        CaptureFrameCommand = new RelayCommand(_ => TriggerF9());
         SelectRegionCommand = new RelayCommand(_ => _ = SelectRegionAsync());
         SaveSessionCommand  = new RelayCommand(_ => _ = SaveSessionAsync());
         OpenSessionCommand  = new RelayCommand(_ => _ = OpenSessionAsync());
@@ -116,6 +116,37 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
     }
 
     private void StopCapture() => _captureService.StopSession();
+
+    /// <summary>
+    /// Called by F9. Behaviour depends on the selected mode:
+    /// - Screenshot / Both : if no session is active, starts one then captures a frame;
+    ///                        if active, captures a frame immediately.
+    /// - TimedInterval      : if no session active, starts the timed session;
+    ///                        F9 does nothing extra (timer drives captures).
+    /// </summary>
+    public void TriggerF9()
+    {
+        var region = Properties.CaptureRegion.IsEmpty
+            ? CaptureRegion.FullScreen()
+            : Properties.CaptureRegion;
+
+        if (!IsSessionActive)
+        {
+            // Always start a session on first F9.
+            StartCapture();
+
+            // In Screenshot/Both mode, also capture the first frame immediately
+            // (the session was just started — TriggerManualCapture checks Active state).
+            if (SelectedMode is RecordingMode.Screenshot or RecordingMode.Both)
+                _captureService.TriggerManualCapture();
+        }
+        else
+        {
+            // Session running — only capture manually in Screenshot/Both mode.
+            if (SelectedMode is RecordingMode.Screenshot or RecordingMode.Both)
+                _captureService.TriggerManualCapture();
+        }
+    }
 
     private void OnFrameCaptured(object? sender, CaptureFrame frame)
     {

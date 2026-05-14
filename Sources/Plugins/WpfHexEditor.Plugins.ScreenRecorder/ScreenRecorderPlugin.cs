@@ -193,9 +193,12 @@ public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptio
             CmdCapture,
             ScreenRecorderResources.ScreenRecorder_CaptureFrame,
             Name, "F9", "",
-            new RelayCommand(
-                _ => ActiveVm?.CaptureFrameCommand.Execute(null),
-                _ => ActiveVm?.IsSessionActive ?? false)));
+            // No CanExecute restriction — opens doc if needed, then TriggerF9 starts session.
+            new RelayCommand(_ =>
+            {
+                if (_entries.Count == 0) OpenOrFocusDocument();
+                ActiveVm?.CaptureFrameCommand.Execute(null);
+            })));
 
         context.CommandRegistry.Register(new SdkCommandDefinition(
             CmdStop,
