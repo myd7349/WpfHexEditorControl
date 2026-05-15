@@ -24,6 +24,13 @@
         <!-- ContextMenu lives outside the visual tree; bind via PlacementTarget.DataContext
              which is the FrameCardViewModel. Timeline commands are delegated from there. -->
         <ContextMenu>
+            <ContextMenu.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <svc:ScreenRecorderLocalizedDictionary/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </ContextMenu.Resources>
             <MenuItem Header="{StaticResource ScreenRecorder_DuplicateFrame}"
                       Command="{Binding PlacementTarget.DataContext.DuplicateCommand,
                                         RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
