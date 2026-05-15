@@ -177,13 +177,19 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         if (_overlay is null)
         {
             _overlay = new Overlay.CaptureOverlayWindow();
-            _overlay.Closed += (_, _) => _overlay = null;
+            _overlay.Closed                += (_, _) => _overlay = null;
+            _overlay.CaptureHotkeyPressed  += (_, _) => TriggerF9();
+            _overlay.StopHotkeyPressed     += (_, _) => StopCapture();
         }
         _overlay.ShowOverlay(region, Hud);
         _captureService.SetOverlayHwnd(_overlay.OverlayHwnd);
     }
 
-    private void HideOverlay() => _overlay?.HideOverlay();
+    private void HideOverlay()
+    {
+        _overlay?.UnregisterHotkeys();
+        _overlay?.HideOverlay();
+    }
 
     // ── Region Selector ────────────────────────────────────────────────────────
 

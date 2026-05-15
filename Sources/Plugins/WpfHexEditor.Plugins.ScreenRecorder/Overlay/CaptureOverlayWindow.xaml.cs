@@ -24,7 +24,18 @@ public partial class CaptureOverlayWindow : Window
     private const int WS_EX_NOACTIVATE  = 0x08000000;
     private const int WS_EX_TOOLWINDOW  = 0x00000080;
     private const int WM_MOUSEACTIVATE  = 0x0021;
+    private const int WM_HOTKEY         = 0x0312;
     private const int MA_NOACTIVATE     = 3;
+
+    private const int HOTKEY_F9         = 1;
+    private const int HOTKEY_SHIFT_F9   = 2;
+    private const int MOD_SHIFT         = 0x0004;
+    private const int VK_F9             = 0x78;
+
+    /// <summary>Fired when F9 is pressed globally during a capture session.</summary>
+    public event EventHandler? CaptureHotkeyPressed;
+    /// <summary>Fired when Shift+F9 is pressed globally during a capture session.</summary>
+    public event EventHandler? StopHotkeyPressed;
 
     public IntPtr OverlayHwnd { get; private set; }
 
@@ -61,12 +72,31 @@ public partial class CaptureOverlayWindow : Window
         var exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
         SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
 
+        // Register global hotkeys on the overlay HWND — received even when IDE is not foreground.
+        RegisterHotKey(hwnd, HOTKEY_F9,       0,        VK_F9);
+        RegisterHotKey(hwnd, HOTKEY_SHIFT_F9, MOD_SHIFT, VK_F9);
+
         HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+    }
+
+    public void UnregisterHotkeys()
+    {
+        if (OverlayHwnd == IntPtr.Zero) return;
+        UnregisterHotKey(OverlayHwnd, HOTKEY_F9);
+        UnregisterHotKey(OverlayHwnd, HOTKEY_SHIFT_F9);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_MOUSEACTIVATE) { handled = true; return (IntPtr)MA_NOACTIVATE; }
+
+        if (msg == WM_HOTKEY)
+        {
+            int id = wParam.ToInt32();
+            if (id == HOTKEY_F9)       { CaptureHotkeyPressed?.Invoke(this, EventArgs.Empty); handled = true; }
+            if (id == HOTKEY_SHIFT_F9) { StopHotkeyPressed?.Invoke(this, EventArgs.Empty);    handled = true; }
+        }
+
         return IntPtr.Zero;
     }
 
@@ -86,4 +116,6 @@ public partial class CaptureOverlayWindow : Window
 
     [DllImport("user32.dll")] private static extern int  GetWindowLong(IntPtr hwnd, int idx);
     [DllImport("user32.dll")] private static extern int  SetWindowLong(IntPtr hwnd, int idx, int val);
+    [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr hwnd, int id, int mods, int vk);
+    [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hwnd, int id);
 }
