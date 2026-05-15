@@ -33,6 +33,7 @@ public sealed class CaptureService : IDisposable
     private bool         _capturingFrame;
     private IntPtr       _overlayHwnd;
 
+
     private enum SessionState { Stopped, Active, Paused }
 
     public void SetOverlayHwnd(IntPtr hwnd) => _overlayHwnd = hwnd;

@@ -25,7 +25,7 @@ public sealed class MenuItemDescriptor
     public Func<string>? HeaderFactory { get; init; }
 
     /// <summary>Resolves the effective display header: factory if provided, else static Header.</summary>
-    internal string ResolveHeader() => HeaderFactory?.Invoke() ?? Header;
+    public string ResolveHeader() => HeaderFactory?.Invoke() ?? Header;
 
     /// <summary>
     /// Slash-separated path of the parent menu where this item is inserted.
