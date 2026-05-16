@@ -334,13 +334,13 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         };
         if (dlg.ShowDialog() != true) return;
 
-        // Load all images in parallel (FileStream releases lock immediately after OnLoad).
         var loadTasks = dlg.FileNames.OrderBy(p => p)
             .Select(path => Task.Run<System.Windows.Media.Imaging.BitmapSource>(() =>
             {
                 var img = new System.Windows.Media.Imaging.BitmapImage();
                 img.BeginInit();
-                img.StreamSource = System.IO.File.OpenRead(path);
+                using var stream = System.IO.File.OpenRead(path);
+                img.StreamSource = stream;
                 img.CacheOption  = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
                 img.EndInit();
                 img.Freeze();
@@ -349,10 +349,11 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
             .ToList();
 
         var bitmaps = await Task.WhenAll(loadTasks);
-        foreach (var bitmap in bitmaps)
+        var thumbTasks = bitmaps.Select(b => Task.Run(() => FrameCaptureEngine.CreateThumbnail(b))).ToList();
+        var thumbs = await Task.WhenAll(thumbTasks);
+        for (var i = 0; i < bitmaps.Length; i++)
         {
-            var thumb = FrameCaptureEngine.CreateThumbnail(bitmap);
-            var card  = new FrameCardViewModel(Timeline.Frames.Count, thumb, Properties.TimerInterval, bitmap);
+            var card = new FrameCardViewModel(Timeline.Frames.Count, thumbs[i], Properties.TimerInterval, bitmaps[i]);
             Timeline.AddFrame(card);
         }
         RefreshCanExecute();

@@ -19,6 +19,7 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.Views;
 public partial class TimelineStrip : System.Windows.Controls.UserControl
 {
     private const double FrameCardWidth = 104.0; // FrameCard Width(100) + Margin(2+2)
+    private TimelineViewModel? _currentTimeline;
 
     public TimelineStrip()
     {
@@ -26,6 +27,7 @@ public partial class TimelineStrip : System.Windows.Controls.UserControl
         KeyDown            += OnKeyDown;
         SizeChanged        += (_, _) => UpdateScrubber();
         DataContextChanged += OnDataContextChanged;
+        Loaded             += (_, _) => SubscribeTimeline(DataContext as TimelineViewModel);
         Unloaded           += (_, _) => UnsubscribeTimeline();
         Focusable = true;
     }
@@ -40,17 +42,23 @@ public partial class TimelineStrip : System.Windows.Controls.UserControl
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (e.OldValue is TimelineViewModel old)
-            old.PropertyChanged -= OnTimelinePropertyChanged;
-        if (e.NewValue is TimelineViewModel tvm)
-            tvm.PropertyChanged += OnTimelinePropertyChanged;
+        UnsubscribeTimeline();
+        SubscribeTimeline(e.NewValue as TimelineViewModel);
         UpdateScrubber();
+    }
+
+    private void SubscribeTimeline(TimelineViewModel? tvm)
+    {
+        if (tvm is null || ReferenceEquals(tvm, _currentTimeline)) return;
+        _currentTimeline = tvm;
+        tvm.PropertyChanged += OnTimelinePropertyChanged;
     }
 
     private void UnsubscribeTimeline()
     {
-        if (DataContext is TimelineViewModel tvm)
-            tvm.PropertyChanged -= OnTimelinePropertyChanged;
+        if (_currentTimeline is null) return;
+        _currentTimeline.PropertyChanged -= OnTimelinePropertyChanged;
+        _currentTimeline = null;
     }
 
     private void OnTimelinePropertyChanged(object? sender, PropertyChangedEventArgs e)

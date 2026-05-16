@@ -31,6 +31,7 @@ public sealed class PlaybackService : IDisposable
 
     public void Stop()
     {
+        if (!_timer.IsEnabled) return;
         _timer.Stop();
         PlaybackStopped?.Invoke(this, EventArgs.Empty);
     }
