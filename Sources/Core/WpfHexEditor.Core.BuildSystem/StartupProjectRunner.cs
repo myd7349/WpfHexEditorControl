@@ -146,14 +146,25 @@ public sealed class StartupProjectRunner
         });
 
         // Stream stderr/stdout and monitor exit — surfaces .NET unhandled exception details.
-        proc.OutputDataReceived += (_, e) => { if (e.Data is not null) Log(e.Data); };
-        proc.ErrorDataReceived  += (_, e) =>
+        // proc is disposed in the finally block of the background task; if BeginOutputReadLine
+        // throws before the task is started, the catch block below disposes it instead.
+        try
         {
-            if (e.Data is not null)
-                _eventBus.Publish(new BuildOutputLineEvent { Line = e.Data, IsError = true });
-        };
-        proc.BeginOutputReadLine();
-        proc.BeginErrorReadLine();
+            proc.OutputDataReceived += (_, e) => { if (e.Data is not null) Log(e.Data); };
+            proc.ErrorDataReceived  += (_, e) =>
+            {
+                if (e.Data is not null)
+                    _eventBus.Publish(new BuildOutputLineEvent { Line = e.Data, IsError = true });
+            };
+            proc.BeginOutputReadLine();
+            proc.BeginErrorReadLine();
+        }
+        catch (Exception ex)
+        {
+            Log($"-- Failed to attach output streams: {ex.Message} --");
+            proc.Dispose();
+            return false;
+        }
 
         _ = Task.Run(async () =>
         {

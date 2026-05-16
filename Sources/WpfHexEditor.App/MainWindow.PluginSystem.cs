@@ -469,7 +469,7 @@ public partial class MainWindow
                     try
                     {
                         if (_pendingTerminalPanel is null) return;
-                        var termVm = new TerminalPanelViewModel(_ideHostContext);
+                        var termVm = new TerminalPanelViewModel(new TerminalHostContextAdapter(_ideHostContext));
                         _terminalService?.SetOutput(termVm.GetActiveOutput());
                         _terminalService?.SetSessionManager(termVm.SessionManager);
                         _terminalService?.SetRegistry(termVm.CommandRegistry);
@@ -1260,7 +1260,7 @@ public partial class MainWindow
 
         if (_ideHostContext is not null)
         {
-            var vm = new TerminalPanelViewModel(_ideHostContext);
+            var vm = new TerminalPanelViewModel(new TerminalHostContextAdapter(_ideHostContext));
             _terminalService?.SetOutput(vm.GetActiveOutput());
             _terminalService?.SetSessionManager(vm.SessionManager);
             _terminalService?.SetRegistry(vm.CommandRegistry);
@@ -1302,7 +1302,7 @@ public partial class MainWindow
         if (ActivateExistingDockPanel(TerminalPanelContentId)) return;
         if (_ideHostContext is null) { OutputLogger.Error("[Terminal] Host context unavailable."); return; }
 
-        var vm      = new TerminalPanelViewModel(_ideHostContext);
+        var vm      = new TerminalPanelViewModel(new TerminalHostContextAdapter(_ideHostContext));
         _terminalService?.SetOutput(vm.GetActiveOutput());
         _terminalService?.SetSessionManager(vm.SessionManager);
         _terminalService?.SetRegistry(vm.CommandRegistry);
