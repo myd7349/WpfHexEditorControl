@@ -71,7 +71,7 @@ public sealed class RoslynLanguageClient : ILspClient, IReferenceCountProvider, 
     public RoslynLanguageClient(Dispatcher dispatcher, IRoslynServiceFactory factory)
     {
         _dispatcher = dispatcher;
-        _workspace = (factory ?? DefaultRoslynServiceFactory.Instance).CreateWorkspaceManager();
+        _workspace = factory.CreateWorkspaceManager();
         _analysisService = new BackgroundAnalysisService(_workspace, dispatcher);
         _analysisService.DiagnosticsReady += (s, e) =>
         {

@@ -146,8 +146,6 @@ public sealed class StartupProjectRunner
         });
 
         // Stream stderr/stdout and monitor exit — surfaces .NET unhandled exception details.
-        // proc is disposed in the finally block of the background task; if BeginOutputReadLine
-        // throws before the task is started, the catch block below disposes it instead.
         try
         {
             proc.OutputDataReceived += (_, e) => { if (e.Data is not null) Log(e.Data); };

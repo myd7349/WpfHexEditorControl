@@ -47,6 +47,8 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
 
     public ShellSession Session { get; }
 
+    private const string SourceName = "TerminalPanel";
+
     // -- Shared services (injected) -----------------------------------------------
 
     private readonly TerminalCommandRegistry _registry;
@@ -331,7 +333,7 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
         AppendLine($"> {input}", TerminalOutputKind.Info);
 
         // Notify host (IDE routes to IIDEEventBus; standalone is a no-op).
-        _hostContext.PublishCommandExecuted("TerminalPanel", input, Session.ShellType.ToString());
+        _hostContext.PublishCommandExecuted(SourceName, input, Session.ShellType.ToString());
 
         // External shell: forward to process stdin.
         if (Session.ShellType != TerminalShellType.HxTerminal && _shellManager?.Input is { } shellInput)
