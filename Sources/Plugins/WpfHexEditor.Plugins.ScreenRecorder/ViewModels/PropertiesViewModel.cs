@@ -22,7 +22,7 @@ public sealed class PropertiesViewModel : INotifyPropertyChanged
     private double        _outputScale    = 1.0;
     private int           _loopCount;
     private int           _repeatLastFrameDelay = 1000;
-    private int           _timerInterval  = 100;
+    private int           _timerInterval  = 500;
 
     public CaptureRegion CaptureRegion
     {

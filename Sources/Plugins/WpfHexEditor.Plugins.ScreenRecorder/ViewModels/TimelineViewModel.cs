@@ -13,7 +13,7 @@ namespace WpfHexEditor.Plugins.ScreenRecorder.ViewModels;
 public sealed class TimelineViewModel : INotifyPropertyChanged
 {
     private FrameCardViewModel? _selectedFrame;
-    private int                 _globalDelay = 100;
+    private int                 _globalDelay = 500;
 
     // Undo/Redo — each entry is a full snapshot of Frames list (shallow clone).
     // Cheap because BitmapSource is frozen (shared reference, no copy).
