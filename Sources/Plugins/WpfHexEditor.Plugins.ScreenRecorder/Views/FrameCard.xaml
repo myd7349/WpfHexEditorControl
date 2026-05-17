@@ -15,7 +15,7 @@
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource DockTabActiveBackground}"/>
+                    <Setter Property="Background" Value="{DynamicResource DockTabActiveBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
