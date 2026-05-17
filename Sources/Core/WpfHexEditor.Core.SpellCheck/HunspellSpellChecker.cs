@@ -10,7 +10,6 @@
 //     WordList is immutable after load — thread-safe for CheckWord/Suggest.
 // ==========================================================
 
-using System.IO;
 using WeCantSpell.Hunspell;
 
 namespace WpfHexEditor.Core.SpellCheck;
@@ -38,8 +37,9 @@ public sealed class HunspellSpellChecker : ISpellChecker
 
     public HunspellSpellChecker(SpellCheckerSettings settings, DictionaryManager dictManager)
     {
-        _settings    = settings;
-        _dictManager = dictManager;
+        _settings         = settings;
+        _dictManager      = dictManager;
+        MultiLanguageMode = settings.MultiLanguageMode;
         LoadUserWords();
     }
 
@@ -130,7 +130,7 @@ public sealed class HunspellSpellChecker : ISpellChecker
             AppendToUserDictFile(word);
     }
 
-    private string UserDictPath => Path.Combine(_settings.DictionariesPath, "userdict.txt");
+    private string UserDictPath => _settings.UserDictPath;
 
     private void LoadUserWords()
     {

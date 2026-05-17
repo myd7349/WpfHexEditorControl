@@ -30,13 +30,70 @@ internal sealed class SpellCheckerOptionsViewModel : INotifyPropertyChanged
         set { if (_isEnabled == value) return; _isEnabled = value; OnPropertyChanged(); _settings.IsEnabled = value; _settings.Save(); }
     }
 
-    public string UserDictPath => System.IO.Path.Combine(_settings.DictionariesPath, "userdict.txt");
+    private bool _multiLanguageMode;
+    public bool MultiLanguageMode
+    {
+        get => _multiLanguageMode;
+        set { if (_multiLanguageMode == value) return; _multiLanguageMode = value; OnPropertyChanged(); _settings.MultiLanguageMode = value; _settings.Save(); }
+    }
+
+    private int _analysisDebounceMs;
+    public int AnalysisDebounceMs
+    {
+        get => _analysisDebounceMs;
+        set { if (_analysisDebounceMs == value) return; _analysisDebounceMs = Math.Clamp(value, 100, 5000); OnPropertyChanged(); _settings.AnalysisDebounceMs = _analysisDebounceMs; }
+    }
+
+    private int _maxSuggestions;
+    public int MaxSuggestions
+    {
+        get => _maxSuggestions;
+        set { if (_maxSuggestions == value) return; _maxSuggestions = Math.Clamp(value, 1, 20); OnPropertyChanged(); _settings.MaxSuggestions = _maxSuggestions; }
+    }
+
+    private int _detectionConfidencePercent;
+    public int DetectionConfidencePercent
+    {
+        get => _detectionConfidencePercent;
+        set { if (_detectionConfidencePercent == value) return; _detectionConfidencePercent = Math.Clamp(value, 1, 50); OnPropertyChanged(); _settings.DetectionConfidencePercent = _detectionConfidencePercent; }
+    }
+
+    private string _mirrorUrl = string.Empty;
+    public string MirrorUrl
+    {
+        get => _mirrorUrl;
+        set { if (_mirrorUrl == value) return; _mirrorUrl = value; OnPropertyChanged(); _settings.MirrorUrl = value; _settings.Save(); }
+    }
+
+    private string _dictionariesPath = string.Empty;
+    public string DictionariesPath
+    {
+        get => _dictionariesPath;
+        set { if (_dictionariesPath == value) return; _dictionariesPath = value; OnPropertyChanged(); _settings.DictionariesPath = value; _settings.Save(); }
+    }
+
+    public ObservableCollection<string> IgnoredWords { get; } = [];
+
+    public string UserDictPath => _settings.UserDictPath;
 
     public SpellCheckerOptionsViewModel(SpellCheckerSettings settings, DictionaryManager dictManager)
     {
-        _settings    = settings;
-        _dictManager = dictManager;
-        _isEnabled   = settings.IsEnabled;
+        _settings                   = settings;
+        _dictManager                = dictManager;
+        _isEnabled                  = settings.IsEnabled;
+        _multiLanguageMode          = settings.MultiLanguageMode;
+        _analysisDebounceMs         = settings.AnalysisDebounceMs;
+        _maxSuggestions             = settings.MaxSuggestions;
+        _detectionConfidencePercent = settings.DetectionConfidencePercent;
+        _mirrorUrl                  = settings.MirrorUrl;
+        _dictionariesPath           = settings.DictionariesPath;
+        foreach (var w in settings.IgnoredWords)
+            IgnoredWords.Add(w);
+        IgnoredWords.CollectionChanged += (_, _) =>
+        {
+            _settings.IgnoredWords = [.. IgnoredWords];
+            _settings.Save();
+        };
         Reload();
     }
 
@@ -60,6 +117,23 @@ internal sealed class SpellCheckerOptionsViewModel : INotifyPropertyChanged
         foreach (var r in Languages)
             if (r != row) r.SilentSetActive(false);
         _settings.ActiveLanguage = row.LanguageCode;
+        _settings.Save();
+    }
+
+    public void RemoveIgnoredWord(string word) => IgnoredWords.Remove(word);
+
+    /// <summary>Persist slider-bound settings in one write (call on LostMouseCapture).</summary>
+    public void SaveSliderSettings() => _settings.Save();
+
+    public void ResetAdvancedToDefaults()
+    {
+        var def = SpellCheckerSettings.Defaults;
+        MultiLanguageMode          = def.MultiLanguageMode;
+        AnalysisDebounceMs         = def.AnalysisDebounceMs;
+        MaxSuggestions             = def.MaxSuggestions;
+        DetectionConfidencePercent = def.DetectionConfidencePercent;
+        MirrorUrl                  = def.MirrorUrl;
+        DictionariesPath           = def.DictionariesPath;
         _settings.Save();
     }
 

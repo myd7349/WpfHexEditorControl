@@ -63,10 +63,15 @@ public sealed class RoslynLanguageClient : ILspClient, IReferenceCountProvider, 
         _showLambdaReturnTypeHints = showLambdaReturnTypeHints;
     }
 
+    /// <summary>Creates a client with the default Roslyn service factory.</summary>
     public RoslynLanguageClient(Dispatcher dispatcher)
+        : this(dispatcher, DefaultRoslynServiceFactory.Instance) { }
+
+    /// <summary>Creates a client with a custom workspace factory — intended for testing.</summary>
+    public RoslynLanguageClient(Dispatcher dispatcher, IRoslynServiceFactory factory)
     {
         _dispatcher = dispatcher;
-        _workspace = new RoslynWorkspaceManager();
+        _workspace = factory.CreateWorkspaceManager();
         _analysisService = new BackgroundAnalysisService(_workspace, dispatcher);
         _analysisService.DiagnosticsReady += (s, e) =>
         {

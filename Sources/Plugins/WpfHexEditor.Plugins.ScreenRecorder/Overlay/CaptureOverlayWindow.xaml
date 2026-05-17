@@ -1,0 +1,35 @@
+<!--
+    Project: WpfHexEditor.Plugins.ScreenRecorder
+    File: Overlay/CaptureOverlayWindow.xaml
+    Description: Borderless, topmost, non-activating transparent window drawn around
+                 the capture region. Shows a colored dashed border + HUD.
+-->
+<Window x:Class="WpfHexEditor.Plugins.ScreenRecorder.Overlay.CaptureOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:overlay="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Overlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        IsHitTestVisible="False">
+    <Grid>
+        <!-- Capture region border (dashed, colored) -->
+        <Rectangle x:Name="RegionBorder"
+                   Stroke="{Binding OverlayBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                   StrokeThickness="2"
+                   Fill="Transparent"
+                   Margin="0">
+            <Rectangle.StrokeDashArray>
+                <DoubleCollection>6 3</DoubleCollection>
+            </Rectangle.StrokeDashArray>
+        </Rectangle>
+
+        <!-- HUD anchored to top-left of overlay -->
+        <overlay:CaptureHudControl x:Name="Hud"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Top"
+                                   Margin="4,4,0,0" />
+    </Grid>
+</Window>

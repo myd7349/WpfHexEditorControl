@@ -26,8 +26,3 @@ manager), add it to `$longLivedSources` in `leak-scan.ps1` AND list it here.
 - Files under `Tests/`, `Samples/`, `*.Designer.cs`, `*.g.cs` are skipped.
 - `// fixture` comment on a secret line excludes from `secret-in-source`.
 
-## Why no LSP semantic analysis
-
-Roslyn analyzers exist for some of this (CA2213, CA1063). The skill is a
-**fast pre-flight** at edit time, not a replacement for compile-time
-analyzers. False negatives are expected on cross-file patterns.

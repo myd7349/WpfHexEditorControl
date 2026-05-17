@@ -74,6 +74,17 @@ public static class CommandIds
         public const string Terminal          = "View.Terminal";
         public const string Options           = "View.Options";
 
+        // Binary Analysis panels (#110–#119)
+        public const string BaStrings         = "View.BinaryAnalysis.Strings";
+        public const string BaHash            = "View.BinaryAnalysis.Hash";
+        public const string BaCarver          = "View.BinaryAnalysis.Carver";
+        public const string BaSigDb           = "View.BinaryAnalysis.SignatureDb";
+        public const string BaFrequency       = "View.BinaryAnalysis.Frequency";
+
+        // Hex Diff and Scripting Console
+        public const string HexDiff           = "View.HexDiff";
+        public const string ScriptingConsole  = "View.ScriptingConsole";
+
         // View Menu Organization
         public const string ViewMenuModeFlat        = "View.MenuMode.Flat";
         public const string ViewMenuModeCategorized = "View.MenuMode.Categorized";

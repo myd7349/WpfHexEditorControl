@@ -92,7 +92,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// Controls the visual highlight style applied to the active panel container.
     /// Use <see cref="ApplyHighlightMode"/> for live updates (re-renders the current active panel).
     /// </summary>
-    public ActivePanelHighlightMode PanelHighlightMode { get; set; } = ActivePanelHighlightMode.TopBar;
+    public ActivePanelHighlightMode PanelHighlightMode { get; set; } = ActivePanelHighlightMode.Glow;
 
     /// <summary>Corner radius in px applied to every panel overlay border. Default 4.</summary>
     public double PanelCornerRadius { get; set; } = 4.0;

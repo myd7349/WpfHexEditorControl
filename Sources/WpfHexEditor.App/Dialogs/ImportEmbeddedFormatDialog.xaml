@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
@@ -9,8 +9,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core.Views;assembly=WpfHexEditor.Editor.Core"
         xmlns:ce="clr-namespace:WpfHexEditor.Editor.CodeEditor.Controls;assembly=WpfHexEditor.Editor.CodeEditor"
+             xmlns:appSvc="clr-namespace:WpfHexEditor.App.Services"
         xmlns:pb="clr-namespace:WpfHexEditor.ProgressBar.Controls;assembly=WpfHexEditor.ProgressBar"
-        Title="{StaticResource App_ImportFormat_Title}"
+        Title="{DynamicResource App_ImportFormat_Title}"
         Width="980" Height="580"
         MinWidth="680" MinHeight="420"
         ResizeMode="CanResizeWithGrip"
@@ -19,6 +20,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <appSvc:AppLocalizedDictionary/>
                 <ResourceDictionary Source="/WpfHexEditor.Core.ProjectSystem;component/Themes/DialogStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 

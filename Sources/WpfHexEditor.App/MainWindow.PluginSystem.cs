@@ -72,6 +72,9 @@ public partial class MainWindow
     private WpfHexEditor.App.Services.DebuggerServiceImpl?      _debuggerService;
     private WpfHexEditor.App.Debug.DebugModule?                 _debugModule;
     private WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule? _assemblyExplorerModule;
+    private WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule?    _binaryAnalysisModule;
+    private WpfHexEditor.App.HexDiff.HexDiffModule?                  _hexDiffModule;
+    private WpfHexEditor.App.Scripting.ScriptingModule?              _scriptingModule;
     private WpfHexEditor.App.Analysis.CodeAnalysisModule?       _codeAnalysisModule;
     private WpfHexEditor.App.Services.ScriptingServiceImpl?     _scriptingService;
     private WpfHexEditor.App.Services.TabGroupService?          _tabGroupService;
@@ -466,7 +469,7 @@ public partial class MainWindow
                     try
                     {
                         if (_pendingTerminalPanel is null) return;
-                        var termVm = new TerminalPanelViewModel(_ideHostContext);
+                        var termVm = new TerminalPanelViewModel(new TerminalHostContextAdapter(_ideHostContext));
                         _terminalService?.SetOutput(termVm.GetActiveOutput());
                         _terminalService?.SetSessionManager(termVm.SessionManager);
                         _terminalService?.SetRegistry(termVm.CommandRegistry);
@@ -499,6 +502,18 @@ public partial class MainWindow
             // Panels/ViewModels/decompiler backend are built in EnsureActivated on first use.
             _assemblyExplorerModule = new WpfHexEditor.App.AssemblyExplorer.AssemblyExplorerModule();
             await _assemblyExplorerModule.InitializeAsync(hostContext).ConfigureAwait(true);
+
+            // Binary Analysis module — #110 strings, #111 hash, #112 carver, #118 sig db, #119 freq heatmap.
+            _binaryAnalysisModule = new WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule();
+            await _binaryAnalysisModule.InitializeAsync(hostContext).ConfigureAwait(true);
+
+            // Hex Diff module — byte-level diff of two binary files with patch export.
+            _hexDiffModule = new WpfHexEditor.App.HexDiff.HexDiffModule();
+            await _hexDiffModule.InitializeAsync(hostContext).ConfigureAwait(true);
+
+            // Scripting Console module — interactive Roslyn C# REPL with IDE globals.
+            _scriptingModule = new WpfHexEditor.App.Scripting.ScriptingModule();
+            await _scriptingModule.InitializeAsync(hostContext).ConfigureAwait(true);
 
             // Code Analysis module — provides OVERKILL analysis with full IDE integration
             // (status bar badge, Tools menu, Solution/Project/File context menus, Error Panel, Options pages).
@@ -1245,7 +1260,7 @@ public partial class MainWindow
 
         if (_ideHostContext is not null)
         {
-            var vm = new TerminalPanelViewModel(_ideHostContext);
+            var vm = new TerminalPanelViewModel(new TerminalHostContextAdapter(_ideHostContext));
             _terminalService?.SetOutput(vm.GetActiveOutput());
             _terminalService?.SetSessionManager(vm.SessionManager);
             _terminalService?.SetRegistry(vm.CommandRegistry);
@@ -1287,7 +1302,7 @@ public partial class MainWindow
         if (ActivateExistingDockPanel(TerminalPanelContentId)) return;
         if (_ideHostContext is null) { OutputLogger.Error("[Terminal] Host context unavailable."); return; }
 
-        var vm      = new TerminalPanelViewModel(_ideHostContext);
+        var vm      = new TerminalPanelViewModel(new TerminalHostContextAdapter(_ideHostContext));
         _terminalService?.SetOutput(vm.GetActiveOutput());
         _terminalService?.SetSessionManager(vm.SessionManager);
         _terminalService?.SetRegistry(vm.CommandRegistry);
@@ -1337,6 +1352,12 @@ public partial class MainWindow
         _lspBridgeService = null;
         _assemblyExplorerModule?.Shutdown();
         _assemblyExplorerModule = null;
+        _binaryAnalysisModule?.Shutdown();
+        _binaryAnalysisModule = null;
+        _hexDiffModule?.Shutdown();
+        _hexDiffModule = null;
+        _scriptingModule?.Shutdown();
+        _scriptingModule = null;
         _debugModule?.Shutdown();
         _debugModule = null;
         if (_debuggerService is not null)

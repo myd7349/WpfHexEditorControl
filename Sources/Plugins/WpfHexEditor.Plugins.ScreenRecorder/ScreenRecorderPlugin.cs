@@ -1,0 +1,219 @@
+// ==========================================================
+// Project: WpfHexEditor.Plugins.ScreenRecorder
+// File: ScreenRecorderPlugin.cs
+// Description: Plugin entry point for the Screen Recorder feature.
+//              Registers the Tools menu item and opens a document tab on demand.
+//              Commands (F9/Shift+F9/ESC) are registered via ICommandRegistry.
+// Architecture Notes:
+//     Multi-document: each Tools > Screen Recorder invocation opens a new tab with a unique uiId.
+//     Tabs are tracked in _entries; DocumentDescriptor.OnClosed removes the entry when the tab closes.
+//     F9/Shift+F9/ESC target the last opened document (ActiveVm = _entries[^1]).
+//     IPluginWithOptions wires the Options page into the IDE settings panel.
+//     IWorkspacePersistable saves/restores the open-tab state across IDE restarts.
+// ==========================================================
+
+using System.Text.Json;
+using System.Threading;
+using System.Windows;
+using WpfHexEditor.Core.Localization.Services;
+using WpfHexEditor.Plugins.ScreenRecorder.Properties;
+using WpfHexEditor.Plugins.ScreenRecorder.Services;
+using WpfHexEditor.Plugins.ScreenRecorder.ViewModels;
+using WpfHexEditor.Plugins.ScreenRecorder.Views;
+using WpfHexEditor.SDK.Commands;
+using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.SDK.Contracts.Services;
+using WpfHexEditor.SDK.Descriptors;
+using WpfHexEditor.SDK.Models;
+
+namespace WpfHexEditor.Plugins.ScreenRecorder;
+
+public sealed class ScreenRecorderPlugin : IWpfHexEditorPlugin, IPluginWithOptions, IWorkspacePersistable
+{
+    private const string DocUiId    = "WpfHexEditor.Plugins.ScreenRecorder.Document";
+    private const string CmdCapture = "ScreenRecorder.CaptureFrame";
+    private const string CmdStop    = "ScreenRecorder.StopSession";
+    private const string CmdCancel  = "ScreenRecorder.CancelSession";
+    private const string CmdStart   = "ScreenRecorder.StartSession";
+
+    public string  Id      => "WpfHexEditor.Plugins.ScreenRecorder";
+    public string  Name    => ScreenRecorderResources.ScreenRecorder_PluginName;
+    public Version Version => new(1, 0, 0);
+
+    public PluginCapabilities Capabilities => new()
+    {
+        AccessFileSystem = true,
+        RegisterMenus    = true,
+        WriteOutput      = true
+    };
+
+    private readonly record struct ScreenRecorderEntry(
+        string UiId,
+        ScreenRecorderDocument Document,
+        ScreenRecorderViewModel Vm);
+
+    private IIDEHostContext?                    _context;
+    private readonly List<ScreenRecorderEntry>  _entries = [];
+
+    public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
+    {
+        _context = context;
+
+        // Apply the IDE's active language to this thread so resx string lookups
+        // (ScreenRecorderResources.*) use the correct culture instead of the OS locale.
+        // LocalizedResourceDictionary.ChangeCulture sets DefaultThreadCurrentUICulture
+        // but not the already-running plugin-loader thread's CurrentUICulture.
+        var ideCulture = LocalizedResourceDictionary.CurrentCulture;
+        Thread.CurrentThread.CurrentUICulture = ideCulture;
+        Thread.CurrentThread.CurrentCulture   = ideCulture;
+
+        FileAssociationService.RegisterIfNeeded();
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = ScreenRecorderResources.ScreenRecorder_MenuItem,
+                ParentPath = "Tools",
+                Group      = "MediaTools",
+                IconGlyph  = "",
+                Command    = new RelayCommand(_ => OpenOrFocusDocument())
+            });
+
+        RegisterCommands(context);
+        context.CapabilityRegistry.RegisterWorkspacePersistable(Id, this);
+
+        // Reopen the document tab if it was open at last shutdown.
+        // The dock layout restores the ContentId as a ghost (CreatePluginDocumentGhostContent)
+        // which closes the stale entry; we recreate the real tab at ApplicationIdle priority.
+        if (Options.ScreenRecorderOptions.Instance.DocumentTabOpen)
+            Application.Current.Dispatcher.InvokeAsync(
+                OpenOrFocusDocument,
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+        return Task.CompletedTask;
+    }
+
+    public Task ShutdownAsync(CancellationToken ct = default)
+    {
+        _context?.CommandRegistry?.Unregister(CmdCapture);
+        _context?.CommandRegistry?.Unregister(CmdStop);
+        _context?.CommandRegistry?.Unregister(CmdCancel);
+        _context?.CommandRegistry?.Unregister(CmdStart);
+
+        // Persist whether any tab was open so InitializeAsync can restore it next session.
+        Options.ScreenRecorderOptions.Instance.DocumentTabOpen = _entries.Count > 0;
+        Options.ScreenRecorderOptions.Instance.Save();
+
+        _entries.Clear();
+        _context = null;
+        return Task.CompletedTask;
+    }
+
+    // ── Workspace persistence (IWorkspacePersistable) ─────────────────────────
+
+    public object? CaptureWorkspaceState()
+        => _entries.Count > 0 ? new { isOpen = true } : null;
+
+    public Task RestoreWorkspaceStateAsync(string json, CancellationToken ct = default)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("isOpen", out var prop) && prop.GetBoolean())
+                Application.Current.Dispatcher.BeginInvoke(OpenOrFocusDocument);
+        }
+        catch (JsonException) { }
+        return Task.CompletedTask;
+    }
+
+    // ── Options (IPluginWithOptions) ──────────────────────────────────────────
+
+    public FrameworkElement CreateOptionsPage() => new Options.ScreenRecorderOptionsPage();
+    public void SaveOptions() => Options.ScreenRecorderOptions.Instance.Save();
+    public void LoadOptions() => Options.ScreenRecorderOptions.Reload();
+    public string GetOptionsCategory()     => "Tools";
+    public string GetOptionsCategoryIcon() => "";
+
+    // ── Document tab management ───────────────────────────────────────────────
+
+    private void OpenOrFocusDocument()
+    {
+        if (_context is null) return;
+
+        var uiId = $"{DocUiId}_{Guid.NewGuid():N}";
+        var vm   = new ScreenRecorderViewModel();
+        var doc  = new ScreenRecorderDocument();
+        doc.SetViewModel(vm);
+
+        var entry = new ScreenRecorderEntry(uiId, doc, vm);
+        _entries.Add(entry);
+
+        _context.UIRegistry.RegisterDocumentTab(
+            uiId,
+            doc,
+            Id,
+            new DocumentDescriptor
+            {
+                Title    = ScreenRecorderResources.ScreenRecorder_DocumentTitle,
+                CanClose = true,
+                OnClosed = () => RemoveEntry(uiId)
+            });
+
+        Options.ScreenRecorderOptions.Instance.DocumentTabOpen = true;
+        Options.ScreenRecorderOptions.Instance.Save();
+    }
+
+    private void RemoveEntry(string uiId)
+    {
+        _entries.RemoveAll(e => e.UiId == uiId);
+        if (_entries.Count == 0)
+        {
+            Options.ScreenRecorderOptions.Instance.DocumentTabOpen = false;
+            Options.ScreenRecorderOptions.Instance.Save();
+        }
+    }
+
+    // The last opened document's VM receives keyboard shortcuts (F9 / Shift+F9 / ESC).
+    private ScreenRecorderViewModel? ActiveVm => _entries.Count > 0 ? _entries[^1].Vm : null;
+
+    // ── Command registration ──────────────────────────────────────────────────
+
+    private void RegisterCommands(IIDEHostContext context)
+    {
+        if (context.CommandRegistry is null) return;
+
+        context.CommandRegistry.Register(new SdkCommandDefinition(
+            CmdStart,
+            ScreenRecorderResources.ScreenRecorder_Start,
+            Name, null, "",
+            new RelayCommand(_ => OpenOrFocusDocument())));
+
+        context.CommandRegistry.Register(new SdkCommandDefinition(
+            CmdCapture,
+            ScreenRecorderResources.ScreenRecorder_CaptureFrame,
+            Name, "F9", "",
+            // No CanExecute restriction — opens doc if needed, then TriggerF9 starts session.
+            new RelayCommand(_ =>
+            {
+                if (_entries.Count == 0) OpenOrFocusDocument();
+                ActiveVm?.CaptureFrameCommand.Execute(null);
+            })));
+
+        context.CommandRegistry.Register(new SdkCommandDefinition(
+            CmdStop,
+            ScreenRecorderResources.ScreenRecorder_Stop,
+            Name, "Shift+F9", "",
+            new RelayCommand(
+                _ => ActiveVm?.StopCaptureCommand.Execute(null),
+                _ => ActiveVm?.IsSessionActive ?? false)));
+
+        context.CommandRegistry.Register(new SdkCommandDefinition(
+            CmdCancel,
+            ScreenRecorderResources.ScreenRecorder_ConfirmCancelTitle,
+            Name, "Escape", "",
+            new RelayCommand(
+                _ => ActiveVm?.StopCaptureCommand.Execute(null),
+                _ => ActiveVm?.IsSessionActive ?? false)));
+    }
+}

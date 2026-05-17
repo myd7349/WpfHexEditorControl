@@ -257,3 +257,6 @@ tools/lsp/
 
 # GitHub wiki clone (not a submodule)
 WpfHexEditorControl.wiki/
+
+# Claude Code local config
+.claude/

@@ -17,75 +17,44 @@ description: |
 
 # whfmt-guard (internal)
 
-Guards the **content** of .whfmt format-definition files. Complements:
-- `nuget-guard` — protects the public C# API of whfmt.* packages.
-- `EmbeddedWhfmt_Tests` build gate — parses all 427+ embedded formats.
-
-This skill catches what neither does: per-file schema/version/signature
-regressions before they reach CI.
+Guards `.whfmt` file content. Complements `nuget-guard` (C# API) and `EmbeddedWhfmt_Tests` build gate (parse-only).
 
 ## When I invoke
 
-| Situation                                                              | Run? |
-|------------------------------------------------------------------------|------|
-| Edit `**/FormatDefinitions/**/*.whfmt`                                 | yes  |
-| Edit `**/whfmt.schema.json`                                            | yes  |
-| Edit a `.whfmt` under `Tests/` or `Samples/`                           | no   |
-| Doc-only / comment-only edit                                           | no   |
-| Edit `.cs` (covered by nuget-guard)                                    | no   |
+| Situation | Run? |
+|---|---|
+| Edit `**/FormatDefinitions/**/*.whfmt` or `**/whfmt.schema.json` | yes |
+| Edit `.whfmt` under `Tests/`/`Samples/`, doc/comment only, `.cs` (nuget-guard) | no |
 
 ## Pipeline
 
-1. Filter changed files to `.whfmt` under `Core/WpfHexEditor.Core.Definitions/FormatDefinitions/`. Empty → exit 0.
-2. Load catalog index once (all `.whfmt` paths) for cross-file checks (R4, R5, R6).
-3. Run R1→R7 per changed file.
-4. Emit one `ERR|WARN <rule> <file> <detail>` per finding.
-5. Exit code = number of ERR findings. WARN-only ⇒ exit 0.
+1. Filter to `.whfmt` under `Core/WpfHexEditor.Core.Definitions/FormatDefinitions/`. Empty → exit 0.
+2. Load catalog index once for cross-file checks (R4, R5).
+3. Run R1→R9 per changed file. Exit code = ERR count. WARN-only ⇒ exit 0.
+4. Suppress: `// whfmt-ignore: <reason>` as JSONC line comment (R1 still parses).
 
 ## Rules
 
-| Rule                       | Severity | Detects                                                                                                  |
-|----------------------------|----------|----------------------------------------------------------------------------------------------------------|
-| `whfmt-jsonc-parse`        | error    | File fails JSONC parse. Leading `/* ... */` header is tolerated then content must be strict JSON.        |
-| `whfmt-version-monotone`   | error    | `version` field semver < version in `git show HEAD:<path>`. New files exempt. Bumps always allowed.      |
-| `whfmt-schema-required`    | error    | Missing one of: `formatName`, `formatId`, `extensions` (non-empty array), `category`, `description`.     |
-| `whfmt-id-uniqueness`      | error    | `formatId` collides with another `.whfmt` in catalog (case-insensitive).                                 |
-| `whfmt-magic-collision`    | warn     | Same `detection.signature` + `detection.offset` + overlapping `extensions[]` as another file. Add a `detection.validation.note` to silence. |
-| `whfmt-strength-enum`      | warn     | `detection.strength` not in {None, Weak, Medium, Strong, VeryStrong}. Prevents `SignatureStrength` converter surprises. |
-| `whfmt-placeholder-drift`  | warn     | `{{var}}` token used in `description` or `blocks[].description` but `var` not declared in `variables{}`. |
-| `whfmt-expression-refs`    | warn     | Identifier in `assertions[].expression`, `blocks[].expression`, `blocks[].condition`, or `forensic.suspiciousPatterns[].condition` is not in `variables{}` / `functions{}` / built-ins. Full AST validation lives in C# `WhfmtExpressionValidator`. |
-| `whfmt-enum-values`        | warn     | Closed-set field has an unrecognized value. Checks: `blocks[].type` (15 types), `blocks[].valueType` + `variables[].type` (canonical + aliases), `assertions[].severity` (error/warning/info), `detection.matchMode` (any/best/all), `fuzz.strategies[].mutation` (6 mutation kinds), `repair[].action`, `forensic.suspiciousPatterns[].severity` + `forensic.riskLevel` (union: error/warning/info/critical/high/medium/low). Catches typos like `"fild"` for `"field"`, `"warn"` for `"warning"`, `"first"` for `"any"`. |
+| Rule | Sev | Detects |
+|---|---|---|
+| `whfmt-jsonc-parse` | error | JSONC parse failure; `/* */` header tolerated |
+| `whfmt-version-monotone` | error | `version` < git HEAD version; new files exempt |
+| `whfmt-schema-required` | error | Missing: formatName/formatId/extensions(≥1)/category/description |
+| `whfmt-id-uniqueness` | error | formatId collision across catalog (case-insensitive) |
+| `whfmt-magic-collision` | warn | Same sig+offset+ext overlap; silence by adding `detection.validation.note` |
+| `whfmt-strength-enum` | warn | `detection.strength` ∉ {None, Weak, Medium, Strong, VeryStrong} |
+| `whfmt-placeholder-drift` | warn | `{{var}}` in description/blocks but `var` not in `variables{}` |
+| `whfmt-expression-refs` | warn | Identifier in assertions/blocks/forensic expressions not in variables{}/functions{}/built-ins |
+| `whfmt-enum-values` | warn | Unrecognized value in closed-set fields: blocks[].type (15 types), blocks[].valueType, assertions[].severity, detection.matchMode, fuzz.strategies[].mutation, repair[].action, forensic.riskLevel, etc. |
 
-## What this skill does NOT do
+**Known deliberate gaps** (dual-shape fields, no false-positive–free rule possible):
+- `references` — 24% flat array / 76% named-bucket object; typos in bucket keys silently hide entries in IDE.
+- `formatRelationships` — same dual shape (28%/72%).
+- `syntaxDefinition.rules[].colorKey` — parsed by DTO but ignored at runtime.
 
-- Does not validate `blocks[]` field offsets (that's `whfmt.Validate`).
-- Does not run signature accuracy fuzzing (that's `whfmt.Fuzz`).
-- Does not check the schema JSON itself for well-formedness — assumes
-  `whfmt.schema.json` is authoritative.
-
-## Known limitations
-
-These are deliberate gaps where the v3 contract tolerates multiple shapes and
-adding a rule would produce more false positives than real findings:
-
-- **`references`** can be either a flat string array OR a named-bucket object
-  (`{specifications, webLinks}`). Both forms are widespread in the catalog
-  (24% array, 76% object). No shape check is run — a typo in a bucket key
-  (e.g. `"refernces"` or `"weblnks"`) will silently make the entries invisible
-  in the IDE references pane.
-- **`formatRelationships`** has the same dual shape (28% array of
-  `{format, relationship}` objects, 72% object with named buckets). Same trade-off.
-- **`syntaxDefinition.rules[].colorKey`** is read by the serializer's DTO but
-  not projected to the domain `SyntaxRule` model. The skill does not flag
-  unknown colorKey values because the runtime ignores them anyway.
-
-## Suppression
-
-Append `// whfmt-ignore: <reason>` as a JSONC line comment above the
-offending field. R1 still parses (comment stripped before strict JSON).
+Does not validate block offsets (`whfmt.Validate`), run fuzz (`whfmt.Fuzz`), or check schema JSON itself.
 
 ## Maintenance
 
-- New required field in schema v3 → add to `whfmt-schema-required` list.
-- New `SignatureStrength` enum value → update `whfmt-strength-enum` allow-list
-  and the `SignatureStrength` C# enum in lockstep.
+- New required schema field → add to `whfmt-schema-required` list.
+- New `SignatureStrength` enum value → update `whfmt-strength-enum` allow-list + C# enum in lockstep.

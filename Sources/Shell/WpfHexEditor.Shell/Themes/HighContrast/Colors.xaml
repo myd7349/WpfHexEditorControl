@@ -890,6 +890,8 @@
     <!-- Hover Markdown tokens -->
     <SolidColorBrush x:Key="CE_InlineCodeBackground"     Color="#2D2D2D"/>
     <SolidColorBrush x:Key="CE_CodeBlockBackground"      Color="#252526"/>
+    <SolidColorBrush x:Key="CE_SnippetVarBrush"    Color="#569CD6"/>
+    <SolidColorBrush x:Key="CE_SnippetCursorBrush" Color="#DCDCAA"/>
 
     <!-- SmartComplete popup tokens -->
     <SolidColorBrush x:Key="SC_Background"          Color="#252526"/>

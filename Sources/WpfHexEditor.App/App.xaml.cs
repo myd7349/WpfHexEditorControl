@@ -56,16 +56,25 @@ public partial class App : Application
         AppSettingsService.Instance.Load();
 
         var cultureName = AppSettingsService.Instance.Current.PreferredLanguage;
-        if (string.IsNullOrWhiteSpace(cultureName)) return;
 
-        try
+        if (string.IsNullOrWhiteSpace(cultureName))
         {
-            LocalizedResourceDictionary.ChangeCulture(new CultureInfo(cultureName));
+            // System default: seed ChangeCulture with the OS locale so that
+            // LocalizedResourceDictionary._currentCulture is set before
+            // InitializeComponent() parses App.xaml. The per-manager fallback
+            // in ResolveManagerCulture() handles cases where a plugin satellite
+            // exists for the OS locale but CommonResources does not.
+            LocalizedResourceDictionary.ChangeCulture(CultureInfo.CurrentUICulture);
+            return;
         }
-        catch (CultureNotFoundException)
-        {
-            // Unknown culture name stored in settings — ignore, keep system default.
-        }
+
+        CultureInfo culture;
+        try   { culture = new CultureInfo(cultureName); }
+        catch (CultureNotFoundException) { return; }
+
+        System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
+        System.Threading.Thread.CurrentThread.CurrentCulture   = culture;
+        LocalizedResourceDictionary.ChangeCulture(culture);
     }
 
     private static void ParseCommandLine(string[] args)

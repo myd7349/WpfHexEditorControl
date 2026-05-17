@@ -16,129 +16,67 @@ description: |
 
 # loc-guard (internal)
 
-The repo has 56 base `*Resources.resx` files. Each can have up to 28 satellite
-files (`<base>.<lang>-<region>.resx`). `xaml-guard` already validates the
-**base.resx ↔ Designer.cs** parity. `loc-guard` validates the **base.resx ↔
-satellites** parity that no other skill covers.
+56 base `*Resources.resx` files × up to 28 satellites. `xaml-guard` covers base↔Designer.cs; this skill covers base↔satellites (Scope 1) and source advisory (Scope 2).
 
 ## When I invoke
 
-### Scope 1 — PARITY (resx only)
+### Scope 1 — PARITY
 
-| Situation                                          | Run? |
-|----------------------------------------------------|------|
-| Edit a base `*Resources.resx`                      | yes (scan all its satellites) |
-| Edit a single satellite `*.<lang>.resx`            | yes (scan against its base only) |
-| Add a new key to base (Phase 6 loc workflow)       | yes  |
+| Situation | Run? |
+|---|---|
+| Edit a base `*Resources.resx` | yes (scan all satellites) |
+| Edit a satellite `*.<lang>.resx` | yes (scan against base only) |
 
-### Scope 2 — SOURCE (xaml + cs, advisory)
+### Scope 2 — SOURCE (advisory)
 
-| Situation                                                                    | Run? |
-|------------------------------------------------------------------------------|------|
-| Edit `*.xaml` under `App/`, `Editors/`, `Plugins/`, `Core/`, `Controls/`     | yes  |
-| Edit `*.cs` (UI / view-model / service) outside excluded paths               | yes  |
-| Edit base `*Resources.resx` (also triggers R4 wiring check, once/assembly)   | yes  |
-| Edit `Themes/*.xaml`, `ColorPicker/*`, `*.Designer.cs`, `*.g.cs`             | no   |
-| Edit `Tests/`, `Samples/`, `obj/`, `bin/`                                    | no   |
-| Pure structural edits (Grid.Row, Margin, Width on existing elements)         | no   |
-| Single-line comment / whitespace                                             | no   |
+| Situation | Run? |
+|---|---|
+| Edit `*.xaml` / `*.cs` under `App/`, `Editors/`, `Plugins/`, `Core/`, `Controls/` | yes |
+| Edit `Themes/`, `ColorPicker/`, `*.Designer.cs`, `*.g.cs`, `Tests/`, `Samples/` | no |
+| Pure structural edit (Grid.Row, Margin), comment/whitespace only | no |
 
 ## Pipeline
 
-### Scope 1 — parity
-1. For each modified resx, locate its base + all satellites.
-2. Run `scripts/loc-parity.ps1 -Files <paths>`.
-3. Output: per-base summary `Loc <BaseName>: <N> satellites checked` then
-   per-satellite stats.
-
-### Scope 2 — source
-1. Collect modified `*.xaml` / `*.cs` / base `*.resx` paths.
-2. Run `scripts/loc-source-guard.ps1 -Files <paths>`.
-3. Output: one `WARN <rule> <file>:<line> <detail>` per finding. Always
-   exits 0 (advisory). To silence a specific line, append the marker
-   `// loc-ignore: <reason>` on that line (CS) or as a same-line XML
-   comment (XAML).
+**Scope 1:** `scripts/loc-parity.ps1 -Files <paths>`
+**Scope 2:** `scripts/loc-source-guard.ps1 -Files <paths>` (always exits 0)
+Silence a line: `// loc-ignore: <reason>` (CS) or same-line XML comment (XAML). Tune: `data/allowlist.json`.
 
 ## Rules
 
-### Scope 1 — parity (5 rules, errors are blocking)
+### Scope 1 — parity (blocking)
 
-| Rule                  | Severity | Detected via                                    |
-|-----------------------|----------|-------------------------------------------------|
-| `satellite-missing-key` | error  | key in base but absent from satellite           |
-| `satellite-orphan-key`  | error  | key in satellite but absent from base           |
-| `placeholder-mismatch`  | error  | base has `{0} {1}`, satellite has `{0}` (or any other format-arg drift) |
-| `untranslated`          | warn   | satellite value identical to base value (only flagged for non-`en-*` cultures) |
-| `satellite-malformed`   | error  | XML parse fails or root element != `<root>` (extends xaml-guard's check across 28 langs) |
+| Rule | Severity |
+|---|---|
+| `satellite-missing-key` | error — key in base, absent from satellite |
+| `satellite-orphan-key` | error — key in satellite, absent from base |
+| `placeholder-mismatch` | error — format-arg drift (`{0}/{1}` base vs `{0}` sat) |
+| `untranslated` | warn — satellite value identical to base (non-en-* only) |
+| `satellite-malformed` | error — XML parse fails or root != `<root>` |
 
-### Scope 2 — source (5 rules, all advisory / warn-only)
+### Scope 2 — source (advisory)
 
-| Rule                          | Detected via                                                                                                          |
-|-------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| `loc-static-required`         | `{DynamicResource <Key>}` where `<Key>` is a loc key (known assembly prefix or `_Title`/`_Label`/`_ToolTip`/… suffix). New loc strings MUST use `StaticResource` (or `{x:Static l10n:Resources.X}`). DynamicResource on loc keys is a regression — was historically allowed; current rule is StaticResource. |
-| `loc-hardcoded-string`        | XAML `Text=`/`ToolTip=`/`Header=`/`Content=`/`Title=` with a literal string value (not a binding, not a resource ref, not numeric/whitespace/punctuation-only). Same check for CS UI property assignments (`.Text = "…"`, `.Title = "…"`, …). |
-| `loc-idemessagebox-literal`   | `IdeMessageBox.Show("literal", …)` or `IDialogService.Show("literal", …)`. First positional argument must be a resource key.                                                                       |
-| `loc-messagebox-legacy`       | `MessageBox.Show(…)` (standard WPF). Should use `IdeMessageBox` via `IDEHostContext.Dialogs` — ADR-009.                                                                                            |
-| `loc-locdict-missing`         | Assembly contains `*Resources.resx` but no `App.xaml` / `Module.xaml` in the assembly merges a `LocalizedResourceDictionary` — ADR-005. Reported once per assembly.                                |
+| Rule | Detects |
+|---|---|
+| `loc-static-required` | `{DynamicResource <LocKey>}` → must be `StaticResource` |
+| `loc-hardcoded-string` | literal in Text/ToolTip/Header/Content/Title (XAML) or `.Text =`/`.Title =` (CS) |
+| `loc-idemessagebox-literal` | `IdeMessageBox.Show("literal", …)` — first arg must be a resource key |
+| `loc-messagebox-legacy` | `MessageBox.Show(…)` → use `IdeMessageBox` (ADR-009) |
+| `loc-locdict-missing` | assembly has `*Resources.resx` but no `LocalizedResourceDictionary` merge (ADR-005) |
 
-LSP-style false positives (technical strings, format placeholders) are
-suppressed by `data/allowlist.json` and the per-line `// loc-ignore: <reason>`
-marker.
-
-## Output format
+## Output
 
 ```
 Loc AppResources (28 satellites):
   fr-FR  OK     keys=680
-  fr-CA  OK     keys=680
   ja-JP  3 missing-key   APP_NewFile_Title, APP_Recent_Header, PA_FilterTitle
   ar-SA  1 placeholder-mismatch  APP_Status_Loading base="{0}/{1}" sat="{0}"
-  ru-RU  124 untranslated  (warn — same value as base)
-  el-GR  malformed  XML parse error: ...
+  ru-RU  124 untranslated  (warn)
 ```
 
-## Auto-detection of language matrix
-
-Each assembly has its own language coverage. AppResources has 28 satellites,
-DocumentEditorResources has 18. The script detects the matrix dynamically by
-scanning sibling files matching `<base>.<lang>(-<region>)?.resx` — no
-hard-coded list.
-
-## Whitelist
-
-- A satellite value of `""` (empty string) is treated as "delete this key in
-  this language" — not an error, but counted in coverage.
-- A satellite that doesn't exist at all is treated as "language not yet
-  added" — silent (use `theme-parity`-style explicit gap report if needed).
-- The `untranslated` rule never fires for `en-*` cultures (English is often
-  the source language; identical values are expected).
-
-## Output catalog (data/satellites-snapshot.tsv)
-
-After every successful run, the script can refresh
-`data/satellites-snapshot.tsv` with one row per (base, language, key-count,
-missing-count, placeholder-mismatch-count). Useful as a periodic snapshot of
-loc completion across the 56 assemblies.
-
-## What this skill does NOT do
-
-- Does **not** translate strings.
-- Does **not** generate satellite files (xaml-guard / Phase 6 infra).
-- Does **not** validate `.Designer.cs` parity (xaml-guard's job).
-- Does **not** coordinate sub-agent satellite creation (that pattern is in
-  memory `feedback_localization_agent_strategy`).
-- Does **not** block on Scope 2 findings (advisory only). Use in combination
-  with `code-analysis` for hard quality gates.
-- Does **not** detect LSP-aware semantic info (e.g. whether a `.Text` setter
-  binds to a `TextBlock` or a non-UI POCO). Heuristic-only; tune via
-  `data/allowlist.json` if noise rises.
+Language matrix auto-detected per assembly by scanning sibling `<base>.<lang>(-<region>)?.resx` files.
+Scope 2 exit 0 (advisory); does not translate, generate, or coordinate sub-agents (see `feedback_localization_agent_strategy`).
 
 ## Maintenance
 
-- New language added (e.g. `nb-NO.resx`) → automatically picked up on next
-  run.
-- Renaming a base `*Resources.resx` → update all 28 satellites in the same
-  commit (otherwise the old satellites become orphan files; the skill
-  doesn't detect orphan files at the filesystem level — out of scope).
-- For sub-agent delegation of large waves, see
-  `references/agent-delegation.md`.
+- New language added → auto-picked up.
+- Renaming a base resx → update all satellites in same commit (orphan files not detected at filesystem level).

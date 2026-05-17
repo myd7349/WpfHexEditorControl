@@ -1938,5 +1938,69 @@ namespace WpfHexEditor.Editor.CodeEditor.Properties {
                 return ResourceManager.GetString("FormatScriptEditor_WarningCountStatus", resourceCulture);
             }
         }
+
+        internal static string Snippets_Page_Title {
+            get { return ResourceManager.GetString("Snippets_Page_Title", resourceCulture); }
+        }
+        internal static string Snippets_Page_Add {
+            get { return ResourceManager.GetString("Snippets_Page_Add", resourceCulture); }
+        }
+        internal static string Snippets_Page_Remove {
+            get { return ResourceManager.GetString("Snippets_Page_Remove", resourceCulture); }
+        }
+        internal static string Snippets_Page_ColLanguage {
+            get { return ResourceManager.GetString("Snippets_Page_ColLanguage", resourceCulture); }
+        }
+        internal static string Snippets_Page_ColTrigger {
+            get { return ResourceManager.GetString("Snippets_Page_ColTrigger", resourceCulture); }
+        }
+        internal static string Snippets_Page_ColDescription {
+            get { return ResourceManager.GetString("Snippets_Page_ColDescription", resourceCulture); }
+        }
+        internal static string Snippets_Page_BodyLabel {
+            get { return ResourceManager.GetString("Snippets_Page_BodyLabel", resourceCulture); }
+        }
+        internal static string Snippets_Page_VariablesHint {
+            get { return ResourceManager.GetString("Snippets_Page_VariablesHint", resourceCulture); }
+        }
+        internal static string Snippets_Page_DefaultDescription {
+            get { return ResourceManager.GetString("Snippets_Page_DefaultDescription", resourceCulture); }
+        }
+        internal static string Snippets_Page_Import {
+            get { return ResourceManager.GetString("Snippets_Page_Import", resourceCulture); }
+        }
+        internal static string Snippets_Page_Export {
+            get { return ResourceManager.GetString("Snippets_Page_Export", resourceCulture); }
+        }
+        internal static string Snippets_Page_ImportTitle {
+            get { return ResourceManager.GetString("Snippets_Page_ImportTitle", resourceCulture); }
+        }
+        internal static string Snippets_Page_ExportTitle {
+            get { return ResourceManager.GetString("Snippets_Page_ExportTitle", resourceCulture); }
+        }
+        internal static string Snippets_Page_ImportSuccess {
+            get { return ResourceManager.GetString("Snippets_Page_ImportSuccess", resourceCulture); }
+        }
+        internal static string Snippets_Page_ImportError {
+            get { return ResourceManager.GetString("Snippets_Page_ImportError", resourceCulture); }
+        }
+        internal static string Snippets_Page_ExportError {
+            get { return ResourceManager.GetString("Snippets_Page_ExportError", resourceCulture); }
+        }
+        internal static string Snippets_Page_ConflictWarning {
+            get { return ResourceManager.GetString("Snippets_Page_ConflictWarning", resourceCulture); }
+        }
+        internal static string Snippets_Page_PreviewLabel {
+            get { return ResourceManager.GetString("Snippets_Page_PreviewLabel", resourceCulture); }
+        }
+        internal static string Snippets_Page_VarPickerLabel {
+            get { return ResourceManager.GetString("Snippets_Page_VarPickerLabel", resourceCulture); }
+        }
+        internal static string Snippets_Page_ImportMergePrompt {
+            get { return ResourceManager.GetString("Snippets_Page_ImportMergePrompt", resourceCulture); }
+        }
+        internal static string Snippets_Page_ImportMergeTitle {
+            get { return ResourceManager.GetString("Snippets_Page_ImportMergeTitle", resourceCulture); }
+        }
     }
 }

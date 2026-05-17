@@ -1,37 +1,8 @@
 #!/usr/bin/env pwsh
 <#
-  nuget-guard.ps1 — protects published-on-nuget.org packages from IDE-feature
-  contamination and public-API regressions.
-
-  Protected packages (see data/package-policy.json):
-    core-xplat  : WpfHexEditor.Core.ByteProvider, WpfHexEditor.Core.BinaryAnalysis,
-                  whfmt.Analysis, whfmt.Backfill, whfmt.CodeGen, whfmt.Fuzz,
-                  whfmt.Validate
-    wpf-control : WPFHexaEditor, WpfCodeEditor, WpfDocking
-
-  Any file edited under a project NOT matching one of these PackageIds is
-  silently ignored.
-
-  Rules:
-    nuget-api-removed         error  public type/member present in git HEAD,
-                                     absent in working tree
-    nuget-api-renamed         error  public signature changed (heuristic:
-                                     removed + similar-name added in same file)
-    nuget-tfm-drift           error  TFM diverges from policy
-    nuget-usewpf-leak         error  UseWPF/UseWindowsForms enabled on core-xplat
-    nuget-ide-projref         error  ProjectReference to App / Editor.* / Plugins.*
-                                     (Editor.*.Core is allowed)
-    nuget-ide-using           error  using or type ref to IDE-only types
-    nuget-wpf-using-in-xplat  error  System.Windows.* / WebView2 in core-xplat
-    nuget-version-regression  error  <Version> numerically lower than git HEAD
-    nuget-release-notes-stale warn   <Version> bumped but PackageReleaseNotes
-                                     unchanged
-
-  Findings printed as `ERR|WARN <rule> <file>:<line> <detail>`. Exit code is
-  the count of ERR findings (capped at 100). WARN-only runs exit 0.
-
-  Usage:
-    nuget-guard.ps1 -Files <paths...>
+  nuget-guard.ps1 — IDE contamination + API regression guard for 13 NuGet packages.
+  Policy: data/package-policy.json  |  Rules: see SKILL.md.
+  Usage: nuget-guard.ps1 -Files <paths...>  |  Exit: ERR count (capped 100); WARN-only=0.
 #>
 [CmdletBinding()]
 param(

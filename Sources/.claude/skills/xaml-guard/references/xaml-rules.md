@@ -26,16 +26,4 @@
   `Foreground`, `BorderBrush`, `Fill`, `Stroke`, `Stretch`, `Visibility`,
   `HorizontalAlignment`, `VerticalAlignment`, `Orientation`.
 
-## Known false-positive zones
-
-- Visual designer XAML in `*Designer.cs` partials → exclude by path.
-- Fallback strings like `Text="N/A"` → ASCII < 3 chars rule catches them.
-- Code-behind-set `Text` (no attribute) → not flagged.
-- Strings that are user-facing but acronym-heavy ("HTML", "CSS", "JSON") →
-  whitelist already covers them.
-
-## Updating
-
-- New convention discovered → add the row here AND extend `xaml-check.ps1`.
-- New whitelist entry → both files in sync.
-- Memory anchor moved or renamed → update the table.
+New rule or whitelist entry → update here AND `xaml-check.ps1` in sync.

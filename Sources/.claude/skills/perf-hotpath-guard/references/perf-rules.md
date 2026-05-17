@@ -29,9 +29,4 @@ These are the patterns the project has paid for in past incidents
 `bug_doc_editor_caret_hittest`). The list is intentionally short; broader
 analysis stays with `CodeAnalysisRunner` (Halstead, LCOM, Roslyn diagnostics).
 
-## Updating
-
-- New incident teaches a new pattern → add a row here AND extend
-  `hotpath-scan.ps1`'s `$rules` array.
-- The `boxing` row is review-only because reliable detection requires Roslyn
-  semantic analysis, which is out of scope for a regex skill.
+New incident → add row here + extend `$rules` in `hotpath-scan.ps1`. `boxing` is review-only (requires Roslyn semantic analysis).

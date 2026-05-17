@@ -1455,4 +1455,51 @@
   <data name="CodeAnalysis_ContextMenu_CopyLocations"       xml:space="preserve"><value>Copy locations ({0})</value></data>
   <data name="CodeAnalysis_ContextMenu_OpenAtDeclaration"   xml:space="preserve"><value>Open at declaration</value></data>
   <data name="CodeAnalysis_ContextMenu_CopySymbolName"      xml:space="preserve"><value>Copy symbol name</value></data>
+
+  <!-- Binary Analysis Module (#110–#119) -->
+  <data name="BinaryAnalysis_Menu_StringExtraction"   xml:space="preserve"><value>String Extraction</value></data>
+  <data name="BinaryAnalysis_Menu_HashInspector"      xml:space="preserve"><value>Hash Inspector</value></data>
+  <data name="BinaryAnalysis_Menu_FileCarver"         xml:space="preserve"><value>File Carver</value></data>
+  <data name="BinaryAnalysis_Menu_SignatureDb"        xml:space="preserve"><value>Signature Database</value></data>
+  <data name="BinaryAnalysis_Menu_ByteFrequency"      xml:space="preserve"><value>Byte Frequency</value></data>
+
+  <data name="StringExtract_Run"                      xml:space="preserve"><value>Run</value></data>
+  <data name="StringExtract_Cancel"                   xml:space="preserve"><value>Cancel</value></data>
+  <data name="StringExtract_MinLength"                xml:space="preserve"><value>Min length:</value></data>
+  <data name="StringExtract_FilterPlaceholder"        xml:space="preserve"><value>Filter…</value></data>
+  <data name="StringExtract_ColOffset"                xml:space="preserve"><value>Offset</value></data>
+  <data name="StringExtract_ColLength"                xml:space="preserve"><value>Length</value></data>
+  <data name="StringExtract_ColEncoding"              xml:space="preserve"><value>Encoding</value></data>
+  <data name="StringExtract_ColValue"                 xml:space="preserve"><value>Value</value></data>
+
+  <data name="HashInspector_HashFile"                 xml:space="preserve"><value>Hash File</value></data>
+  <data name="HashInspector_HashSelection"            xml:space="preserve"><value>Hash Selection</value></data>
+  <data name="HashInspector_Cancel"                   xml:space="preserve"><value>Cancel</value></data>
+  <data name="HashInspector_ColAlgorithm"             xml:space="preserve"><value>Algorithm</value></data>
+  <data name="HashInspector_ColDigest"                xml:space="preserve"><value>Digest</value></data>
+  <data name="HashInspector_Copy"                     xml:space="preserve"><value>Copy</value></data>
+  <data name="HashInspector_NoSelection"              xml:space="preserve"><value>No selection.</value></data>
+  <data name="HashInspector_Cancelled"                xml:space="preserve"><value>Cancelled.</value></data>
+
+  <data name="FileCarver_Scan"                        xml:space="preserve"><value>Scan</value></data>
+  <data name="FileCarver_Cancel"                      xml:space="preserve"><value>Cancel</value></data>
+  <data name="FileCarver_Extract"                     xml:space="preserve"><value>Extract</value></data>
+  <data name="FileCarver_ColOffset"                   xml:space="preserve"><value>Offset</value></data>
+  <data name="FileCarver_ColFormat"                   xml:space="preserve"><value>Format</value></data>
+  <data name="FileCarver_ColConfidence"               xml:space="preserve"><value>Confidence</value></data>
+  <data name="FileCarver_ColSource"                   xml:space="preserve"><value>Source</value></data>
+
+  <data name="SignatureDb_Add"                        xml:space="preserve"><value>Add</value></data>
+  <data name="SignatureDb_Remove"                     xml:space="preserve"><value>Remove</value></data>
+  <data name="SignatureDb_TestOnFile"                 xml:space="preserve"><value>Test on Current File</value></data>
+  <data name="SignatureDb_ColName"                    xml:space="preserve"><value>Name</value></data>
+  <data name="SignatureDb_ColPattern"                 xml:space="preserve"><value>Hex Pattern</value></data>
+  <data name="SignatureDb_ColOffset"                  xml:space="preserve"><value>Offset</value></data>
+  <data name="SignatureDb_ColDescription"             xml:space="preserve"><value>Description</value></data>
+
+  <data name="ByteFreq_Analyze"                       xml:space="preserve"><value>Analyze</value></data>
+  <data name="ByteFreq_Cancel"                        xml:space="preserve"><value>Cancel</value></data>
+  <data name="ByteFreq_ExportCsv"                     xml:space="preserve"><value>Export CSV</value></data>
+  <data name="ByteFreq_CsvFilter"                     xml:space="preserve"><value>CSV|*.csv</value></data>
+  <data name="ByteFreq_CsvFileName"                   xml:space="preserve"><value>byte_frequency.csv</value></data>
 </root>

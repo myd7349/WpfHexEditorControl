@@ -35,7 +35,6 @@ using WpfHexEditor.Core.Terminal.BuiltInCommands;
 using WpfHexEditor.Core.Terminal.Macros;
 using WpfHexEditor.Core.Terminal.Scripting;
 using WpfHexEditor.Core.Terminal.ShellSession;
-using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Terminal;
 using WpfHexEditor.Core.ViewModels;
 
@@ -53,7 +52,7 @@ public sealed class TerminalPanelViewModel : ViewModelBase, IDisposable
     private readonly TerminalCommandRegistry _registry = new();
     private readonly ITerminalMacroService   _macroService;
     private readonly ShellSessionManager     _sessionManager = new();
-    private readonly IIDEHostContext         _ideHostContext;
+    private readonly ITerminalHostContext    _hostContext;
 
     // -- Session collection (bound to TabControl) ---------------------------------
 
@@ -251,9 +250,9 @@ public sealed class TerminalPanelViewModel : ViewModelBase, IDisposable
 
     // -- Constructor --------------------------------------------------------------
 
-    public TerminalPanelViewModel(IIDEHostContext hostContext)
+    public TerminalPanelViewModel(ITerminalHostContext hostContext)
     {
-        _ideHostContext = hostContext ?? throw new ArgumentNullException(nameof(hostContext));
+        _hostContext = hostContext ?? throw new ArgumentNullException(nameof(hostContext));
 
         _macroService = new TerminalMacroService(_registry);
         _macroService.RecordingStateChanged += (_, recording) => IsRecording = recording;
@@ -318,7 +317,7 @@ public sealed class TerminalPanelViewModel : ViewModelBase, IDisposable
     private void CreateSession(TerminalShellType shellType)
     {
         var coreSession = _sessionManager.CreateSession(shellType);
-        var vm = new ShellSessionViewModel(coreSession, _registry, _ideHostContext, _macroService);
+        var vm = new ShellSessionViewModel(coreSession, _registry, _hostContext, _macroService);
 
         // Forward per-session property changes up so XAML bindings on this VM update.
         vm.PropertyChanged += OnActiveSessionPropertyChanged;

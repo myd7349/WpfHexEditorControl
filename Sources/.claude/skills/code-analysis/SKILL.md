@@ -13,98 +13,42 @@ description: |
 
 # code-analysis (internal)
 
-This is **my** dev assistant skill, not a user-facing command. I invoke it on
-myself when working on WpfHexEditor to keep changes aligned with `CLAUDE.md`,
-project ADRs, and the existing `WpfHexEditor.App/Analysis` engine.
+Pre/post guard for CLAUDE.md thresholds and forbidden patterns. Not a replacement for the in-app `CodeAnalysisRunner` (deep Roslyn/Halstead).
 
 ## When I invoke
 
-| Situation                                       | Phases   |
-|-------------------------------------------------|----------|
-| User asks "ajoute / refactor / corrige X"       | P1, P3   |
-| Edit traverses 2+ modules                       | P1, P3   |
-| New file created                                | P1, P3   |
-| Touch HexEditor/ or CodeEditor/ render/buffer   | P1, P3 (mandatory) |
-| Plugin or SDK surface change                    | P1, P3 (mandatory) |
-| Multi-file completion                           | P3       |
-| Single-file edit < 20 lines, no new symbol      | skip     |
-| .resx / .md / comments only                     | skip     |
+| Situation | Phases |
+|---|---|
+| Non-trivial edit, 2+ modules, new file | P1, P3 |
+| HexEditor/ or CodeEditor/ render/buffer, plugin/SDK | P1, P3 (mandatory) |
+| Multi-file completion | P3 |
+| Single-file <20 lines, no new symbol, resx/md/comment only | skip |
 
 ## Phases
 
-### P1 — pre-edit-check (before first Edit/Write)
+**P1 — pre-edit** `scripts/pre-edit-check.ps1 -File <path>`
+→ `LOC=X | Funcs>25=N | Class>300=M | Callers=K | Module=<id> | Risk=LOW|MED|HIGH`
+HIGH risk → propose PLAN, do not edit.
 
-Run `scripts/pre-edit-check.ps1 -File <path>`.
-Output: one line per file. `LOC=X | Funcs>25=N | Class>300=M | Callers=K | Module=<id> | Risk=LOW|MED|HIGH`.
+**P2 — during edit (mental checklist from `references/forbidden-patterns.md`)**
+Refuse: `using ICSharpCode`/AvalonEdit, `MessageBox.Show(` (use `IDialogService`), `.md` in `Sources/`, hardcoded user-strings in XAML/VMs, `Resources.X` in HexEditor partials (use `L10n`), background fix without root cause, new mutable static on hot paths.
 
-Use to:
-- decide if a refactor PLAN is needed (HIGH risk → propose PLAN, do not edit).
-- size the change vs CLAUDE.md thresholds.
-- spot module-boundary crossing before it happens.
+**P3 — post-edit** `scripts/post-edit-audit.ps1 -Files <paths> -Baseline HEAD`
+→ `OK` or `VIOLATIONS: <list>`
+VIOLATIONS ≤2 mechanical → fix immediately. VIOLATIONS large/architectural → stop, propose PLAN.
 
-### P2 — forbidden-pattern guard (during each Edit)
+**Scope-impact (on demand):** `scripts/scope-impact.ps1 -Symbol <name>` — enumerate referencing files (cap 50, depth 2) before public symbol rename/move.
 
-Mental checklist sourced from `references/forbidden-patterns.md`. Refuse to
-write any of:
-- `using ICSharpCode` / AvalonEdit references.
-- `MessageBox.Show(` outside `IdeMessageBox` (use `IDialogService`).
-- `.md` files inside `Sources/` tree.
-- Hardcoded user-visible strings in XAML / VMs (use `DynamicResource`).
-- `Resources.X` inside HexEditor partials (alias as `L10n`).
-- Background "fix" without root cause (`BUG` trigger required).
-- New mutable static state on hot paths (HexEditor, CodeEditor render).
+## Performance budget
 
-If a pattern is unavoidable, surface it explicitly and ask before proceeding.
+P1 ≤150 tokens | P3 ≤200 tokens | scope = changed files only | cache valid <5 min + unchanged mtime.
 
-### P3 — post-edit-audit (after the edit batch, before reporting done)
+## Failure modes to avoid
 
-Run `scripts/post-edit-audit.ps1 -Files <paths> -Baseline HEAD`.
-Output: `OK` or `VIOLATIONS: <short list>`.
+| Mode | Guard |
+|---|---|
+| Sur-déclenchement on typo fixes | Honor skip rules above |
+| Cache staleness | P3 must not use P1 cache for a just-edited file |
+| PowerShell edition mismatch | Scripts exit with clear message; fall back to Grep/Read |
 
-Then:
-- `OK` → continue / report done.
-- `VIOLATIONS` small (≤2, mechanical) → fix immediately in same turn.
-- `VIOLATIONS` large or architectural → stop, propose follow-up `PLAN`, do not
-  pretend the task is done.
-
-## Scope-impact (on demand, not automatic)
-
-When refactoring a public symbol or moving a file across modules:
-`scripts/scope-impact.ps1 -Symbol <name>` to enumerate referencing files (cap
-50, depth 2). Used to size blast radius before committing to the change.
-
-## Performance budget (self-imposed)
-
-- P1 output: <= 5 lines per file, <=150 tokens total.
-- P3 output: <= 10 lines, <=200 tokens.
-- Never read full JSON reports — scripts aggregate.
-- Never scan full solution by default — scope is the changed files only.
-- Cache: skip P1 re-run on a file if `.skill-cache/<hash>` is < 5 min old AND
-  the file mtime is unchanged.
-
-## What this skill does NOT do
-
-- Does **not** replace `CodeAnalysisRunner`. For deep semantic analysis
-  (Halstead, LCOM, Roslyn diagnostics) the user runs the in-app Code Analysis
-  pane. This skill is the lightweight pre/post guard.
-- Does **not** modify source code automatically.
-- Does **not** run `dotnet build`. Build verification is the user's call.
-- Does **not** invoke external services or upload code anywhere.
-
-## References
-
-- `references/project-thresholds.md` — numeric limits aligned with CLAUDE.md.
-- `references/module-boundaries.md` — who may reference whom.
-- `references/forbidden-patterns.md` — regex-detectable anti-patterns sourced
-  from project memory (ADR-009, feedback_no_avalonedit,
-  feedback_localization_new_strings, feedback_resources_alias_hexeditor, etc.).
-
-## Failure modes I must avoid
-
-- **Sur-déclenchement**: invoking on a 3-line typo fix wastes turns. Honor the
-  skip rules above.
-- **Cache staleness**: if I just edited a file, P3 must NOT use a P1 cache for
-  that file.
-- **PowerShell edition mismatch**: scripts assume PowerShell 7+. If
-  `$PSVersionTable.PSEdition -ne 'Core'` they exit with a clear message; I
-  fall back to manual `Grep`/`Read` checks.
+Does not replace `CodeAnalysisRunner`, modify source, run `dotnet build`, or invoke external services.

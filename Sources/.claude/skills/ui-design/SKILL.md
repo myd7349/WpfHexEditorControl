@@ -12,59 +12,36 @@ description: |
 
 # ui-design (internal)
 
-Static guard for the WpfHexEditor design-system. The repo has 18 themes
-sharing the same `Dock*` / `HexEditor_*` / `Panel_*` token surface — every UI
-edit should respect those tokens and the implicit conventions documented in
-`PanelCommon.xaml`, `DialogStyles.xaml`, and the per-theme `Colors.xaml`.
+Static guard for 18-theme design system (`Dock*` / `HexEditor_*` / `Panel_*` token surface).
 
 ## When I invoke
 
-| Situation                                                       | Run? |
-|-----------------------------------------------------------------|------|
-| Edit `*.xaml` under `WpfHexEditor.App/`                         | yes  |
-| Edit `*.xaml` under `Editors/*/`, `Controls/*/`, `Plugins/*/`   | yes  |
-| Edit `*.xaml` in `Themes/` (any folder)                         | no   |
-| Edit `*.xaml` in `*ColorPicker*`                                | no   |
-| Edit `*.cs.xaml` / `*.g.cs` / generated                         | no   |
-| New theme file under `Themes/`                                  | re-run `token-catalog.ps1` instead |
+| Situation | Run? |
+|---|---|
+| Edit `*.xaml` under `App/`, `Editors/`, `Controls/`, `Plugins/` | yes |
+| Edit `*.xaml` in `Themes/`, `*ColorPicker*`, generated `*.g.cs` | no |
+| New theme under `Themes/` | run `token-catalog.ps1` instead |
 
 ## Pipeline
 
-1. After the edit batch, gather modified `*.xaml` files matching the trigger.
-2. If `data/known-tokens.json` is missing OR a new theme was added, run
-   `scripts/token-catalog.ps1` first.
-3. Run `scripts/ui-check.ps1 -Files <paths>`.
-4. Output: `UI: <summary> | TokenCoverage=<pct>%` or `OK` + per-issue lines.
+1. If `data/known-tokens.json` missing or stale: run `scripts/token-catalog.ps1` first.
+2. `scripts/ui-check.ps1 -Files <paths>`
+3. → `UI: <summary> | TokenCoverage=<pct>%` or `OK`
 
 ## 6 rules
 
-| Rule                       | Severity | Anchor                                |
-|----------------------------|----------|---------------------------------------|
-| `hardcoded-color`          | error    | `references/design-tokens.md`         |
-| `unknown-token`            | error    | tokens absent from `known-tokens.json`|
-| `non-canonical-spacing`    | warn     | `references/spacing-grid.md`          |
-| `non-canonical-fontsize`   | warn     | `references/typography.md`            |
-| `glyph-no-tooltip`         | warn     | `references/glyphs-catalog.md`        |
-| `reinvented-style`         | warn     | `references/components.md`            |
+| Rule | Severity | Reference |
+|---|---|---|
+| `hardcoded-color` | error | `references/design-tokens.md` |
+| `unknown-token` | error | `data/known-tokens.json` (only keys ending in Brush/Color/Background/Foreground/Border/Fill/Stroke/Highlight/Accent) |
+| `non-canonical-spacing` | warn | `references/spacing-grid.md` |
+| `non-canonical-fontsize` | warn | `references/typography.md` |
+| `glyph-no-tooltip` | warn | `references/glyphs-catalog.md` (skips icon slots + `PanelIconButtonStyle`/`PanelIconToggleStyle`) |
+| `reinvented-style` | warn | `references/components.md` |
 
-`hardcoded-color` and `unknown-token` are errors because they break theme
-switching at runtime. The four warnings flag stylistic drift; resolve when
-they cluster, not every isolated case.
+`hardcoded-color` + `unknown-token` are errors (break theme switching at runtime). Warnings flag drift; resolve when they cluster.
 
-## Whitelist (NOT flagged)
-
-- Anything under `Themes/` — themes own the literal colors.
-- `ColorPicker` — its job is to manipulate raw color values.
-- `glyph-no-tooltip` skips:
-  - glyphs in icon slots (`<MenuItem.Icon>`, `<Button.Icon>`, etc.) where the
-    parent has its own `Header=` / `Content=`.
-  - elements using `Style="{StaticResource PanelIconButtonStyle}"` /
-    `PanelIconToggleStyle` (the style sets `AutomationProperties.Name`).
-- `unknown-token` only fires when the unknown key ends in
-  `Brush|Color|Background|Foreground|Border|Fill|Stroke|Highlight|Accent`
-  to avoid false positives on local style keys.
-
-## Output format
+## Output
 
 ```
 UI: 3 hardcoded-color, 2 unknown-token, 1 non-canonical-fontsize | TokenCoverage=92%
@@ -73,32 +50,10 @@ UI: 3 hardcoded-color, 2 unknown-token, 1 non-canonical-fontsize | TokenCoverage
   Welcome.xaml:330     non-canonical-fontsize  FontSize="15"
 ```
 
-## Catalogues consultables
-
-- `data/known-tokens.json` — list of every `<Color>` and `<SolidColorBrush>`
-  x:Key across all themes. Regenerate via `token-catalog.ps1` when a theme is
-  added or a new token introduced.
-- `data/glyphs.tsv` — every Segoe MDL2 codepoint used in the repo with usage
-  count + first context. Use to dedupe glyphs and reuse existing meanings.
-- `references/design-tokens.md` — token taxonomy + naming conventions.
-- `references/spacing-grid.md` — canonical Padding / Margin scale.
-- `references/typography.md` — FontSize ladder.
-- `references/components.md` — list of shared styles / templates so I don't
-  reinvent them.
-- `references/glyphs-catalog.md` — pointer to `data/glyphs.tsv` + dedupe rules.
-
-## What this skill does NOT do
-
-- Does **not** fix hardcoded colors (matching color → token is unstable).
-- Does **not** auto-add ToolTips. It signals the missing one.
-- Does **not** verify XAML compiles (build is the user's call).
-- Does **not** check accessibility beyond glyph-no-tooltip.
+Does not fix colors, auto-add tooltips, verify compile, or check accessibility beyond glyph-no-tooltip.
 
 ## Maintenance
 
-- New theme file under `Themes/` → run `token-catalog.ps1` immediately so
-  `unknown-token` sees the new keys.
-- Periodically run `glyph-catalog.ps1` to refresh `data/glyphs.tsv` and spot
-  duplicate glyphs across the codebase.
-- New canonical spacing / FontSize discovered → add it to the arrays in
-  `ui-check.ps1` AND document it in the matching reference file.
+- New theme → `token-catalog.ps1` immediately so `unknown-token` sees new keys.
+- New canonical spacing/FontSize → update arrays in `ui-check.ps1` + matching reference file.
+- Periodic: `glyph-catalog.ps1` to refresh `data/glyphs.tsv` and spot duplicate glyphs.

@@ -15,7 +15,7 @@
 //     Pattern: MVVM ViewModel + Adapter (ITerminalContext / ITerminalOutput).
 //     Feature #92: Multi-tab shell sessions.
 //     Each tab has its own history, working directory, and process state.
-//     Shared resources (TerminalCommandRegistry, IIDEHostContext) are injected.
+//     Shared resources (TerminalCommandRegistry, ITerminalHostContext) are injected.
 //
 // ==========================================================
 
@@ -31,9 +31,6 @@ using WpfHexEditor.Core.Terminal;
 using WpfHexEditor.SDK.Contracts.Terminal;
 using WpfHexEditor.Core.Terminal.Macros;
 using WpfHexEditor.Core.Terminal.ShellSession;
-using WpfHexEditor.Core.Events.IDEEvents;
-using WpfHexEditor.SDK.Contracts;
-using WpfHexEditor.SDK.Contracts.Focus;
 using WpfHexEditor.Core.ViewModels;
 
 namespace WpfHexEditor.Terminal;
@@ -50,10 +47,12 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
 
     public ShellSession Session { get; }
 
+    private const string SourceName = "TerminalPanel";
+
     // -- Shared services (injected) -----------------------------------------------
 
     private readonly TerminalCommandRegistry _registry;
-    private readonly IIDEHostContext _ideHostContext;
+    private readonly ITerminalHostContext _hostContext;
     private readonly ITerminalMacroService _macroService;
 
     // -- Process state (external shells) -----------------------------------------
@@ -79,11 +78,11 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
 
     // -- ITerminalContext implementation ------------------------------------------
 
-    public object? HostServices => _ideHostContext;
-    // Convenience typed accessors (IDE-specific, not part of ITerminalContext contract)
-    public IIDEHostContext IDE => _ideHostContext;
-    public IDocument? ActiveDocument => _ideHostContext.FocusContext.ActiveDocument;
-    public IPanel? ActivePanel => _ideHostContext.FocusContext.ActivePanel;
+    public object? HostServices => _hostContext;
+    /// <summary>Path of the currently active document; null in standalone mode.</summary>
+    public string? ActiveDocumentPath => _hostContext.ActiveDocumentPath;
+    /// <summary>Title of the currently active panel; null in standalone mode.</summary>
+    public string? ActivePanelTitle => _hostContext.ActivePanelTitle;
 
     private string _workingDirectory;
     public string WorkingDirectory
@@ -247,13 +246,13 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
     public ShellSessionViewModel(
         ShellSession session,
         TerminalCommandRegistry registry,
-        IIDEHostContext ideHostContext,
+        ITerminalHostContext hostContext,
         ITerminalMacroService macroService)
     {
-        Session          = session          ?? throw new ArgumentNullException(nameof(session));
-        _registry        = registry        ?? throw new ArgumentNullException(nameof(registry));
-        _ideHostContext  = ideHostContext  ?? throw new ArgumentNullException(nameof(ideHostContext));
-        _macroService    = macroService    ?? throw new ArgumentNullException(nameof(macroService));
+        Session       = session      ?? throw new ArgumentNullException(nameof(session));
+        _registry     = registry     ?? throw new ArgumentNullException(nameof(registry));
+        _hostContext  = hostContext  ?? throw new ArgumentNullException(nameof(hostContext));
+        _macroService = macroService ?? throw new ArgumentNullException(nameof(macroService));
 
         _workingDirectory = session.WorkingDirectory;
 
@@ -333,13 +332,8 @@ public sealed class ShellSessionViewModel : ViewModelBase, IDisposable,
         CommandInput = string.Empty;
         AppendLine($"> {input}", TerminalOutputKind.Info);
 
-        // Publish IDE event so plugins can observe terminal commands.
-        _ideHostContext.IDEEvents.Publish(new TerminalCommandExecutedEvent
-        {
-            Source    = "TerminalPanel",
-            Command   = input,
-            ShellType = Session.ShellType.ToString(),
-        });
+        // Notify host (IDE routes to IIDEEventBus; standalone is a no-op).
+        _hostContext.PublishCommandExecuted(SourceName, input, Session.ShellType.ToString());
 
         // External shell: forward to process stdin.
         if (Session.ShellType != TerminalShellType.HxTerminal && _shellManager?.Input is { } shellInput)

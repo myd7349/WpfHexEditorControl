@@ -1,0 +1,133 @@
+<!--
+    Project: WpfHexEditor.Plugins.ScreenRecorder
+    File: Views/TimelineStrip.xaml
+    Description: Horizontal scrollable timeline of frame thumbnail cards.
+                 Supports drag-to-reorder, multi-select, global delay spinner,
+                 and Delete/Insert/Duplicate keyboard shortcuts.
+-->
+<UserControl x:Class="WpfHexEditor.Plugins.ScreenRecorder.Views.TimelineStrip"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Views"
+             xmlns:svc="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Services"
+             Background="{DynamicResource DockMenuBackgroundBrush}"
+             AllowDrop="True">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <svc:ScreenRecorderLocalizedDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="TextBox">
+                <Setter Property="Background"               Value="{DynamicResource DockBackgroundBrush}"/>
+                <Setter Property="Foreground"               Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="BorderBrush"              Value="{DynamicResource DockBorderBrush}"/>
+                <Setter Property="BorderThickness"          Value="1"/>
+                <Setter Property="CaretBrush"               Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="SelectionBrush"           Value="{DynamicResource DockTabActiveBrush}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource DockTabActiveBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="6" />
+        </Grid.RowDefinitions>
+
+        <!-- Timeline toolbar: global delay + action buttons -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource DockMenuBackgroundBrush}"
+                BorderBrush="{DynamicResource DockBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="8,4">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{StaticResource ScreenRecorder_GlobalDelay}"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                           Margin="0,0,6,0" />
+                <TextBox Width="50"
+                         Text="{Binding GlobalDelay, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         FontSize="11"
+                         Padding="4,2"
+                         ToolTip="{StaticResource ScreenRecorder_GlobalDelay}" />
+                <TextBlock Text="ms" VerticalAlignment="Center" Margin="3,0,12,0"
+                           FontSize="10" Foreground="{DynamicResource DockMenuForegroundBrush}" />
+
+                <Button Content="{StaticResource ScreenRecorder_DeleteSelected}"
+                        Command="{Binding DeleteSelectedCommand}"
+                        Style="{DynamicResource PM_ActionButtonStyle}"
+                        Padding="8,3" FontSize="11" Margin="0,0,4,0" />
+                <Button Content="{StaticResource ScreenRecorder_InsertBlank}"
+                        Command="{Binding InsertBlankCommand}"
+                        Style="{DynamicResource PM_ActionButtonStyle}"
+                        Padding="8,3" FontSize="11" Margin="0,0,4,0" />
+                <Button Content="{StaticResource ScreenRecorder_DuplicateFrame}"
+                        Command="{Binding DuplicateFrameCommand}"
+                        Style="{DynamicResource PM_ActionButtonStyle}"
+                        Padding="8,3" FontSize="11" />
+            </StackPanel>
+        </Border>
+
+        <!-- Frame cards scroll area -->
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled"
+                      x:Name="FrameScroll">
+            <ItemsControl x:Name="FrameList"
+                          ItemsSource="{Binding Frames}"
+                          AllowDrop="True"
+                          Drop="OnFrameDrop"
+                          DragOver="OnFrameDragOver">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <views:FrameCard DataContext="{Binding}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Scrubber: clickable progress track at the bottom of the strip -->
+        <Grid Grid.Row="2" x:Name="ScrubberTrack"
+              Background="{DynamicResource DockBackgroundBrush}"
+              MouseLeftButtonDown="OnScrubberClick"
+              Cursor="Hand">
+            <!-- Track fill (progress up to current frame) -->
+            <Rectangle x:Name="ScrubberFill"
+                       HorizontalAlignment="Left"
+                       Fill="{DynamicResource DockTabActiveBrush}"
+                       Height="6" />
+        </Grid>
+
+        <!-- Empty state -->
+        <TextBlock Grid.Row="1"
+                   Text="{StaticResource ScreenRecorder_EmptyTimeline}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                   FontSize="12"
+                   IsHitTestVisible="False">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Frames.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </Grid>
+</UserControl>

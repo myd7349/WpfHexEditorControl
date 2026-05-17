@@ -1,24 +1,7 @@
 #!/usr/bin/env pwsh
 <#
-  loc-source-guard.ps1 — advisory checks for localization rules in XAML/CS
-  source files. Complements loc-parity.ps1 (which covers resx parity only).
-
-  Rules (all warn-only):
-    R1 loc-static-required        DynamicResource on a resx key → use StaticResource
-                                  (or x:Static l10n:Resources.Key)
-    R2 loc-hardcoded-string       user-visible literal in XAML attribute or
-                                  CS UI property assignment
-    R3a loc-idemessagebox-literal IdeMessageBox.Show("literal", ...)
-    R3b loc-messagebox-legacy     MessageBox.Show used instead of IdeMessageBox
-    R4 loc-locdict-missing        assembly has *Resources.resx but App.xaml /
-                                  module entry-point does not merge a
-                                  LocalizedResourceDictionary
-
-  Usage:
-    loc-source-guard.ps1 -Files <paths...>
-
-  All findings printed to stdout as `WARN <rule> <file>:<line> <detail>`.
-  Exit code is always 0 (advisory).
+  loc-source-guard.ps1 — advisory loc rules (R1-R4) on XAML/CS. See SKILL.md.
+  Usage: loc-source-guard.ps1 -Files <paths...>  |  Exit: always 0 (advisory).
 #>
 [CmdletBinding()]
 param(

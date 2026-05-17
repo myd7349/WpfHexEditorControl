@@ -291,7 +291,7 @@ public sealed class UiSettings
     /// Visual highlight mode for the active panel/document container.
     /// Default: TopBar (2px accent bar on top edge — VS Code style).
     /// </summary>
-    public ActivePanelHighlightMode ActivePanelHighlight { get; set; } = ActivePanelHighlightMode.TopBar;
+    public ActivePanelHighlightMode ActivePanelHighlight { get; set; } = ActivePanelHighlightMode.Glow;
 }
 
 // ─── Tab Groups ───────────────────────────────────────────────────────────────

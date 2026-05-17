@@ -13,70 +13,48 @@ description: |
 
 # leak-guard (internal)
 
-Static guard for memory / handle / event leaks and basic secret hygiene.
-Targets the patterns the WpfHexEditor codebase actually uses (75+ IDisposable
-implementations, lots of file watching, LSP integration with long-lived
-handlers).
+Static guard for memory/handle/event leaks and secret hygiene (75+ IDisposable implementations, lots of file watching, long-lived LSP handlers).
 
 ## When I invoke
 
-| Situation                                                                 | Run? |
-|---------------------------------------------------------------------------|------|
-| Edit `.cs` containing `IDisposable`, `event`, `+=` on event               | yes  |
-| Edit `.cs` using `FileStream`, `File.Open`, `Process`, `Timer`            | yes  |
+| Situation | Run? |
+|---|---|
+| Edit `.cs` with `IDisposable`/`event`/`+=`, or `FileStream`/`File.Open`/`Process`/`Timer` | yes |
 | Edit under `Services/`, `*Manager.cs`, `*Service.cs`, `*Watcher*`, `*Adapter.cs` | yes |
-| Edit in `Tests/`, `Samples/`, `*.Designer.cs`, `*.g.cs`                   | no   |
-| Pure renaming, comment-only changes                                       | no   |
+| `Tests/`, `Samples/`, `*.Designer.cs`, `*.g.cs`, rename/comment only | no |
 
 ## Pipeline
 
-1. Gather modified `.cs` files matching the trigger.
-2. Run `scripts/leak-scan.ps1 -Files <paths>`.
-3. Output: `Leaks: <summary>` or `OK` + per-issue lines with file:line.
+`scripts/leak-scan.ps1 -Files <paths>` → `Leaks: <summary>` or `OK` + per-issue lines.
+Suppress: `// leak-ok: <reason>` on the offending line.
 
 ## 9 rules
 
-| Rule                          | Severity | Detected via                              |
-|-------------------------------|----------|-------------------------------------------|
-| `event-no-unsubscribe`        | warn     | `+=` on event without matching `-=` in `Dispose`/`Unloaded` of same class |
-| `idisposable-no-dispose`      | error    | `: IDisposable` without `Dispose()` method body |
-| `dispose-no-suppress-finalize`| warn     | `~Class()` finalizer present, but `Dispose()` lacks `GC.SuppressFinalize(this)` |
-| `filestream-no-using`         | warn     | `new FileStream(` / `File.Open(` not preceded by `using` and not on a field |
-| `timer-no-stop`               | warn     | `new (DispatcherTimer\|Timer\|System.Timers.Timer)(` field without `Stop()`/`Dispose()` reference |
-| `process-no-dispose`          | warn     | `Process.Start` / `new Process(` without `using` and result assigned to local |
-| `static-event-collection`     | error    | `public static event` OR `static (List\|Dictionary\|HashSet)<...>` mutated by instance methods |
-| `weak-event-candidate`        | warn     | `+=` on `Application.Current.*`, `Dispatcher.*`, or any `*.Instance.*` event from a `UserControl`/`Window` |
-| `secret-in-source`            | error    | regex on `(api[_-]?key\|password\|secret\|token)\s*=\s*"[A-Za-z0-9+/=]{16,}"` |
+| Rule | Sev | Detected via |
+|---|---|---|
+| `event-no-unsubscribe` | warn | `+=` on event without matching `-=` in `Dispose`/`Unloaded` of same class |
+| `idisposable-no-dispose` | error | `: IDisposable` without `Dispose()` method body |
+| `dispose-no-suppress-finalize` | warn | `~Class()` finalizer + `Dispose()` lacks `GC.SuppressFinalize(this)` |
+| `filestream-no-using` | warn | `new FileStream(`/`File.Open(` not in `using`, not a field |
+| `timer-no-stop` | warn | `new (DispatcherTimer\|Timer\|System.Timers.Timer)(` field without `Stop()`/`Dispose()` reference |
+| `process-no-dispose` | warn | `Process.Start`/`new Process(` without `using`, result assigned to local |
+| `static-event-collection` | error | `public static event` OR `static List/Dict/HashSet` mutated by instance methods |
+| `weak-event-candidate` | warn | `+=` on `Application.Current.*`, `Dispatcher.*`, or `*.Instance.*` from `UserControl`/`Window` |
+| `secret-in-source` | error | `(api[_-]?key\|password\|secret\|token)\s*=\s*"[A-Za-z0-9+/=]{16,}"` |
 
-## Whitelist / suppressions
+`secret-in-source` skips `// fixture` lines and `Tests/Fixtures/`. Full rule detail: `references/leak-rules.md`.
 
-- Skip path patterns: `\\Tests\\`, `\\Samples\\`, `\.Designer\.cs$`,
-  `\.g\.cs$`, `\.g\.i\.cs$`.
-- Inline `// leak-ok: <reason>` on the same line silences any rule on that
-  line.
-- `secret-in-source` skips lines matching `// fixture` or files under
-  `Tests/Fixtures/`.
-
-## Output format
+## Output
 
 ```
 Leaks: 2 event-no-unsubscribe, 1 timer-no-stop | 0 secrets
-  FileMonitorService.cs:42       event-no-unsubscribe   _watcher.Changed += OnFileChanged (no -= in Dispose)
-  HighlightPipelineService.cs:128 timer-no-stop          DispatcherTimer field never .Stop()
+  FileMonitorService.cs:42        event-no-unsubscribe  _watcher.Changed += OnFileChanged (no -= in Dispose)
+  HighlightPipelineService.cs:128 timer-no-stop         DispatcherTimer field never .Stop()
 ```
 
-## What this skill does NOT do
-
-- Does **not** run static analyzers (Roslyn analyzers exist for some of this).
-- Does **not** instrument runtime (no GC.Collect, no allocations profiling).
-- Does **not** rewrite code to fix.
-- Does **not** detect cross-file leaks (handler subscribed in class A, never
-  removed in class B). It is single-file static analysis.
+Static single-file analysis only. No runtime profiling, code rewrite, or cross-file tracking.
 
 ## Maintenance
 
-- New leak pattern discovered → add a row to `references/leak-rules.md` AND
-  extend `$rules` in `leak-scan.ps1`.
-- When the project introduces a new long-lived host object (e.g. a singleton
-  manager) → add it to the `weak-event-candidate` long-lived-source list in
-  the script.
+New leak pattern → row in `references/leak-rules.md` + extend `$rules` in `leak-scan.ps1`.
+New long-lived host singleton → add to `weak-event-candidate` source list in script.

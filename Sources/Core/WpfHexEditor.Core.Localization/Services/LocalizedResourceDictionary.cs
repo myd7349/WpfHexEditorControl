@@ -136,17 +136,93 @@ public class LocalizedResourceDictionary : ResourceDictionary
         if (baseSet is null)
             return;
 
+        // Resolve the best culture this specific manager can actually serve.
+        // Walking up from _currentCulture (e.g. es-MX → es → en-US) and stopping at
+        // the first culture for which a satellite exists prevents a plugin that ships
+        // an "es" satellite from displaying Spanish when CommonResources only has en-US
+        // (i.e. when the IDE itself would show English for that OS locale).
+        var effectiveCulture = ResolveManagerCulture(manager, _currentCulture);
+
         foreach (System.Collections.DictionaryEntry entry in baseSet)
         {
             if (entry.Key is not string key)
                 continue;
 
             string? value;
-            try { value = manager.GetString(key, _currentCulture); }
+            try { value = manager.GetString(key, effectiveCulture); }
             catch (MissingManifestResourceException) { value = null; }
             catch (Exception) { value = null; }
 
             this[key] = value ?? entry.Value?.ToString() ?? string.Empty;
         }
+    }
+
+    // ─── Culture resolution ──────────────────────────────────────────────────
+
+    // Cache: maps (manager identity, requested culture name) → effective culture name.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(int, string), string>
+        _cultureCache = new();
+
+    /// <summary>
+    /// Finds the culture CommonResources would actually serve for <paramref name="requested"/>,
+    /// mirroring the .NET satellite probe order: exact → neutral parent → regional siblings.
+    /// Every plugin dictionary uses this same effective culture, keeping all assemblies in sync.
+    /// Example: es-MX → no es-MX sat → no es sat → finds es-ES → return es-ES.
+    /// </summary>
+    private static CultureInfo ResolveManagerCulture(ResourceManager manager, CultureInfo requested)
+    {
+        var cacheKey = (System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(manager), requested.Name);
+        if (_cultureCache.TryGetValue(cacheKey, out var cached))
+            return new CultureInfo(cached);
+
+        var commonRm = CommonResources.ResourceManager;
+
+        // Build probe list: exact, neutral parent, then all regional siblings sharing
+        // the same neutral parent (e.g. for es-MX also try es-ES, es-419, etc.).
+        var probes = new System.Collections.Generic.List<CultureInfo> { requested };
+
+        var neutral = requested.Parent;
+        if (!neutral.Equals(CultureInfo.InvariantCulture))
+        {
+            probes.Add(neutral);
+
+            // Regional siblings: any satellite of CommonResources whose parent == neutral.
+            foreach (var sibling in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
+            {
+                if (sibling.Parent.Name.Equals(neutral.Name, StringComparison.OrdinalIgnoreCase)
+                    && !sibling.Name.Equals(requested.Name, StringComparison.OrdinalIgnoreCase))
+                    probes.Add(sibling);
+            }
+        }
+
+        foreach (var probe in probes)
+        {
+            if (HasSatellite(commonRm, probe))
+            {
+                _cultureCache[cacheKey] = probe.Name;
+                return probe;
+            }
+        }
+
+        // No common satellite found → use en-US (the IDE's neutral language).
+        var fallback = new CultureInfo("en-US");
+        _cultureCache[cacheKey] = fallback.Name;
+        return fallback;
+    }
+
+    private static readonly System.Reflection.Assembly _commonAsm =
+        System.Reflection.Assembly.GetAssembly(typeof(CommonResources))!;
+
+    /// <summary>
+    /// Returns true only if a physical satellite assembly for CommonResources exists for
+    /// <paramref name="culture"/>. Uses Assembly.GetSatelliteAssembly — throws on miss —
+    /// to avoid .NET returning a synthetic empty ResourceSet for cultures whose DLL was
+    /// never shipped, which would incorrectly signal satellite presence.
+    /// </summary>
+    private static bool HasSatellite(ResourceManager _, CultureInfo culture)
+    {
+        if (culture.Equals(CultureInfo.InvariantCulture)) return false;
+        try   { _commonAsm.GetSatelliteAssembly(culture); return true; }
+        catch { return false; }
     }
 }
