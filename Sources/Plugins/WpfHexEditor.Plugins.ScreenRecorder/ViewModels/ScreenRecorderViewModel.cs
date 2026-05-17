@@ -82,7 +82,12 @@ public sealed class ScreenRecorderViewModel : INotifyPropertyChanged, IDisposabl
         Properties.ResetRegionCommand  = new RelayCommand(_ =>
         {
             Properties.CaptureRegion = default;
-            if (!IsSessionActive && !IsPlaying) StartCapture();
+            System.Diagnostics.Debug.WriteLine($"[SR] FullScreen clicked: IsSessionActive={IsSessionActive}, IsPlaying={IsPlaying}");
+            if (!IsSessionActive && !IsPlaying)
+            {
+                try   { StartCapture(); System.Diagnostics.Debug.WriteLine("[SR] StartCapture OK"); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[SR] StartCapture FAILED: {ex}"); }
+            }
         });
 
         _captureService                  = new CaptureService();
