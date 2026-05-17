@@ -6,7 +6,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
-  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.5.8-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
+  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.5.95-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
   [![Roadmap](https://img.shields.io/badge/Roadmap-ROADMAP.md-brightgreen)](docs/ROADMAP.md)
@@ -16,7 +16,7 @@
 
   > 🚧 **Active Development** — New features, editors and panels are added regularly. Contributions welcome!
   >
-  > 📅 *Last revised: 2026-05-12*
+  > 📅 *Last revised: 2026-05-17*
 
   <br/>
 
@@ -271,6 +271,19 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 
 | Feature | Version |
 |---------|---------|
+| **ScreenRecorder plugin** — full capture pipeline (BitBlt + DPI-aware region selector, F9/Shift+F9 global hotkey), timeline UI (thumbnails, drag-reorder, multi-select), GIF/PNG/FFmpeg export, playback scrubber, undo/redo, import/clipboard; themed + localized (28 langs) | v0.6.5.95 |
+| **ClassDiagram live arrow redraw** — arrows follow nodes in real time during drag (≤60 relations threshold) | v0.6.5.95 |
+| **Scripting Console panel** — dockable Roslyn-based scripting console (Chantier B); history, output cap, CTS-safe shutdown | v0.6.5.95 |
+| **Snippets Phase 2** — visual in-app snippet editor with SnippetBodyHighlightBox, conflict detector, import/export, variable picker; default snippet pack + user store | v0.6.5.95 |
+| **Hex Diff / Patch panel** — side-by-side binary diff with concurrent reads, patch export (Chantier A) | v0.6.5.95 |
+| **Binary Analysis module** — 5 panels: navigate, EstimateSize, CSV export; `UserLanguageSnippetStore` integration (Chantier C) | v0.6.5.95 |
+| **IdeInputDialog** — themed input dialog + docking profile directory browse button | v0.6.5.95 |
+| **View menu** — 7 new panel entries wired into View menu | v0.6.5.95 |
+| **MenuItemDescriptor.HeaderFactory** — `Func<string>` for live-localizable dynamic menu items | v0.6.5.95 |
+| **Language restart prompt** — IDE prompts to restart on language change; `IdeMessageBox` custom buttons | v0.6.5.95 |
+| **ByteProvider v1.3.0** — public API boost: DI/AOP/Slice/Metrics tier; 90 xUnit tests | v0.6.5.95 |
+| **whfmt.CodeGen v1.1.3** — JSONC header parsing in `.whfmt` files | v0.6.5.95 |
+| **WpfTerminal decoupled** — `IIDEHostContext` dependency removed; `RoslynServiceFactory` injected; `Process` leak fixed | v0.6.5.95 |
 | **Build-number scheme reset** — `WpfHexEditor.App` realigned from `0.6.5.225` to `0.6.5.8` (small monotonic build counter in the `0.6.5.*` revision slot); no functional regression; published NuGet packages unchanged | v0.6.5.8 |
 | **Code Analysis scope UX + SplitButton re-run** — scope label (Solution/Project/File) in toolbar; SplitButton with same-scope re-run + dropdown (Run Solution / Run Project… / Run File…); `_lastScope/_lastPath` persisted across tab switches | v0.6.5.225 |
 | **Code Analysis Treemap context menu** — right-click: Open File, Copy Path, Copy Metrics, Run Analysis on File, Filter to This Project, Highlight Top 10 Hotspots (toggle dims non-hotspot tiles); 15 new keys × 28 satellite languages | v0.6.5.225 |

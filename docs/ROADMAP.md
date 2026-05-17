@@ -5,9 +5,9 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 
 > **Legend:** 🔧 In Progress · 🔜 Planned · ✅ Done (see CHANGELOG)
 >
-> 📅 *Last revised: 2026-05-12*
+> 📅 *Last revised: 2026-05-17*
 >
-> **Current IDE build:** `0.6.5.8` — new build-number scheme (reset after `0.6.5.225`); functional baseline unchanged.
+> **Current IDE build:** `0.6.5.95` — ScreenRecorder plugin, ClassDiagram live arrows, Scripting Console, Snippets Phase 2, ByteProvider v1.3.0, Hex Diff/Patch, Binary Analysis.
 
 ---
 
@@ -325,6 +325,15 @@ Features internal to the `WPFHexaEditor` control itself — engine, ByteProvider
 
 | Feature | Version / Release |
 |---------|-------------------|
+| **ScreenRecorder plugin** — full capture pipeline (BitBlt + DPI-aware region selector, F9/Shift+F9 global hotkey), timeline UI (thumbnails, drag-reorder, multi-select), GIF/PNG/FFmpeg export, playback scrubber, undo/redo, import/clipboard; themed + 28-lang localized; `.whscr` format | [0.6.5.95] — 2026-05-17 |
+| **ClassDiagram live arrow redraw** — arrows follow nodes in real time during drag (≤60 relations); stale-arrow-after-drop fix | [0.6.5.95] — 2026-05-17 |
+| **Scripting Console panel** — dockable Roslyn scripting console; history, output cap, CTS-safe shutdown; `ScriptingModule` | [0.6.5.95] — 2026-05-17 |
+| **Snippets Phase 2** — visual in-app snippet editor: highlight box, conflict detector, import/export, variable picker, default pack + user store | [0.6.5.95] — 2026-05-17 |
+| **Hex Diff / Patch panel** — side-by-side binary diff, concurrent reads, TOCTOU fix, patch export | [0.6.5.95] — 2026-05-17 |
+| **Binary Analysis module** — 5 panels: navigate, EstimateSize, CSV export | [0.6.5.95] — 2026-05-17 |
+| **ByteProvider v1.3.0** — DI/AOP/Slice/Metrics public API tier; 90 xUnit tests | [0.6.5.95] — 2026-05-17 |
+| **whfmt.CodeGen v1.1.3** — JSONC header parsing in `.whfmt` files | [0.6.5.95] — 2026-05-17 |
+| **WpfTerminal decoupled from IIDEHostContext** — `RoslynServiceFactory` injected; `Process` leak fixed | [0.6.5.95] — 2026-05-17 |
 | **Build-number scheme reset** — `WpfHexEditor.App` realigned from `0.6.5.225` to `0.6.5.8` to adopt a small monotonic build counter inside the `0.6.5.*` revision slot; no functional regression; published NuGet packages unchanged | [0.6.5.8] — 2026-05-12 |
 | **Code Analysis scope UX + SplitButton re-run** — scope label (Solution/Project/File) displayed in italic in toolbar after each run; SplitButton: left = re-run same scope, dropdown = Run Solution / Run Project… / Run File…; `_lastScope/_lastPath` persisted in `CodeAnalysisModule`; `SetScope` on `CodeAnalysisReportViewModel` | [0.6.5.225] — 2026-05-09 |
 | **Code Analysis Treemap context menu** — right-click raises `ContextMenuRequested` event with `FileMetrics`; 6 items: Open File (editor nav), Copy Path, Copy Metrics (clipboard), Run Analysis on File, Filter to This Project, Highlight Top 10 Hotspots (toggle dims non-critical tiles); 15 new AppResources keys × 28 satellite languages | [0.6.5.225] — 2026-05-09 |

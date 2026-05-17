@@ -6,6 +6,60 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.6.5.95] — 2026-05-17 — ScreenRecorder, ClassDiagram Live Arrows, Scripting Console, Snippets Phase 2, ByteProvider v1.3.0
+
+### ✨ Added
+
+- **ScreenRecorder plugin** — full 10-phase capture pipeline: BitBlt + RenderTargetBitmap engine, DPI-aware region selector, CaptureOverlayWindow, F9/Shift+F9 global hotkey registered on overlay HWND; timeline UI (thumbnails, drag-reorder, multi-select), GIF/PNG sequence/FFmpeg export services, playback scrubber, undo/redo, import from file, clipboard paste; themed (all Dock brush tokens), localized in 28 satellite languages; `.whscr` session format; multi-instance document tab support
+- **ClassDiagram — live arrow redraw during node drag** — arrows follow nodes in real time while dragging (≤60 relations threshold for smooth 60fps rendering); fixes stale arrows after drop
+- **Scripting Console panel** — dockable Roslyn-based scripting console (Chantier B); async execution, output history, output cap, CTS-safe shutdown; `ScriptingModule` integration
+- **Snippets Phase 2** — visual in-app snippet editor: `SnippetBodyHighlightBox` (RTB highlight), `SnippetConflictDetector`, `SnippetImportExport`, `SnippetVariablePicker`, `SnippetsOptionsPage`; default snippet pack + user store (`UserLanguageSnippetStore`) integration
+- **Hex Diff / Patch panel** — side-by-side binary diff with concurrent reads, TOCTOU fix, patch export; `HexDiffModule` (Chantier A)
+- **Binary Analysis module** — 5 panels: navigate, EstimateSize, CSV export; `BinaryAnalysisModule` (Chantier C)
+- **`IdeInputDialog`** — themed modal input dialog; wired to docking profile directory browse button in options
+- **View menu** — 7 new panel entries (ScreenRecorder, Hex Diff, Binary Analysis, Scripting Console, Spell Check, Snippets, Spell Options) wired into View menu via `ViewMenuOrganizer`
+- **`MenuItemDescriptor.HeaderFactory`** — additive `Func<string>` delegate for live-localizable dynamic menu items without rebuilding the menu tree
+- **Language restart prompt** — IDE prompts to restart on language change; `IdeMessageBox` gains custom button support
+- **`ActivePanelHighlight` defaults to Glow** — dock panels now glow-highlight active tab by default
+- **SpellChecker options page** — settings + satellite localization (28 langs)
+- **ByteProvider v1.3.0** — public API tier: DI decorators, AOP intercept, Slice views, Metrics; 90 xUnit tests (`ByteProviderTests`, `ChangesetTests`, `DecoratorTests`, `DiffTests`, `FactoryTests`, `InsertDeleteTests`, `MetricsTests`)
+- **`TerminalHostContextAdapter`** — `ITerminalHostContext` implemented on `StandaloneIDEHostContext` for terminal sample
+
+### 🔧 Fixed
+
+- **whfmt.CodeGen v1.1.3** — JSONC `/* */` headers in `.whfmt` files now parsed correctly (first-char guard extended)
+- **WpfTerminal decoupled from `IIDEHostContext`** — `RoslynServiceFactory` injected; `Process` leak fixed; NuGet standalone contract restored
+- **`ClassDiagram`** — stale `DiagnosticOutput` wiring causing `MissingMethodException` removed
+- **Loc: `Assembly.GetSatelliteAssembly`** — real satellite presence detection replaces glob-based check
+- **Loc: regional sibling fallback** — `es-MX → es-ES` culture chain resolution; per-manager culture aligned to `CommonResources` satellites; `_currentCulture` defaults to `en-US`
+- **Loc: 36 XAML files** — `LocalizedDictionary` injected + `DynamicResource` → `StaticResource` on loc keys (200 files pass)
+- **Loc: `AsmExplorer_GoToDefinition`** — missing key added to resx + 28 satellites
+- **MC3089** — misplaced attributes moved back onto `ThemedDialog` opening tag in `ResizeImageDialog`
+- **ScreenRecorder: Dispatcher re-entrancy** — `DoDragDrop` deferred via `BeginInvoke` to fix crash on drag
+- **ScreenRecorder: DPI** — `ApplyRegion` moved after `Show()` for correct physical-DPI resolution; primary screen default; correct DPI for captured bitmaps
+- **Build: 35 CS errors** — `VirtualizingPanel` initializer, `CodeEditorResources` access, missing `using` resolved
+
+### 📦 Versions in this build
+
+| Component | Version |
+|---|---|
+| `WpfHexEditor.App` (IDE shell) | **0.6.5.95** ← bumped this release |
+| `WPFHexaEditor` (NuGet) | 3.3.1 |
+| `WpfCodeEditor` (NuGet) | 0.9.9.0 |
+| `WpfDocking` (NuGet) | 0.9.8.0 |
+| `WpfTerminal` (NuGet) | 0.9.7.1 |
+| `WpfColorPicker` (NuGet) | 2.0.2 |
+| `WpfHexEditor.Core.ByteProvider` (NuGet) | 1.3.0 |
+| `WpfHexEditor.Core.BinaryAnalysis` (NuGet) | 1.0.1 |
+| `whfmt.FileFormatCatalog` (NuGet) | 1.3.2 |
+| `whfmt.Analysis` (NuGet) | 1.1.1 |
+| `whfmt.CodeGen` (NuGet) | 1.1.3 |
+| `whfmt.Fuzz` (NuGet) | 1.1.1 |
+| `whfmt.Validate` (NuGet) | 1.0.0 |
+| `WpfHexEditor.SDK` | 2.0.0 (frozen) |
+
+---
+
 ## [0.6.5.8] — 2026-05-12 — Build-Number Scheme Reset
 
 ### 🔧 Changed
