@@ -13,14 +13,14 @@
         Topmost="True"
         ShowInTaskbar="False"
         WindowStartupLocation="Manual"
-        Cursor="Cross">
+        Cursor="Cross"
+        MouseLeftButtonDown="OnMouseDown"
+        MouseLeftButtonUp="OnMouseUp"
+        MouseMove="OnMouseMove"
+        KeyDown="OnKeyDown">
 
     <Canvas x:Name="RootCanvas"
-            Background="Transparent"
-            MouseLeftButtonDown="OnMouseDown"
-            MouseLeftButtonUp="OnMouseUp"
-            MouseMove="OnMouseMove"
-            KeyDown="OnKeyDown"
+            Background="#01000000"
             Focusable="True">
 
         <!-- Full-screen dim overlay (4 rectangles around the selection) -->

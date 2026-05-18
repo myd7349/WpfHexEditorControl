@@ -66,7 +66,7 @@ public partial class RegionSelectorWindow : Window
     {
         _startPoint = e.GetPosition(RootCanvas);
         _dragging   = true;
-        RootCanvas.CaptureMouse();
+        CaptureMouse();
 
         InstructionBorder.Visibility = Visibility.Collapsed;
         SelectionRect.Visibility     = Visibility.Visible;
@@ -88,9 +88,8 @@ public partial class RegionSelectorWindow : Window
         _dragging = false;
         UpdateRect(e.GetPosition(RootCanvas));
 
-        // Build region while visual tree is still intact (before ReleaseMouseCapture/Close).
         SelectedRegion = BuildRegion();
-        RootCanvas.ReleaseMouseCapture();
+        ReleaseMouseCapture();
         Close();
     }
 
