@@ -8,6 +8,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:svc="clr-namespace:WpfHexEditor.Plugins.ScreenRecorder.Services"
+             xmlns:conv="clr-namespace:WpfHexEditor.Editor.Core.Converters;assembly=WpfHexEditor.Editor.Core"
              Background="{DynamicResource DockMenuBackgroundBrush}">
 
     <UserControl.Resources>
@@ -138,7 +139,7 @@
                 <!-- ── Capture Region ─────────────────────────────────────────── -->
                 <Border Style="{StaticResource SectionCard}">
                     <StackPanel>
-                        <TextBlock Text="{StaticResource ScreenRecorder_CaptureRegion}"
+                        <TextBlock Text="{Binding Source={StaticResource ScreenRecorder_CaptureRegion}, Converter={x:Static conv:StringCaseConverter.Upper}}"
                                    Style="{StaticResource SectionTitle}"/>
 
                         <!-- Region summary chip -->
@@ -179,7 +180,7 @@
                     <StackPanel>
                         <DockPanel Margin="0,0,0,6">
                             <TextBlock DockPanel.Dock="Left"
-                                       Text="{StaticResource ScreenRecorder_OutputScale}"
+                                       Text="{Binding Source={StaticResource ScreenRecorder_OutputScale}, Converter={x:Static conv:StringCaseConverter.Upper}}"
                                        Style="{StaticResource SectionTitle}"
                                        Margin="0"/>
                             <TextBlock DockPanel.Dock="Right"
@@ -213,7 +214,7 @@
                 <!-- ── GIF Export ─────────────────────────────────────────────── -->
                 <Border Style="{StaticResource SectionCard}">
                     <StackPanel>
-                        <TextBlock Text="{StaticResource ScreenRecorder_Options_Export}"
+                        <TextBlock Text="{Binding Source={StaticResource ScreenRecorder_Options_Export}, Converter={x:Static conv:StringCaseConverter.Upper}}"
                                    Style="{StaticResource SectionTitle}"/>
 
                         <!-- Loop Count -->
@@ -255,7 +256,7 @@
                 <!-- ── Capture ────────────────────────────────────────────────── -->
                 <Border Style="{StaticResource SectionCard}">
                     <StackPanel>
-                        <TextBlock Text="{StaticResource ScreenRecorder_Options_Capture}"
+                        <TextBlock Text="{Binding Source={StaticResource ScreenRecorder_Options_Capture}, Converter={x:Static conv:StringCaseConverter.Upper}}"
                                    Style="{StaticResource SectionTitle}"/>
 
                         <!-- Interval -->
