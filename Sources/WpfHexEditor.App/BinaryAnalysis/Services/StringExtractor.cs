@@ -25,13 +25,21 @@ public enum StringEncoding
 public sealed record StringRun(long Offset, int Length, StringEncoding Encoding, string Value);
 
 /// <summary>
-/// Byte-to-char decode table used by <see cref="StringExtractor"/> for TBL-mode scanning.
-/// Avoids a direct dependency on TblStream in the service layer.
+/// Decode contract used by <see cref="StringExtractor"/> for TBL-mode scanning.
+/// The implementation must honour multi-byte entries (DTE/MTE) via greedy matching,
+/// exactly as <c>TblStream.ToTblString()</c> does.
 /// </summary>
 public interface ITblDecodeTable
 {
-    /// <summary>Try to decode a single byte to a printable character. Returns false for unmapped/control bytes.</summary>
-    bool TryDecode(byte b, out char ch);
+    /// <summary>
+    /// Try to match the longest entry in the table starting at <paramref name="offset"/>.
+    /// Returns true when a mapped (non-control) sequence is found.
+    /// </summary>
+    /// <param name="data">Full byte buffer.</param>
+    /// <param name="offset">Start position in <paramref name="data"/>.</param>
+    /// <param name="bytesConsumed">Number of bytes consumed by the match (≥1).</param>
+    /// <param name="text">The mapped string (may be multi-char for DTE/MTE).</param>
+    bool TryMatch(ReadOnlySpan<byte> data, int offset, out int bytesConsumed, out string text);
 }
 
 /// <summary>Stateless service: extracts printable string runs from a byte buffer.</summary>
@@ -213,25 +221,35 @@ public static class StringExtractor
 
     private static void ExtractTbl(ReadOnlySpan<byte> data, int minLength, ITblDecodeTable tbl, List<StringRun> results)
     {
+        int i = 0;
         int start = -1;
-        char ch = '\0';
+        int startByteEnd = 0; // byte position just past the last matched byte
         var sb = new StringBuilder();
-        for (int i = 0; i <= data.Length; i++)
+
+        void Flush()
         {
-            bool printable = i < data.Length && tbl.TryDecode(data[i], out ch);
-            if (printable)
+            if (start >= 0 && sb.Length >= minLength)
+                results.Add(new StringRun(start, startByteEnd - start, StringEncoding.Tbl, sb.ToString()));
+            start = -1;
+            sb.Clear();
+        }
+
+        while (i < data.Length)
+        {
+            if (tbl.TryMatch(data, i, out int consumed, out string text))
             {
-                if (start < 0) { start = i; sb.Clear(); }
-                sb.Append(ch);
+                if (start < 0) start = i;
+                sb.Append(text);
+                i += consumed;
+                startByteEnd = i;
             }
-            else if (start >= 0)
+            else
             {
-                int len = i - start;
-                if (sb.Length >= minLength)
-                    results.Add(new StringRun(start, len, StringEncoding.Tbl, sb.ToString()));
-                start = -1;
+                Flush();
+                i++;
             }
         }
+        Flush();
     }
 
     // ── Decode helpers ────────────────────────────────────────────────────────

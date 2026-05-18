@@ -61,25 +61,28 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
         var stack = new StackPanel();
 
-        // Row 1: action buttons (left) + search box filling the right
-        var btnRow = new DockPanel { LastChildFill = true, Height = 26, Margin = new Thickness(4, 0, 4, 0) };
+        // Row 1: action buttons (left, Dock=Left) + search box (right, Dock=Right, fixed width)
+        var btnRow = new DockPanel { LastChildFill = false, Height = 26, Margin = new Thickness(4, 0, 4, 0) };
 
-        var runBtn    = MakeToolbarButton("", "Run (F5)");
+        // Search box anchored to the right with fixed width
+        var searchBox = BuildSearchBox();
+        DockPanel.SetDock(searchBox, Dock.Right);
+        btnRow.Children.Add(searchBox);
+
+        var runBtn    = MakeToolbarButton("", "Run (F5)");
         runBtn.Click += async (_, _) => await _vm.RunAsync();
-        var cancelBtn    = MakeToolbarButton("", "Cancel");
+        var cancelBtn = MakeToolbarButton("", "Cancel");
         cancelBtn.Click += (_, _) => _vm.Cancel();
-        var tblBtn    = MakeToolbarButton("", "Load TBL file…");
+        var tblBtn    = MakeToolbarButton("", "Load TBL file…");
         tblBtn.Click += OnLoadTbl;
-        var exportBtn    = MakeToolbarButton("", "Export…");
+        var exportBtn = MakeToolbarButton("", "Export…");
         exportBtn.Click += (_, _) => OnExport(exportAll: true);
 
-        btnRow.Children.Add(runBtn);
-        btnRow.Children.Add(cancelBtn);
-        btnRow.Children.Add(MakeToolbarSeparator());
-        btnRow.Children.Add(tblBtn);
-        btnRow.Children.Add(MakeToolbarSeparator());
-        btnRow.Children.Add(exportBtn);
-        btnRow.Children.Add(BuildSearchBox()); // LastChildFill — fills the right side
+        foreach (UIElement el in new UIElement[] { runBtn, cancelBtn, MakeToolbarSeparator(), tblBtn, MakeToolbarSeparator(), exportBtn })
+        {
+            DockPanel.SetDock(el, Dock.Left);
+            btnRow.Children.Add(el);
+        }
 
         // Row 2: file selector + encodings + min length
         var filterRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 4, 4) };
@@ -125,71 +128,36 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return outer;
     }
 
-    /// <summary>Search box with watermark, fills remaining toolbar width on the right.</summary>
+    /// <summary>Search box with watermark, docked to the right of the toolbar.</summary>
     private UIElement BuildSearchBox()
     {
-        var container = new Grid { Margin = new Thickness(8, 3, 0, 3), VerticalAlignment = VerticalAlignment.Center };
-
-        var hint = new TextBlock
-        {
-            Text = "    Search strings…",
-            FontSize = 11,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(2, 0, 0, 0),
-            IsHitTestVisible = false,
-            Opacity = 0.45,
-        };
-        hint.SetResourceReference(ForegroundProperty, "TE_Foreground");
-
         var box = new TextBox
         {
-            FontSize = 11,
-            Height = 20,
-            VerticalContentAlignment = VerticalAlignment.Center,
-            Background = System.Windows.Media.Brushes.Transparent,
-            BorderThickness = new Thickness(1),
+            Width  = 140,
+            Tag    = "Search strings…",
             ToolTip = "Live filter on extracted strings",
+            Margin = new Thickness(4, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
         };
-        box.SetResourceReference(ForegroundProperty,  "TE_Foreground");
-        box.SetResourceReference(BorderBrushProperty, "Panel_ToolbarBorderBrush");
+        box.SetResourceReference(StyleProperty, "PanelSearchBoxStyle");
         box.SetBinding(TextBox.TextProperty, new Binding(nameof(_vm.Filter))
         {
             Source = _vm, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
         });
-        box.TextChanged += (_, _) =>
-            hint.Visibility = string.IsNullOrEmpty(box.Text) ? Visibility.Visible : Visibility.Collapsed;
-
-        container.Children.Add(hint);
-        container.Children.Add(box);
-        return container;
+        return box;
     }
 
     private static Button MakeToolbarButton(string glyph, string tooltip)
     {
-        var btn = new Button
-        {
-            Content         = glyph,
-            ToolTip         = tooltip,
-            Padding         = new Thickness(0),
-            Margin          = new Thickness(1, 0, 1, 0),
-            Width           = 22,
-            Height          = 22,
-            BorderThickness = new Thickness(0),
-            Background      = System.Windows.Media.Brushes.Transparent,
-            FontFamily      = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
-            FontSize        = 13,
-            VerticalAlignment = VerticalAlignment.Center,
-            Cursor            = Cursors.Hand,
-            FocusVisualStyle  = null,
-        };
-        btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+        var btn = new Button { Content = glyph, ToolTip = tooltip };
+        btn.SetResourceReference(StyleProperty, "PanelIconButtonStyle");
         return btn;
     }
 
-    private static Separator MakeToolbarSeparator()
+    private static System.Windows.Shapes.Rectangle MakeToolbarSeparator()
     {
-        var sep = new Separator { Width = 1, Margin = new Thickness(4, 3, 4, 3) };
-        sep.SetResourceReference(BackgroundProperty, "Panel_ToolbarBorderBrush");
+        var sep = new System.Windows.Shapes.Rectangle { Width = 1, Height = 16, Margin = new Thickness(4, 0, 4, 0) };
+        sep.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Panel_ToolbarBorderBrush");
         return sep;
     }
 
