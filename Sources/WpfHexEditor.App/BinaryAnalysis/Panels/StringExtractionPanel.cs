@@ -29,24 +29,20 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
     public StringExtractionPanel()
     {
         var root = new Grid();
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // toolbar
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // filter row
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                      // toolbar + filter overlap
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // grid
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // status bar
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                      // status bar
         root.SetResourceReference(BackgroundProperty, "TE_Background");
 
-        var toolbar   = BuildToolbar();
-        var filterRow = BuildFilterRow();
-        var grid      = BuildGrid();
-        var statusBar = BuildStatusBar();
+        var toolbarPanel = BuildToolbarWithFilter();
+        var grid         = BuildGrid();
+        var statusBar    = BuildStatusBar();
 
-        Grid.SetRow(toolbar,   0);
-        Grid.SetRow(filterRow, 1);
-        Grid.SetRow(grid,      2);
-        Grid.SetRow(statusBar, 3);
+        Grid.SetRow(toolbarPanel, 0);
+        Grid.SetRow(grid,         1);
+        Grid.SetRow(statusBar,    2);
 
-        root.Children.Add(toolbar);
-        root.Children.Add(filterRow);
+        root.Children.Add(toolbarPanel);
         root.Children.Add(grid);
         root.Children.Add(statusBar);
 
@@ -55,74 +51,138 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         KeyDown += OnKeyDown;
     }
 
-    // ── Toolbar ───────────────────────────────────────────────────────────────
+    // ── Toolbar + filter overlap (single border, two rows) ───────────────────
 
-    private UIElement BuildToolbar()
+    private UIElement BuildToolbarWithFilter()
     {
-        var toolbar = new Border
-        {
-            Padding         = new Thickness(4, 0, 4, 0),
-            BorderThickness = new Thickness(0, 0, 0, 1),
-            Height          = 26,
-        };
-        toolbar.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
-        toolbar.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
-        Grid.SetRow(toolbar, 0);
+        var outer = new Border { BorderThickness = new Thickness(0, 0, 0, 1) };
+        outer.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
+        outer.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
 
-        var row = new DockPanel { LastChildFill = false };
+        var stack = new StackPanel();
 
-        // Run button
-        var runBtn = MakeToolbarButton("", "Run (F5)");
+        // Row 1: action buttons (left) + search box filling the right
+        var btnRow = new DockPanel { LastChildFill = true, Height = 26, Margin = new Thickness(4, 0, 4, 0) };
+
+        var runBtn    = MakeToolbarButton("", "Run (F5)");
         runBtn.Click += async (_, _) => await _vm.RunAsync();
-
-        // Cancel button
-        var cancelBtn = MakeToolbarButton("", "Cancel");
+        var cancelBtn    = MakeToolbarButton("", "Cancel");
         cancelBtn.Click += (_, _) => _vm.Cancel();
-
-        // Separator
-        var sep1 = MakeToolbarSeparator();
-
-        // Load TBL button
-        var tblBtn = MakeToolbarButton("", "Load TBL file…");
+        var tblBtn    = MakeToolbarButton("", "Load TBL file…");
         tblBtn.Click += OnLoadTbl;
-
-        // Separator
-        var sep2 = MakeToolbarSeparator();
-
-        // Export All button
-        var exportBtn = MakeToolbarButton("", "Export…");
+        var exportBtn    = MakeToolbarButton("", "Export…");
         exportBtn.Click += (_, _) => OnExport(exportAll: true);
 
-        row.Children.Add(runBtn);
-        row.Children.Add(cancelBtn);
-        row.Children.Add(sep1);
-        row.Children.Add(tblBtn);
-        row.Children.Add(sep2);
-        row.Children.Add(exportBtn);
+        btnRow.Children.Add(runBtn);
+        btnRow.Children.Add(cancelBtn);
+        btnRow.Children.Add(MakeToolbarSeparator());
+        btnRow.Children.Add(tblBtn);
+        btnRow.Children.Add(MakeToolbarSeparator());
+        btnRow.Children.Add(exportBtn);
+        btnRow.Children.Add(BuildSearchBox()); // LastChildFill — fills the right side
 
-        toolbar.Child = row;
-        return toolbar;
+        // Row 2: file selector + encodings + min length
+        var filterRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 4, 4) };
+
+        var fileCombo = new ComboBox
+        {
+            Width = 160, Height = 20, FontSize = 11,
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "Select file to scan"
+        };
+        fileCombo.SetResourceReference(ForegroundProperty, "TE_Foreground");
+        fileCombo.SetBinding(ItemsControl.ItemsSourceProperty, new Binding(nameof(_vm.OpenedFiles))  { Source = _vm });
+        fileCombo.SetBinding(Selector.SelectedItemProperty,   new Binding(nameof(_vm.SelectedFile)) { Source = _vm, Mode = BindingMode.TwoWay });
+        fileCombo.DisplayMemberPath = nameof(OpenedFileItem.DisplayName);
+
+        var minBox = new TextBox
+        {
+            Width = 32, Height = 20, FontSize = 11, TextAlignment = TextAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Text = _vm.MinLength.ToString(),
+            ToolTip = "Minimum string length (1–64)"
+        };
+        minBox.SetResourceReference(BackgroundProperty, "TE_Background");
+        minBox.SetResourceReference(ForegroundProperty, "TE_Foreground");
+        minBox.LostFocus += (_, _) =>
+        {
+            if (int.TryParse(minBox.Text, out int v)) _vm.MinLength = v;
+            minBox.Text = _vm.MinLength.ToString();
+        };
+        minBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) Keyboard.ClearFocus(); };
+
+        filterRow.Children.Add(MakeLabel("File:"));
+        filterRow.Children.Add(fileCombo);
+        filterRow.Children.Add(MakeLabel("Encodings:"));
+        filterRow.Children.Add(BuildEncodingDropdown());
+        filterRow.Children.Add(MakeLabel("Min:"));
+        filterRow.Children.Add(minBox);
+
+        stack.Children.Add(btnRow);
+        stack.Children.Add(filterRow);
+        outer.Child = stack;
+        return outer;
+    }
+
+    /// <summary>Search box with watermark, fills remaining toolbar width on the right.</summary>
+    private UIElement BuildSearchBox()
+    {
+        var container = new Grid { Margin = new Thickness(8, 3, 0, 3), VerticalAlignment = VerticalAlignment.Center };
+
+        var hint = new TextBlock
+        {
+            Text = "    Search strings…",
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(2, 0, 0, 0),
+            IsHitTestVisible = false,
+            Opacity = 0.45,
+        };
+        hint.SetResourceReference(ForegroundProperty, "TE_Foreground");
+
+        var box = new TextBox
+        {
+            FontSize = 11,
+            Height = 20,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = System.Windows.Media.Brushes.Transparent,
+            BorderThickness = new Thickness(1),
+            ToolTip = "Live filter on extracted strings",
+        };
+        box.SetResourceReference(ForegroundProperty,  "TE_Foreground");
+        box.SetResourceReference(BorderBrushProperty, "Panel_ToolbarBorderBrush");
+        box.SetBinding(TextBox.TextProperty, new Binding(nameof(_vm.Filter))
+        {
+            Source = _vm, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+        });
+        box.TextChanged += (_, _) =>
+            hint.Visibility = string.IsNullOrEmpty(box.Text) ? Visibility.Visible : Visibility.Collapsed;
+
+        container.Children.Add(hint);
+        container.Children.Add(box);
+        return container;
     }
 
     private static Button MakeToolbarButton(string glyph, string tooltip)
     {
         var btn = new Button
         {
-            Content  = glyph,
-            ToolTip  = tooltip,
-            Padding  = new Thickness(0),
-            Margin   = new Thickness(1, 0, 1, 0),
-            Width    = 22,
-            Height   = 22,
+            Content         = glyph,
+            ToolTip         = tooltip,
+            Padding         = new Thickness(0),
+            Margin          = new Thickness(1, 0, 1, 0),
+            Width           = 22,
+            Height          = 22,
             BorderThickness = new Thickness(0),
-            Background = System.Windows.Media.Brushes.Transparent,
-            FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
-            FontSize   = 13,
+            Background      = System.Windows.Media.Brushes.Transparent,
+            FontFamily      = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+            FontSize        = 13,
             VerticalAlignment = VerticalAlignment.Center,
-            Cursor = Cursors.Hand,
-            FocusVisualStyle = null,
+            Cursor            = Cursors.Hand,
+            FocusVisualStyle  = null,
         };
-        btn.SetResourceReference(ForegroundProperty,   "Panel_ToolbarForegroundBrush");
+        btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
         return btn;
     }
 
@@ -133,127 +193,124 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return sep;
     }
 
-    // ── Filter row (file + encoding + checkboxes + min-length + filter text) ──
-
-    private UIElement BuildFilterRow()
+    private TextBlock MakeLabel(string text)
     {
-        var bar = new Border
+        var tb = new TextBlock
         {
-            Padding         = new Thickness(4, 2, 4, 2),
-            BorderThickness = new Thickness(0, 0, 0, 1),
+            Text = text, VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 4, 0), FontSize = 11
         };
-        bar.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
-        bar.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
-        Grid.SetRow(bar, 1);
-
-        var row = new WrapPanel { Orientation = Orientation.Horizontal };
-
-        // File selector
-        var fileLabel = new TextBlock { Text = "File:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0), FontSize = 11 };
-        fileLabel.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-
-        var fileCombo = new ComboBox { Width = 160, Height = 20, FontSize = 11, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-        fileCombo.SetResourceReference(ForegroundProperty, "TE_Foreground");
-        fileCombo.SetBinding(ItemsControl.ItemsSourceProperty, new Binding(nameof(_vm.OpenedFiles))  { Source = _vm });
-        fileCombo.SetBinding(Selector.SelectedItemProperty,   new Binding(nameof(_vm.SelectedFile)) { Source = _vm, Mode = BindingMode.TwoWay });
-        fileCombo.DisplayMemberPath = nameof(OpenedFileItem.DisplayName);
-        fileCombo.ToolTip = "Select file to scan";
-
-        // Encoding selector
-        var encLabel = new TextBlock { Text = "Encoding:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0), FontSize = 11 };
-        encLabel.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-
-        var encCombo = BuildEncodingCombo();
-
-        // ASCII / UTF-16 checkboxes
-        var asciiChk = MakeCheckBox("ASCII");
-        asciiChk.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.ShowAscii)) { Source = _vm, Mode = BindingMode.TwoWay });
-
-        var utf16Chk = MakeCheckBox("UTF-16");
-        utf16Chk.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.ShowUtf16)) { Source = _vm, Mode = BindingMode.TwoWay });
-
-        // Min length slider
-        var minLabel = new TextBlock { Text = "Min:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 4, 0), FontSize = 11 };
-        minLabel.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-
-        var minBox = new Slider { Minimum = 1, Maximum = 64, Value = 4, Width = 70, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
-        minBox.SetBinding(RangeBase.ValueProperty, new Binding(nameof(_vm.MinLength)) { Source = _vm, Mode = BindingMode.TwoWay, Converter = new DoubleToIntConverter() });
-
-        // Filter textbox
-        var filterLabel = new TextBlock { Text = "Filter:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0), FontSize = 11 };
-        filterLabel.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-
-        var filterBox = new TextBox { Width = 120, Height = 20, FontSize = 11, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0) };
-        filterBox.SetResourceReference(BackgroundProperty, "TE_Background");
-        filterBox.SetResourceReference(ForegroundProperty, "TE_Foreground");
-        filterBox.SetBinding(TextBox.TextProperty, new Binding(nameof(_vm.Filter)) { Source = _vm, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
-
-        row.Children.Add(fileLabel);
-        row.Children.Add(fileCombo);
-        row.Children.Add(encLabel);
-        row.Children.Add(encCombo);
-        row.Children.Add(asciiChk);
-        row.Children.Add(utf16Chk);
-        row.Children.Add(minLabel);
-        row.Children.Add(minBox);
-        row.Children.Add(filterLabel);
-        row.Children.Add(filterBox);
-
-        bar.Child = row;
-        return bar;
+        tb.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+        return tb;
     }
 
-    private ComboBox BuildEncodingCombo()
-    {
-        var combo = new ComboBox { Width = 130, Height = 20, FontSize = 11, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-        combo.SetResourceReference(ForegroundProperty, "TE_Foreground");
+    // ── Encoding multi-select dropdown ────────────────────────────────────────
 
-        void AddGroup(string header)
+    private UIElement BuildEncodingDropdown()
+    {
+        var summaryText = new TextBlock { FontSize = 11, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        summaryText.SetResourceReference(ForegroundProperty, "TE_Foreground");
+
+        void RefreshSummary() =>
+            summaryText.Text = _vm.ActiveEncodings.Count == 0
+                ? "(none)"
+                : string.Join(", ", _vm.ActiveEncodings.Select(EncodingLabel));
+
+        var popup = new Popup { StaysOpen = false, AllowsTransparency = true, Placement = PlacementMode.Bottom };
+        var listBorder = new Border { BorderThickness = new Thickness(1), Padding = new Thickness(2) };
+        listBorder.SetResourceReference(BackgroundProperty,  "TE_Background");
+        listBorder.SetResourceReference(BorderBrushProperty, "Panel_ToolbarBorderBrush");
+
+        var listPanel = new StackPanel();
+
+        (string label, StringEncoding? enc)[] items =
+        [
+            ("── Built-in ──",   null),
+            ("ASCII",                                 StringEncoding.Ascii),
+            ("EBCDIC + Special",                      StringEncoding.Ebcdic),
+            ("EBCDIC (no spec)",                      StringEncoding.EbcdicNoSpec),
+            ("── Encodings ──",  null),
+            ("UTF-8",                                 StringEncoding.Utf8),
+            ("UTF-16 LE",                             StringEncoding.Utf16Le),
+            ("UTF-16 BE",                             StringEncoding.Utf16Be),
+            ("Latin-1",                               StringEncoding.Latin1),
+            ("── Project ──",    null),
+            ("TBL (loaded)",                          StringEncoding.Tbl),
+        ];
+
+        var checkBoxes = new List<CheckBox>();
+        foreach (var (label, enc) in items)
         {
-            combo.Items.Add(new ComboBoxItem { Content = header, IsEnabled = false, FontWeight = FontWeights.SemiBold, Foreground = System.Windows.Media.Brushes.Gray, FontSize = 10 });
+            if (enc is null)
+            {
+                var hdr = new TextBlock
+                {
+                    Text = label, FontSize = 10, FontWeight = FontWeights.SemiBold,
+                    Margin = new Thickness(4, 2, 4, 0), IsEnabled = false
+                };
+                hdr.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+                listPanel.Children.Add(hdr);
+            }
+            else
+            {
+                var chk = new CheckBox
+                {
+                    Content = label, Tag = enc,
+                    IsChecked = _vm.IsEncodingActive(enc.Value),
+                    Padding = new Thickness(4, 1, 8, 1),
+                    FontSize = 11,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                chk.SetResourceReference(ForegroundProperty, "TE_Foreground");
+                chk.Click += (_, _) =>
+                {
+                    _vm.ToggleEncoding(enc.Value);
+                    chk.IsChecked = _vm.IsEncodingActive(enc.Value);
+                    foreach (var c in checkBoxes)
+                        if (c.Tag is StringEncoding e2) c.IsChecked = _vm.IsEncodingActive(e2);
+                    RefreshSummary();
+                };
+                checkBoxes.Add(chk);
+                listPanel.Children.Add(chk);
+            }
         }
 
-        void AddItem(string label, StringEncoding enc)
+        listBorder.Child = listPanel;
+        popup.Child      = listBorder;
+
+        var btn = new Button
         {
-            var item = new ComboBoxItem { Content = label, Tag = enc, Padding = new Thickness(12, 1, 4, 1) };
-            combo.Items.Add(item);
-        }
-
-        AddGroup("Built-in Tables");
-        AddItem("Default (ASCII)",      StringEncoding.Ascii);
-        AddItem("ASCII",                StringEncoding.Ascii);
-        AddItem("EBCDIC + Special",     StringEncoding.Ebcdic);
-        AddItem("EBCDIC (no spec)",     StringEncoding.EbcdicNoSpec);
-        AddGroup("Encodings");
-        AddItem("UTF-8",                StringEncoding.Utf8);
-        AddItem("UTF-16 LE",            StringEncoding.Utf16Le);
-        AddItem("UTF-16 BE",            StringEncoding.Utf16Be);
-        AddItem("Latin-1",              StringEncoding.Latin1);
-        AddGroup("Project TBL");
-        AddItem("(loaded .tbl)",        StringEncoding.Tbl);
-
-        combo.SelectedIndex = 1; // Default (ASCII)
-        combo.SelectionChanged += (_, _) =>
-        {
-            if (combo.SelectedItem is ComboBoxItem { Tag: StringEncoding enc })
-                _vm.SelectedEncoding = enc;
-        };
-
-        return combo;
-    }
-
-    private CheckBox MakeCheckBox(string label)
-    {
-        var chk = new CheckBox
-        {
-            Content = label,
-            Margin = new Thickness(0, 0, 6, 0),
-            VerticalAlignment = VerticalAlignment.Center,
+            Height = 20, MinWidth = 130,
+            Padding = new Thickness(6, 0, 6, 0),
+            BorderThickness = new Thickness(1),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment   = VerticalAlignment.Center,
             FontSize = 11,
+            Margin = new Thickness(0, 0, 8, 0),
+            FocusVisualStyle = null,
         };
-        chk.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-        return chk;
+        btn.SetResourceReference(BackgroundProperty,  "TE_Background");
+        btn.SetResourceReference(ForegroundProperty,  "TE_Foreground");
+        btn.SetResourceReference(BorderBrushProperty, "Panel_ToolbarBorderBrush");
+        btn.Content = summaryText;
+        btn.Click   += (_, _) => { popup.PlacementTarget = btn; popup.IsOpen = !popup.IsOpen; };
+
+        RefreshSummary();
+        return btn;
     }
+
+    private static string EncodingLabel(StringEncoding enc) => enc switch
+    {
+        StringEncoding.Ascii        => "ASCII",
+        StringEncoding.Utf16Le      => "UTF-16 LE",
+        StringEncoding.Utf16Be      => "UTF-16 BE",
+        StringEncoding.Utf8         => "UTF-8",
+        StringEncoding.Latin1       => "Latin-1",
+        StringEncoding.Ebcdic       => "EBCDIC+",
+        StringEncoding.EbcdicNoSpec => "EBCDIC",
+        StringEncoding.Tbl          => "TBL",
+        _                           => enc.ToString(),
+    };
 
     // ── DataGrid ──────────────────────────────────────────────────────────────
 
@@ -275,23 +332,21 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         VirtualizingPanel.SetVirtualizationMode(_grid, VirtualizationMode.Recycling);
         VirtualizingPanel.SetScrollUnit(_grid, ScrollUnit.Item);
 
-        _grid.SetResourceReference(BackgroundProperty,                           "TE_Background");
-        _grid.SetResourceReference(ForegroundProperty,                           "TE_Foreground");
-        _grid.SetResourceReference(DataGrid.RowBackgroundProperty,               "TE_Background");
-        _grid.SetResourceReference(DataGrid.AlternatingRowBackgroundProperty,    "Panel_ToolbarBrush");
+        _grid.SetResourceReference(BackgroundProperty,                        "TE_Background");
+        _grid.SetResourceReference(ForegroundProperty,                        "TE_Foreground");
+        _grid.SetResourceReference(DataGrid.RowBackgroundProperty,            "TE_Background");
+        _grid.SetResourceReference(DataGrid.AlternatingRowBackgroundProperty, "Panel_ToolbarBrush");
 
-        // Column header style — themed
         var headerStyle = new Style(typeof(DataGridColumnHeader));
-        headerStyle.Setters.Add(new Setter(BackgroundProperty,    new DynamicResourceExtension("Panel_ToolbarBrush")));
-        headerStyle.Setters.Add(new Setter(ForegroundProperty,    new DynamicResourceExtension("Panel_ToolbarForegroundBrush")));
-        headerStyle.Setters.Add(new Setter(BorderBrushProperty,   new DynamicResourceExtension("Panel_ToolbarBorderBrush")));
+        headerStyle.Setters.Add(new Setter(BackgroundProperty,      new DynamicResourceExtension("Panel_ToolbarBrush")));
+        headerStyle.Setters.Add(new Setter(ForegroundProperty,      new DynamicResourceExtension("Panel_ToolbarForegroundBrush")));
+        headerStyle.Setters.Add(new Setter(BorderBrushProperty,     new DynamicResourceExtension("Panel_ToolbarBorderBrush")));
         headerStyle.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(0, 0, 1, 1)));
-        headerStyle.Setters.Add(new Setter(PaddingProperty,       new Thickness(6, 3, 6, 3)));
-        headerStyle.Setters.Add(new Setter(FontSizeProperty,      11d));
+        headerStyle.Setters.Add(new Setter(PaddingProperty,         new Thickness(6, 3, 6, 3)));
+        headerStyle.Setters.Add(new Setter(FontSizeProperty,        11d));
         headerStyle.Setters.Add(new Setter(SnapsToDevicePixelsProperty, true));
         _grid.ColumnHeaderStyle = headerStyle;
 
-        // Row style — themed foreground
         var rowStyle = new Style(typeof(DataGridRow));
         rowStyle.Setters.Add(new Setter(ForegroundProperty, new DynamicResourceExtension("TE_Foreground")));
         _grid.RowStyle = rowStyle;
@@ -305,7 +360,6 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _grid.MouseDoubleClick += (_, _) => NavigateSelected();
         _grid.ContextMenu       = BuildContextMenu();
 
-        Grid.SetRow(_grid, 2);
         return _grid;
     }
 
@@ -329,14 +383,14 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         cm.SetResourceReference(BackgroundProperty, "TE_Background");
         cm.SetResourceReference(ForegroundProperty, "TE_Foreground");
 
-        cm.Items.Add(MakeMenuItem("Go to Offset",        "", () => NavigateSelected()));
+        cm.Items.Add(MakeMenuItem("Go to Offset",     "", () => NavigateSelected()));
         cm.Items.Add(new Separator());
-        cm.Items.Add(MakeMenuItem("Copy Value",          "", () => CopyField(r => r.Value)));
-        cm.Items.Add(MakeMenuItem("Copy Offset",         "", () => CopyField(r => $"0x{r.Offset:X8}")));
-        cm.Items.Add(MakeMenuItem("Copy Row (TSV)",      "", () => CopyField(r => $"0x{r.Offset:X8}\t{r.Length}\t{r.Encoding}\t{r.Value}")));
+        cm.Items.Add(MakeMenuItem("Copy Value",       "", () => CopyField(r => r.Value)));
+        cm.Items.Add(MakeMenuItem("Copy Offset",      "", () => CopyField(r => $"0x{r.Offset:X8}")));
+        cm.Items.Add(MakeMenuItem("Copy Row (TSV)",   "", () => CopyField(r => $"0x{r.Offset:X8}\t{r.Length}\t{r.Encoding}\t{r.Value}")));
         cm.Items.Add(new Separator());
-        cm.Items.Add(MakeMenuItem("Export Selected…",    "", () => OnExport(exportAll: false)));
-        cm.Items.Add(MakeMenuItem("Export All…",         "", () => OnExport(exportAll: true)));
+        cm.Items.Add(MakeMenuItem("Export Selected…", "", () => OnExport(exportAll: false)));
+        cm.Items.Add(MakeMenuItem("Export All…",      "", () => OnExport(exportAll: true)));
         return cm;
     }
 
@@ -368,7 +422,6 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         };
         bar.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
         bar.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
-        Grid.SetRow(bar, 3);
 
         var statusTxt = new TextBlock { FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
         statusTxt.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
@@ -409,8 +462,8 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F5)                            { _ = _vm.RunAsync(); e.Handled = true; }
-        else if (e.Key == Key.Enter && !_vm.IsBusy)     { NavigateSelected();  e.Handled = true; }
+        if (e.Key == Key.F5)                        { _ = _vm.RunAsync(); e.Handled = true; }
+        else if (e.Key == Key.Enter && !_vm.IsBusy) { NavigateSelected();  e.Handled = true; }
         else if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control)
         {
             CopyField(r => r.Value);
@@ -422,16 +475,15 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
     {
         var dlg = new OpenFileDialog
         {
-            Title       = "Load TBL file",
-            Filter      = "TBL Files (*.tbl;*.tblx)|*.tbl;*.tblx|All Files (*.*)|*.*",
-            DefaultExt  = ".tbl",
+            Title      = "Load TBL file",
+            Filter     = "TBL Files (*.tbl;*.tblx)|*.tbl;*.tblx|All Files (*.*)|*.*",
+            DefaultExt = ".tbl",
         };
         if (dlg.ShowDialog() != true) return;
 
         _loadedTbl?.Dispose();
         _loadedTbl = new TblStream(dlg.FileName);
         _vm.SetTblTable(new TblDecodeTableAdapter(_loadedTbl));
-        _vm.SelectedEncoding = StringEncoding.Tbl;
     }
 
     private void OnExport(bool exportAll)
@@ -454,14 +506,4 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
         _ = exporter.ExportAsync(runs, dlg.FileName);
     }
-}
-
-// ── Local converters ──────────────────────────────────────────────────────────
-
-file sealed class DoubleToIntConverter : System.Windows.Data.IValueConverter
-{
-    public object Convert(object value, Type t, object p, System.Globalization.CultureInfo c)
-        => value is int i ? (double)i : value;
-    public object ConvertBack(object value, Type t, object p, System.Globalization.CultureInfo c)
-        => value is double d ? (int)d : value;
 }

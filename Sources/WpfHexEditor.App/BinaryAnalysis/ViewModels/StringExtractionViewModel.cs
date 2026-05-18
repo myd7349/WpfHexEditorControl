@@ -35,9 +35,6 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     private int _shownCount;
     private string _statusText = string.Empty;
     private OpenedFileItem? _selectedFile;
-    private StringEncoding _selectedEncoding = StringEncoding.Ascii;
-    private bool _showAscii  = true;
-    private bool _showUtf16  = true;
 
     // ── Collections ──────────────────────────────────────────────────────────
 
@@ -45,6 +42,9 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public  ICollectionView ResultsView { get; }
 
     public ObservableCollection<OpenedFileItem> OpenedFiles { get; } = [];
+
+    /// <summary>Encodings selected for the next scan AND shown in the results view.</summary>
+    public HashSet<StringEncoding> ActiveEncodings { get; } = [StringEncoding.Ascii, StringEncoding.Utf16Le];
 
     // ── Properties ───────────────────────────────────────────────────────────
 
@@ -72,18 +72,6 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public bool ShowAscii
-    {
-        get => _showAscii;
-        set { _showAscii = value; OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
-    }
-
-    public bool ShowUtf16
-    {
-        get => _showUtf16;
-        set { _showUtf16 = value; OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
-    }
-
     public int TotalCount
     {
         get => _totalCount;
@@ -108,11 +96,17 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         set { _selectedFile = value; OnPropertyChanged(); }
     }
 
-    public StringEncoding SelectedEncoding
+    public void ToggleEncoding(StringEncoding enc)
     {
-        get => _selectedEncoding;
-        set { _selectedEncoding = value; OnPropertyChanged(); }
+        if (!ActiveEncodings.Remove(enc))
+            ActiveEncodings.Add(enc);
+        if (ActiveEncodings.Count == 0)
+            ActiveEncodings.Add(StringEncoding.Ascii);
+        ResultsView.Refresh();
+        UpdateShownCount();
     }
+
+    public bool IsEncodingActive(StringEncoding enc) => ActiveEncodings.Contains(enc);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -269,28 +263,23 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         return buffer;
     }
 
-    private HashSet<StringEncoding> BuildEncodingSet()
-    {
-        var set = new HashSet<StringEncoding>();
-        if (_showAscii)  set.Add(StringEncoding.Ascii);
-        if (_showUtf16)  set.Add(StringEncoding.Utf16Le);
-        // Add the explicitly selected encoding when it differs from the checkbox-driven ones
-        if (SelectedEncoding != StringEncoding.Ascii && SelectedEncoding != StringEncoding.Utf16Le)
-            set.Add(SelectedEncoding);
-        if (set.Count == 0) set.Add(StringEncoding.Ascii);
-        return set;
-    }
+    private HashSet<StringEncoding> BuildEncodingSet() =>
+        ActiveEncodings.Count > 0 ? new HashSet<StringEncoding>(ActiveEncodings) : [StringEncoding.Ascii];
 
     private ITblDecodeTable? _activeTblTable;
-    public void SetTblTable(ITblDecodeTable? table) => _activeTblTable = table;
+    public void SetTblTable(ITblDecodeTable? table)
+    {
+        _activeTblTable = table;
+        if (table is not null)
+            ActiveEncodings.Add(StringEncoding.Tbl);
+    }
 
     // ── Filter ────────────────────────────────────────────────────────────────
 
     private bool FilterPredicate(object obj)
     {
         if (obj is not StringRun run) return false;
-        if (!_showAscii  && run.Encoding == StringEncoding.Ascii)   return false;
-        if (!_showUtf16  && run.Encoding == StringEncoding.Utf16Le) return false;
+        if (!ActiveEncodings.Contains(run.Encoding)) return false;
         if (!string.IsNullOrEmpty(_filter) &&
             !run.Value.Contains(_filter, StringComparison.OrdinalIgnoreCase)) return false;
         return true;
