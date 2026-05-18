@@ -14,21 +14,20 @@ public static class RegionSelectorService
 {
     public static async Task<CaptureRegion?> SelectRegionAsync()
     {
-        // Capture previous state BEFORE minimizing.
-        var prevState = await Application.Current.Dispatcher.InvokeAsync(() =>
+        // Hide all open windows so the selector overlays the full desktop cleanly.
+        var hiddenWindows = await Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            var main = Application.Current.MainWindow;
-            var state = main?.WindowState ?? WindowState.Normal;
-            if (main is not null)
-            {
-                main.Topmost     = false;
-                main.WindowState = WindowState.Minimized;
-            }
-            return state == WindowState.Minimized ? WindowState.Normal : state;
+            var windows = Application.Current.Windows
+                .OfType<Window>()
+                .Where(w => w.IsVisible)
+                .ToList();
+            foreach (var w in windows)
+                w.Hide();
+            return windows;
         });
 
-        // Give Windows time to actually hide the IDE window before showing the selector.
-        await Task.Delay(350);
+        // Give Windows time to actually remove the windows from screen.
+        await Task.Delay(200);
 
         var region = await Application.Current.Dispatcher.InvokeAsync(() =>
         {
@@ -37,15 +36,12 @@ public static class RegionSelectorService
             return win.SelectedRegion;
         });
 
-        // Restore IDE window.
+        // Restore all hidden windows.
         await Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            var main = Application.Current.MainWindow;
-            if (main is not null)
-            {
-                main.WindowState = prevState;
-                main.Activate();
-            }
+            foreach (var w in hiddenWindows)
+                w.Show();
+            Application.Current.MainWindow?.Activate();
         });
 
         return region;

@@ -86,10 +86,11 @@ public partial class RegionSelectorWindow : Window
     {
         if (!_dragging) return;
         _dragging = false;
-        RootCanvas.ReleaseMouseCapture();
         UpdateRect(e.GetPosition(RootCanvas));
 
+        // Build region while visual tree is still intact (before ReleaseMouseCapture/Close).
         SelectedRegion = BuildRegion();
+        RootCanvas.ReleaseMouseCapture();
         Close();
     }
 
