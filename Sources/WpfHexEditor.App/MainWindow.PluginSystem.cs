@@ -507,6 +507,19 @@ public partial class MainWindow
             _binaryAnalysisModule = new WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule();
             await _binaryAnalysisModule.InitializeAsync(hostContext).ConfigureAwait(true);
 
+            // Navigate-to-offset: any panel (e.g. String Extraction) publishes this; MainWindow opens
+            // the target file if needed then moves the HexEditor caret to the requested offset.
+            _ideEventBus.Subscribe<WpfHexEditor.Core.Events.IDEEvents.NavigateToOffsetEvent>(e =>
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    var hex = ActiveHexEditor;
+                    if (hex is null) return;
+                    if (e.Offset >= 0 && e.Offset < hex.Length)
+                        hex.SetPosition(e.Offset);
+                });
+            });
+
             // Hex Diff module — byte-level diff of two binary files with patch export.
             _hexDiffModule = new WpfHexEditor.App.HexDiff.HexDiffModule();
             await _hexDiffModule.InitializeAsync(hostContext).ConfigureAwait(true);
@@ -1469,6 +1482,7 @@ public partial class MainWindow
 
         // --- Hex editor ---
         reg.Register(typeof(EditorSelectionChangedEvent),   "Editor Selection Changed",   "HexEditorService");
+        reg.Register(typeof(NavigateToOffsetEvent),         "Navigate To Offset",         "BinaryAnalysis");
 
         // --- Code editor ---
         reg.Register(typeof(CodeEditorDocumentOpenedEvent),          "Code Document Opened",       "CodeEditor");

@@ -79,6 +79,49 @@ public sealed class JsonStringExporter : IStringExtractionExporter
     }
 }
 
+/// <summary>Exports string runs as an XML document.</summary>
+public sealed class XmlStringExporter : IStringExtractionExporter
+{
+    public string Format     => "XML";
+    public string FileFilter => "XML Files (*.xml)|*.xml";
+    public string DefaultExt => ".xml";
+
+    public async Task ExportAsync(IEnumerable<StringRun> runs, string path, CancellationToken ct = default)
+    {
+        await using var sw = new StreamWriter(path, append: false, Encoding.UTF8);
+        await sw.WriteLineAsync("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        await sw.WriteLineAsync("<strings>");
+        foreach (var run in runs)
+        {
+            ct.ThrowIfCancellationRequested();
+            var escaped = System.Security.SecurityElement.Escape(run.Value) ?? run.Value;
+            await sw.WriteLineAsync($"  <string offset=\"0x{run.Offset:X8}\" length=\"{run.Length}\" encoding=\"{run.Encoding}\">{escaped}</string>");
+        }
+        await sw.WriteLineAsync("</strings>");
+    }
+}
+
+/// <summary>Exports string runs as a Markdown table.</summary>
+public sealed class MarkdownStringExporter : IStringExtractionExporter
+{
+    public string Format     => "Markdown";
+    public string FileFilter => "Markdown Files (*.md)|*.md";
+    public string DefaultExt => ".md";
+
+    public async Task ExportAsync(IEnumerable<StringRun> runs, string path, CancellationToken ct = default)
+    {
+        await using var sw = new StreamWriter(path, append: false, Encoding.UTF8);
+        await sw.WriteLineAsync("| Offset | Length | Encoding | Value |");
+        await sw.WriteLineAsync("|--------|--------|----------|-------|");
+        foreach (var run in runs)
+        {
+            ct.ThrowIfCancellationRequested();
+            var escaped = run.Value.Replace("|", "\\|").Replace("\n", " ").Replace("\r", "");
+            await sw.WriteLineAsync($"| `0x{run.Offset:X8}` | {run.Length} | {run.Encoding} | {escaped} |");
+        }
+    }
+}
+
 /// <summary>Registry of all available exporters, keyed by format name.</summary>
 public static class StringExtractionExporters
 {
@@ -87,5 +130,7 @@ public static class StringExtractionExporters
         new TxtStringExporter(),
         new CsvStringExporter(),
         new JsonStringExporter(),
+        new XmlStringExporter(),
+        new MarkdownStringExporter(),
     ];
 }
