@@ -14,36 +14,40 @@ public static class RegionSelectorService
 {
     public static async Task<CaptureRegion?> SelectRegionAsync()
     {
-        // Must run on UI thread — minimize IDE first so user can draw over any app.
-        await Application.Current.Dispatcher.InvokeAsync(() =>
+        // Capture previous state BEFORE minimizing.
+        var prevState = await Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var main = Application.Current.MainWindow;
+            var state = main?.WindowState ?? WindowState.Normal;
             if (main is not null)
             {
                 main.Topmost     = false;
                 main.WindowState = WindowState.Minimized;
             }
+            return state == WindowState.Minimized ? WindowState.Normal : state;
         });
 
         // Give Windows time to actually hide the IDE window before showing the selector.
         await Task.Delay(350);
 
-        return await Application.Current.Dispatcher.InvokeAsync(() =>
+        var region = await Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            var main      = Application.Current.MainWindow;
-            var prevState = main?.WindowState ?? WindowState.Normal;
+            var win = new RegionSelectorWindow();
+            win.ShowDialog();
+            return win.SelectedRegion;
+        });
 
-            try
+        // Restore IDE window.
+        await Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            var main = Application.Current.MainWindow;
+            if (main is not null)
             {
-                var win = new RegionSelectorWindow();
-                win.ShowDialog();
-                return win.SelectedRegion;
-            }
-            finally
-            {
-                if (main is not null)
-                    main.WindowState = prevState;
+                main.WindowState = prevState;
+                main.Activate();
             }
         });
+
+        return region;
     }
 }
