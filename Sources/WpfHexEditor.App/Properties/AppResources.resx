@@ -1014,6 +1014,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>START</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>PINNED</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Feature</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Fix</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Perf</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Pin</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Unpin</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Remove from recent</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Search recent…</value>
+  </data>
+
   <data name="APP_SolutionPropertiesTitle" xml:space="preserve">
     <value>Solution Property Pages</value>
   </data>

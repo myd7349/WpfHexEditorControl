@@ -840,6 +840,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>START</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>FÄST</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Alla</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Funktion</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Buggfix</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Prestanda</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Fäst</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Lösgör</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Ta bort från senaste</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Sök i senaste…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Stäng</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Visa i:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Osparade ändringar</value></data>

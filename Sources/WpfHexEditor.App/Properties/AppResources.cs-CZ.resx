@@ -496,6 +496,39 @@
   <data name="APP_WikiButton" xml:space="preserve"><value>Wiki</value></data>
   <data name="APP_ReportIssueButton" xml:space="preserve"><value>Nahlásit problém</value></data>
   <data name="APP_FullChangelogButton" xml:space="preserve"><value>Celý changelog</value></data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>START</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>PŘIPNUTO</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Vše</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Funkce</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Oprava</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Výkon</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Připnout</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Odepnout</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Odebrat z posledních</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Hledat v posledních…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Zavřít</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Zobrazit v:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Neuložené změny</value></data>

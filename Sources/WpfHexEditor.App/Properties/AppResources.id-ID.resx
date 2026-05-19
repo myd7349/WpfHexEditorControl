@@ -536,6 +536,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>MULAI</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>DISEMATKAN</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Semua</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Fitur</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Perbaikan</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Performa</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Sematkan</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Lepas sematan</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Hapus dari terbaru</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Cari di terbaru…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Tutup</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Afficher dans :</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Perubahan belum disimpan</value></data>

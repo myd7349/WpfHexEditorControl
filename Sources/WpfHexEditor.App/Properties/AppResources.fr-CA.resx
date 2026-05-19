@@ -536,6 +536,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>DÉMARRAGE</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>ÉPINGLÉS</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Tout</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Fonctionnalité</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Correction</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Performance</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Épingler</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Désépingler</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Retirer des récents</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Rechercher dans les récents…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Fermer</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Afficher dans :</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Modifications non sauvegardées</value></data>

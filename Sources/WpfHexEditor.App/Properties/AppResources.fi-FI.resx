@@ -536,6 +536,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>ALOITUS</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>KIINNITETTY</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Kaikki</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Ominaisuus</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Korjaus</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Suorituskyky</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Kiinnitä</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Irrota</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Poista viimeisistä</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Etsi viimeisistä…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Sulje</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Näytä kohteessa:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Tallentamattomat muutokset</value></data>

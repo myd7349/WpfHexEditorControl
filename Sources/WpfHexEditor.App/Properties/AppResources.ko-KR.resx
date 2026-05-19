@@ -840,6 +840,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>시작</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>고정됨</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>전체</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>기능</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>수정</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>성능</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>고정</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>고정 해제</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>최근에서 제거</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>최근 검색…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>닫기</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>다음에서 보기:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>저장되지 않은 변경 사항</value></data>

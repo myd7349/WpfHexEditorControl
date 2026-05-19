@@ -536,6 +536,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>เริ่มต้น</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>ปักหมุด</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>ทั้งหมด</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>ฟีเจอร์</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>แก้ไข</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>ประสิทธิภาพ</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>ปักหมุด</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>เลิกปักหมุด</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>ลบออกจากล่าสุด</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>ค้นหาล่าสุด…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>ปิด</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Afficher dans :</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>การเปลี่ยนแปลงที่ยังไม่ได้บันทึก</value></data>

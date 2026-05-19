@@ -536,6 +536,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Повний журнал змін</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>ПОЧАТОК</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>ЗАКРІПЛЕНІ</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Усі</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Функція</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Виправлення</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Продуктивність</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Закріпити</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Відкріпити</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Видалити з нещодавніх</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Пошук у нещодавніх…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Закрити</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Переглянути в:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Незбережені зміни</value></data>

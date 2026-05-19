@@ -536,6 +536,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>START</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>FIXATE</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>Toate</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>Funcționalitate</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>Remediere</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>Performanță</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>Fixează</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>Defixează</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>Elimină din recente</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>Caută în recente…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>Închidere</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>Afișare în:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>Modificări nesalvate</value></data>

@@ -840,6 +840,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>प्रारंभ</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>पिन किए गए</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>सभी</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>फ़ीचर</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>सुधार</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>प्रदर्शन</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>पिन करें</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>अनपिन करें</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>हाल के से हटाएँ</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>हाल के में खोजें…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>खारिज करें</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>इसमें देखें:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>असहेजे बदलाव</value></data>

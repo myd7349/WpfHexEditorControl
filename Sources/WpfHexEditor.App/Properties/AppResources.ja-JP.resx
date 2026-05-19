@@ -840,6 +840,39 @@
   <data name="APP_FullChangelogButton" xml:space="preserve">
     <value>Full Changelog</value>
   </data>
+
+  <!-- Welcome Panel redesign (#138) -->
+  <data name="APP_StartTemplatesSection" xml:space="preserve">
+    <value>スタート</value>
+  </data>
+  <data name="APP_PinnedSection" xml:space="preserve">
+    <value>ピン留め</value>
+  </data>
+  <data name="APP_FilterAll" xml:space="preserve">
+    <value>すべて</value>
+  </data>
+  <data name="APP_FilterFeature" xml:space="preserve">
+    <value>機能</value>
+  </data>
+  <data name="APP_FilterFix" xml:space="preserve">
+    <value>修正</value>
+  </data>
+  <data name="APP_FilterPerf" xml:space="preserve">
+    <value>パフォーマンス</value>
+  </data>
+  <data name="APP_PinFile" xml:space="preserve">
+    <value>ピン留め</value>
+  </data>
+  <data name="APP_UnpinFile" xml:space="preserve">
+    <value>ピン留め解除</value>
+  </data>
+  <data name="APP_RemoveRecent" xml:space="preserve">
+    <value>最近から削除</value>
+  </data>
+  <data name="APP_SearchRecent" xml:space="preserve">
+    <value>最近を検索…</value>
+  </data>
+
   <data name="APP_Dismiss" xml:space="preserve"><value>閉じる</value></data>
   <data name="APP_ViewIn" xml:space="preserve"><value>表示先:</value></data>
   <data name="APP_UnsavedChanges" xml:space="preserve"><value>未保存の変更</value></data>
