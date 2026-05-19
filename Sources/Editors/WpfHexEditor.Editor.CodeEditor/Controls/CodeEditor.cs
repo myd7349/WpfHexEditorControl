@@ -4662,6 +4662,30 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             InvalidateVisual();
         }
 
+        // ── SDK service surface ───────────────────────────────────────────────
+        // Thin read-only accessors so CodeEditorServiceImpl does not reach into private fields.
+
+        /// <summary>Language identifier of the loaded document (e.g. "csharp"), or null.</summary>
+        public string? CurrentLanguage => Language?.Id;
+
+        /// <summary>Absolute path of the currently open file, or null.</summary>
+        public string? CurrentFilePath => _currentFilePath;
+
+        /// <summary>Current caret line (1-based).</summary>
+        public int CaretLine   => _cursorLine + 1;
+
+        /// <summary>Current caret column (1-based).</summary>
+        public int CaretColumn => _cursorColumn + 1;
+
+        /// <summary>Full document text.</summary>
+        public string? GetContent() => _document is not null ? GetText() : null;
+
+        /// <summary>Currently selected text, or empty string.</summary>
+        public string GetSelectedText() =>
+            _document is not null && !_selection.IsEmpty
+                ? _document.GetText(_selection.NormalizedStart, _selection.NormalizedEnd)
+                : string.Empty;
+
         /// <summary>
         /// Public 1-based overload — mirrors <see cref="INavigableDocument.NavigateTo"/> convention.
         /// Intended for SDK consumers (e.g. StringExtraction panel).
