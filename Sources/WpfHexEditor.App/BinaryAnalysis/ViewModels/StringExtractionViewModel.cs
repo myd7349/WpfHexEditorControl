@@ -501,6 +501,17 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     public IEnumerable<StringRun> GetAllRuns() => _allResults;
 
+    /// <summary>Notifies the IDE to apply the TBL at <paramref name="filePath"/> to the active HexEditor.</summary>
+    public void PublishLoadTbl(string filePath)
+    {
+        if (_context is null || string.IsNullOrEmpty(filePath)) return;
+        _context.IDEEvents.Publish(new LoadTblEvent
+        {
+            FilePath = filePath,
+            Source   = "BinaryAnalysis.StringExtraction",
+        });
+    }
+
     // ── IDisposable ───────────────────────────────────────────────────────────
 
     public void Dispose()

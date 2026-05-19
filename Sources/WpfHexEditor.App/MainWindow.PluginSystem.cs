@@ -522,6 +522,36 @@ public partial class MainWindow
                 });
             });
 
+            _ideEventBus.Subscribe<WpfHexEditor.Core.Events.IDEEvents.LoadTblEvent>(e =>
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    if (!System.IO.File.Exists(e.FilePath)) return;
+
+                    // Apply to active HexEditor immediately
+                    ActiveHexEditor?.LoadTBLFile(e.FilePath);
+
+                    // Add to TBL list under an "External" section if not already present
+                    var existing = _tblItems.FirstOrDefault(i =>
+                        i.Kind == WpfHexEditor.App.Models.TblSelectionKind.ExternalFile &&
+                        string.Equals(i.ExternalPath, e.FilePath, StringComparison.OrdinalIgnoreCase));
+
+                    if (existing is null)
+                    {
+                        if (!_tblItems.Any(i => i.Kind == WpfHexEditor.App.Models.TblSelectionKind.ExternalFile))
+                        {
+                            _tblItems.Add(WpfHexEditor.App.Models.TblSelectionItem.MakeSeparator());
+                            _tblItems.Add(WpfHexEditor.App.Models.TblSelectionItem.MakeHeader("External TBL"));
+                        }
+                        _tblItems.Add(WpfHexEditor.App.Models.TblSelectionItem.MakeExternalFile(e.FilePath));
+                    }
+
+                    // Sync the dropdown to show the newly loaded TBL
+                    SyncTblDropdownToActiveEditor();
+                    OutputLogger.Info($"TBL loaded externally: {System.IO.Path.GetFileName(e.FilePath)} (from {e.Source})");
+                });
+            });
+
             // Hex Diff module — byte-level diff of two binary files with patch export.
             _hexDiffModule = new WpfHexEditor.App.HexDiff.HexDiffModule();
             await _hexDiffModule.InitializeAsync(hostContext).ConfigureAwait(true);

@@ -3449,6 +3449,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     _editorProjectTbl[hex] = pi;
                 }
                 break;
+            case TblSelectionKind.ExternalFile when item.ExternalPath is { } ep && File.Exists(ep):
+                hex.LoadTBLFile(ep);
+                _editorProjectTbl[hex] = null;
+                break;
         }
         OutputLogger.Info($"TBL changed to: {item.DisplayName}");
     }
