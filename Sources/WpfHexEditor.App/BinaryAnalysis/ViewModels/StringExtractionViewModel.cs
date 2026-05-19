@@ -9,7 +9,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Data;
+using System.Windows.Media;
 using WpfHexEditor.App.BinaryAnalysis.Services;
+using WpfHexEditor.Core;
 using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.Core.ViewModels;
 using WpfHexEditor.Editor.Core.Documents;
@@ -320,6 +322,46 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
             ? string.Empty
             : $"{_totalCount} strings found, {_shownCount} shown";
     }
+
+    // ── Highlight ─────────────────────────────────────────────────────────────
+
+    private const string HighlightTag = "StringExtraction";
+
+    public void HighlightRuns(IEnumerable<StringRun> runs)
+    {
+        if (_context is null) return;
+        _context.HexEditor.ClearCustomBackgroundBlockByTag(HighlightTag);
+        foreach (var run in runs)
+        {
+            var block = new CustomBackgroundBlock(run.Offset, run.Length, ColorForEncoding(run.Encoding))
+            {
+                Description = $"[{run.Encoding}] {run.Value}",
+                Tag         = HighlightTag,
+                Opacity     = 0.35,
+            };
+            _context.HexEditor.AddCustomBackgroundBlock(block);
+        }
+    }
+
+    public void ClearHighlights()
+    {
+        _context?.HexEditor.ClearCustomBackgroundBlockByTag(HighlightTag);
+    }
+
+    private static SolidColorBrush ColorForEncoding(StringEncoding enc) => enc switch
+    {
+        StringEncoding.Tbl          or
+        StringEncoding.TblDte       or
+        StringEncoding.TblMte       => new SolidColorBrush(Color.FromRgb(0x4C, 0xAF, 0x50)), // green
+        StringEncoding.Ascii        => new SolidColorBrush(Color.FromRgb(0x42, 0x8B, 0xCA)), // blue
+        StringEncoding.Utf8         or
+        StringEncoding.Utf16Le      or
+        StringEncoding.Utf16Be      => new SolidColorBrush(Color.FromRgb(0x00, 0xBC, 0xD4)), // cyan
+        StringEncoding.Ebcdic       or
+        StringEncoding.EbcdicNoSpec => new SolidColorBrush(Color.FromRgb(0xFF, 0x98, 0x00)), // orange
+        StringEncoding.Latin1       => new SolidColorBrush(Color.FromRgb(0xAB, 0x47, 0xBC)), // violet
+        _                           => new SolidColorBrush(Colors.Gray),
+    };
 
     // ── Navigation ────────────────────────────────────────────────────────────
 

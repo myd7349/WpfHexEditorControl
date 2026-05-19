@@ -80,7 +80,12 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         var exportBtn = MakeToolbarButton("", "Export…");
         exportBtn.Click += (_, _) => OnExport(exportAll: true);
 
-        foreach (UIElement el in new UIElement[] { runBtn, cancelBtn, MakeToolbarSeparator(), tblBtn, MakeToolbarSeparator(), exportBtn })
+        var highlightBtn = MakeToolbarButton("", "Highlight runs in HexEditor");
+        highlightBtn.Click += (_, _) => _vm.HighlightRuns(_vm.GetAllRuns());
+        var clearHlBtn   = MakeToolbarButton("", "Clear highlights");
+        clearHlBtn.Click += (_, _) => _vm.ClearHighlights();
+
+        foreach (UIElement el in new UIElement[] { runBtn, cancelBtn, MakeToolbarSeparator(), tblBtn, MakeToolbarSeparator(), exportBtn, MakeToolbarSeparator(), highlightBtn, clearHlBtn })
         {
             DockPanel.SetDock(el, Dock.Left);
             btnRow.Children.Add(el);
@@ -433,6 +438,10 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         cm.Items.Add(MakeMenuItem("Copy Offset",      "", () => CopyField(r => $"0x{r.Offset:X8}")));
         cm.Items.Add(MakeMenuItem("Copy Row (TSV)",   "", () => CopyField(r => $"0x{r.Offset:X8}\t{r.Length}\t{r.Encoding}\t{r.Value}")));
         cm.Items.Add(new Separator());
+        cm.Items.Add(MakeMenuItem("Highlight Selected", "", () => _vm.HighlightRuns(_grid.SelectedItems.OfType<StringRun>())));
+        cm.Items.Add(MakeMenuItem("Highlight All",      "", () => _vm.HighlightRuns(_vm.GetAllRuns())));
+        cm.Items.Add(MakeMenuItem("Clear Highlights",   "", () => _vm.ClearHighlights()));
+        cm.Items.Add(new Separator());
         cm.Items.Add(MakeMenuItem("Export Selected…", "", () => OnExport(exportAll: false)));
         cm.Items.Add(MakeMenuItem("Export All…",      "", () => OnExport(exportAll: true)));
         return cm;
@@ -455,7 +464,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return item;
     }
 
-    // ── Status bar ────────────────────────────────────────────────────────────
+    // ── Status bar ──────────────────────────────────────────────────────────────────────────────────
 
     private UIElement BuildStatusBar()
     {
@@ -495,7 +504,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return bar;
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // ── Public API ────────────────────────────────────────────────────────────────────────────
 
     public void SetContext(IIDEHostContext context) => _vm.SetContext(context);
     public void OnFileOpened() => _vm.ResultsView.Refresh();
@@ -509,7 +518,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _vm.Dispose();
     }
 
-    // ── Actions ───────────────────────────────────────────────────────────────
+    // ── Actions ────────────────────────────────────────────────────────────────────────────────────
 
     private void NavigateSelected()
     {
