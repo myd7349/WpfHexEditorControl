@@ -80,8 +80,8 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         var exportBtn = MakeToolbarButton("", "Export…");
         exportBtn.Click += (_, _) => OnExport(exportAll: true);
 
-        var highlightBtn = MakeToolbarButton("", "Highlight runs in HexEditor");
-        highlightBtn.Click += (_, _) => _vm.HighlightRuns(_vm.GetAllRuns());
+        var highlightBtn = MakeToolbarButton("", "Highlight visible runs (filtered)");
+        highlightBtn.Click += (_, _) => _vm.HighlightRuns(_vm.ResultsView.Cast<StringRun>());
         var clearHlBtn   = MakeToolbarButton("", "Clear highlights");
         clearHlBtn.Click += (_, _) => _vm.ClearHighlights();
 
@@ -439,7 +439,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         cm.Items.Add(MakeMenuItem("Copy Row (TSV)",   "", () => CopyField(r => $"0x{r.Offset:X8}\t{r.Length}\t{r.Encoding}\t{r.Value}")));
         cm.Items.Add(new Separator());
         cm.Items.Add(MakeMenuItem("Highlight Selected", "", () => _vm.HighlightRuns(_grid.SelectedItems.OfType<StringRun>())));
-        cm.Items.Add(MakeMenuItem("Highlight All",      "", () => _vm.HighlightRuns(_vm.GetAllRuns())));
+        cm.Items.Add(MakeMenuItem("Highlight All",      "", () => _vm.HighlightRuns(_vm.ResultsView.Cast<StringRun>())));
         cm.Items.Add(MakeMenuItem("Clear Highlights",   "", () => _vm.ClearHighlights()));
         cm.Items.Add(new Separator());
         cm.Items.Add(MakeMenuItem("Export Selected…", "", () => OnExport(exportAll: false)));
