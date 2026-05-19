@@ -1044,6 +1044,12 @@ namespace WpfHexEditor.App.Properties {
         /// <summary>
         ///   Recherche une chaîne localisée semblable à Project Tables.
         /// </summary>
+        internal static string App_Editor_ExternalTables {
+            get {
+                return ResourceManager.GetString("App_Editor_ExternalTables", resourceCulture);
+            }
+        }
+
         internal static string App_Editor_ProjectTables {
             get {
                 return ResourceManager.GetString("App_Editor_ProjectTables", resourceCulture);

@@ -17,10 +17,6 @@
 namespace WpfHexEditor.Core.Events.IDEEvents;
 
 /// <summary>
-/// Published when a consumer wants the active HexEditor to scroll to and
-/// highlight a specific byte offset (e.g. double-click in String Extraction).
-/// </summary>
-/// <summary>
 /// Published when a component (e.g. StringExtraction panel) loads a TBL file and
 /// wants it applied to the active HexEditor and registered in the IDE's TBL list.
 /// </summary>

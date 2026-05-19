@@ -802,6 +802,7 @@
   <data name="App_Editor_HexEditor" xml:space="preserve"><value>Hex Editor</value></data>
   <data name="App_Editor_Encodings" xml:space="preserve"><value>Encodings</value></data>
   <data name="App_Editor_ProjectTables" xml:space="preserve"><value>Project Tables</value></data>
+  <data name="App_Editor_ExternalTables" xml:space="preserve"><value>External Tables</value></data>
   <data name="App_Editor_BuiltInTables" xml:space="preserve"><value>Built-in Tables</value></data>
   <data name="App_Editor_DefaultAscii" xml:space="preserve"><value>Default (ASCII)</value></data>
   <data name="App_Editor_FileNotFound" xml:space="preserve"><value>File not found:{0}{1}</value></data>

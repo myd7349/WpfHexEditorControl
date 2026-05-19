@@ -136,21 +136,17 @@ public static class StringExtractor
 
             if (cur.Offset >= highWater)
             {
-                // No overlap — keep unconditionally
                 runs[writeIdx++] = cur;
                 highWater = curEnd;
                 continue;
             }
 
-            // Overlap with the last retained run — compare priorities
             var prev = runs[writeIdx - 1];
             if (EncodingPriority(cur.Encoding) > EncodingPriority(prev.Encoding))
             {
-                // Incoming run wins — replace the previous retained run
                 runs[writeIdx - 1] = cur;
                 highWater = Math.Max(highWater, curEnd);
             }
-            // else: incoming run loses — discard (don't increment writeIdx)
         }
 
         runs.RemoveRange(writeIdx, runs.Count - writeIdx);

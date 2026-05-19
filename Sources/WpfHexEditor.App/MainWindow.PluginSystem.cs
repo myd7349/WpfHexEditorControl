@@ -33,6 +33,7 @@ using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Shell;
+using WpfHexEditor.App.Models;
 using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.PluginHost;
@@ -522,33 +523,40 @@ public partial class MainWindow
                 });
             });
 
-            _ideEventBus.Subscribe<WpfHexEditor.Core.Events.IDEEvents.LoadTblEvent>(e =>
+            _ideEventBus.Subscribe<LoadTblEvent>(e =>
             {
                 Dispatcher.InvokeAsync(() =>
                 {
-                    if (!System.IO.File.Exists(e.FilePath)) return;
+                    ActiveHexEditor?.LoadTBLFile(e.FilePath); // LoadTBLFile handles missing file internally
 
-                    // Apply to active HexEditor immediately
-                    ActiveHexEditor?.LoadTBLFile(e.FilePath);
-
-                    // Add to TBL list under an "External" section if not already present
-                    var existing = _tblItems.FirstOrDefault(i =>
-                        i.Kind == WpfHexEditor.App.Models.TblSelectionKind.ExternalFile &&
-                        string.Equals(i.ExternalPath, e.FilePath, StringComparison.OrdinalIgnoreCase));
+                    // Single O(n) scan: find existing entry and detect whether the section header exists
+                    bool hasSection = false;
+                    TblSelectionItem? existing = null;
+                    foreach (var item in _tblItems)
+                    {
+                        if (item.Kind == TblSelectionKind.ExternalFile)
+                        {
+                            hasSection = true;
+                            if (string.Equals(item.ExternalPath, e.FilePath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                existing = item;
+                                break;
+                            }
+                        }
+                    }
 
                     if (existing is null)
                     {
-                        if (!_tblItems.Any(i => i.Kind == WpfHexEditor.App.Models.TblSelectionKind.ExternalFile))
+                        if (!hasSection)
                         {
-                            _tblItems.Add(WpfHexEditor.App.Models.TblSelectionItem.MakeSeparator());
-                            _tblItems.Add(WpfHexEditor.App.Models.TblSelectionItem.MakeHeader("External TBL"));
+                            _tblItems.Add(TblSelectionItem.MakeSeparator());
+                            _tblItems.Add(TblSelectionItem.MakeHeader(AppResources.App_Editor_ExternalTables));
                         }
-                        _tblItems.Add(WpfHexEditor.App.Models.TblSelectionItem.MakeExternalFile(e.FilePath));
+                        _tblItems.Add(TblSelectionItem.MakeExternalFile(e.FilePath));
+                        SyncTblDropdownToActiveEditor();
                     }
 
-                    // Sync the dropdown to show the newly loaded TBL
-                    SyncTblDropdownToActiveEditor();
-                    OutputLogger.Info($"TBL loaded externally: {System.IO.Path.GetFileName(e.FilePath)} (from {e.Source})");
+                    OutputLogger.Info($"TBL loaded externally: {Path.GetFileName(e.FilePath)} (from {e.Source})");
                 });
             });
 
