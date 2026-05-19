@@ -174,7 +174,7 @@ public static class StringExtractor
         {
             int byteLen = charCount * 2;
             var enc = bigEndian ? Encoding.BigEndianUnicode : Encoding.Unicode;
-            results.Add(new StringRun(start, byteLen, encoding, enc.GetString(data.Slice(start, byteLen))));
+            results.Add(new StringRun(start, byteLen, encoding, enc.GetString(data.Slice(start, byteLen)), ToRawHex(data, start, byteLen)));
         }
     }
 
@@ -231,30 +231,15 @@ public static class StringExtractor
         int i = 0;
         int start = -1;
         int startByteEnd = 0;
-        int maxByteWidth = 1; // tracks widest match seen in current run
+        int maxByteWidth = 1;
         var sb = new StringBuilder();
-
-        void Flush()
-        {
-            if (start >= 0 && sb.Length >= minLength)
-            {
-                var enc = maxByteWidth >= 3 ? StringEncoding.TblMte
-                        : maxByteWidth == 2 ? StringEncoding.TblDte
-                        : StringEncoding.Tbl;
-                int len = startByteEnd - start;
-                results.Add(new StringRun(start, len, enc, sb.ToString(), ToRawHex(data, start, len)));
-            }
-            start = -1;
-            maxByteWidth = 1;
-            sb.Clear();
-        }
 
         while (i < data.Length)
         {
-            // EndBlock / EndLine → flush current run, skip the marker
             if (tbl.IsEndMarker(data, i, out int markerBytes))
             {
-                Flush();
+                FlushTbl(data, minLength, start, startByteEnd, maxByteWidth, sb, results);
+                start = -1; startByteEnd = 0; maxByteWidth = 1; sb.Clear();
                 i += markerBytes;
                 continue;
             }
@@ -269,11 +254,22 @@ public static class StringExtractor
             }
             else
             {
-                Flush();
+                FlushTbl(data, minLength, start, startByteEnd, maxByteWidth, sb, results);
+                start = -1; startByteEnd = 0; maxByteWidth = 1; sb.Clear();
                 i++;
             }
         }
-        Flush();
+        FlushTbl(data, minLength, start, startByteEnd, maxByteWidth, sb, results);
+    }
+
+    private static void FlushTbl(ReadOnlySpan<byte> data, int minLength, int start, int startByteEnd, int maxByteWidth, StringBuilder sb, List<StringRun> results)
+    {
+        if (start < 0 || sb.Length < minLength) return;
+        var enc = maxByteWidth >= 3 ? StringEncoding.TblMte
+                : maxByteWidth == 2 ? StringEncoding.TblDte
+                : StringEncoding.Tbl;
+        int len = startByteEnd - start;
+        results.Add(new StringRun(start, len, enc, sb.ToString(), ToRawHex(data, start, len)));
     }
 
     // ── Decode helpers ────────────────────────────────────────────────────────
