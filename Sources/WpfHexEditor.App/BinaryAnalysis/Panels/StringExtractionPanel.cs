@@ -458,14 +458,35 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         {
             Padding         = new Thickness(6, 2, 6, 2),
             BorderThickness = new Thickness(0, 1, 0, 0),
+            Height          = 20,
         };
         bar.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
         bar.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
 
+        var row = new DockPanel { LastChildFill = true };
+
+        var progress = new System.Windows.Controls.ProgressBar
+        {
+            Width           = 100,
+            Height          = 10,
+            IsIndeterminate = true,
+            Margin          = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        progress.SetBinding(UIElement.VisibilityProperty, new Binding(nameof(_vm.IsBusy))
+        {
+            Source    = _vm,
+            Converter = new BooleanToVisibilityConverter(),
+        });
+        DockPanel.SetDock(progress, Dock.Right);
+
         var statusTxt = new TextBlock { FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
         statusTxt.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
         statusTxt.SetBinding(TextBlock.TextProperty, new Binding(nameof(_vm.StatusText)) { Source = _vm });
-        bar.Child = statusTxt;
+
+        row.Children.Add(progress);
+        row.Children.Add(statusTxt);
+        bar.Child = row;
         return bar;
     }
 
