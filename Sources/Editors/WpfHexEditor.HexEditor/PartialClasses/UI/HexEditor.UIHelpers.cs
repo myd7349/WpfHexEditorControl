@@ -362,7 +362,6 @@ namespace WpfHexEditor.HexEditor
             if (fillItem != null) fillItem.IsEnabled = !ReadOnlyMode && SelectionLength > 0;
             if (replaceItem != null) replaceItem.IsEnabled = !ReadOnlyMode && SelectionLength > 0;
 
-            // Sync entropy heatmap checkmark
             if (LogicalTreeHelper.FindLogicalNode(contextMenu, "EntropyHeatmapMenuItem") is MenuItem entropyItem)
                 entropyItem.IsChecked = IsEntropyHeatmapEnabled;
 

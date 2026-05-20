@@ -11,6 +11,8 @@
 //              IDisposable — unsubscribes cleanly.
 //////////////////////////////////////////////////////
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Media;
 using System.Windows.Threading;
 using WpfHexEditor.Core;
@@ -111,36 +113,41 @@ public sealed class EntropyHeatmapService : IDisposable
         long length   = last - first;
         if (length <= 0) return;
 
-        int windowSize = _settings.EntropyWindowSize > 0
-            ? _settings.EntropyWindowSize
+        int windowSize = _settings.EntropyWindowSizeBytes > 0
+            ? _settings.EntropyWindowSizeBytes
             : (int)EntropyWindowSize.Medium;
 
         var theme = (EntropyColorTheme)Math.Clamp(_settings.EntropyColorTheme, 0, 2);
 
-        // Compute off-thread, inject on UI thread
-        Task.Run(() =>
-        {
-            var blocks = EntropyService.ComputeRange(filePath, first, length, windowSize);
-            return (blocks, theme);
-        }).ContinueWith(t =>
+        Task.Run(() => EntropyService.ComputeRange(filePath, first, length, windowSize))
+            .ContinueWith(t =>
         {
             if (t.IsFaulted || !_enabled || !_hex.IsActive) return;
 
-            _hex.ClearCustomBackgroundBlockByTag(Tag);
-            foreach (var eb in t.Result.blocks)
+            // Pre-compute one frozen brush per distinct entropy level to avoid N allocations.
+            var brushCache = new Dictionary<Color, SolidColorBrush>();
+            SolidColorBrush GetBrush(Color c)
             {
-                var color  = EntropyColorMapper.Map(eb.Entropy, t.Result.theme);
-                var brush  = new SolidColorBrush(color) { Opacity = 0.25 };
-                brush.Freeze();
-                _hex.AddCustomBackgroundBlock(new CustomBackgroundBlock
+                if (!brushCache.TryGetValue(c, out var b))
                 {
-                    StartOffset  = eb.Offset,
-                    Length       = eb.Length,
-                    Color        = brush,
-                    Description  = Tag,
-                    ShowInTooltip = false,
-                });
+                    b = new SolidColorBrush(c) { Opacity = 0.25 };
+                    b.Freeze();
+                    brushCache[c] = b;
+                }
+                return b;
             }
+
+            var cbBlocks = t.Result.Select(eb => new CustomBackgroundBlock
+            {
+                StartOffset   = eb.Offset,
+                Length        = eb.Length,
+                Color         = GetBrush(EntropyColorMapper.Map(eb.Entropy, theme)),
+                Description   = Tag,
+                ShowInTooltip = false,
+            }).ToList();
+
+            _hex.ClearCustomBackgroundBlockByTag(Tag);
+            _hex.AddCustomBackgroundBlockRange(cbBlocks);
         }, TaskScheduler.FromCurrentSynchronizationContext());
     }
 

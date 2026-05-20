@@ -61,7 +61,7 @@ public static class EntropyService
         int    windowSize)
     {
         var result = new List<EntropyBlock>((int)(length / windowSize) + 1);
-        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return result;
+        if (string.IsNullOrEmpty(filePath)) return result;
         if (windowSize <= 0) windowSize = (int)EntropyWindowSize.Medium;
 
         try

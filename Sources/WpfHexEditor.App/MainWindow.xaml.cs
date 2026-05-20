@@ -6346,7 +6346,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _editorSettingsService?.Apply(docEditor);
         }
 
-        // Sync entropy heatmap state from updated settings.
         if (_binaryAnalysisModule is not null)
         {
             var enabled = AppSettingsService.Instance.Current.HexEditorDefaults.ShowEntropyHeatmap;

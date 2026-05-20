@@ -43,7 +43,6 @@ public sealed partial class HexEditorDisplayPage : UserControl, IOptionsPage
             MouseWheelSpeedCombo.ItemsSource     = Enum.GetValues<MouseWheelSpeed>();
             ByteToolTipModeCombo.ItemsSource     = Enum.GetValues<ByteToolTipDisplayMode>();
 
-            // Entropy combos
             EntropyWindowSizeCombo.ItemsSource  = EntropyWindowSizeOptions.Select(x => x.Label).ToArray();
             EntropyColorThemeCombo.ItemsSource  = EntropyThemeOptions;
 
@@ -73,9 +72,8 @@ public sealed partial class HexEditorDisplayPage : UserControl, IOptionsPage
             // Split view toggle
             CheckShowSplitToggleButton.IsChecked    = s.HexEditorDefaults.ShowSplitToggleButton;
 
-            // Entropy heatmap
             CheckShowEntropyHeatmap.IsChecked = s.HexEditorDefaults.ShowEntropyHeatmap;
-            var wsIdx = Array.FindIndex(EntropyWindowSizeOptions, x => x.Value == s.HexEditorDefaults.EntropyWindowSize);
+            var wsIdx = Array.FindIndex(EntropyWindowSizeOptions, x => x.Value == s.HexEditorDefaults.EntropyWindowSizeBytes);
             EntropyWindowSizeCombo.SelectedIndex = wsIdx >= 0 ? wsIdx : 1;
             EntropyColorThemeCombo.SelectedIndex = Math.Clamp(s.HexEditorDefaults.EntropyColorTheme, 0, 2);
         }
@@ -116,11 +114,10 @@ public sealed partial class HexEditorDisplayPage : UserControl, IOptionsPage
 
         s.HexEditorDefaults.ShowSplitToggleButton = CheckShowSplitToggleButton.IsChecked == true;
 
-        // Entropy heatmap
         s.HexEditorDefaults.ShowEntropyHeatmap = CheckShowEntropyHeatmap.IsChecked == true;
         var wsIdx = EntropyWindowSizeCombo.SelectedIndex;
         if (wsIdx >= 0 && wsIdx < EntropyWindowSizeOptions.Length)
-            s.HexEditorDefaults.EntropyWindowSize = EntropyWindowSizeOptions[wsIdx].Value;
+            s.HexEditorDefaults.EntropyWindowSizeBytes = EntropyWindowSizeOptions[wsIdx].Value;
         s.HexEditorDefaults.EntropyColorTheme = Math.Clamp(EntropyColorThemeCombo.SelectedIndex, 0, 2);
     }
 

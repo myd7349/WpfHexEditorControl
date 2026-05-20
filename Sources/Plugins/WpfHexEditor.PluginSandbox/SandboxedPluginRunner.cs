@@ -23,6 +23,7 @@
 //     - Metrics are pushed every MetricsIntervalMs via SandboxMetricsRelay.
 // ==========================================================
 
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -591,6 +592,7 @@ internal sealed class IpcHexEditorService : IHexEditorService
     public void ConnectParsedFieldsPanel(IParsedFieldsPanel panel)  => ConnectedPanel = panel;
     public void DisconnectParsedFieldsPanel()                        => ConnectedPanel = null;
     public void AddCustomBackgroundBlock(WpfHexEditor.Core.CustomBackgroundBlock block) { }
+    public void AddCustomBackgroundBlockRange(IEnumerable<WpfHexEditor.Core.CustomBackgroundBlock> blocks) { }
     public void ClearCustomBackgroundBlockByTag(string tag)          { }
 
     // ── Methods (read/write deferred to future phase) ─────────────────────────

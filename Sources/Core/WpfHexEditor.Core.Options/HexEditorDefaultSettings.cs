@@ -177,9 +177,9 @@ public sealed class HexEditorDefaultSettings
     /// <summary>Show the Shannon entropy heatmap overlay on the active HexEditor viewport.</summary>
     public bool ShowEntropyHeatmap { get; set; } = false;
 
-    /// <summary>Sliding-window block size used when computing entropy samples.</summary>
-    public int EntropyWindowSize { get; set; } = 256;
+    /// <summary>Sliding-window block size in bytes used when computing entropy samples (128, 256, or 512).</summary>
+    public int EntropyWindowSizeBytes { get; set; } = 256;
 
-    /// <summary>Color theme used to render the entropy heatmap overlay.</summary>
-    public int EntropyColorTheme { get; set; } = 0; // 0=BlueRed, 1=Greyscale, 2=TrafficLight
+    /// <summary>Color theme index for the entropy heatmap overlay (0=BlueRed, 1=Greyscale, 2=TrafficLight).</summary>
+    public int EntropyColorTheme { get; set; } = 0;
 }
