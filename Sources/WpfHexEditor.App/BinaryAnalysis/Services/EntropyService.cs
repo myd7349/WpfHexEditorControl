@@ -8,6 +8,8 @@
 //              Pure static, no I/O, no WPF dependencies — standalone-safe.
 //////////////////////////////////////////////////////
 
+using System.IO;
+
 namespace WpfHexEditor.App.BinaryAnalysis.Services;
 
 /// <summary>Block size used for one entropy sample.</summary>

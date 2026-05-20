@@ -322,15 +322,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         get => _activeHexEditor;
         private set
         {
-            // Unsubscribe from the previous editor's file-change event.
+            // Unsubscribe from the previous editor's events.
             if (_activeHexEditor != null)
-                _activeHexEditor.FileExternallyChanged -= OnActiveFileExternallyChanged;
+            {
+                _activeHexEditor.FileExternallyChanged      -= OnActiveFileExternallyChanged;
+                _activeHexEditor.EntropyHeatmapToggleRequested -= OnEntropyHeatmapToggleRequested;
+            }
 
             _activeHexEditor = value;
 
             // Subscribe to the new editor and hide any stale file-change bar.
             if (_activeHexEditor != null)
-                _activeHexEditor.FileExternallyChanged += OnActiveFileExternallyChanged;
+            {
+                _activeHexEditor.FileExternallyChanged      += OnActiveFileExternallyChanged;
+                _activeHexEditor.EntropyHeatmapToggleRequested += OnEntropyHeatmapToggleRequested;
+                SyncEntropyHeatmapCheckmark();
+            }
 
             HideFileChangeInfoBar();
             OnPropertyChanged();
@@ -6339,6 +6346,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _editorSettingsService?.Apply(docEditor);
         }
 
+        // Sync entropy heatmap state from updated settings.
+        if (_binaryAnalysisModule is not null)
+        {
+            var enabled = AppSettingsService.Instance.Current.HexEditorDefaults.ShowEntropyHeatmap;
+            _binaryAnalysisModule.SetEntropyHeatmapEnabled(enabled);
+            SyncEntropyHeatmapCheckmark();
+        }
+
         _autoSerializeTimer?.Stop();
         _autoSerializeTimer = null;
         InitAutoSerializeTimer();
@@ -7500,4 +7515,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnStructureEditorHexNavigation(object? sender, (long Offset, long Length) nav)
         => Dispatcher.InvokeAsync(() => _activeHexEditor?.SetPosition(nav.Offset, nav.Length));
+
+    private void OnEntropyHeatmapToggleRequested(object? sender, EventArgs e)
+    {
+        if (_binaryAnalysisModule is null) return;
+        _binaryAnalysisModule.SetEntropyHeatmapEnabled(!_binaryAnalysisModule.IsEntropyHeatmapEnabled);
+        AppSettingsService.Instance.Save();
+        SyncEntropyHeatmapCheckmark();
+    }
+
+    private void SyncEntropyHeatmapCheckmark()
+    {
+        if (_activeHexEditor is null || _binaryAnalysisModule is null) return;
+        _activeHexEditor.IsEntropyHeatmapEnabled = _binaryAnalysisModule.IsEntropyHeatmapEnabled;
+    }
 }

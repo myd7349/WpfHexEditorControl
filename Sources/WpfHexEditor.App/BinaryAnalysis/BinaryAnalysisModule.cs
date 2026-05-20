@@ -10,6 +10,7 @@ using System.Windows;
 using WpfHexEditor.App.BinaryAnalysis.Panels;
 using WpfHexEditor.App.BinaryAnalysis.Services;
 using WpfHexEditor.App.BinaryAnalysis.ViewModels;
+using WpfHexEditor.Core.Options;
 using WpfHexEditor.SDK.Contracts;
 
 namespace WpfHexEditor.App.BinaryAnalysis;
@@ -33,11 +34,15 @@ internal sealed class BinaryAnalysisModule
     public const string ContentIdPe       = "panel-ba-pe";
     public const string ContentIdCipher   = "panel-ba-cipher";
 
-    private IIDEHostContext? _context;
+    private IIDEHostContext?       _context;
+    private HexEditorDefaultSettings? _settings;
     private bool _activated;
 
     // Shared service (one process-wide signature store)
     private readonly UserSignatureDbStore _sigStore = new();
+
+    // Entropy heatmap service — lifetime tied to this module
+    private EntropyHeatmapService? _entropyService;
 
     // Panels — built once, reused across dock/undock
     private StringExtractionPanel? _stringsPanel;
@@ -48,12 +53,17 @@ internal sealed class BinaryAnalysisModule
     private PeAnalyzerPanel?       _pePanel;
     private CipherDecoderPanel?    _cipherPanel;
 
-    public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
+    public Task InitializeAsync(IIDEHostContext context, HexEditorDefaultSettings settings, CancellationToken ct = default)
     {
-        _context = context;
+        _context  = context;
+        _settings = settings;
 
         context.HexEditor.FileOpened          += OnFileOpened;
         context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
+
+        _entropyService = new EntropyHeatmapService(context.HexEditor, settings);
+        if (settings.ShowEntropyHeatmap)
+            _entropyService.Enable();
 
         // Eagerly build all panels so that when RefreshModulePanels / RebuildVisualTree
         // fires (immediately after this returns), GetPanel() can return the real panel
@@ -64,6 +74,16 @@ internal sealed class BinaryAnalysisModule
         return Task.CompletedTask;
     }
 
+    /// <summary>Called by the host when the user toggles via context menu or options.</summary>
+    public void SetEntropyHeatmapEnabled(bool enabled)
+    {
+        if (_settings is not null) _settings.ShowEntropyHeatmap = enabled;
+        if (enabled) _entropyService?.Enable();
+        else         _entropyService?.Disable();
+    }
+
+    public bool IsEntropyHeatmapEnabled => _entropyService?.IsEnabled ?? false;
+
     public void Shutdown()
     {
         if (_context is not null)
@@ -72,6 +92,8 @@ internal sealed class BinaryAnalysisModule
             _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
             _context = null;
         }
+        _entropyService?.Dispose();
+        _entropyService = null;
     }
 
     public UIElement? GetPanel(string contentId)

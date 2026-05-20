@@ -508,7 +508,8 @@ public partial class MainWindow
 
             // Binary Analysis module — #110 strings, #111 hash, #112 carver, #118 sig db, #119 freq heatmap.
             _binaryAnalysisModule = new WpfHexEditor.App.BinaryAnalysis.BinaryAnalysisModule();
-            await _binaryAnalysisModule.InitializeAsync(hostContext).ConfigureAwait(true);
+            var hexDefaults = AppSettingsService.Instance.Current.HexEditorDefaults;
+            await _binaryAnalysisModule.InitializeAsync(hostContext, hexDefaults).ConfigureAwait(true);
 
             // Navigate-to-offset: any panel (e.g. String Extraction) publishes this; MainWindow opens
             // the target file if needed then moves the HexEditor caret to the requested offset.
