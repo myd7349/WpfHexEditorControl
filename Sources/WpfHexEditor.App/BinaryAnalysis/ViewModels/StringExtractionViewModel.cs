@@ -266,6 +266,11 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     // ── Document list maintenance ─────────────────────────────────────────────
 
+    public void RefreshOpenedFiles()
+    {
+        if (_context is not null) RebuildOpenedFilesList(_context);
+    }
+
     private void RebuildOpenedFilesList(IIDEHostContext ctx)
     {
         OpenedFiles.Clear();

@@ -50,6 +50,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
     private static SolidColorBrush Freeze(SolidColorBrush b) { b.Freeze(); return b; }
 
     private readonly StringExtractionViewModel _vm = new();
+    private readonly StringExtractionOptions _options = StringExtractionOptions.Load();
     private DataGrid _grid = null!;
     private TblStream? _loadedTbl;
     private bool _disposed;
@@ -180,6 +181,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         fileCombo.SetBinding(ItemsControl.ItemsSourceProperty, new Binding(nameof(_vm.OpenedFiles)) { Source = _vm });
         fileCombo.SetBinding(Selector.SelectedItemProperty,   new Binding(nameof(_vm.SelectedFile)) { Source = _vm, Mode = BindingMode.TwoWay });
         fileCombo.DisplayMemberPath = nameof(OpenedFileItem.DisplayName);
+        fileCombo.DropDownOpened += (_, _) => _vm.RefreshOpenedFiles();
 
         var minBox = new TextBox
         {
@@ -614,6 +616,8 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _loadedTbl = null;
         _vm.SetTblTable(null);
         UpdateTblIndicator(null);
+        _options.LastTblFilePath = null;
+        _options.Save();
     }
 
     private static string EncodingLabel(StringEncoding enc) => enc switch
@@ -984,7 +988,21 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    public void SetContext(IIDEHostContext context) => _vm.SetContext(context);
+    public void SetContext(IIDEHostContext context)
+    {
+        _vm.SetContext(context);
+        RestoreLastTbl();
+    }
+
+    private void RestoreLastTbl()
+    {
+        var path = _options.LastTblFilePath;
+        if (path is null || !File.Exists(path)) return;
+        _loadedTbl?.Dispose();
+        _loadedTbl = new TblStream(path);
+        _vm.SetTblTable(new TblDecodeTableAdapter(_loadedTbl));
+        UpdateTblIndicator(path);
+    }
     public void OnFileOpened() => _vm.ResultsView.Refresh();
 
     public void Dispose()
@@ -1049,6 +1067,8 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _vm.SetTblTable(new TblDecodeTableAdapter(_loadedTbl));
         _vm.PublishLoadTbl(dlg.FileName);
         UpdateTblIndicator(dlg.FileName);
+        _options.LastTblFilePath = dlg.FileName;
+        _options.Save();
     }
 
     private void OnExport(bool exportAll)
