@@ -1505,6 +1505,43 @@
   <data name="StringExtract_ColLength"                xml:space="preserve"><value>Length</value></data>
   <data name="StringExtract_ColEncoding"              xml:space="preserve"><value>Encoding</value></data>
   <data name="StringExtract_ColValue"                 xml:space="preserve"><value>Value</value></data>
+  <data name="StringExtract_ColBytes"                 xml:space="preserve"><value>Bytes</value></data>
+  <data name="StringExtract_ColDup"                   xml:space="preserve"><value>Dup</value></data>
+  <data name="StringExtract_ColContext"               xml:space="preserve"><value>Context</value></data>
+  <data name="StringExtract_TtOffset"                 xml:space="preserve"><value>Byte offset of the string in the file (hexadecimal)</value></data>
+  <data name="StringExtract_TtLength"                 xml:space="preserve"><value>Number of raw bytes occupied by this string</value></data>
+  <data name="StringExtract_TtEncoding"               xml:space="preserve"><value>Detected encoding: ASCII, UTF-16 LE/BE, UTF-8, Latin-1, EBCDIC, or TBL</value></data>
+  <data name="StringExtract_TtBytes"                  xml:space="preserve"><value>Raw hex bytes of the matched region</value></data>
+  <data name="StringExtract_TtValue"                  xml:space="preserve"><value>Decoded string value</value></data>
+  <data name="StringExtract_TtDup"                    xml:space="preserve"><value>Number of strings with the same decoded value (orange = duplicates found)</value></data>
+  <data name="StringExtract_TtContext"                xml:space="preserve"><value>4 bytes before (grey) + matched bytes (colored by encoding) + 4 bytes after (grey)</value></data>
+  <data name="StringExtract_TtRegex"                  xml:space="preserve"><value>Regex filter — when ON, the search box is treated as a regular expression</value></data>
+  <data name="StringExtract_TtOutdated"               xml:space="preserve"><value>File has changed since last scan — press F5 to rescan</value></data>
+  <data name="StringExtract_TtSyncCaret"              xml:space="preserve"><value>Sync HexEditor caret to grid</value></data>
+  <data name="StringExtract_TtHighlight"              xml:space="preserve"><value>Highlight visible runs</value></data>
+  <data name="StringExtract_TtClearHighlight"         xml:space="preserve"><value>Clear highlights</value></data>
+  <data name="StringExtract_TtExport"                 xml:space="preserve"><value>Export…</value></data>
+  <data name="StringExtract_TtLoadTbl"                xml:space="preserve"><value>Load TBL file…</value></data>
+  <data name="StringExtract_TtRun"                    xml:space="preserve"><value>Run (F5)</value></data>
+  <data name="StringExtract_TtCancel"                 xml:space="preserve"><value>Cancel</value></data>
+  <data name="StringExtract_TtRemoveTbl"              xml:space="preserve"><value>Remove TBL</value></data>
+  <data name="StringExtract_TtPin"                    xml:space="preserve"><value>Pin/Unpin (survives filter)</value></data>
+  <data name="StringExtract_TtMinLength"              xml:space="preserve"><value>Min string length</value></data>
+  <data name="StringExtract_TtMinUniq"                xml:space="preserve"><value>Minimum distinct characters in the string</value></data>
+  <data name="StringExtract_TtOffsetFrom"             xml:space="preserve"><value>Filter from offset (hex)</value></data>
+  <data name="StringExtract_TtOffsetTo"               xml:space="preserve"><value>Filter to offset (hex, 0 = no limit)</value></data>
+  <data name="StringExtract_TtExclEntropy"            xml:space="preserve"><value>Hide runs in high-entropy blocks</value></data>
+  <data name="StringExtract_TtFile"                   xml:space="preserve"><value>File to scan</value></data>
+  <data name="StringExtract_TtSearch"                 xml:space="preserve"><value>Live filter (F3 = next, Shift+F3 = prev)</value></data>
+  <data name="StringExtract_TtOutdatedBadge"          xml:space="preserve"><value> OUTDATED</value></data>
+  <data name="StringExtract_ExclHighEntropy"          xml:space="preserve"><value>Excl. high entropy</value></data>
+  <data name="StringExtract_LabelFile"                xml:space="preserve"><value>File:</value></data>
+  <data name="StringExtract_LabelEncodings"           xml:space="preserve"><value>Encodings:</value></data>
+  <data name="StringExtract_LabelMin"                 xml:space="preserve"><value>Min:</value></data>
+  <data name="StringExtract_LabelTbl"                 xml:space="preserve"><value>TBL:</value></data>
+  <data name="StringExtract_LabelUniq"                xml:space="preserve"><value>Uniq≥</value></data>
+  <data name="StringExtract_LabelOffset"              xml:space="preserve"><value>Offset:</value></data>
+  <data name="StringExtract_RegexLabel"               xml:space="preserve"><value>.*</value></data>
 
   <data name="HashInspector_HashFile"                 xml:space="preserve"><value>Hash File</value></data>
   <data name="HashInspector_HashSelection"            xml:space="preserve"><value>Hash Selection</value></data>

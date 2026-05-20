@@ -88,25 +88,25 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         DockPanel.SetDock(searchBox, Dock.Right);
         btnRow.Children.Add(searchBox);
 
-        var runBtn       = MakeToolbarButton("", "Run (F5)");
+        var runBtn       = MakeToolbarButton("", "StringExtract_TtRun");
         runBtn.Click    += async (_, _) => await _vm.RunAsync();
-        var cancelBtn    = MakeToolbarButton("", "Cancel");
+        var cancelBtn    = MakeToolbarButton("", "StringExtract_TtCancel");
         cancelBtn.Click += (_, _) => _vm.Cancel();
-        var tblBtn       = MakeToolbarButton("", "Load TBL file…");
+        var tblBtn       = MakeToolbarButton("", "StringExtract_TtLoadTbl");
         tblBtn.Click    += OnLoadTbl;
-        var exportBtn    = MakeToolbarButton("", "Export…");
+        var exportBtn    = MakeToolbarButton("", "StringExtract_TtExport");
         exportBtn.Click += (_, _) => OnExport(exportAll: true);
 
-        var highlightBtn  = MakeToolbarButton("", "Highlight visible runs");
+        var highlightBtn  = MakeToolbarButton("", "StringExtract_TtHighlight");
         highlightBtn.Click += (_, _) => _vm.HighlightRuns(_vm.ResultsView.Cast<StringRun>());
-        var clearHlBtn    = MakeToolbarButton("", "Clear highlights");
+        var clearHlBtn    = MakeToolbarButton("", "StringExtract_TtClearHighlight");
         clearHlBtn.Click += (_, _) => _vm.ClearHighlights();
 
         // Caret sync toggle
         var syncBtn = new ToggleButton
         {
             Content  = "",
-            ToolTip  = "Sync HexEditor caret to grid",
+            ToolTip  = null,
             Height   = 20, Width = 22,
             Padding  = new Thickness(0),
             BorderThickness = new Thickness(0),
@@ -117,19 +117,20 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         };
         syncBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
         syncBtn.SetResourceReference(BackgroundProperty, "Panel_ToolbarBrush");
+        syncBtn.SetResourceReference(ToolTipProperty,   "StringExtract_TtSyncCaret");
         syncBtn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.SyncCaretToGrid)) { Source = _vm, Mode = BindingMode.TwoWay });
 
         _outdatedBadge = new TextBlock
         {
-            Text = " OUTDATED",
             FontSize = 10,
             FontWeight = FontWeights.Bold,
             Foreground = Brushes.OrangeRed,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(6, 0, 0, 0),
             Visibility = Visibility.Collapsed,
-            ToolTip = "File has changed since last scan — press F5 to rescan",
         };
+        _outdatedBadge.SetResourceReference(TextBlock.TextProperty,   "StringExtract_TtOutdatedBadge");
+        _outdatedBadge.SetResourceReference(ToolTipProperty,          "StringExtract_TtOutdated");
 
         foreach (UIElement el in new UIElement[]
         {
@@ -147,8 +148,9 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         // Row 2: file + encodings + min length + TBL indicator
         var filterRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 4, 2) };
 
-        var fileCombo = new ComboBox { Width = 160, Height = 20, FontSize = 11, Margin = new Thickness(0, 0, 8, 0), ToolTip = "File to scan" };
+        var fileCombo = new ComboBox { Width = 160, Height = 20, FontSize = 11, Margin = new Thickness(0, 0, 8, 0) };
         fileCombo.SetResourceReference(ForegroundProperty, "TE_Foreground");
+        fileCombo.SetResourceReference(ToolTipProperty,    "StringExtract_TtFile");
         fileCombo.SetBinding(ItemsControl.ItemsSourceProperty, new Binding(nameof(_vm.OpenedFiles)) { Source = _vm });
         fileCombo.SetBinding(Selector.SelectedItemProperty,   new Binding(nameof(_vm.SelectedFile)) { Source = _vm, Mode = BindingMode.TwoWay });
         fileCombo.DisplayMemberPath = nameof(OpenedFileItem.DisplayName);
@@ -158,10 +160,10 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             Width = 32, Height = 20, FontSize = 11, TextAlignment = TextAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Text    = _vm.MinLength.ToString(),
-            ToolTip = "Min string length",
         };
         minBox.SetResourceReference(BackgroundProperty, "TE_Background");
         minBox.SetResourceReference(ForegroundProperty, "TE_Foreground");
+        minBox.SetResourceReference(ToolTipProperty,    "StringExtract_TtMinLength");
         minBox.LostFocus += (_, _) =>
         {
             if (int.TryParse(minBox.Text, out int v)) _vm.MinLength = v;
@@ -169,11 +171,11 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         };
         minBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) Keyboard.ClearFocus(); };
 
-        filterRow.Children.Add(MakeLabel("File:"));
+        filterRow.Children.Add(MakeLabelFromKey("StringExtract_LabelFile"));
         filterRow.Children.Add(fileCombo);
-        filterRow.Children.Add(MakeLabel("Encodings:"));
+        filterRow.Children.Add(MakeLabelFromKey("StringExtract_LabelEncodings"));
         filterRow.Children.Add(BuildEncodingDropdown());
-        filterRow.Children.Add(MakeLabel("Min:"));
+        filterRow.Children.Add(MakeLabelFromKey("StringExtract_LabelMin"));
         filterRow.Children.Add(minBox);
         filterRow.Children.Add(BuildTblIndicator());
 
@@ -196,22 +198,22 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             getValue: () => _vm.MinUniqueChars,
             setValue: v => _vm.MinUniqueChars = v,
             min: 1, max: 20, width: 36,
-            tooltip: "Minimum distinct characters in the string");
-        row.Children.Add(MakeLabel("Uniq≥"));
+            tooltip: "StringExtract_TtMinUniq");
+        row.Children.Add(MakeLabelFromKey("StringExtract_LabelUniq"));
         row.Children.Add(uniqueCharsUpDown);
 
         // Offset range
-        row.Children.Add(MakeLabel("Offset:"));
+        row.Children.Add(MakeLabelFromKey("StringExtract_LabelOffset"));
         var fromBox = BuildHexBox(
             getValue: () => _vm.RangeFrom,
             setValue: v => _vm.RangeFrom = v,
-            tooltip: "Filter from offset (hex)");
+            tooltip: "StringExtract_TtOffsetFrom");
         row.Children.Add(fromBox);
         row.Children.Add(MakeLabel("–"));
         var toBox = BuildHexBox(
             getValue: () => _vm.RangeTo == long.MaxValue ? 0 : _vm.RangeTo,
             setValue: v => _vm.RangeTo = v == 0 ? long.MaxValue : v,
-            tooltip: "Filter to offset (hex, 0 = no limit)");
+            tooltip: "StringExtract_TtOffsetTo");
         row.Children.Add(toBox);
 
         row.Children.Add(new System.Windows.Shapes.Rectangle { Width = 6, Height = 1, Fill = Brushes.Transparent });
@@ -219,12 +221,12 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         // Entropy toggle + threshold slider
         var entropyChk = new CheckBox
         {
-            Content  = "Excl. high entropy",
-            ToolTip  = "Hide runs in high-entropy blocks",
             FontSize = 10,
             VerticalAlignment = VerticalAlignment.Center,
         };
         entropyChk.SetResourceReference(ForegroundProperty, "TE_Foreground");
+        entropyChk.SetResourceReference(ContentProperty,    "StringExtract_ExclHighEntropy");
+        entropyChk.SetResourceReference(ToolTipProperty,    "StringExtract_TtExclEntropy");
         entropyChk.SetBinding(CheckBox.IsCheckedProperty, new Binding(nameof(_vm.ExcludeHighEntropy)) { Source = _vm, Mode = BindingMode.TwoWay });
 
         var thresholdSlider = new Slider
@@ -255,11 +257,11 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         {
             Width   = 140,
             Tag     = "Search strings…",
-            ToolTip = "Live filter (F3 = next, Shift+F3 = prev)",
             Margin  = new Thickness(4, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        box.SetResourceReference(StyleProperty, "PanelSearchBoxStyle");
+        box.SetResourceReference(StyleProperty,   "PanelSearchBoxStyle");
+        box.SetResourceReference(ToolTipProperty, "StringExtract_TtSearch");
         box.SetBinding(TextBox.TextProperty, new Binding(nameof(_vm.Filter))
         {
             Source = _vm, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
@@ -280,10 +282,10 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             Margin          = new Thickness(2, 0, 0, 0),
             Cursor          = Cursors.Hand,
             VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = "Regex filter — when ON, the search box is treated as a regular expression",
         };
         chip.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
         chip.SetResourceReference(Border.BackgroundProperty,  "TE_Background");
+        chip.SetResourceReference(ToolTipProperty,            "StringExtract_TtRegex");
 
         var label = new TextBlock
         {
@@ -329,8 +331,9 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             Width = width, Height = 18, FontSize = 10,
             TextAlignment = TextAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
-            Text = getValue().ToString(), ToolTip = tooltip,
+            Text = getValue().ToString(),
         };
+        txt.SetResourceReference(ToolTipProperty, tooltip);
 
         void Commit()
         {
@@ -363,9 +366,9 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             Width = 70, Height = 18, FontSize = 10,
             TextAlignment = TextAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
-            ToolTip = tooltip,
             Text = $"{getValue():X}",
         };
+        txt.SetResourceReference(ToolTipProperty, tooltip);
 
         void Commit()
         {
@@ -380,12 +383,11 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return txt;
     }
 
-    private static Button MakeToolbarButton(string glyph, string tooltip)
+    private static Button MakeToolbarButton(string glyph, string tooltipKey)
     {
         var btn = new Button
         {
             Content          = glyph,
-            ToolTip          = tooltip,
             Width            = 22,
             Height           = 22,
             Padding          = new Thickness(0),
@@ -399,6 +401,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         };
         btn.SetResourceReference(StyleProperty,      "PanelIconButtonStyle");
         btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+        btn.SetResourceReference(ToolTipProperty,    tooltipKey);
         return btn;
     }
 
@@ -417,6 +420,18 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             Margin = new Thickness(0, 0, 4, 0), FontSize = 11,
         };
         tb.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+        return tb;
+    }
+
+    private TextBlock MakeLabelFromKey(string resourceKey)
+    {
+        var tb = new TextBlock
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 4, 0), FontSize = 11,
+        };
+        tb.SetResourceReference(TextBlock.TextProperty, resourceKey);
+        tb.SetResourceReference(ForegroundProperty,     "Panel_ToolbarForegroundBrush");
         return tb;
     }
 
@@ -523,7 +538,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
         _tblClearBtn = new Button
         {
-            Content = "", ToolTip = "Remove TBL",
+            Content = "",
             Width = 16, Height = 16, Padding = new Thickness(0), BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
             FontFamily = new FontFamily("Segoe MDL2 Assets"),
@@ -531,9 +546,10 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             Visibility = Visibility.Collapsed, FocusVisualStyle = null,
         };
         _tblClearBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+        _tblClearBtn.SetResourceReference(ToolTipProperty,    "StringExtract_TtRemoveTbl");
         _tblClearBtn.Click += (_, _) => ClearTbl();
 
-        panel.Children.Add(MakeLabel("TBL:"));
+        panel.Children.Add(MakeLabelFromKey("StringExtract_LabelTbl"));
         panel.Children.Add(_tblNameLabel);
         panel.Children.Add(_tblClearBtn);
         return panel;
@@ -620,13 +636,13 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _grid.RowStyle = rowStyle;
 
         _grid.Columns.Add(MakePinColumn());
-        _grid.Columns.Add(MakeCol("Offset",   nameof(StringRun.Offset),   80,  "X8"));
-        _grid.Columns.Add(MakeCol("Length",   nameof(StringRun.Length),   55));
-        _grid.Columns.Add(MakeCol("Encoding", nameof(StringRun.Encoding), 85));
-        _grid.Columns.Add(MakeCol("Bytes",    nameof(StringRun.RawHex),   160));
+        _grid.Columns.Add(MakeCol("StringExtract_ColOffset",   nameof(StringRun.Offset),   80,  "X8",  "StringExtract_TtOffset"));
+        _grid.Columns.Add(MakeCol("StringExtract_ColLength",   nameof(StringRun.Length),   55,  null,  "StringExtract_TtLength"));
+        _grid.Columns.Add(MakeCol("StringExtract_ColEncoding", nameof(StringRun.Encoding), 85,  null,  "StringExtract_TtEncoding"));
+        _grid.Columns.Add(MakeCol("StringExtract_ColBytes",    nameof(StringRun.RawHex),   160, null,  "StringExtract_TtBytes"));
         _grid.Columns.Add(MakeDuplicateColumn());
         _grid.Columns.Add(MakeContextBytesColumn());
-        _grid.Columns.Add(MakeCol("Value",    nameof(StringRun.Value),    0));
+        _grid.Columns.Add(MakeCol("StringExtract_ColValue",    nameof(StringRun.Value),    0,   null,  "StringExtract_TtValue"));
 
         // Sync SelectedGridItem in VM when DataGrid selection changes
         _grid.SelectionChanged += (_, _) =>
@@ -666,7 +682,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         btnFactory.SetValue(Button.BorderThicknessProperty, new Thickness(0));
         btnFactory.SetValue(Button.BackgroundProperty, Brushes.Transparent);
         btnFactory.SetValue(Button.FocusVisualStyleProperty, null as Style);
-        btnFactory.SetValue(Button.ToolTipProperty, "Pin/Unpin (survives filter)");
+        btnFactory.SetResourceReference(Button.ToolTipProperty, "StringExtract_TtPin");
         btnFactory.AddHandler(Button.ClickEvent, new RoutedEventHandler((s, _) =>
         {
             if (s is FrameworkElement fe && fe.DataContext is StringRun r)
@@ -679,9 +695,12 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
     private DataGridTemplateColumn MakeDuplicateColumn()
     {
+        var dupHdr = new TextBlock();
+        dupHdr.SetResourceReference(TextBlock.TextProperty, "StringExtract_ColDup");
+        dupHdr.SetResourceReference(ToolTipProperty,        "StringExtract_TtDup");
         var col = new DataGridTemplateColumn
         {
-            Header = "Dup",
+            Header = dupHdr,
             Width  = new DataGridLength(40),
             CanUserSort = false,
         };
@@ -710,12 +729,16 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
     private DataGridTemplateColumn MakeContextBytesColumn()
     {
+        var hdrTb = new TextBlock();
+        hdrTb.SetResourceReference(TextBlock.TextProperty, "StringExtract_ColContext");
+        hdrTb.SetResourceReference(ToolTipProperty,        "StringExtract_TtContext");
         var col = new DataGridTemplateColumn
         {
-            Header = "Context",
-            Width  = new DataGridLength(100),
+            Header = hdrTb,
+            Width  = new DataGridLength(180),
             CanUserSort = false,
         };
+
         var cellTemplate = new DataTemplate();
         var tbFactory = new FrameworkElementFactory(typeof(TextBlock));
         tbFactory.SetValue(TextBlock.FontSizeProperty, 9d);
@@ -726,7 +749,8 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
             if (s is not TextBlock tb) return;
             void Refresh(object? _, DependencyPropertyChangedEventArgs __)
             {
-                tb.Text = tb.DataContext is StringRun r ? GetContextBytes(r, 4) : string.Empty;
+                tb.Inlines.Clear();
+                if (tb.DataContext is StringRun r) BuildContextInlines(tb, r, 4);
             }
             tb.DataContextChanged += Refresh;
             tb.Unloaded += (_, _) => tb.DataContextChanged -= Refresh;
@@ -737,34 +761,63 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return col;
     }
 
-    private string GetContextBytes(StringRun run, int n)
+    private void BuildContextInlines(TextBlock tb, StringRun run, int n)
     {
         var buf = _vm.LastBuffer;
-        if (buf is null) return string.Empty;
+        if (buf is null) return;
+
         long start = Math.Max(0, run.Offset - n);
         long end   = Math.Min(buf.Length - 1, run.Offset + run.Length + n - 1);
-        var sb = new StringBuilder();
-        for (long i = start; i <= end; i++)
+
+        var encodingColor = EncodingChipColor(run.Encoding);
+        var contextColor  = new SolidColorBrush(Color.FromRgb(0x70, 0x70, 0x70));
+
+        // Pre-context bytes (grey)
+        for (long i = start; i < run.Offset; i++)
         {
-            if (i == run.Offset)         sb.Append('[');
-            if (i == run.Offset + run.Length) sb.Append(']');
-            sb.Append(buf[i].ToString("X2"));
-            if (i < end) sb.Append(' ');
+            if (tb.Inlines.Count > 0) tb.Inlines.Add(new System.Windows.Documents.Run(" ") { Foreground = contextColor });
+            tb.Inlines.Add(new System.Windows.Documents.Run(buf[i].ToString("X2")) { Foreground = contextColor });
         }
-        if (run.Offset + run.Length <= end) sb.Append(']');
-        return sb.ToString();
+
+        // Run bytes (encoding color, slightly brighter)
+        for (long i = run.Offset; i < run.Offset + run.Length && i <= end; i++)
+        {
+            if (tb.Inlines.Count > 0) tb.Inlines.Add(new System.Windows.Documents.Run(" ") { Foreground = encodingColor });
+            tb.Inlines.Add(new System.Windows.Documents.Run(buf[i].ToString("X2")) { Foreground = encodingColor, FontWeight = FontWeights.SemiBold });
+        }
+
+        // Post-context bytes (grey)
+        for (long i = run.Offset + run.Length; i <= end; i++)
+        {
+            if (tb.Inlines.Count > 0) tb.Inlines.Add(new System.Windows.Documents.Run(" ") { Foreground = contextColor });
+            tb.Inlines.Add(new System.Windows.Documents.Run(buf[i].ToString("X2")) { Foreground = contextColor });
+        }
     }
 
-    private static DataGridTextColumn MakeCol(string header, string path, double width, string? format = null)
+    private static DataGridTextColumn MakeCol(string header, string path, double width, string? format = null, string? tooltip = null)
     {
         var binding = new Binding(path);
         if (format is not null) binding.StringFormat = $"{{0:{format}}}";
-        return new DataGridTextColumn
+        var col = new DataGridTextColumn
         {
-            Header  = header,
             Binding = binding,
             Width   = width > 0 ? new DataGridLength(width) : DataGridLength.Auto,
         };
+        // headerKey and tooltip are resource keys when present
+        if (tooltip is not null)
+        {
+            var hdr = new TextBlock();
+            hdr.SetResourceReference(TextBlock.TextProperty, header);
+            hdr.SetResourceReference(ToolTipProperty,        tooltip);
+            col.Header = hdr;
+        }
+        else
+        {
+            var hdr = new TextBlock();
+            hdr.SetResourceReference(TextBlock.TextProperty, header);
+            col.Header = hdr;
+        }
+        return col;
     }
 
     // ── Context menu ──────────────────────────────────────────────────────────
