@@ -55,6 +55,12 @@ internal sealed class BinaryAnalysisModule
         context.HexEditor.FileOpened          += OnFileOpened;
         context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
 
+        // Eagerly build all panels so that when RefreshModulePanels / RebuildVisualTree
+        // fires (immediately after this returns), GetPanel() can return the real panel
+        // instead of deferring to a transparent placeholder that never gets replaced on
+        // inactive tabs.
+        EnsureActivated();
+
         return Task.CompletedTask;
     }
 
