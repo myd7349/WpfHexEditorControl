@@ -1003,7 +1003,11 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _vm.SetTblTable(new TblDecodeTableAdapter(_loadedTbl));
         UpdateTblIndicator(path);
     }
-    public void OnFileOpened() => _vm.ResultsView.Refresh();
+    public void OnFileOpened()
+    {
+        _vm.RefreshOpenedFiles();
+        _vm.ResultsView.Refresh();
+    }
 
     public void Dispose()
     {
