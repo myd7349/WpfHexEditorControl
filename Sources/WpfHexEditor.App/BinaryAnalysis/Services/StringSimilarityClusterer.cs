@@ -21,11 +21,18 @@ internal static class StringSimilarityClusterer
         int minLength    = 6,
         int maxDistance  = 2)
     {
-        var result  = new Dictionary<StringRun, int>(runs.Count);
+        var result   = new Dictionary<StringRun, int>(runs.Count);
         var eligible = runs.Where(r => r.Value.Length >= minLength).ToList();
 
+        if (eligible.Count > 10_000)
+        {
+            foreach (var run in runs) result[run] = 0;
+            return result;
+        }
+
         // Union-Find over eligible indices.
-        var parent = Enumerable.Range(0, eligible.Count).ToArray();
+        var parent = new int[eligible.Count];
+        for (int i = 0; i < parent.Length; i++) parent[i] = i;
 
         int Find(int i)
         {
@@ -47,7 +54,7 @@ internal static class StringSimilarityClusterer
 
         // Map root → cluster ID (only roots with ≥2 members get a non-zero ID).
         var rootCount = new Dictionary<int, int>();
-        foreach (var i in Enumerable.Range(0, eligible.Count))
+        for (int i = 0; i < eligible.Count; i++)
         {
             int root = Find(i);
             rootCount.TryGetValue(root, out int c);
@@ -59,7 +66,7 @@ internal static class StringSimilarityClusterer
         foreach (var (root, count) in rootCount)
             if (count > 1) rootToId[root] = nextId++;
 
-        foreach (var i in Enumerable.Range(0, eligible.Count))
+        for (int i = 0; i < eligible.Count; i++)
         {
             int root = Find(i);
             result[eligible[i]] = rootToId.TryGetValue(root, out int id) ? id : 0;

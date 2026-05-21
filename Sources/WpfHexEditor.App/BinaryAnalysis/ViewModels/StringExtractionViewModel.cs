@@ -418,7 +418,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
             SelectedGridItem = match;
     }
 
-    private StringRun? FindNearestRun(long caret)
+    public StringRun? FindNearestRun(long caret)
     {
         // Check highlighted runs first (small list, O(n) is fine)
         var inHighlight = _lastHighlightedRuns.FirstOrDefault(r => r.Offset <= caret && caret < r.Offset + r.Length);
@@ -845,7 +845,6 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     // ── Similarity clustering ─────────────────────────────────────────────────
 
     private Dictionary<StringRun, int> _clusterMap = [];
-    public IReadOnlyDictionary<StringRun, int> ClusterMap => _clusterMap;
 
     private bool _showOnlyClusters;
     public bool ShowOnlyClusters
@@ -863,7 +862,6 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
             var snapshot = _allResults.ToList();
             var map = await Task.Run(() => StringSimilarityClusterer.Cluster(snapshot));
             _clusterMap = map;
-            OnPropertyChanged(nameof(ClusterMap));
             ResultsView.Refresh();
             UpdateShownCount();
             int groups = map.Values.Where(v => v > 0).Distinct().Count();
@@ -882,7 +880,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         _watcher?.Dispose();
         _watcher = null;
 
-        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+        if (string.IsNullOrEmpty(path)) return;
 
         var dir  = Path.GetDirectoryName(path)!;
         var name = Path.GetFileName(path);
@@ -894,19 +892,25 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         _watcher.Changed += OnFileChanged;
     }
 
+    private async void OnRescanTimerTick(object? sender, EventArgs e)
+    {
+        _rescanTimer!.Stop();
+        await RunAsync();
+    }
+
     private void OnFileChanged(object sender, FileSystemEventArgs e)
     {
-        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             IsOutdated = true;
             if (!_autoRescan) return;
 
-            _rescanTimer ??= new System.Windows.Threading.DispatcherTimer
+            if (_rescanTimer is null)
             {
-                Interval = TimeSpan.FromSeconds(2),
-            };
+                _rescanTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                _rescanTimer.Tick += OnRescanTimerTick;
+            }
             _rescanTimer.Stop();
-            _rescanTimer.Tick += async (_, _) => { _rescanTimer.Stop(); await RunAsync(); };
             _rescanTimer.Start();
         });
     }

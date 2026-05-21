@@ -39,6 +39,7 @@ namespace WpfHexEditor.Plugins.ClassDiagram.Analysis;
 public sealed class DiagramLiveSyncService : IDisposable, ILiveSyncCoordinator
 {
     private readonly IReadOnlyList<string>                  _filePaths;
+    private readonly HashSet<string>                        _filePathSet;
     private readonly ClassDiagramOptions                    _options;
     private readonly List<FileSystemWatcher>                _watchers      = [];
     private readonly ConcurrentDictionary<string, DateTime> _suppressUntil =
@@ -63,9 +64,10 @@ public sealed class DiagramLiveSyncService : IDisposable, ILiveSyncCoordinator
         DiagramDocument        initialDocument,
         ClassDiagramOptions    options)
     {
-        _filePaths = filePaths.ToList();
-        _current   = initialDocument;
-        _options   = options;
+        _filePaths   = filePaths.ToList();
+        _filePathSet = new HashSet<string>(_filePaths, StringComparer.OrdinalIgnoreCase);
+        _current     = initialDocument;
+        _options     = options;
 
         StartWatchers();
     }
@@ -129,7 +131,7 @@ public sealed class DiagramLiveSyncService : IDisposable, ILiveSyncCoordinator
 
     private void OnFileEvent(object sender, FileSystemEventArgs e)
     {
-        if (!_filePaths.Contains(e.FullPath, StringComparer.OrdinalIgnoreCase))
+        if (!_filePathSet.Contains(e.FullPath))
             return;
 
         // ADR-021: drop events for files inside their suppression window
@@ -160,7 +162,7 @@ public sealed class DiagramLiveSyncService : IDisposable, ILiveSyncCoordinator
 
         var changedDistinct = changed
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Where(p => _filePaths.Contains(p, StringComparer.OrdinalIgnoreCase))
+            .Where(_filePathSet.Contains)
             .ToList();
 
         DiagramDocument next;

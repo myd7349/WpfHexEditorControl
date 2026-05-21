@@ -78,9 +78,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _heatmap.Attach(_vm);
         _heatmap.NavigateToOffset = offset =>
         {
-            var nearest = _vm.GetAllRuns()
-                .OrderBy(r => Math.Abs(r.Offset - offset))
-                .FirstOrDefault();
+            var nearest = _vm.FindNearestRun(offset);
             if (nearest is not null)
             {
                 _vm.SelectedGridItem = nearest;
@@ -140,71 +138,14 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         tblBtn.Click    += OnLoadTbl;
         var exportBtn    = MakeToolbarButton("", "StringExtract_TtExport");
         exportBtn.Click += (_, _) => OnExport(exportAll: true);
-        var wrapBtn = new ToggleButton
-        {
-            Content  = "",
-            Height   = 20, Width = 22,
-            Padding  = new Thickness(0),
-            BorderThickness = new Thickness(0),
-            FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            FontSize   = 11,
-            FocusVisualStyle = null,
-        };
-        wrapBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-        wrapBtn.SetResourceReference(BackgroundProperty, "Panel_ToolbarBrush");
-        wrapBtn.SetResourceReference(ToolTipProperty,   "StringExtract_TtWordWrap");
-        wrapBtn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.WordWrap)) { Source = _vm, Mode = BindingMode.TwoWay });
-
-        var groupBtn = new ToggleButton
-        {
-            Content  = "",
-            Height   = 20, Width = 22,
-            Padding  = new Thickness(0),
-            BorderThickness = new Thickness(0),
-            FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            FontSize   = 11,
-            FocusVisualStyle = null,
-        };
-        groupBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-        groupBtn.SetResourceReference(BackgroundProperty, "Panel_ToolbarBrush");
-        groupBtn.SetResourceReference(ToolTipProperty,   "StringExtract_TtGroupByEncoding");
-        groupBtn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.GroupByEncoding)) { Source = _vm, Mode = BindingMode.TwoWay });
-
-        var autoRescanBtn = new ToggleButton
-        {
-            Content  = "",
-            Height   = 20, Width = 22,
-            Padding  = new Thickness(0),
-            BorderThickness = new Thickness(0),
-            FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            FontSize   = 11,
-            FocusVisualStyle = null,
-        };
-        autoRescanBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-        autoRescanBtn.SetResourceReference(BackgroundProperty, "Panel_ToolbarBrush");
-        autoRescanBtn.SetResourceReference(ToolTipProperty,   "StringExtract_TtAutoRescan");
-        autoRescanBtn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.AutoRescan)) { Source = _vm, Mode = BindingMode.TwoWay });
+        var wrapBtn         = MakeToolbarToggle("", "StringExtract_TtWordWrap",      nameof(_vm.WordWrap));
+        var groupBtn        = MakeToolbarToggle("", "StringExtract_TtGroupByEncoding", nameof(_vm.GroupByEncoding));
+        var autoRescanBtn   = MakeToolbarToggle("", "StringExtract_TtAutoRescan",    nameof(_vm.AutoRescan));
 
         var clusterBtn = MakeToolbarButton("", "StringExtract_TtCluster");
         clusterBtn.Click += async (_, _) => await _vm.ClusterAsync();
 
-        var showClustersBtn = new ToggleButton
-        {
-            Content  = "",
-            Height   = 20, Width = 22,
-            Padding  = new Thickness(0),
-            BorderThickness = new Thickness(0),
-            FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            FontSize   = 11,
-            FocusVisualStyle = null,
-        };
-        showClustersBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-        showClustersBtn.SetResourceReference(BackgroundProperty, "Panel_ToolbarBrush");
-        showClustersBtn.SetResourceReference(ToolTipProperty,   "StringExtract_TtShowClusters");
-        showClustersBtn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(nameof(_vm.ShowOnlyClusters)) { Source = _vm, Mode = BindingMode.TwoWay });
-
-
-
+        var showClustersBtn = MakeToolbarToggle("", "StringExtract_TtShowClusters", nameof(_vm.ShowOnlyClusters));
 
 
 
@@ -544,6 +485,25 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         btn.SetResourceReference(StyleProperty,      "PanelIconButtonStyle");
         btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
         btn.SetResourceReference(ToolTipProperty,    tooltipKey);
+        return btn;
+    }
+
+    private ToggleButton MakeToolbarToggle(string glyph, string tooltipKey, string vmProperty)
+    {
+        var btn = new ToggleButton
+        {
+            Content = glyph,
+            Height  = 20, Width = 22,
+            Padding = new Thickness(0),
+            BorderThickness  = new Thickness(0),
+            FontFamily       = new FontFamily("Segoe MDL2 Assets"),
+            FontSize         = 11,
+            FocusVisualStyle = null,
+        };
+        btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
+        btn.SetResourceReference(BackgroundProperty, "Panel_ToolbarBrush");
+        btn.SetResourceReference(ToolTipProperty,    tooltipKey);
+        btn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(vmProperty) { Source = _vm, Mode = BindingMode.TwoWay });
         return btn;
     }
 
@@ -959,7 +919,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return col;
     }
 
-        private static DataGridTextColumn MakeScoreColumn()
+    private static DataGridTextColumn MakeScoreColumn()
     {
         var col = MakeCol("StringExtract_ColScore", nameof(StringRun.ReadabilityScore), 55, "F2", "StringExtract_TtScore");
         col.Visibility = Visibility.Collapsed;

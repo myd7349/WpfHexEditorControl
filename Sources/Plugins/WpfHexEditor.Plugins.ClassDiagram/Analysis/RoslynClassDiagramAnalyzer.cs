@@ -249,7 +249,7 @@ public static class RoslynClassDiagramAnalyzer
             if (!string.IsNullOrEmpty(node.SourceFilePath) && changedSet.Contains(node.SourceFilePath))
                 continue;
 
-            nodeMap[string.IsNullOrEmpty(node.Namespace) ? node.Name : $"{node.Namespace}.{node.Name}"] = node;
+            nodeMap[MakeFullKey(node.Namespace, node.Name)] = node;
         }
 
         // Re-parse changed files and merge into nodeMap.
@@ -277,6 +277,9 @@ public static class RoslynClassDiagramAnalyzer
         return document;
     }
 
+    private static string MakeFullKey(string ns, string name)
+        => string.IsNullOrEmpty(ns) ? name : $"{ns}.{name}";
+
     // ── Syntax tree processing ───────────────────────────────────────────────
 
     private static void ProcessSyntaxTree(
@@ -291,7 +294,7 @@ public static class RoslynClassDiagramAnalyzer
         {
             string typeName     = typeDecl.Identifier.ValueText;
             string ns           = GetNamespace(typeDecl);
-            string fullKey      = string.IsNullOrEmpty(ns) ? typeName : $"{ns}.{typeName}";
+            string fullKey      = MakeFullKey(ns, typeName);
             bool   isPartial    = typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
 
             if (!nodeMap.TryGetValue(fullKey, out var node))

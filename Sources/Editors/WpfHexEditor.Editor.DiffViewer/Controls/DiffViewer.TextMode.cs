@@ -75,9 +75,8 @@ public sealed partial class DiffViewer
             if (!IsLikelyText(leftBytes) || !IsLikelyText(rightBytes))
                 return null;
 
-            var enc        = DetectEncoding(leftBytes);
-            var leftLines  = enc.GetString(leftBytes).ReplaceLineEndings("\n").Split('\n');
-            var rightLines = enc.GetString(rightBytes).ReplaceLineEndings("\n").Split('\n');
+            var leftLines  = DecodeLines(leftBytes);
+            var rightLines = DecodeLines(rightBytes);
 
             return new MyersDiffAlgorithm().ComputeLines(leftLines, rightLines);
         });
@@ -300,6 +299,9 @@ public sealed partial class DiffViewer
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static string[] DecodeLines(byte[] data)
+        => DetectEncoding(data).GetString(data).ReplaceLineEndings("\n").Split('\n');
 
     private static bool IsLikelyText(byte[] data)
     {

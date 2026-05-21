@@ -7,6 +7,7 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using WpfHexEditor.App.BinaryAnalysis.Services;
 using WpfHexEditor.App.BinaryAnalysis.ViewModels;
 
@@ -51,8 +52,7 @@ internal sealed class StringOffsetHeatmap : FrameworkElement
 
     private void OnVmChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(StringExtractionViewModel.TotalCount)
-                           or nameof(StringExtractionViewModel.ShownCount))
+        if (e.PropertyName is nameof(StringExtractionViewModel.TotalCount))
         {
             _bufferLength = _vm?.LastBuffer?.Length ?? 0;
             RebuildBitmap();
@@ -100,10 +100,11 @@ internal sealed class StringOffsetHeatmap : FrameworkElement
             pixels[col] = unchecked((int)(0xFF000000u | (uint)(nr << 16) | (uint)(ng << 8) | (uint)nb));
         }
 
-        // Write the same row to all bitmap rows.
-        var rect = new Int32Rect(0, 0, w, 1);
+        // Replicate the single pixel row across all rows then write in one call.
+        var fullPixels = new int[w * h];
         for (int y = 0; y < h; y++)
-            _bitmap.WritePixels(rect, pixels, w * 4, 0, y);
+            pixels.CopyTo(fullPixels, y * w);
+        _bitmap.WritePixels(new Int32Rect(0, 0, w, h), fullPixels, w * 4, 0);
 
         _bitmap.Unlock();
         _bitmap.Freeze();

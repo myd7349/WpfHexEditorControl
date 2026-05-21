@@ -10,13 +10,13 @@
 //////////////////////////////////////////////
 
 using System.IO;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Win32;
 using WpfHexEditor.Core.Diff.Models;
 using WpfHexEditor.Core.Diff.Services;
+using WpfHexEditor.Editor.Core.Dialogs;
 using WpfHexEditor.Editor.DiffViewer.Properties;
 
 namespace WpfHexEditor.Editor.DiffViewer.Controls;
@@ -26,7 +26,8 @@ public sealed partial class DiffViewer
     // ── Fields ───────────────────────────────────────────────────────────────
 
     private byte[]?              _base;
-    private string               _basePath = string.Empty;
+    private string               _basePath      = string.Empty;
+    private string[]?            _baseLinesCache;
     private ThreeWayMergeResult? _mergeResult;
     private int                  _currentConflictIndex = -1;
     private bool                 _syncingMergeScroll;
@@ -44,12 +45,10 @@ public sealed partial class DiffViewer
     private void UpdateMergeToolbarVisibility()
     {
         bool isMergeTab = ViewTabControl.SelectedIndex == 2;
-        MergeToolbarSep.Visibility    = isMergeTab ? Visibility.Visible   : Visibility.Collapsed;
-        BtnOpenBase.Visibility        = isMergeTab ? Visibility.Visible   : Visibility.Collapsed;
-        BtnPrevConflict.Visibility    = isMergeTab ? Visibility.Visible   : Visibility.Collapsed;
-        BtnNextConflict.Visibility    = isMergeTab ? Visibility.Visible   : Visibility.Collapsed;
-        ChipConflicts.Visibility      = isMergeTab ? Visibility.Visible   : Visibility.Collapsed;
-        BtnSaveMerged.Visibility      = isMergeTab ? Visibility.Visible   : Visibility.Collapsed;
+        var visibility  = isMergeTab ? Visibility.Visible : Visibility.Collapsed;
+        MergeToolbarSep.Visibility = BtnOpenBase.Visibility     = visibility;
+        BtnPrevConflict.Visibility = BtnNextConflict.Visibility = visibility;
+        ChipConflicts.Visibility   = BtnSaveMerged.Visibility   = visibility;
 
         if (isMergeTab && _mergeResult is null && _left is not null && _right is not null && _base is not null)
             ComputeMerge();
@@ -62,9 +61,10 @@ public sealed partial class DiffViewer
         var dlg = new OpenFileDialog { Title = DiffViewerResources.DiffViewer_MergeOpenBase };
         if (dlg.ShowDialog() != true) return;
 
-        _basePath    = dlg.FileName;
-        _base        = File.ReadAllBytes(_basePath);
-        _mergeResult = null;
+        _basePath        = dlg.FileName;
+        _base            = File.ReadAllBytes(_basePath);
+        _baseLinesCache  = null;
+        _mergeResult     = null;
 
         MergeBaseHeader.Text = System.IO.Path.GetFileName(_basePath);
         ComputeMerge();
@@ -85,12 +85,12 @@ public sealed partial class DiffViewer
             return;
         }
 
-        var enc        = DetectEncoding(_base);
-        var baseLines  = enc.GetString(_base).ReplaceLineEndings("\n").Split('\n');
-        var oursLines  = DetectEncoding(_left).GetString(_left).ReplaceLineEndings("\n").Split('\n');
-        var theirsLines = DetectEncoding(_right).GetString(_right).ReplaceLineEndings("\n").Split('\n');
+        var baseLines   = _baseLinesCache = DecodeLines(_base);
+        var oursLines   = DecodeLines(_left);
+        var theirsLines = DecodeLines(_right);
 
-        _mergeResult = new ThreeWayMergeEngine().Merge(baseLines, oursLines, theirsLines);
+        _mergeResult          = new ThreeWayMergeEngine().Merge(baseLines, oursLines, theirsLines);
+        _currentConflictIndex = -1;
 
         RenderMergeLists();
         UpdateConflictChip();
@@ -111,9 +111,7 @@ public sealed partial class DiffViewer
         var baseItems   = new List<UIElement>();
         var theirsItems = new List<UIElement>();
 
-        string[]? baseLines = _base is not null
-            ? DetectEncoding(_base).GetString(_base).ReplaceLineEndings("\n").Split('\n')
-            : null;
+        var baseLines = _baseLinesCache;
 
         foreach (var line in _mergeResult.Lines)
         {
@@ -132,13 +130,14 @@ public sealed partial class DiffViewer
                 _ => null
             };
 
-            string oursContent   = line.Kind is MergeLineKind.ConflictOurs or MergeLineKind.AcceptedOurs or MergeLineKind.Equal or MergeLineKind.Resolved
+            string oursContent   = line.Kind is MergeLineKind.ConflictOurs or MergeLineKind.AcceptedOurs
+                                               or MergeLineKind.Equal or MergeLineKind.Resolved
                 ? line.Content : string.Empty;
-            string theirsContent = line.Kind is MergeLineKind.ConflictTheirs or MergeLineKind.AcceptedTheirs or MergeLineKind.Equal or MergeLineKind.Resolved
+            string theirsContent = line.Kind is MergeLineKind.ConflictTheirs or MergeLineKind.AcceptedTheirs
+                                               or MergeLineKind.Equal or MergeLineKind.Resolved
                 ? line.Content : string.Empty;
-
-            string baseContent = (baseLines is not null && line.BaseLineNumber.HasValue && line.BaseLineNumber.Value <= baseLines.Length)
-                ? baseLines[line.BaseLineNumber.Value - 1] : string.Empty;
+            string baseContent   = baseLines is not null && line.BaseLineNumber is { } bn && bn <= baseLines.Length
+                ? baseLines[bn - 1] : string.Empty;
 
             oursItems.Add(BuildMergeLineElement(oursContent, oursBg, line.OursLineNumber));
             theirsItems.Add(BuildMergeLineElement(theirsContent, theirsBg, line.TheirsLineNumber));
@@ -173,8 +172,8 @@ public sealed partial class DiffViewer
         Grid.SetColumn(lineNumTb, 0);
         grid.Children.Add(lineNumTb);
 
-        var contentTb = string.IsNullOrEmpty(content)
-            ? (FrameworkElement)new TextBlock { Background = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128)), Height = 18 }
+        FrameworkElement contentEl = string.IsNullOrEmpty(content)
+            ? new TextBlock { Background = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128)), Height = 18 }
             : new TextBlock
             {
                 Text              = content,
@@ -185,8 +184,8 @@ public sealed partial class DiffViewer
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming      = TextTrimming.CharacterEllipsis,
             };
-        Grid.SetColumn(contentTb, 1);
-        grid.Children.Add(contentTb);
+        Grid.SetColumn(contentEl, 1);
+        grid.Children.Add(contentEl);
         return grid;
     }
 
@@ -194,14 +193,14 @@ public sealed partial class DiffViewer
     {
         var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(44, 2, 0, 2) };
 
-        var btnOurs = new Button { Content = DiffViewerResources.DiffViewer_MergeAcceptOurs, Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 4, 0), FontSize = 11, Tag = conflictIndex };
-        btnOurs.Click += (_, _) => ResolveConflict((int)((Button)btnOurs).Tag, ConflictResolution.AcceptOurs);
+        var btnOurs = new Button { Content = DiffViewerResources.DiffViewer_MergeAcceptOurs, Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 4, 0), FontSize = 11 };
+        btnOurs.Click += (_, _) => ResolveConflict(conflictIndex, ConflictResolution.AcceptOurs);
 
-        var btnTheirs = new Button { Content = DiffViewerResources.DiffViewer_MergeAcceptTheirs, Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 4, 0), FontSize = 11, Tag = conflictIndex };
-        btnTheirs.Click += (_, _) => ResolveConflict((int)((Button)btnTheirs).Tag, ConflictResolution.AcceptTheirs);
+        var btnTheirs = new Button { Content = DiffViewerResources.DiffViewer_MergeAcceptTheirs, Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 4, 0), FontSize = 11 };
+        btnTheirs.Click += (_, _) => ResolveConflict(conflictIndex, ConflictResolution.AcceptTheirs);
 
-        var btnBoth = new Button { Content = DiffViewerResources.DiffViewer_MergeAcceptBoth, Padding = new Thickness(8, 2, 8, 2), FontSize = 11, Tag = conflictIndex };
-        btnBoth.Click += (_, _) => ResolveConflict((int)((Button)btnBoth).Tag, ConflictResolution.AcceptBoth);
+        var btnBoth = new Button { Content = DiffViewerResources.DiffViewer_MergeAcceptBoth, Padding = new Thickness(8, 2, 8, 2), FontSize = 11 };
+        btnBoth.Click += (_, _) => ResolveConflict(conflictIndex, ConflictResolution.AcceptBoth);
 
         panel.Children.Add(btnOurs);
         panel.Children.Add(btnTheirs);
@@ -215,6 +214,7 @@ public sealed partial class DiffViewer
     {
         if (_mergeResult is null || index < 0 || index >= _mergeResult.Conflicts.Count) return;
         _mergeResult.Conflicts[index].Resolution = resolution;
+        _currentConflictIndex = Math.Min(_currentConflictIndex, _mergeResult.UnresolvedCount - 1);
         RenderMergeLists();
         UpdateConflictChip();
         UpdateMergeButtons();
@@ -223,14 +223,13 @@ public sealed partial class DiffViewer
     private void UpdateConflictChip()
     {
         if (_mergeResult is null) return;
-        int unresolved = _mergeResult.UnresolvedCount;
-        ConflictsText.Text = string.Format(DiffViewerResources.DiffViewer_MergeConflicts, unresolved);
+        ConflictsText.Text       = string.Format(DiffViewerResources.DiffViewer_MergeConflicts, _mergeResult.UnresolvedCount);
         ChipConflicts.Visibility = _mergeResult.Conflicts.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void UpdateMergeButtons()
     {
-        bool hasConflicts = _mergeResult?.Conflicts.Count > 0;
+        bool hasConflicts         = _mergeResult?.Conflicts.Count > 0;
         BtnPrevConflict.IsEnabled = hasConflicts;
         BtnNextConflict.IsEnabled = hasConflicts;
         BtnSaveMerged.IsEnabled   = _mergeResult is not null;
@@ -252,8 +251,7 @@ public sealed partial class DiffViewer
     private void ScrollToConflict(int conflictIndex)
     {
         if (_mergeResult is null) return;
-        int lineIndex = _mergeResult.Conflicts[conflictIndex].Index;
-        double offset = lineIndex * 18.0;
+        double offset = _mergeResult.Conflicts[conflictIndex].Index * 18.0;
         MergeOursScroll.ScrollToVerticalOffset(offset);
         MergeBaseScroll.ScrollToVerticalOffset(offset);
         MergeTheirsScroll.ScrollToVerticalOffset(offset);
@@ -284,22 +282,21 @@ public sealed partial class DiffViewer
         if (!_mergeResult.IsFullyResolved)
         {
             var msg = string.Format(DiffViewerResources.DiffViewer_MergeUnresolvedWarning, _mergeResult.UnresolvedCount);
-            if (MessageBox.Show(msg, DiffViewerResources.DiffViewer_MergeSave,
+            if (IdeMessageBox.Show(msg, DiffViewerResources.DiffViewer_MergeSave,
                     MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                 return;
         }
 
         var dlg = new SaveFileDialog
         {
-            Title      = DiffViewerResources.DiffViewer_MergeSave,
-            Filter     = "All files (*.*)|*.*",
-            FileName   = System.IO.Path.GetFileNameWithoutExtension(_leftPath) + ".merged" +
-                         System.IO.Path.GetExtension(_leftPath),
+            Title    = DiffViewerResources.DiffViewer_MergeSave,
+            Filter   = "All files (*.*)|*.*",
+            FileName = System.IO.Path.GetFileNameWithoutExtension(_leftPath) + ".merged" +
+                       System.IO.Path.GetExtension(_leftPath),
         };
         if (dlg.ShowDialog() != true) return;
 
-        var enc = DetectEncoding(_left ?? []);
-        File.WriteAllText(dlg.FileName, _mergeResult.BuildOutput(), enc);
+        File.WriteAllText(dlg.FileName, _mergeResult.BuildOutput(), DetectEncoding(_left ?? []));
         StatusText.Text = string.Format(DiffViewerResources.DiffViewer_MergeSaved, dlg.FileName);
     }
 }

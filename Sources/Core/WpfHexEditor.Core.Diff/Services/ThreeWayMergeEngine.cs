@@ -24,11 +24,10 @@ public sealed class ThreeWayMergeEngine
     /// <param name="theirsLines">Right/theirs revision lines.</param>
     public ThreeWayMergeResult Merge(string[] baseLines, string[] oursLines, string[] theirsLines)
     {
-        // Two independent diffs from the common base.
         var oursEdits   = ComputeLinearEdits(baseLines, oursLines);
         var theirsEdits = ComputeLinearEdits(baseLines, theirsLines);
 
-        return BuildMerge(baseLines, oursLines, theirsLines, oursEdits, theirsEdits);
+        return BuildMerge(baseLines, oursEdits, theirsEdits);
     }
 
     // ── Linear edit computation ───────────────────────────────────────────────
@@ -56,17 +55,16 @@ public sealed class ThreeWayMergeEngine
                 continue;
             }
 
-            // Start of an edit chunk — collect contiguous non-equal lines.
             int chunkBaseStart = baseIdx;
-            var removed = new List<string>();
-            var added   = new List<string>();
+            int removedCount   = 0;
+            var added          = new List<string>();
 
             while (i < lines.Count && lines[i].Kind != TextLineKind.Equal)
             {
                 var ln = lines[i];
                 if (ln.Kind is TextLineKind.DeletedLeft or TextLineKind.Modified)
                 {
-                    removed.Add(from[baseIdx]);
+                    removedCount++;
                     baseIdx++;
                 }
                 if (ln.Kind is TextLineKind.InsertedRight or TextLineKind.Modified)
@@ -77,7 +75,7 @@ public sealed class ThreeWayMergeEngine
                 i++;
             }
 
-            chunks.Add(new EditChunk(chunkBaseStart, removed.Count, added));
+            chunks.Add(new EditChunk(chunkBaseStart, removedCount, added));
         }
 
         return chunks;
@@ -87,13 +85,9 @@ public sealed class ThreeWayMergeEngine
 
     private static ThreeWayMergeResult BuildMerge(
         string[]         baseLines,
-        string[]         oursLines,
-        string[]         theirsLines,
         List<EditChunk>  oursEdits,
         List<EditChunk>  theirsEdits)
     {
-        // Walk base line by line and apply edits from both sides.
-        // Conflict = both sides have an edit that overlaps the same base range.
 
         var outputLines = new List<MergeLine>();
         var conflicts   = new List<MergeConflict>();
