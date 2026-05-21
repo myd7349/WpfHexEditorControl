@@ -2272,7 +2272,52 @@ namespace WpfHexEditor.App.Properties {
                 return ResourceManager.GetString("App_Menu_ResetLayout", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Reset the layout to default? Open documents will be preserved.
+        /// </summary>
+        internal static string App_ResetLayout_Confirm {
+            get {
+                return ResourceManager.GetString("App_ResetLayout_Confirm", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Clear Roaming Data….
+        /// </summary>
+        internal static string App_Menu_ClearRoamingData {
+            get {
+                return ResourceManager.GetString("App_Menu_ClearRoamingData", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Clear Roaming Data.
+        /// </summary>
+        internal static string App_ClearRoamingData_Title {
+            get {
+                return ResourceManager.GetString("App_ClearRoamingData_Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à This will delete saved settings, layout, and session data. Installed extensions will not be affected. Continue?
+        /// </summary>
+        internal static string App_ClearRoamingData_Confirm {
+            get {
+                return ResourceManager.GetString("App_ClearRoamingData_Confirm", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Roaming data cleared. A restart is recommended to apply the changes. Restart now?
+        /// </summary>
+        internal static string App_ClearRoamingData_RestartPrompt {
+            get {
+                return ResourceManager.GetString("App_ClearRoamingData_RestartPrompt", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à R_esize....
         /// </summary>
