@@ -1608,6 +1608,8 @@
   <data name="StringExtract_LabelUniq"                xml:space="preserve"><value>Uniq≥</value></data>
   <data name="StringExtract_LabelOffset"              xml:space="preserve"><value>Offset:</value></data>
   <data name="StringExtract_LabelReadability"         xml:space="preserve"><value>Score≥</value></data>
+  <data name="StringExtract_PrintableOnly"            xml:space="preserve"><value>Printable only</value></data>
+  <data name="StringExtract_TtPrintableOnly"          xml:space="preserve"><value>Hide strings containing control characters (below 0x20, except tab/LF/CR)</value></data>
   <data name="StringExtract_TtScore"                  xml:space="preserve"><value>Readability score 0–1 (letter ratio + bigram ratio + length bonus). Right-click column header to show/hide.</value></data>
   <data name="StringExtract_RegexLabel"               xml:space="preserve"><value>.*</value></data>
 
