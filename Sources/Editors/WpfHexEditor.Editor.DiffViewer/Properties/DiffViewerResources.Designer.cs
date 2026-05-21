@@ -248,5 +248,53 @@ namespace WpfHexEditor.Editor.DiffViewer.Properties {
                 return ResourceManager.GetString("DiffViewer_ShowHideDiffList", resourceCulture);
             }
         }
+
+        internal static string DiffViewer_TabHex {
+            get { return ResourceManager.GetString("DiffViewer_TabHex", resourceCulture); }
+        }
+
+        internal static string DiffViewer_TabText {
+            get { return ResourceManager.GetString("DiffViewer_TabText", resourceCulture); }
+        }
+
+        internal static string DiffViewer_ExportPatch {
+            get { return ResourceManager.GetString("DiffViewer_ExportPatch", resourceCulture); }
+        }
+
+        internal static string DiffViewer_ExportPatchTooltip {
+            get { return ResourceManager.GetString("DiffViewer_ExportPatchTooltip", resourceCulture); }
+        }
+
+        internal static string DiffViewer_TextModeOnly {
+            get { return ResourceManager.GetString("DiffViewer_TextModeOnly", resourceCulture); }
+        }
+
+        internal static string DiffViewer_ColLine {
+            get { return ResourceManager.GetString("DiffViewer_ColLine", resourceCulture); }
+        }
+
+        internal static string DiffViewer_LineEqual {
+            get { return ResourceManager.GetString("DiffViewer_LineEqual", resourceCulture); }
+        }
+
+        internal static string DiffViewer_LineModified {
+            get { return ResourceManager.GetString("DiffViewer_LineModified", resourceCulture); }
+        }
+
+        internal static string DiffViewer_LineDeleted {
+            get { return ResourceManager.GetString("DiffViewer_LineDeleted", resourceCulture); }
+        }
+
+        internal static string DiffViewer_LineInserted {
+            get { return ResourceManager.GetString("DiffViewer_LineInserted", resourceCulture); }
+        }
+
+        internal static string DiffViewer_NotTextFile {
+            get { return ResourceManager.GetString("DiffViewer_NotTextFile", resourceCulture); }
+        }
+
+        internal static string DiffViewer_PatchSaved {
+            get { return ResourceManager.GetString("DiffViewer_PatchSaved", resourceCulture); }
+        }
     }
 }

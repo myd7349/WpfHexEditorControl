@@ -88,6 +88,8 @@ public sealed partial class DiffViewer : UserControl, IDocumentEditor, IOpenable
         {
             _leftPath  = leftPath;
             _rightPath = rightPath;
+            _textResult = null;
+            BtnExportPatch.IsEnabled = false;
             Title      = $"{Path.GetFileName(leftPath)} ↔ {Path.GetFileName(rightPath)}";
 
             _left  = await Task.Run(() => File.ReadAllBytes(leftPath),  ct);

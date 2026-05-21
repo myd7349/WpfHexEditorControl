@@ -51,59 +51,140 @@
             <Separator/>
             <ToggleButton x:Name="BtnDiffList" Content="{StaticResource DiffViewer_DiffList}" Padding="8,3" ToolTip="{StaticResource DiffViewer_ShowHideDiffList}"
                           Checked="OnDiffListToggled" Unchecked="OnDiffListToggled"/>
+            <Separator/>
+            <Button x:Name="BtnExportPatch" Content="{StaticResource DiffViewer_ExportPatch}"
+                    ToolTip="{StaticResource DiffViewer_ExportPatchTooltip}"
+                    Click="BtnExportPatch_Click" Padding="8,3" IsEnabled="False"/>
         </ToolBar>
 
-        <!-- Side-by-side panel -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="4"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- Tab: Hex / Text -->
+        <TabControl x:Name="ViewTabControl" Grid.Row="1"
+                    Background="{DynamicResource TE_Background}"
+                    BorderThickness="0"
+                    SelectionChanged="OnViewTabChanged">
 
-            <!-- Left panel -->
-            <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <TextBlock x:Name="LeftHeader" Grid.Row="0"
-                           Text="{StaticResource DiffViewer_LeftLabel}"
-                           Background="{DynamicResource TE_LineNumberBackground}"
-                           Foreground="{DynamicResource TE_LineNumberForeground}"
-                           Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
-                <ScrollViewer x:Name="LeftScroll" Grid.Row="1"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto"
-                              Background="{DynamicResource TE_Background}">
-                    <Canvas x:Name="LeftCanvas" Background="{DynamicResource TE_Background}"/>
-                </ScrollViewer>
-            </Grid>
+            <!-- ── Hex tab ── -->
+            <TabItem Header="{StaticResource DiffViewer_TabHex}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="4"
-                          HorizontalAlignment="Stretch"
-                          Background="{DynamicResource TE_LineNumberBackground}"/>
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="LeftHeader" Grid.Row="0"
+                                   Text="{StaticResource DiffViewer_LeftLabel}"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="LeftScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Background="{DynamicResource TE_Background}">
+                            <Canvas x:Name="LeftCanvas" Background="{DynamicResource TE_Background}"/>
+                        </ScrollViewer>
+                    </Grid>
 
-            <!-- Right panel -->
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <TextBlock x:Name="RightHeader" Grid.Row="0"
-                           Text="{StaticResource DiffViewer_RightLabel}"
-                           Background="{DynamicResource TE_LineNumberBackground}"
-                           Foreground="{DynamicResource TE_LineNumberForeground}"
-                           Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
-                <ScrollViewer x:Name="RightScroll" Grid.Row="1"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto"
-                              Background="{DynamicResource TE_Background}">
-                    <Canvas x:Name="RightCanvas" Background="{DynamicResource TE_Background}"/>
-                </ScrollViewer>
-            </Grid>
-        </Grid>
+                    <GridSplitter Grid.Column="1" Width="4"
+                                  HorizontalAlignment="Stretch"
+                                  Background="{DynamicResource TE_LineNumberBackground}"/>
+
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="RightHeader" Grid.Row="0"
+                                   Text="{StaticResource DiffViewer_RightLabel}"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="RightScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Background="{DynamicResource TE_Background}">
+                            <Canvas x:Name="RightCanvas" Background="{DynamicResource TE_Background}"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ── Text tab ── -->
+            <TabItem Header="{StaticResource DiffViewer_TabText}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left text panel -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="TextLeftHeader" Grid.Row="0"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="TextLeftScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Visible"
+                                      Background="{DynamicResource TE_Background}"
+                                      ScrollChanged="OnTextScrollChanged">
+                            <ItemsControl x:Name="TextLeftList"
+                                          Background="{DynamicResource TE_Background}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <GridSplitter Grid.Column="1" Width="4"
+                                  HorizontalAlignment="Stretch"
+                                  Background="{DynamicResource TE_LineNumberBackground}"/>
+
+                    <!-- Right text panel -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="TextRightHeader" Grid.Row="0"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="TextRightScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Visible"
+                                      Background="{DynamicResource TE_Background}"
+                                      ScrollChanged="OnTextScrollChanged">
+                            <ItemsControl x:Name="TextRightList"
+                                          Background="{DynamicResource TE_Background}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
 
         <!-- Diff list panel (collapsible via BtnDiffList toggle) -->
         <Grid x:Name="DiffListPanel" Grid.Row="2" Visibility="Collapsed" MaxHeight="200">

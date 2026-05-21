@@ -7280,6 +7280,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnResetLayout(object sender, RoutedEventArgs e)
     {
+        var confirm = _dialogService.Show(
+            AppResources.App_ResetLayout_Confirm,
+            AppResources.App_Menu_ResetLayout.Replace("_", string.Empty),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
         // Snapshot open document items before resetting (exclude the Welcome tab).
         // The _contentCache is intentionally NOT cleared — cached UIElements remain valid
         // and will be returned by ContentFactory when the tabs are re-docked below.
@@ -7347,18 +7355,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         OutputLogger.Info($"[ClearRoamingData] Deleted: {(deleted.Count > 0 ? string.Join(", ", deleted) : "nothing")}");
 
-        _dialogService.Show(
-            AppResources.App_ClearRoamingData_Done,
-            AppResources.App_ClearRoamingData_Title,
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
-
-        // Restart is recommended so the app re-initialises from defaults.
+        // Single dialog: confirm success + offer restart.
         var restart = _dialogService.Show(
             AppResources.App_ClearRoamingData_RestartPrompt,
             AppResources.App_ClearRoamingData_Title,
             MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
+            MessageBoxImage.Information);
 
         if (restart == MessageBoxResult.Yes)
             System.Windows.Application.Current.Shutdown();
