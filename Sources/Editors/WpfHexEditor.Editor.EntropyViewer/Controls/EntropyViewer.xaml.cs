@@ -42,8 +42,6 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
     private long[]?   _byteFrequency;
 
     // Zoom state for the entropy bar
-    private double _zoom = 1.0;
-
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public EntropyViewer()
@@ -185,10 +183,11 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         {
             // Per-block entropy
             var blocks = new List<double>();
+            var freq   = new long[256]; // reused across blocks — cleared each iteration
             for (int offset = 0; offset < data.Length; offset += windowSize)
             {
-                int   len  = Math.Min(windowSize, data.Length - offset);
-                var   freq = new long[256];
+                int len = Math.Min(windowSize, data.Length - offset);
+                Array.Clear(freq);
                 for (int i = offset; i < offset + len; i++) freq[data[i]]++;
                 blocks.Add(Shannon(freq, len));
             }
@@ -276,8 +275,7 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         e.Handled = true;
 
         var delta = e.Delta > 0 ? 0.25 : -0.25;
-        _zoom = Math.Clamp(_zoom + delta, 0.5, 8.0);
-        EntropyCanvas.SetZoom(_zoom);
+        EntropyCanvas.SetZoom(EntropyCanvas.Zoom + delta);
     }
 
     private void OnExportPng(object sender, RoutedEventArgs e)

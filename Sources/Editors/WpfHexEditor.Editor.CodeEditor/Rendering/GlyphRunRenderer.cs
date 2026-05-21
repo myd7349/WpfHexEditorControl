@@ -19,12 +19,12 @@
 // ==========================================================
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using WpfHexEditor.Editor.CodeEditor.Helpers;
-// IEnumerable<T> in BuildLineGlyphRuns comes from System.Collections.Generic — already included.
 
 namespace WpfHexEditor.Editor.CodeEditor.Rendering;
 
@@ -39,7 +39,7 @@ public sealed class GlyphRunRenderer
     #region Static GlyphTypeface cache — shared across all GlyphRunRenderer instances
 
     // Maps a Typeface (value type) → resolved GlyphTypeface (null = fallback needed).
-    private static readonly Dictionary<Typeface, GlyphTypeface?> _gtCache
+    private static readonly ConcurrentDictionary<Typeface, GlyphTypeface?> _gtCache
         = new(TypefaceEqualityComparer.Instance);
 
     private static GlyphTypeface? ResolveGlyphTypeface(Typeface typeface)
@@ -56,19 +56,20 @@ public sealed class GlyphRunRenderer
 
     #region Static glyph-data cache — avoids List<ushort>/List<double> allocation per token
 
-    // Key: (text, GlyphTypeface identity, fontSize) → pre-computed glyph indices + advance widths.
+    // Key: (text, GlyphTypeface font URI, fontSize) → pre-computed glyph indices + advance widths.
+    // FontUri is content-stable: two GlyphTypeface objects for the same face share the same URI.
     // Hit rate ~100% for hex cells (256-entry vocabulary "00"–"FF" + single chars).
     // Cleared entirely when full — vocabulary is small enough that a cold refill is cheap.
     private const int GlyphDataCacheMax = 512;
 
-    private static readonly Dictionary<(string text, int gtId, double fontSize), (ushort[] indices, double[] advances)>
-        _glyphDataCache = new(GlyphDataCacheMax);
+    private static readonly ConcurrentDictionary<(string text, string gtUri, double fontSize), (ushort[] indices, double[] advances)>
+        _glyphDataCache = new();
 
     private static bool TryGetGlyphData(
         string text, GlyphTypeface gt, double fontSize,
         out ushort[] indices, out double[] advances)
     {
-        var key = (text, System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(gt), fontSize);
+        var key = (text, gt.FontUri?.ToString() ?? string.Empty, fontSize);
         if (_glyphDataCache.TryGetValue(key, out var cached))
         {
             indices  = cached.indices;
@@ -87,7 +88,7 @@ public sealed class GlyphRunRenderer
         if (_glyphDataCache.Count >= GlyphDataCacheMax)
             _glyphDataCache.Clear();
 
-        var key = (text, System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(gt), fontSize);
+        var key = (text, gt.FontUri?.ToString() ?? string.Empty, fontSize);
         _glyphDataCache[key] = (indices, advances);
     }
 

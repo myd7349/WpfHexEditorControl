@@ -142,13 +142,13 @@ internal sealed class LspDiagnosticPullProvider
         var diagnostics = new List<LspDiagnostic>(items.Count);
         foreach (var item in items)
         {
-            var d = ParseDiagnostic(item, uri);
+            var d = ParseDiagnostic(item);
             if (d is not null) diagnostics.Add(d);
         }
         return diagnostics;
     }
 
-    private static LspDiagnostic? ParseDiagnostic(JsonNode? node, string _documentUri)
+    private static LspDiagnostic? ParseDiagnostic(JsonNode? node)
     {
         if (node is not JsonObject obj) return null;
 
@@ -163,22 +163,13 @@ internal sealed class LspDiagnosticPullProvider
         {
             Message     = message,
             Code        = obj["code"]?.ToString(),
-            Severity    = MapSeverity(severity),
+            Severity    = LspSeverity.ToString(severity),
             StartLine   = start?["line"]?.GetValue<int>()               ?? 0,
             StartColumn = start?["character"]?.GetValue<int>()          ?? 0,
             EndLine     = range?["end"]?["line"]?.GetValue<int>()       ?? 0,
             EndColumn   = range?["end"]?["character"]?.GetValue<int>()  ?? 0,
         };
     }
-
-    private static string MapSeverity(int s) => s switch
-    {
-        1 => "error",
-        2 => "warning",
-        3 => "information",
-        4 => "hint",
-        _ => "information",
-    };
 
     /// <summary>Clears cached result identifiers (call when server restarts).</summary>
     internal void Reset() => _resultIds.Clear();

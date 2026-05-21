@@ -133,27 +133,25 @@ public sealed class ByteBigramHeatmapPanel : UserControl
 
         _analyzeBtn.IsEnabled = false;
         _cancelBtn.IsEnabled  = true;
-        _statusTxt.Text       = "Reading file…";
+        _statusTxt.Text       = "Computing bigrams…";
 
         try
         {
-            var data = await Task.Run(() => ReadAllBytesFromEditor(), ct);
-            if (data is null || data.Length < 2)
+            long byteCount = 0;
+            await Task.Run(() => byteCount = ComputeCountsStreaming(ct), ct);
+
+            if (byteCount < 2)
             {
                 _statusTxt.Text = "No data (file too small or not open).";
                 return;
             }
-
-            _statusTxt.Text = $"Computing bigrams over {data.Length:N0} bytes…";
-
-            await Task.Run(() => ComputeCounts(data, ct), ct);
 
             ct.ThrowIfCancellationRequested();
 
             await Dispatcher.InvokeAsync(() =>
             {
                 RenderBitmap();
-                _statusTxt.Text = $"Done — {data.Length - 1:N0} bigrams.";
+                _statusTxt.Text = $"Done — {byteCount - 1:N0} bigrams.";
             });
         }
         catch (OperationCanceledException)
@@ -167,36 +165,38 @@ public sealed class ByteBigramHeatmapPanel : UserControl
         }
     }
 
-    private byte[]? ReadAllBytesFromEditor()
+    // Streams through the file in 64 KB chunks — avoids loading the entire file into memory.
+    // Returns the total number of bytes read, or 0 on error.
+    private long ComputeCountsStreaming(CancellationToken ct)
     {
-        if (_context?.HexEditor is null) return null;
+        if (_context?.HexEditor is null) return 0;
         try
         {
             using var stream = new HexEditorStream(_context.HexEditor);
-            if (stream.Length < 2) return null;
-            var buffer = new byte[stream.Length];
-            var offset = 0;
-            int read;
-            while ((read = stream.Read(buffer, offset, buffer.Length - offset)) > 0)
-                offset += read;
-            return buffer;
-        }
-        catch
-        {
-            return null;
-        }
-    }
+            if (stream.Length < 2) return 0;
 
-    private void ComputeCounts(byte[] data, CancellationToken ct)
-    {
-        Array.Clear(_counts);
+            Array.Clear(_counts);
 
-        var n = data.Length - 1;
-        for (var i = 0; i < n; i++)
-        {
-            if ((i & 0xFFFF) == 0) ct.ThrowIfCancellationRequested();
-            _counts[data[i], data[i + 1]]++;
+            const int ChunkSize = 65536;
+            var buf  = new byte[ChunkSize];
+            int prev = -1;
+            long totalRead = 0;
+            int  read;
+
+            while ((read = stream.Read(buf, 0, ChunkSize)) > 0)
+            {
+                if (prev >= 0) _counts[prev, buf[0]]++;
+                for (int k = 1; k < read; k++)
+                    _counts[buf[k - 1], buf[k]]++;
+                prev       = buf[read - 1];
+                totalRead += read;
+                if ((totalRead & 0xFFFF) == 0) ct.ThrowIfCancellationRequested();
+            }
+
+            return totalRead;
         }
+        catch (OperationCanceledException) { throw; }
+        catch { return 0; }
     }
 
     // ── Rendering ─────────────────────────────────────────────────────────────
@@ -211,22 +211,20 @@ public sealed class ByteBigramHeatmapPanel : UserControl
 
         var logMax = Math.Log(max + 1);
 
-        // Build a 256×256 BGRA pixel buffer.
-        var pixels = new int[256 * 256];
         for (var j = 0; j < 256; j++)
         {
             for (var i = 0; i < 256; i++)
             {
                 var c     = _counts[i, j];
                 var t     = c == 0 ? 0.0 : Math.Log(c + 1) / logMax; // 0..1
-                pixels[j * 256 + i] = MapColor(t);
+                _pixels[j * 256 + i] = MapColor(t);
             }
         }
 
         _bitmap.Lock();
         try
         {
-            System.Runtime.InteropServices.Marshal.Copy(pixels, 0, _bitmap.BackBuffer, 256 * 256);
+            System.Runtime.InteropServices.Marshal.Copy(_pixels, 0, _bitmap.BackBuffer, 256 * 256);
             _bitmap.AddDirtyRect(new Int32Rect(0, 0, 256, 256));
         }
         finally
@@ -257,6 +255,7 @@ public sealed class ByteBigramHeatmapPanel : UserControl
     }
 
     private static readonly int[] _zeroes = new int[256 * 256];
+    private readonly int[] _pixels = new int[256 * 256];
 
     private void ClearBitmap()
     {

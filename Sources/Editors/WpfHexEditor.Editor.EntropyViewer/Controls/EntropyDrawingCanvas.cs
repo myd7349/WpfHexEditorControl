@@ -161,6 +161,9 @@ public sealed class EntropyBarCanvas : FrameworkElement
         InvalidateVisual();
     }
 
+    /// <summary>Current zoom factor [0.5, 8.0].</summary>
+    public double Zoom => _zoom;
+
     /// <summary>Sets the zoom factor [0.5, 8.0] and updates MinWidth for the parent ScrollViewer.</summary>
     public void SetZoom(double zoom)
     {
@@ -219,7 +222,8 @@ public sealed class EntropyBarCanvas : FrameworkElement
         // Section label overlays
         if (_sectionLabels.Count > 0 && count > 0)
         {
-            long totalBytes = (long)count * _windowSize;
+            long   totalBytes   = (long)count * _windowSize;
+            double pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
             foreach (var (offset, length, name) in _sectionLabels)
             {
                 if (totalBytes <= 0 || string.IsNullOrEmpty(name)) continue;
@@ -231,7 +235,7 @@ public sealed class EntropyBarCanvas : FrameworkElement
 
                 var ft = new FormattedText(name, System.Globalization.CultureInfo.CurrentUICulture,
                     FlowDirection.LeftToRight, _labelTypeface, 9, Brushes.Black,
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                    pixelsPerDip);
                 ft.MaxTextWidth  = Math.Max(1, lw - 2);
                 ft.Trimming      = TextTrimming.CharacterEllipsis;
                 dc.DrawText(ft, new Point(xStart + 1, 2));
