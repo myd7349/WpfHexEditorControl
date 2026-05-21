@@ -54,6 +54,8 @@ public sealed partial class DiffViewer
 
         if (isTextTab && _textResult is null && _left is not null && _right is not null)
             _ = ComputeTextDiffAsync();
+
+        UpdateMergeToolbarVisibility();
     }
 
     // ── Text diff computation ─────────────────────────────────────────────────

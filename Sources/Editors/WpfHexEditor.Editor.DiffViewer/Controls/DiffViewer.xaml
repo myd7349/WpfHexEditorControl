@@ -55,6 +55,21 @@
             <Button x:Name="BtnExportPatch" Content="{StaticResource DiffViewer_ExportPatch}"
                     ToolTip="{StaticResource DiffViewer_ExportPatchTooltip}"
                     Click="BtnExportPatch_Click" Padding="8,3" IsEnabled="False"/>
+            <Separator x:Name="MergeToolbarSep" Visibility="Collapsed"/>
+            <Button x:Name="BtnOpenBase" Content="{StaticResource DiffViewer_MergeOpenBase}"
+                    ToolTip="{StaticResource DiffViewer_MergeOpenBaseTooltip}"
+                    Click="BtnOpenBase_Click" Padding="8,3" Visibility="Collapsed"/>
+            <Button x:Name="BtnPrevConflict" Content="◄" ToolTip="{StaticResource DiffViewer_MergePrevConflict}"
+                    Click="BtnPrevConflict_Click" Padding="8,3" IsEnabled="False" Visibility="Collapsed"/>
+            <Button x:Name="BtnNextConflict" Content="►" ToolTip="{StaticResource DiffViewer_MergeNextConflict}"
+                    Click="BtnNextConflict_Click" Padding="8,3" IsEnabled="False" Visibility="Collapsed"/>
+            <Border x:Name="ChipConflicts" CornerRadius="3" Background="{DynamicResource DiffViewer_ModifiedBrush}"
+                    Padding="6,2" Margin="2,0" Visibility="Collapsed">
+                <TextBlock x:Name="ConflictsText" Foreground="{DynamicResource DiffViewer_BadgeForeground}" FontSize="11"/>
+            </Border>
+            <Button x:Name="BtnSaveMerged" Content="{StaticResource DiffViewer_MergeSave}"
+                    ToolTip="{StaticResource DiffViewer_MergeSaveTooltip}"
+                    Click="BtnSaveMerged_Click" Padding="8,3" IsEnabled="False" Visibility="Collapsed"/>
         </ToolBar>
 
         <!-- Tab: Hex / Text -->
@@ -171,6 +186,109 @@
                                       Background="{DynamicResource TE_Background}"
                                       ScrollChanged="OnTextScrollChanged">
                             <ItemsControl x:Name="TextRightList"
+                                          Background="{DynamicResource TE_Background}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ── Merge tab ── -->
+            <TabItem Header="{StaticResource DiffViewer_TabMerge}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Ours (left) panel -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="MergeOursHeader" Grid.Row="0"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="MergeOursScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Visible"
+                                      Background="{DynamicResource TE_Background}"
+                                      ScrollChanged="OnMergeScrollChanged">
+                            <ItemsControl x:Name="MergeOursList"
+                                          Background="{DynamicResource TE_Background}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
+                                  Background="{DynamicResource TE_LineNumberBackground}"/>
+
+                    <!-- Base (middle) panel -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="MergeBaseHeader" Grid.Row="0"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="MergeBaseScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Visible"
+                                      Background="{DynamicResource TE_Background}"
+                                      ScrollChanged="OnMergeScrollChanged">
+                            <ItemsControl x:Name="MergeBaseList"
+                                          Background="{DynamicResource TE_Background}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch"
+                                  Background="{DynamicResource TE_LineNumberBackground}"/>
+
+                    <!-- Theirs (right) panel -->
+                    <Grid Grid.Column="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="MergeTheirsHeader" Grid.Row="0"
+                                   Background="{DynamicResource TE_LineNumberBackground}"
+                                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                                   Padding="6,3" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        <ScrollViewer x:Name="MergeTheirsScroll" Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Visible"
+                                      Background="{DynamicResource TE_Background}"
+                                      ScrollChanged="OnMergeScrollChanged">
+                            <ItemsControl x:Name="MergeTheirsList"
                                           Background="{DynamicResource TE_Background}"
                                           VirtualizingPanel.IsVirtualizing="True"
                                           VirtualizingPanel.VirtualizationMode="Recycling">

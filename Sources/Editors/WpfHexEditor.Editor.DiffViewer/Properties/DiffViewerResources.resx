@@ -116,4 +116,20 @@
   <data name="DiffViewer_LineInserted" xml:space="preserve"><value>Inserted</value></data>
   <data name="DiffViewer_NotTextFile" xml:space="preserve"><value>File does not appear to be text or is too large for text diff.</value></data>
   <data name="DiffViewer_PatchSaved" xml:space="preserve"><value>Patch saved: {0}</value></data>
+  <data name="DiffViewer_TabMerge" xml:space="preserve"><value>Merge</value></data>
+  <data name="DiffViewer_MergeConflicts" xml:space="preserve"><value>Conflicts: {0}</value></data>
+  <data name="DiffViewer_MergeNoConflicts" xml:space="preserve"><value>No conflicts — merge is clean.</value></data>
+  <data name="DiffViewer_MergeAcceptOurs" xml:space="preserve"><value>Accept Ours</value></data>
+  <data name="DiffViewer_MergeAcceptTheirs" xml:space="preserve"><value>Accept Theirs</value></data>
+  <data name="DiffViewer_MergeAcceptBoth" xml:space="preserve"><value>Accept Both</value></data>
+  <data name="DiffViewer_MergeNextConflict" xml:space="preserve"><value>Next conflict (F9)</value></data>
+  <data name="DiffViewer_MergePrevConflict" xml:space="preserve"><value>Previous conflict (Shift+F9)</value></data>
+  <data name="DiffViewer_MergeSave" xml:space="preserve"><value>Save Merged…</value></data>
+  <data name="DiffViewer_MergeSaveTooltip" xml:space="preserve"><value>Save the merged output to a file</value></data>
+  <data name="DiffViewer_MergeSaved" xml:space="preserve"><value>Merged file saved: {0}</value></data>
+  <data name="DiffViewer_MergeUnresolvedWarning" xml:space="preserve"><value>There are {0} unresolved conflict(s). Save anyway?</value></data>
+  <data name="DiffViewer_MergeBaseLabel" xml:space="preserve"><value>— (base)</value></data>
+  <data name="DiffViewer_MergeOpenBase" xml:space="preserve"><value>Open Base File…</value></data>
+  <data name="DiffViewer_MergeOpenBaseTooltip" xml:space="preserve"><value>Open a base (ancestor) file to enable 3-way merge</value></data>
+  <data name="DiffViewer_MergeNotReady" xml:space="preserve"><value>Open two files and a base file to start a 3-way merge.</value></data>
 </root>
