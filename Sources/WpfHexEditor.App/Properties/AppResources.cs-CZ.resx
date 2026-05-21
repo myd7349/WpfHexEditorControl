@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Vymazat cestovní data</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Tím se odstraní uložená nastavení, rozložení a data relace. Nainstalovaná rozšíření nebudou ovlivněna. Pokračovat?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Cestovní data byla vymazána. Pro použití změn se doporučuje restart. Restartovat nyní?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Byla zjištěna poškozená data roamingu ({0}). Zálohujte a resetujte pro opravu nebo ignorujte a pokračujte.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Zálohovat &amp; resetovat</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ignorovat</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Obnovit ze zálohy…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Obnovit data roamingu ze zálohy '{0}'? Aktuální soubory budou přepsány.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Žádná záloha nenalezena. Pro vytvoření zálohy použijte alespoň jednou možnost 'Vymazat data roamingu'.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Záloha byla úspěšně obnovena. Restartovat nyní pro použití změn?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>P&#345;epnout _z&#225;mek rozlo&#382;en&#237;</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_N&#225;stroje</value></data>

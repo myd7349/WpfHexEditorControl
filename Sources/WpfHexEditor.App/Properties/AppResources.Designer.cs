@@ -2318,6 +2318,34 @@ namespace WpfHexEditor.App.Properties {
             }
         }
 
+        internal static string App_RoamingDataInfoBar_Message {
+            get { return ResourceManager.GetString("App_RoamingDataInfoBar_Message", resourceCulture); }
+        }
+
+        internal static string App_RoamingDataInfoBar_BackupReset {
+            get { return ResourceManager.GetString("App_RoamingDataInfoBar_BackupReset", resourceCulture); }
+        }
+
+        internal static string App_RoamingDataInfoBar_Ignore {
+            get { return ResourceManager.GetString("App_RoamingDataInfoBar_Ignore", resourceCulture); }
+        }
+
+        internal static string App_Menu_RestoreRoamingBackup {
+            get { return ResourceManager.GetString("App_Menu_RestoreRoamingBackup", resourceCulture); }
+        }
+
+        internal static string App_RestoreRoamingBackup_Confirm {
+            get { return ResourceManager.GetString("App_RestoreRoamingBackup_Confirm", resourceCulture); }
+        }
+
+        internal static string App_RestoreRoamingBackup_NoBackup {
+            get { return ResourceManager.GetString("App_RestoreRoamingBackup_NoBackup", resourceCulture); }
+        }
+
+        internal static string App_RestoreRoamingBackup_Done {
+            get { return ResourceManager.GetString("App_RestoreRoamingBackup_Done", resourceCulture); }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à R_esize....
         /// </summary>

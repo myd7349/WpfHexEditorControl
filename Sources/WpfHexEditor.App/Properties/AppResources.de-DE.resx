@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Roaming-Daten löschen</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Dadurch werden gespeicherte Einstellungen, Layout und Sitzungsdaten gelöscht. Installierte Erweiterungen sind nicht betroffen. Fortfahren?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Roaming-Daten gelöscht. Ein Neustart wird empfohlen, um die Änderungen anzuwenden. Jetzt neu starten?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Beschädigte Roaming-Daten erkannt ({0}). Sichern und zurücksetzen, um das Problem zu beheben, oder ignorieren, um fortzufahren.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Sichern &amp; Zurücksetzen</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ignorieren</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Aus Sicherung wiederherstellen…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Roaming-Daten aus der Sicherung '{0}' wiederherstellen? Aktuelle Dateien werden überschrieben.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Keine Sicherung gefunden. Verwenden Sie mindestens einmal 'Roaming-Daten löschen', um eine Sicherung zu erstellen.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Sicherung erfolgreich wiederhergestellt. Jetzt neu starten, um die Änderungen anzuwenden?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Gesperrtes _Layout umschalten</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Extras</value></data>

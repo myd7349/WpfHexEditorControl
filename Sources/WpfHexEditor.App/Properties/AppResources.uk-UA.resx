@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Очистити дані роумінгу</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Буде видалено збережені параметри, макет і дані сеансу. Встановлені розширення не постраждають. Продовжити?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Дані роумінгу очищено. Для застосування змін рекомендується перезапуск. Перезапустити зараз?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Виявлено пошкоджені дані роумінгу ({0}). Створіть резервну копію та виконайте скидання для виправлення або ігноруйте для продовження.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Резервна копія &amp; Скидання</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ігнорувати</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Відновити з резервної копії…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Відновити дані роумінгу з резервної копії '{0}'? Поточні файли буде перезаписано.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Резервну копію не знайдено. Використайте 'Очистити дані роумінгу' принаймні один раз, щоб створити резервну копію.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Резервну копію успішно відновлено. Перезапустити зараз для застосування змін?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Увімкнути/вимкнути блокування _розташування</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Інструменти</value></data>

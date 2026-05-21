@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Cancella dati di roaming</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Verranno eliminati le impostazioni salvate, il layout e i dati di sessione. Le estensioni installate non saranno interessate. Continuare?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Dati di roaming cancellati. Si consiglia un riavvio per applicare le modifiche. Riavviare ora?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Rilevati dati di roaming corrotti ({0}). Esegui un backup e ripristina per correggere, oppure ignora per continuare.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Backup &amp; Ripristino</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ignora</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Ripristina dal backup…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Ripristinare i dati di roaming dal backup '{0}'? I file correnti verranno sovrascritti.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Nessun backup trovato. Usa 'Cancella dati di roaming' almeno una volta per creare un backup.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Backup ripristinato correttamente. Riavviare ora per applicare le modifiche?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Attiva/disattiva _layout bloccato</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Strumenti</value></data>

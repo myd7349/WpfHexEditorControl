@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Borrar datos de itinerancia</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Esto eliminará la configuración guardada, el diseño y los datos de sesión. Las extensiones instaladas no se verán afectadas. ¿Continuar?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Datos de itinerancia borrados. Se recomienda reiniciar para aplicar los cambios. ¿Reiniciar ahora?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Se detectaron datos de itinerancia corruptos ({0}). Haga una copia de seguridad y restablezca para corregirlo, o ignore para continuar.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Copia de seguridad &amp; Restablecer</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ignorar</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Restaurar desde copia de seguridad…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>¿Restaurar datos de itinerancia desde la copia de seguridad '{0}'? Los archivos actuales serán sobrescritos.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>No se encontró ninguna copia de seguridad. Use 'Borrar datos de itinerancia' al menos una vez para crear una copia de seguridad.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Copia de seguridad restaurada correctamente. ¿Reiniciar ahora para aplicar los cambios?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Alternar _diseño bloqueado</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Herramientas</value></data>

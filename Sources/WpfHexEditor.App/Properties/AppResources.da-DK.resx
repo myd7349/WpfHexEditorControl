@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Ryd roaming-data</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Dette vil slette gemte indstillinger, layout og sessionsdata. Installerede udvidelser vil ikke blive berørt. Fortsæt?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Roaming-data er ryddet. En genstart anbefales for at anvende ændringerne. Genstart nu?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Beskædigede roaming-data opdaget ({0}). Sikkerhedskopier og nulstil for at rette, eller ignorer for at fortsætte.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Sikkerhedskopier &amp; nulstil</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ignorer</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Gendan fra sikkerhedskopi…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Gendan roaming-data fra sikkerhedskopi '{0}'? Nuværende filer vil blive overskrevet.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Ingen sikkerhedskopi fundet. Brug 'Ryd roaming-data' mindst én gang for at oprette en sikkerhedskopi.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Sikkerhedskopi gendannet. Genstart nu for at anvende ændringerne?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Slå layout_lås til/fra</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Funktioner</value></data>

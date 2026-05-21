@@ -671,6 +671,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         RebuildTblItemList();   // must be before LoadSavedLayoutOrDefault so SyncTblDropdown finds items
         LoadSavedLayoutOrDefault();
         InitLayoutCustomization();  // creates service + chord keys (no restore yet)
+
+        // Plan A: silent startup health check — non-blocking, runs after layout restore
+        Dispatcher.InvokeAsync(() =>
+        {
+            var health = WpfHexEditor.App.Services.RoamingDataHealthChecker.Check();
+            if (!health.IsHealthy)
+                ShowRoamingDataInfoBar(health.CorruptFiles);
+        }, System.Windows.Threading.DispatcherPriority.Background);
         PopulateRecentMenus();
         TryRestoreSession();
         RestoreLayoutPreferences(); // apply saved layout prefs AFTER session restore
@@ -7322,36 +7330,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (result != MessageBoxResult.Yes) return;
 
-        var roamingRoot = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "WpfHexEditor");
-
-        // Files to delete (preserve Plugins\ — user installed extensions)
-        string[] filesToDelete =
-        [
-            Path.Combine(roamingRoot, "settings.json"),
-            Path.Combine(roamingRoot, "plugin-isolation-overrides.json"),
-            Path.Combine(roamingRoot, "App", "layout.json"),
-            Path.Combine(roamingRoot, "App", "session.json"),
-        ];
-
-        var deleted = new List<string>();
-        var failed  = new List<string>();
-
-        foreach (var path in filesToDelete)
-        {
-            try
-            {
-                if (File.Exists(path)) { File.Delete(path); deleted.Add(Path.GetFileName(path)); }
-            }
-            catch (Exception ex)
-            {
-                failed.Add($"{Path.GetFileName(path)} ({ex.Message})");
-            }
-        }
+        var backupPath = WpfHexEditor.App.Services.RoamingDataBackupService.CreateBackup();
+        var (deleted, failed) = WpfHexEditor.App.Services.RoamingDataBackupService.DeleteManagedFiles();
 
         if (failed.Count > 0)
             OutputLogger.Error($"[ClearRoamingData] Failed to delete: {string.Join(", ", failed)}");
+
+        if (backupPath is not null)
+            OutputLogger.Info($"[ClearRoamingData] Backup created at: {backupPath}");
 
         OutputLogger.Info($"[ClearRoamingData] Deleted: {(deleted.Count > 0 ? string.Join(", ", deleted) : "nothing")}");
 

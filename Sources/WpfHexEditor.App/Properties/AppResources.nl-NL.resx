@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Roaming-gegevens wissen</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Hierdoor worden opgeslagen instellingen, lay-out en sessiegegevens verwijderd. Geïnstalleerde extensies worden niet beïnvloed. Doorgaan?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Roaming-gegevens gewist. Een herstart wordt aanbevolen om de wijzigingen toe te passen. Nu herstarten?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Beschadigde roaminggegevens gedetecteerd ({0}). Maak een back-up en herstel om te corrigeren, of negeer om door te gaan.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Back-up &amp; Herstel</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Negeren</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Herstel vanuit back-up…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Roaminggegevens herstellen vanuit back-up '{0}'? Huidige bestanden worden overschreven.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Geen back-up gevonden. Gebruik 'Roaminggegevens wissen' minstens één keer om een back-up te maken.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Back-up succesvol hersteld. Nu opnieuw starten om de wijzigingen toe te passen?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>_Vergrendelde indeling wisselen</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Extra</value></data>

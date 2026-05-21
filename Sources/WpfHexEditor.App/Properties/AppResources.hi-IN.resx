@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>रोमिंग डेटा साफ़ करें</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>यह सहेजी गई सेटिंग्स, लेआउट और सत्र डेटा हटा देगा। इंस्टॉल किए गए एक्सटेंशन प्रभावित नहीं होंगे। जारी रखें?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>रोमिंग डेटा साफ़ किया गया। परिवर्तन लागू करने के लिए पुनः आरंभ करने की सलाह दी जाती है। अभी पुनः आरंभ करें?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>दूषित रोमिंग डेटा ({0}) मिला। ठीक करने के लिए बैकअप और रीसेट करें, या जारी रखने के लिए अनदेखा करें।</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>बैकअप &amp; रीसेट</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>अनदेखा करें</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>बैकअप से पुनर्स्थापित करें…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>बैकअप '{0}' से रोमिंग डेटा पुनर्स्थापित करें? वर्तमान फ़ाइलें अधिलेखित हो जाएंगी।</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>कोई बैकअप नहीं मिला। बैकअप बनाने के लिए कम से कम एक बार 'रोमिंग डेटा साफ़ करें' का उपयोग करें।</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>बैकअप सफलतापूर्वक पुनर्स्थापित हुआ। परिवर्तन लागू करने के लिए अभी पुनः प्रारंभ करें?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>लॉक किए गए लेआउट को टॉगल करें</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>टूल्स</value></data>

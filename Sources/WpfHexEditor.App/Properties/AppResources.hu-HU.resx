@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Roaming-adatok törlése</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Ez törli a mentett beállításokat, az elrendezést és a munkamenet-adatokat. A telepített bővítmények nem érintettek. Folytatja?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>A roaming-adatok törölve. A változtatások alkalmazásához újraindítás ajánlott. Újraindítja most?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Sérült barangolási adatok észlelve ({0}). A javításhoz készítsen biztonsági másolatot és állítsa vissza, vagy hagyja figyelmen kívül a folytatáshoz.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Biztonsági mentés &amp; Visszaallítás</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Figyelmen kívül hagyás</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Visszaallítás biztonsági másolatból…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Visszaallítja a barangolási adatokat a(z) '{0}' biztonsági másolatból? Az aktuális fájlok felülíródnak.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Nem található biztonsági másolat. Használja legalább egyszer a 'Barangolási adatok törlése' funkciót a biztonsági másolat létrehozásához.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>A biztonsági másolat sikeresen visszaallítva. Újraindít most a módosítások alkalmazásához?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Elrendezés zárolásának _átváltása</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Eszközök</value></data>

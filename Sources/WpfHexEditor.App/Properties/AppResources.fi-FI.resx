@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Tyhjennä roaming-tiedot</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Tämä poistaa tallennetut asetukset, asettelun ja istuntotiedot. Asennettuihin laajennuksiin ei vaikuteta. Jatketaanko?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Roaming-tiedot tyhjennetty. Muutosten käyttäminen edellyttää uudelleenkäynnistystä. Käynnistetäänkö nyt uudelleen?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Vioittuneet verkkovierailutiedot havaittu ({0}). Varmuuskopioi ja palauta korjataksesi tai ohita jatkaaksesi.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Varmuuskopioi &amp; Palauta</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ohita</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Palauta varmuuskopiosta…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Palautetaanko verkkovierailutiedot varmuuskopiosta '{0}'? Nykyiset tiedostot ylikirjoitetaan.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Varmuuskopiota ei löydy. Käytä 'Tyhjennä verkkovierailutiedot' vähintään kerran varmuuskopion luomiseksi.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Varmuuskopio palautettu onnistuneesti. Käynnistetäänkö uudelleen muutosten soveltamiseksi?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Vaihda asettelun _lukitus</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Työkalut</value></data>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -93,6 +93,13 @@
   <data name="App_ClearRoamingData_Title" xml:space="preserve"><value>Ștergere date de roaming</value></data>
   <data name="App_ClearRoamingData_Confirm" xml:space="preserve"><value>Aceasta va șterge setările salvate, aspectul și datele sesiunii. Extensiile instalate nu vor fi afectate. Continuați?</value></data>
   <data name="App_ClearRoamingData_RestartPrompt" xml:space="preserve"><value>Datele de roaming au fost șterse. Se recomandă repornirea pentru a aplica modificările. Reporniți acum?</value></data>
+  <data name="App_RoamingDataInfoBar_Message" xml:space="preserve"><value>Au fost detectate date de roaming corupte ({0}). Creați o copie de rezervă şi resetați pentru a remedia sau ignorați pentru a continua.</value></data>
+  <data name="App_RoamingDataInfoBar_BackupReset" xml:space="preserve"><value>Copie de rezervă &amp; Resetare</value></data>
+  <data name="App_RoamingDataInfoBar_Ignore" xml:space="preserve"><value>Ignorare</value></data>
+  <data name="App_Menu_RestoreRoamingBackup" xml:space="preserve"><value>Restaurare din copie de rezervă…</value></data>
+  <data name="App_RestoreRoamingBackup_Confirm" xml:space="preserve"><value>Restaurați datele de roaming din copia de rezervă '{0}'? Fişierele curente vor fi suprascrise.</value></data>
+  <data name="App_RestoreRoamingBackup_NoBackup" xml:space="preserve"><value>Nu s-a găsit nicio copie de rezervă. Utilizați 'Ştergere date de roaming' cel puțin o dată pentru a crea o copie de rezervă.</value></data>
+  <data name="App_RestoreRoamingBackup_Done" xml:space="preserve"><value>Copia de rezervă a fost restaurată cu succes. Reporniți acum pentru a aplica modificările?</value></data>
   <data name="App_Menu_ToggleLockedLayout" xml:space="preserve"><value>Comutare blocare _aspect</value></data>
 
   <data name="App_Menu_Tools" xml:space="preserve"><value>_Instrumente</value></data>
