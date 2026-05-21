@@ -41,39 +41,19 @@ internal static class RoamingDataBackupService
     /// </summary>
     public static string? CreateBackup()
     {
-        var stamp      = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-        var backupDir  = Path.Combine(BackupRoot, stamp);
-        var anyCopied  = false;
+        var stamp     = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        var backupDir = Path.Combine(BackupRoot, stamp);
 
-        foreach (var relative in ManagedRelativePaths)
-        {
-            var src = Path.Combine(RoamingRoot, relative);
-            if (!File.Exists(src)) continue;
+        var (copied, _) = CopyManagedFiles(RoamingRoot, backupDir);
+        if (copied == 0) return null;
 
-            var dst = Path.Combine(backupDir, relative);
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
-                File.Copy(src, dst, overwrite: true);
-                anyCopied = true;
-            }
-            catch (Exception ex)
-            {
-                OutputLogger.Error($"[RoamingBackup] Failed to backup '{relative}': {ex.Message}");
-            }
-        }
-
-        if (anyCopied)
-        {
-            OutputLogger.Info($"[RoamingBackup] Backup created: {backupDir}");
-            return backupDir;
-        }
-
-        return null;
+        OutputLogger.Info($"[RoamingBackup] Backup created: {backupDir}");
+        return backupDir;
     }
 
     /// <summary>
     /// Returns the most recent backup folder, or null if none exists.
+    /// Folders are named YYYYMMDD-HHmmss so lexicographic descending equals chronological descending.
     /// </summary>
     public static string? GetLatestBackup()
     {
@@ -85,38 +65,17 @@ internal static class RoamingDataBackupService
     }
 
     /// <summary>
-    /// Restores all files from the most recent backup into their original locations.
-    /// Returns (restoredCount, errorMessages).
+    /// Restores all files from <paramref name="backupFolder"/> (or the latest backup when null)
+    /// into their original locations. Returns (restoredCount, errorMessages).
     /// </summary>
-    public static (int Restored, List<string> Errors) RestoreLatestBackup()
+    public static (int Restored, List<string> Errors) RestoreLatestBackup(string? backupFolder = null)
     {
-        var latest = GetLatestBackup();
+        var latest = backupFolder ?? GetLatestBackup();
         if (latest is null) return (0, ["No backup found."]);
 
-        var restored = 0;
-        var errors   = new List<string>();
-
-        foreach (var relative in ManagedRelativePaths)
-        {
-            var src = Path.Combine(latest, relative);
-            if (!File.Exists(src)) continue;
-
-            var dst = Path.Combine(RoamingRoot, relative);
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
-                File.Copy(src, dst, overwrite: true);
-                restored++;
-            }
-            catch (Exception ex)
-            {
-                errors.Add($"{relative}: {ex.Message}");
-                OutputLogger.Error($"[RoamingBackup] Failed to restore '{relative}': {ex.Message}");
-            }
-        }
-
-        OutputLogger.Info($"[RoamingBackup] Restored {restored} file(s) from '{latest}'.");
-        return (restored, errors);
+        var (copied, errors) = CopyManagedFiles(latest, RoamingRoot);
+        OutputLogger.Info($"[RoamingBackup] Restored {copied} file(s) from '{latest}'.");
+        return (copied, errors);
     }
 
     /// <summary>
@@ -131,12 +90,12 @@ internal static class RoamingDataBackupService
         foreach (var relative in ManagedRelativePaths)
         {
             var path = Path.Combine(RoamingRoot, relative);
-            if (!File.Exists(path)) continue;
             try
             {
                 File.Delete(path);
                 deleted.Add(Path.GetFileName(path));
             }
+            catch (FileNotFoundException) { /* already gone — nothing to delete */ }
             catch (Exception ex)
             {
                 errors.Add($"{Path.GetFileName(path)}: {ex.Message}");
@@ -145,5 +104,36 @@ internal static class RoamingDataBackupService
         }
 
         return (deleted, errors);
+    }
+
+    // Copies ManagedRelativePaths that exist under sourceRoot into destRoot.
+    // Returns (count copied, errors). Destination subdirectories are created as needed.
+    private static (int Copied, List<string> Errors) CopyManagedFiles(string sourceRoot, string destRoot)
+    {
+        var copied = 0;
+        var errors = new List<string>();
+
+        // Pre-create the App\ subdirectory once rather than per-file.
+        Directory.CreateDirectory(Path.Combine(destRoot, "App"));
+
+        foreach (var relative in ManagedRelativePaths)
+        {
+            var src = Path.Combine(sourceRoot, relative);
+            if (!File.Exists(src)) continue;
+
+            var dst = Path.Combine(destRoot, relative);
+            try
+            {
+                File.Copy(src, dst, overwrite: true);
+                copied++;
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{relative}: {ex.Message}");
+                OutputLogger.Error($"[RoamingBackup] Failed to copy '{relative}': {ex.Message}");
+            }
+        }
+
+        return (copied, errors);
     }
 }

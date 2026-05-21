@@ -24,7 +24,10 @@ namespace WpfHexEditor.App.Services;
 /// </summary>
 internal static class RoamingDataHealthChecker
 {
-    public sealed record HealthReport(bool IsHealthy, IReadOnlyList<string> CorruptFiles);
+    public sealed record HealthReport(IReadOnlyList<string> CorruptFiles)
+    {
+        public bool IsHealthy => CorruptFiles.Count == 0;
+    }
 
     private static readonly JsonSerializerOptions _settingsOptions = new()
     {
@@ -39,33 +42,27 @@ internal static class RoamingDataHealthChecker
     /// </summary>
     public static HealthReport Check()
     {
+        var root    = RoamingDataBackupService.RoamingRoot;
         var corrupt = new List<string>();
 
-        CheckFile(
-            RoamingDataBackupService.RoamingRoot,
-            "settings.json",
+        CheckFile(root, "settings.json",
             text => JsonSerializer.Deserialize<AppSettings>(text, _settingsOptions),
             corrupt);
 
-        CheckFile(
-            RoamingDataBackupService.RoamingRoot,
-            Path.Combine("App", "layout.json"),
+        CheckFile(root, Path.Combine("App", "layout.json"),
             text => DockLayoutSerializer.Deserialize(text),
             corrupt);
 
-        CheckFile(
-            RoamingDataBackupService.RoamingRoot,
-            Path.Combine("App", "session.json"),
-            text => JsonDocument.Parse(text),
+        // session.json and plugin-isolation-overrides.json — validate as JSON documents
+        CheckFile(root, Path.Combine("App", "session.json"),
+            text => { using var _ = JsonDocument.Parse(text); },
             corrupt);
 
-        CheckFile(
-            RoamingDataBackupService.RoamingRoot,
-            "plugin-isolation-overrides.json",
-            text => JsonDocument.Parse(text),
+        CheckFile(root, "plugin-isolation-overrides.json",
+            text => { using var _ = JsonDocument.Parse(text); },
             corrupt);
 
-        return new HealthReport(corrupt.Count == 0, corrupt);
+        return new HealthReport(corrupt);
     }
 
     private static void CheckFile(string root, string relative, Action<string> parse, List<string> corrupt)

@@ -672,13 +672,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         LoadSavedLayoutOrDefault();
         InitLayoutCustomization();  // creates service + chord keys (no restore yet)
 
-        // Plan A: silent startup health check — non-blocking, runs after layout restore
-        Dispatcher.InvokeAsync(() =>
-        {
-            var health = WpfHexEditor.App.Services.RoamingDataHealthChecker.Check();
-            if (!health.IsHealthy)
-                ShowRoamingDataInfoBar(health.CorruptFiles);
-        }, System.Windows.Threading.DispatcherPriority.Background);
+        // Plan A: silent startup health check — file I/O on thread pool, result marshalled back to UI
+        _ = Task.Run(WpfHexEditor.App.Services.RoamingDataHealthChecker.Check)
+                 .ContinueWith(t =>
+                 {
+                     if (!t.Result.IsHealthy)
+                         ShowRoamingDataInfoBar(t.Result.CorruptFiles);
+                 }, System.Threading.CancellationToken.None,
+                    System.Threading.Tasks.TaskContinuationOptions.OnlyOnRanToCompletion,
+                    System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
         PopulateRecentMenus();
         TryRestoreSession();
         RestoreLayoutPreferences(); // apply saved layout prefs AFTER session restore

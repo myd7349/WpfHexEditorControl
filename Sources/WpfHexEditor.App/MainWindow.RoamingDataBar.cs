@@ -86,7 +86,7 @@ public partial class MainWindow
 
         if (confirm != System.Windows.MessageBoxResult.Yes) return;
 
-        var (restored, errors) = RoamingDataBackupService.RestoreLatestBackup();
+        var (restored, errors) = RoamingDataBackupService.RestoreLatestBackup(latest);
 
         if (errors.Count > 0)
             OutputLogger.Error($"[RestoreBackup] Errors: {string.Join("; ", errors)}");
