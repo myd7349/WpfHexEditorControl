@@ -54,6 +54,45 @@ public sealed class GlyphRunRenderer
 
     #endregion
 
+    #region Static glyph-data cache — avoids List<ushort>/List<double> allocation per token
+
+    // Key: (text, GlyphTypeface identity, fontSize) → pre-computed glyph indices + advance widths.
+    // Hit rate ~100% for hex cells (256-entry vocabulary "00"–"FF" + single chars).
+    // Cleared entirely when full — vocabulary is small enough that a cold refill is cheap.
+    private const int GlyphDataCacheMax = 512;
+
+    private static readonly Dictionary<(string text, int gtId, double fontSize), (ushort[] indices, double[] advances)>
+        _glyphDataCache = new(GlyphDataCacheMax);
+
+    private static bool TryGetGlyphData(
+        string text, GlyphTypeface gt, double fontSize,
+        out ushort[] indices, out double[] advances)
+    {
+        var key = (text, System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(gt), fontSize);
+        if (_glyphDataCache.TryGetValue(key, out var cached))
+        {
+            indices  = cached.indices;
+            advances = cached.advances;
+            return true;
+        }
+        indices  = null!;
+        advances = null!;
+        return false;
+    }
+
+    private static void StoreGlyphData(
+        string text, GlyphTypeface gt, double fontSize,
+        ushort[] indices, double[] advances)
+    {
+        if (_glyphDataCache.Count >= GlyphDataCacheMax)
+            _glyphDataCache.Clear();
+
+        var key = (text, System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(gt), fontSize);
+        _glyphDataCache[key] = (indices, advances);
+    }
+
+    #endregion
+
     #region Constants
 
     // Number of space-widths used to render a single tab character.
@@ -227,47 +266,50 @@ public sealed class GlyphRunRenderer
                                     double x, double baselineY,
                                     GlyphTypeface gt, Brush brush)
     {
-        var glyphIndices  = new List<ushort>(text.Length);
-        var advanceWidths = new List<double>(text.Length);
-        var charMap       = gt.CharacterToGlyphMap;
-
-        foreach (char ch in text)
+        if (!TryGetGlyphData(text, gt, _fontSize, out var glyphIndices, out var advanceWidths))
         {
-            if (ch == '\t')
+            var idxList = new List<ushort>(text.Length);
+            var advList = new List<double>(text.Length);
+            var charMap = gt.CharacterToGlyphMap;
+
+            foreach (char ch in text)
             {
-                // Tab has no glyph in most monospace fonts — use space glyph with TabSize advance.
-                charMap.TryGetValue(' ', out ushort spaceGi);
-                glyphIndices.Add(spaceGi);
-                advanceWidths.Add(SnapToPixel(gt.AdvanceWidths[spaceGi] * _fontSize * TabSize));
-                continue;
+                if (ch == '	')
+                {
+                    charMap.TryGetValue(' ', out ushort spaceGi);
+                    idxList.Add(spaceGi);
+                    advList.Add(SnapToPixel(gt.AdvanceWidths[spaceGi] * _fontSize * TabSize));
+                    continue;
+                }
+
+                if (!charMap.TryGetValue(ch, out ushort gi))
+                    charMap.TryGetValue('�', out gi);
+
+                idxList.Add(gi);
+                advList.Add(SnapToPixel(gt.AdvanceWidths[gi] * _fontSize));
             }
 
-            if (!charMap.TryGetValue(ch, out ushort gi))
-            {
-                // Try replacement-character glyph; fall back to glyph index 0.
-                charMap.TryGetValue('\uFFFD', out gi);
-            }
-
-            glyphIndices.Add(gi);
-            advanceWidths.Add(SnapToPixel(gt.AdvanceWidths[gi] * _fontSize));
+            glyphIndices  = [.. idxList];
+            advanceWidths = [.. advList];
+            StoreGlyphData(text, gt, _fontSize, glyphIndices, advanceWidths);
         }
 
         var origin   = new Point(SnapToPixel(x), SnapToPixel(baselineY));
         var glyphRun = new GlyphRun(
             gt,
-            bidiLevel:     0,
-            isSideways:    false,
+            bidiLevel:       0,
+            isSideways:      false,
             renderingEmSize: _fontSize,
-            pixelsPerDip:  (float)_pixelsPerDip,
-            glyphIndices:  glyphIndices,
-            baselineOrigin: origin,
-            advanceWidths: advanceWidths,
-            glyphOffsets:  null,
-            characters:    null,
-            deviceFontName: null,
-            clusterMap:    null,
-            caretStops:    null,
-            language:      null);
+            pixelsPerDip:    (float)_pixelsPerDip,
+            glyphIndices:    glyphIndices,
+            baselineOrigin:  origin,
+            advanceWidths:   advanceWidths,
+            glyphOffsets:    null,
+            characters:      null,
+            deviceFontName:  null,
+            clusterMap:      null,
+            caretStops:      null,
+            language:        null);
 
         dc.DrawGlyphRun(brush, glyphRun);
     }
@@ -375,44 +417,50 @@ public sealed class GlyphRunRenderer
     /// </summary>
     private GlyphRun BuildGlyphRunAtOffset(string text, double x, double baselineY, GlyphTypeface gt)
     {
-        var idxList = new List<ushort>(text.Length);
-        var advList = new List<double>(text.Length);
-        var charMap = gt.CharacterToGlyphMap;
-
-        for (int i = 0; i < text.Length; i++)
+        if (!TryGetGlyphData(text, gt, _fontSize, out var idxArr, out var advArr))
         {
-            char ch = text[i];
-            if (ch == '\t')
+            var idxList = new List<ushort>(text.Length);
+            var advList = new List<double>(text.Length);
+            var charMap = gt.CharacterToGlyphMap;
+
+            for (int i = 0; i < text.Length; i++)
             {
-                // Tab has no glyph in most monospace fonts — use space glyph with TabSize advance.
-                charMap.TryGetValue(' ', out ushort spaceGi);
-                idxList.Add(spaceGi);
-                advList.Add(gt.AdvanceWidths[spaceGi] * _fontSize * TabSize);
-                continue;
+                char ch = text[i];
+                if (ch == '	')
+                {
+                    charMap.TryGetValue(' ', out ushort spaceGi);
+                    idxList.Add(spaceGi);
+                    advList.Add(gt.AdvanceWidths[spaceGi] * _fontSize * TabSize);
+                    continue;
+                }
+
+                if (!charMap.TryGetValue(ch, out ushort gi))
+                    charMap.TryGetValue('�', out gi);
+
+                idxList.Add(gi);
+                advList.Add(gt.AdvanceWidths[gi] * _fontSize);
             }
 
-            if (!charMap.TryGetValue(ch, out ushort gi))
-                charMap.TryGetValue('\uFFFD', out gi);
-
-            idxList.Add(gi);
-            advList.Add(gt.AdvanceWidths[gi] * _fontSize);
+            idxArr = [.. idxList];
+            advArr = [.. advList];
+            StoreGlyphData(text, gt, _fontSize, idxArr, advArr);
         }
 
         return new GlyphRun(
             gt,
-            bidiLevel:        0,
-            isSideways:       false,
-            renderingEmSize:  _fontSize,
-            pixelsPerDip:     (float)_pixelsPerDip,
-            glyphIndices:     idxList,
-            baselineOrigin:   new Point(x, baselineY),
-            advanceWidths:    advList,
-            glyphOffsets:     null,
-            characters:       null,
-            deviceFontName:   null,
-            clusterMap:       null,
-            caretStops:       null,
-            language:         null);
+            bidiLevel:       0,
+            isSideways:      false,
+            renderingEmSize: _fontSize,
+            pixelsPerDip:    (float)_pixelsPerDip,
+            glyphIndices:    idxArr,
+            baselineOrigin:  new Point(x, baselineY),
+            advanceWidths:   advArr,
+            glyphOffsets:    null,
+            characters:      null,
+            deviceFontName:  null,
+            clusterMap:      null,
+            caretStops:      null,
+            language:        null);
     }
 
     #endregion
