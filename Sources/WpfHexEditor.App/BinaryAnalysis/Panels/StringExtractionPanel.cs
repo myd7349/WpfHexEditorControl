@@ -246,7 +246,6 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
         row.Children.Add(new System.Windows.Shapes.Rectangle { Width = 6, Height = 1, Fill = Brushes.Transparent });
 
-        // Entropy toggle + threshold slider
         var entropyChk = new CheckBox
         {
             FontSize = 10,
@@ -276,7 +275,6 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         row.Children.Add(thresholdSlider);
         row.Children.Add(thresholdLabel);
 
-        // Readability score filter
         row.Children.Add(new System.Windows.Shapes.Rectangle { Width = 6, Height = 1, Fill = Brushes.Transparent });
 
         var readabilitySlider = new Slider
@@ -703,7 +701,15 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _grid.Columns.Add(MakeDuplicateColumn());
         _grid.Columns.Add(MakeContextBytesColumn());
         _grid.Columns.Add(MakeCol("StringExtract_ColValue",    nameof(StringRun.Value),    0,   null,  "StringExtract_TtValue"));
-        _grid.Columns.Add(MakeScoreColumn());
+        var scoreCol = MakeScoreColumn();
+        _grid.Columns.Add(scoreCol);
+        _grid.ColumnHeaderStyle.Setters.Add(new EventSetter(UIElement.MouseRightButtonUpEvent,
+            new MouseButtonEventHandler((_, _) =>
+            {
+                scoreCol.Visibility = scoreCol.Visibility == Visibility.Visible
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            })));
 
         // Sync SelectedGridItem in VM when DataGrid selection changes
         _grid.SelectionChanged += (_, _) =>
@@ -788,20 +794,10 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         return col;
     }
 
-    private DataGridTextColumn MakeScoreColumn()
+    private static DataGridTextColumn MakeScoreColumn()
     {
         var col = MakeCol("StringExtract_ColScore", nameof(StringRun.ReadabilityScore), 55, "F2", "StringExtract_TtScore");
         col.Visibility = Visibility.Collapsed;
-
-        // Right-click on any column header toggles Score column visibility
-        _grid.ColumnHeaderStyle.Setters.Add(new EventSetter(UIElement.MouseRightButtonUpEvent,
-            new MouseButtonEventHandler((_, _) =>
-            {
-                col.Visibility = col.Visibility == Visibility.Visible
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-            })));
-
         return col;
     }
 
