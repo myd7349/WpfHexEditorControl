@@ -50,6 +50,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     private FileSystemWatcher? _watcher;
     private System.Windows.Threading.DispatcherTimer? _rescanTimer;
+    private System.Windows.Threading.DispatcherTimer? _filterDebounceTimer;
     private bool _autoRescan;
     public bool AutoRescan
     {
@@ -70,7 +71,9 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     // ── Collections ──────────────────────────────────────────────────────────
 
-    private readonly ObservableCollection<StringRun> _allResults = [];
+    // Plain List — CollectionView is refreshed explicitly after batch operations.
+    // Avoids 50k individual CollectionChanged notifications on large file scans.
+    private readonly List<StringRun> _allResults = [];
     public  ICollectionView ResultsView { get; }
 
     public ObservableCollection<OpenedFileItem> OpenedFiles { get; } = [];
@@ -119,37 +122,37 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public int MinUniqueChars
     {
         get => _minUniqueChars;
-        set { _minUniqueChars = Math.Clamp(value, 1, 20); OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _minUniqueChars = Math.Clamp(value, 1, 20); OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public bool UseRegexFilter
     {
         get => _useRegexFilter;
-        set { _useRegexFilter = value; OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _useRegexFilter = value; OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public long RangeFrom
     {
         get => _rangeFrom;
-        set { _rangeFrom = Math.Max(0, value); OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _rangeFrom = Math.Max(0, value); OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public long RangeTo
     {
         get => _rangeTo;
-        set { _rangeTo = Math.Max(0, value); OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _rangeTo = Math.Max(0, value); OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public bool ExcludeHighEntropy
     {
         get => _excludeHighEntropy;
-        set { _excludeHighEntropy = value; OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _excludeHighEntropy = value; OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public double EntropyThreshold
     {
         get => _entropyThreshold;
-        set { _entropyThreshold = Math.Clamp(value, 0.1, 1.0); OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _entropyThreshold = Math.Clamp(value, 0.1, 1.0); OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public bool IsOutdated
@@ -167,13 +170,13 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public float MinReadability
     {
         get => _minReadability;
-        set { _minReadability = Math.Clamp(value, 0f, 1f); OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _minReadability = Math.Clamp(value, 0f, 1f); OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public bool PrintableOnly
     {
         get => _printableOnly;
-        set { _printableOnly = value; OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _printableOnly = value; OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     private bool _wordWrap;
@@ -279,8 +282,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     public StringExtractionViewModel()
     {
-        ResultsView = CollectionViewSource.GetDefaultView(_allResults);
-        ResultsView.Filter = FilterPredicate;
+        ResultsView = new System.Windows.Data.ListCollectionView(_allResults) { Filter = FilterPredicate };
     }
 
     // ── Context ───────────────────────────────────────────────────────────────
@@ -468,14 +470,32 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
                                          encodings.Contains(StringEncoding.TblMte))
                                         ? _activeTblTable : null;
 
-            // Run extract + line-start cache + entropy map + kind detection all on background thread
-            var (runs, lineStarts, entropyMap) = await Task.Run(() =>
+            // Run extract + kind detection + ancillary maps all on background thread.
+            var (runs, lineStarts, entropyMap, dupCounts, encCounts) = await Task.Run(() =>
             {
-                var r  = StringExtractor.Extract(buffer.AsSpan(), _minLength, encodings, tblTable);
-                var rk = r.Select(run => run with { Kind = StringPatternDetector.Detect(run.Value) }).ToList();
+                var r = StringExtractor.Extract(buffer.AsSpan(), _minLength, encodings, tblTable);
+
+                // Kind detection: parallelised over the already-sorted result list.
+                var rk = new StringRun[r.Count];
+                Parallel.For(0, r.Count, i =>
+                    rk[i] = r[i] with { Kind = StringPatternDetector.Detect(r[i].Value) });
+
                 var ls = BuildLineStartsFromBuffer(buffer);
                 var em = BuildEntropyMap(buffer);
-                return (rk, ls, em);
+
+                // Pre-compute duplicate counts while still on background thread.
+                var dc = rk.GroupBy(x => x.Value, StringComparer.Ordinal)
+                            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+
+                // Pre-compute per-encoding counts (unfiltered = total scan counts).
+                var ec = new Dictionary<StringEncoding, int>();
+                foreach (var run in rk)
+                {
+                    ec.TryGetValue(run.Encoding, out int c);
+                    ec[run.Encoding] = c + 1;
+                }
+
+                return (rk, ls, em, dc, ec);
             }, _cts.Token);
 
             // Cache for reuse in ApplyCodeHighlights / entropy filter
@@ -486,14 +506,20 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
             ArmFileWatcher(targetPath);
 
-            foreach (var run in runs)
-                _allResults.Add(run);
+            // Batch-load: single Refresh() instead of n×CollectionChanged notifications.
+            _allResults.Clear();
+            _allResults.AddRange(runs);
 
-            _offsetIndex = [.. runs.OrderBy(r => r.Offset)];
-            RebuildDuplicateCounts();
+            // Extract returns sorted by offset — no second sort needed.
+            _offsetIndex = runs;
+
+            _duplicateCounts = dupCounts;
+            EncodingCounts.Clear();
+            foreach (var (enc, cnt) in encCounts) EncodingCounts[enc] = cnt;
+            OnPropertyChanged(nameof(EncodingCounts));
+
             TotalCount = _allResults.Count;
             ResultsView.Refresh();
-            RefreshEncodingCounts();
             UpdateShownCount();
 
             StatusText = $"{TotalCount} strings found, {ShownCount} shown — {sw.Elapsed.TotalMilliseconds:F0} ms";
@@ -584,8 +610,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
                 try { _compiledRegex = new System.Text.RegularExpressions.Regex(value, System.Text.RegularExpressions.RegexOptions.IgnoreCase); }
                 catch { /* invalid regex — filter shows nothing */ }
             }
-            ResultsView.Refresh();
-            UpdateShownCount();
+            ScheduleFilterRefresh();
         }
     }
 
@@ -639,6 +664,25 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     private void UpdateShownCount() =>
         ShownCount = ResultsView is System.Collections.ICollection c ? c.Count : ResultsView.Cast<object>().Count();
+
+    // Coalesces rapid filter changes (e.g. typing in search box) into a single Refresh
+    // after 300 ms of inactivity — prevents blocking the UI thread on every keystroke.
+    private void ScheduleFilterRefresh()
+    {
+        if (_filterDebounceTimer is null)
+        {
+            _filterDebounceTimer = new System.Windows.Threading.DispatcherTimer
+                { Interval = TimeSpan.FromMilliseconds(300) };
+            _filterDebounceTimer.Tick += (_, _) =>
+            {
+                _filterDebounceTimer.Stop();
+                ResultsView.Refresh();
+                UpdateShownCount();
+            };
+        }
+        _filterDebounceTimer.Stop();
+        _filterDebounceTimer.Start();
+    }
 
     private void UpdateStatusText()
     {
@@ -872,8 +916,9 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public void RestoreSnapshot(ScanSnapshot snapshot)
     {
         _allResults.Clear();
-        foreach (var run in snapshot.Runs) _allResults.Add(run);
-        _offsetIndex = [.. snapshot.Runs.OrderBy(r => r.Offset)];
+        _allResults.AddRange(snapshot.Runs);
+        // Snapshot.Runs is already offset-sorted (taken from a sorted scan result).
+        _offsetIndex = [.. snapshot.Runs];
         RebuildDuplicateCounts();
         TotalCount = _allResults.Count;
         ResultsView.Refresh();
@@ -907,7 +952,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public bool ShowOnlyClusters
     {
         get => _showOnlyClusters;
-        set { _showOnlyClusters = value; OnPropertyChanged(); ResultsView.Refresh(); UpdateShownCount(); }
+        set { _showOnlyClusters = value; OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     public async Task ClusterAsync()
@@ -990,5 +1035,6 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         _cts?.Dispose();
         _watcher?.Dispose();
         _rescanTimer?.Stop();
+        _filterDebounceTimer?.Stop();
     }
 }
