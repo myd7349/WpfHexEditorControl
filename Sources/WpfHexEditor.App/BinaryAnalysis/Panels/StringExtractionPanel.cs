@@ -211,7 +211,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
 
         var highlightBtn  = MakeToolbarButton("", "StringExtract_TtHighlight");
-        highlightBtn.Click += (_, _) => _vm.HighlightRuns(_vm.ResultsView.Cast<StringRun>());
+        highlightBtn.Click += (_, _) => _vm.HighlightRuns(_vm.DisplayList);
         var clearHlBtn    = MakeToolbarButton("", "StringExtract_TtClearHighlight");
         clearHlBtn.Click += (_, _) => _vm.ClearHighlights();
 
@@ -973,16 +973,23 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
                 _vm.SelectedGridItem = run;
         };
 
-        // Sync DataGrid to VM when VM sets SelectedGridItem
+        // Sync DataGrid to VM when VM sets SelectedGridItem or refreshes DisplayList
         _vm.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName != nameof(_vm.SelectedGridItem)) return;
-            if (_vm.SelectedGridItem is null || ReferenceEquals(_grid.SelectedItem, _vm.SelectedGridItem)) return;
-            _grid.SelectedItem = _vm.SelectedGridItem;
-            _grid.ScrollIntoView(_vm.SelectedGridItem);
+            if (e.PropertyName == nameof(_vm.DisplayList))
+            {
+                _grid.ItemsSource = null;
+                _grid.ItemsSource = _vm.DisplayList;
+            }
+            else if (e.PropertyName == nameof(_vm.SelectedGridItem))
+            {
+                if (_vm.SelectedGridItem is null || ReferenceEquals(_grid.SelectedItem, _vm.SelectedGridItem)) return;
+                _grid.SelectedItem = _vm.SelectedGridItem;
+                _grid.ScrollIntoView(_vm.SelectedGridItem);
+            }
         };
 
-        _grid.ItemsSource       = _vm.ResultsView;
+        _grid.ItemsSource       = _vm.DisplayList;
         _grid.MouseDoubleClick += (_, _) => NavigateSelected();
         _grid.ContextMenu       = BuildContextMenu();
 
@@ -1285,7 +1292,7 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         }));
         cm.Items.Add(new Separator());
         cm.Items.Add(MakeMenuItem("Highlight Selected", "", () => _vm.HighlightRuns(_grid.SelectedItems.OfType<StringRun>())));
-        cm.Items.Add(MakeMenuItem("Highlight All",      "", () => _vm.HighlightRuns(_vm.ResultsView.Cast<StringRun>())));
+        cm.Items.Add(MakeMenuItem("Highlight All",      "", () => _vm.HighlightRuns(_vm.DisplayList)));
         cm.Items.Add(MakeMenuItem("Clear Highlights",   "", () => _vm.ClearHighlights()));
         cm.Items.Add(new Separator());
         cm.Items.Add(MakeMenuItem("Export Selected…", "", () => OnExport(exportAll: false)));
@@ -1442,7 +1449,6 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
     public void OnFileOpened()
     {
         _vm.RefreshOpenedFiles();
-        _vm.ResultsView.Refresh();
     }
 
     public void Dispose()

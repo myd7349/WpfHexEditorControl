@@ -8,7 +8,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Data;
 using System.Windows.Media;
 using WpfHexEditor.App.BinaryAnalysis.Services;
 using WpfHexEditor.Core;
@@ -71,10 +70,12 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     // ── Collections ──────────────────────────────────────────────────────────
 
-    // Plain List — CollectionView is refreshed explicitly after batch operations.
-    // Avoids 50k individual CollectionChanged notifications on large file scans.
-    private readonly List<StringRun> _allResults = [];
-    public  ICollectionView ResultsView { get; }
+    private readonly List<StringRun> _allResults   = [];  // full scan, never mutated after load
+    private readonly List<StringRun> _displayList  = [];  // filtered view, replaces CollectionView
+    private CancellationTokenSource  _filterCts    = new();
+
+    /// <summary>Filtered + sorted list bound directly to the DataGrid ItemsSource.</summary>
+    public List<StringRun> DisplayList => _displayList;
 
     public ObservableCollection<OpenedFileItem> OpenedFiles { get; } = [];
 
@@ -197,15 +198,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public bool GroupByEncoding
     {
         get => _groupByEncoding;
-        set
-        {
-            _groupByEncoding = value;
-            OnPropertyChanged();
-            var cv = (CollectionView)ResultsView;
-            cv.GroupDescriptions.Clear();
-            if (value)
-                cv.GroupDescriptions.Add(new PropertyGroupDescription(nameof(StringRun.Encoding)));
-        }
+        set { _groupByEncoding = value; OnPropertyChanged(); ScheduleFilterRefresh(); }
     }
 
     // ── Stats ─────────────────────────────────────────────────────────────────
@@ -215,7 +208,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     private void RefreshEncodingCounts()
     {
         EncodingCounts.Clear();
-        foreach (var run in ResultsView.Cast<StringRun>())
+        foreach (var run in _displayList)
         {
             EncodingCounts.TryGetValue(run.Encoding, out int c);
             EncodingCounts[run.Encoding] = c + 1;
@@ -232,8 +225,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public void TogglePin(StringRun run)
     {
         if (!_pinnedRuns.Remove(run)) _pinnedRuns.Add(run);
-        ResultsView.Refresh();
-        UpdateShownCount();
+        ScheduleFilterRefresh();
     }
 
     // ── Duplicate map ─────────────────────────────────────────────────────────
@@ -279,18 +271,14 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
             ActiveEncodings.Add(enc);
         if (ActiveEncodings.Count == 0)
             ActiveEncodings.Add(StringEncoding.Ascii);
-        ResultsView.Refresh();
-        UpdateShownCount();
+        ScheduleFilterRefresh();
     }
 
     public bool IsEncodingActive(StringEncoding enc) => ActiveEncodings.Contains(enc);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public StringExtractionViewModel()
-    {
-        ResultsView = new System.Windows.Data.ListCollectionView(_allResults) { Filter = FilterPredicate };
-    }
+    public StringExtractionViewModel() { }
 
     // ── Context ───────────────────────────────────────────────────────────────
 
@@ -518,26 +506,11 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
             _offsetIndex = runs;
             TotalCount = runs.Length;
 
-            // Stream results to the UI in chunks so first rows appear immediately
-            // instead of blocking the UI thread for the full Refresh on large files.
-            const int ChunkSize  = 5_000;
-            const int DisplayCap = 100_000;
-            int loaded = 0;
-            while (loaded < runs.Length && !_cts.Token.IsCancellationRequested)
-            {
-                int take = Math.Min(ChunkSize, Math.Min(runs.Length - loaded, DisplayCap - loaded));
-                if (take <= 0) break;
-                _allResults.AddRange(new ArraySegment<StringRun>(runs, loaded, take));
-                loaded += take;
-                ResultsView.Refresh();
-                UpdateShownCount();
-                if (loaded < runs.Length && loaded < DisplayCap)
-                    await System.Windows.Threading.Dispatcher.Yield();
-            }
+            _allResults.AddRange(runs);
+            await ApplyFilterAsync();
 
-            IsDisplayCapped = runs.Length > DisplayCap;
             StatusText = $"{TotalCount} strings found, {ShownCount} shown — {sw.Elapsed.TotalMilliseconds:F0} ms"
-                       + (IsDisplayCapped ? $" (display capped at {DisplayCap:N0})" : string.Empty);
+                       + (IsDisplayCapped ? " (display capped at 100 000)" : string.Empty);
         }
         catch (OperationCanceledException) { StatusText = "Cancelled."; }
         finally { IsBusy = false; }
@@ -629,74 +602,95 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private bool FilterPredicate(object obj)
-    {
-        if (obj is not StringRun run) return false;
-
-        // Pinned runs always visible
-        if (_pinnedRuns.Contains(run)) return true;
-
-        if (!ActiveEncodings.Contains(run.Encoding)) return false;
-
-        // Offset range
-        if (run.Offset < _rangeFrom || run.Offset + run.Length > _rangeTo) return false;
-
-        if (run.UniqueCharCount < _minUniqueChars) return false;
-
-        // Entropy exclusion
-        if (_excludeHighEntropy && _entropyMap is not null)
-        {
-            int block = (int)(run.Offset / 256);
-            if (block < _entropyMap.Length && _entropyMap[block] / 255.0 >= _entropyThreshold)
-                return false;
-        }
-
-        // Readability score filter
-        if (_minReadability > 0f && run.ReadabilityScore < _minReadability) return false;
-
-        if (_printableOnly && !IsPrintable(run.Value)) return false;
-
-        if (_activeKinds.Count > 0 && !_activeKinds.Contains(run.Kind)) return false;
-
-        if (_showOnlyClusters && GetClusterId(run) == 0) return false;
-
-        // Text filter (substring or regex)
-        if (!string.IsNullOrEmpty(_filter))
-        {
-            if (_useRegexFilter)
-            {
-                if (_compiledRegex is null) return false; // invalid regex
-                if (!_compiledRegex.IsMatch(run.Value)) return false;
-            }
-            else
-            {
-                if (!run.Value.Contains(_filter, StringComparison.OrdinalIgnoreCase)) return false;
-            }
-        }
-
-        return true;
-    }
-
-    private void UpdateShownCount() =>
-        ShownCount = ResultsView is System.Collections.ICollection c ? c.Count : ResultsView.Cast<object>().Count();
-
-    // Coalesces rapid filter changes (e.g. typing in search box) into a single Refresh
-    // after 300 ms of inactivity — prevents blocking the UI thread on every keystroke.
+    // Coalesces rapid filter changes into a single background pass after 300 ms.
     private void ScheduleFilterRefresh()
     {
         if (_filterDebounceTimer is null)
         {
             _filterDebounceTimer = new System.Windows.Threading.DispatcherTimer
                 { Interval = TimeSpan.FromMilliseconds(300) };
-            _filterDebounceTimer.Tick += (_, _) =>
+            _filterDebounceTimer.Tick += async (_, _) =>
             {
-                _filterDebounceTimer.Stop();
-                ResultsView.Refresh();
-                UpdateShownCount();
+                _filterDebounceTimer!.Stop();
+                await ApplyFilterAsync();
             };
         }
         _filterDebounceTimer.Stop();
         _filterDebounceTimer.Start();
+    }
+
+    // Runs the filter predicate on a background thread, then updates DisplayList on UI thread.
+    private async Task ApplyFilterAsync()
+    {
+        _filterCts.Cancel();
+        _filterCts.Dispose();
+        _filterCts = new CancellationTokenSource();
+        var token = _filterCts.Token;
+
+        // Capture filter state for the background thread (immutable snapshot of primitives).
+        var allResults      = _allResults;
+        var pinnedRuns      = _pinnedRuns;
+        var activeEncodings = ActiveEncodings;
+        var activeKinds     = _activeKinds;
+        var rangeFrom       = _rangeFrom;
+        var rangeTo         = _rangeTo;
+        var minUnique       = _minUniqueChars;
+        var exclEntropy     = _excludeHighEntropy;
+        var entropyMap      = _entropyMap;
+        var entropyThresh   = _entropyThreshold;
+        var minRead         = _minReadability;
+        var printableOnly   = _printableOnly;
+        var showClusters    = _showOnlyClusters;
+        var clusterMap      = _clusterMap;
+        var filter          = _filter;
+        var useRegex        = _useRegexFilter;
+        var compiledRegex   = _compiledRegex;
+        var groupByEnc      = _groupByEncoding;
+        const int DisplayCap = 100_000;
+
+        List<StringRun>? filtered = await Task.Run(() =>
+        {
+            var result = new List<StringRun>(Math.Min(allResults.Count, DisplayCap));
+            foreach (var run in allResults)
+            {
+                if (token.IsCancellationRequested) return null;
+
+                if (!pinnedRuns.Contains(run))
+                {
+                    if (!activeEncodings.Contains(run.Encoding)) continue;
+                    if (run.Offset < rangeFrom || run.Offset + run.Length > rangeTo) continue;
+                    if (run.UniqueCharCount < minUnique) continue;
+                    if (exclEntropy && entropyMap is not null)
+                    {
+                        int block = (int)(run.Offset / 256);
+                        if (block < entropyMap.Length && entropyMap[block] / 255.0 >= entropyThresh) continue;
+                    }
+                    if (minRead > 0f && run.ReadabilityScore < minRead) continue;
+                    if (printableOnly && !IsPrintable(run.Value)) continue;
+                    if (activeKinds.Count > 0 && !activeKinds.Contains(run.Kind)) continue;
+                    if (showClusters && (!clusterMap.TryGetValue(run, out int cid) || cid == 0)) continue;
+                    if (!string.IsNullOrEmpty(filter))
+                    {
+                        if (useRegex) { if (compiledRegex?.IsMatch(run.Value) != true) continue; }
+                        else          { if (!run.Value.Contains(filter, StringComparison.OrdinalIgnoreCase)) continue; }
+                    }
+                }
+
+                result.Add(run);
+                if (result.Count >= DisplayCap) break;
+            }
+            if (groupByEnc && !token.IsCancellationRequested)
+                result.Sort(static (a, b) => a.Encoding.CompareTo(b.Encoding));
+            return result;
+        }, token);
+
+        if (token.IsCancellationRequested || filtered is null) return;
+
+        _displayList.Clear();
+        _displayList.AddRange(filtered);
+        IsDisplayCapped = _allResults.Count > DisplayCap && filtered.Count >= DisplayCap;
+        ShownCount = _displayList.Count;
+        OnPropertyChanged(nameof(DisplayList));
     }
 
     private void UpdateStatusText()
@@ -714,7 +708,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     private string?          _pendingHighlightPath;
 
     /// <summary>
-    /// Highlight the given runs.  Source of truth is the <see cref="ResultsView"/> (filtered).
+    /// Highlight the given runs.  Source of truth is the <see cref="DisplayList"/> (filtered).
     /// Applies immediately if the target file is active; otherwise stores as pending
     /// and applies automatically when <see cref="OnActiveDocumentChanged"/> fires.
     /// </summary>
@@ -928,17 +922,15 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
         while (Snapshots.Count > MaxSnapshots) Snapshots.RemoveAt(Snapshots.Count - 1);
     }
 
-    public void RestoreSnapshot(ScanSnapshot snapshot)
+    public async void RestoreSnapshot(ScanSnapshot snapshot)
     {
         _allResults.Clear();
         _allResults.AddRange(snapshot.Runs);
-        // Snapshot.Runs is already offset-sorted (taken from a sorted scan result).
         _offsetIndex = [.. snapshot.Runs];
         RebuildDuplicateCounts();
         TotalCount = _allResults.Count;
-        ResultsView.Refresh();
+        await ApplyFilterAsync();
         RefreshEncodingCounts();
-        UpdateShownCount();
         StatusText = $"Snapshot restored — {snapshot.DisplayName}";
     }
 
@@ -952,9 +944,8 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
     public void ToggleKind(StringKind kind)
     {
         if (!_activeKinds.Remove(kind)) _activeKinds.Add(kind);
-        ResultsView.Refresh();
-        UpdateShownCount();
         OnPropertyChanged(nameof(ActiveKinds));
+        ScheduleFilterRefresh();
     }
 
     public bool IsKindActive(StringKind kind) => _activeKinds.Contains(kind);
@@ -979,8 +970,7 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
             var snapshot = _allResults.ToList();
             var map = await Task.Run(() => StringSimilarityClusterer.Cluster(snapshot));
             _clusterMap = map;
-            ResultsView.Refresh();
-            UpdateShownCount();
+            await ApplyFilterAsync();
             int groups = map.Values.Where(v => v > 0).Distinct().Count();
             StatusText = $"Clustering done — {groups} groups found";
         }
