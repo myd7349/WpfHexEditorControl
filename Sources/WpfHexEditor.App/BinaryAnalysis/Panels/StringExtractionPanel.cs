@@ -548,36 +548,39 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
 
     private static Button MakeToolbarButton(string glyph, string tooltipKey)
     {
+        // Content must be a TextBlock with its own FontFamily — PanelIconButtonStyle's
+        // ControlTemplate does not inherit FontFamily from the Button itself.
+        var icon = new TextBlock { Text = glyph, FontFamily = Mdl2, FontSize = 13 };
+        icon.SetResourceReference(TextBlock.ForegroundProperty, "Panel_ToolbarForegroundBrush");
+
         var btn = new Button
         {
-            Content          = glyph,
-            Width            = 22,
-            Height           = 22,
-            Padding          = new Thickness(0),
-            Margin           = new Thickness(1, 0, 1, 0),
-            BorderThickness  = new Thickness(0),
-            Background       = Brushes.Transparent,
-            FontFamily       = new FontFamily("Segoe MDL2 Assets"),
-            FontSize         = 13,
+            Content           = icon,
+            Width             = 22,
+            Height            = 22,
+            Padding           = new Thickness(0),
+            Margin            = new Thickness(1, 0, 1, 0),
+            BorderThickness   = new Thickness(0),
+            Background        = Brushes.Transparent,
             VerticalAlignment = VerticalAlignment.Center,
-            FocusVisualStyle = null,
+            FocusVisualStyle  = null,
         };
-        btn.SetResourceReference(StyleProperty,      "PanelIconButtonStyle");
-        btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
-        btn.SetResourceReference(ToolTipProperty,    tooltipKey);
+        btn.SetResourceReference(StyleProperty,   "PanelIconButtonStyle");
+        btn.SetResourceReference(ToolTipProperty, tooltipKey);
         return btn;
     }
 
     private ToggleButton MakeToolbarToggle(string glyph, string tooltipKey, string vmProperty)
     {
+        var icon = new TextBlock { Text = glyph, FontFamily = Mdl2, FontSize = 11 };
+        icon.SetResourceReference(TextBlock.ForegroundProperty, "Panel_ToolbarForegroundBrush");
+
         var btn = new ToggleButton
         {
-            Content = glyph,
-            Height  = 20, Width = 22,
-            Padding = new Thickness(0),
-            BorderThickness  = new Thickness(0),
-            FontFamily       = new FontFamily("Segoe MDL2 Assets"),
-            FontSize         = 11,
+            Content         = icon,
+            Height          = 20, Width = 22,
+            Padding         = new Thickness(0),
+            BorderThickness = new Thickness(0),
             FocusVisualStyle = null,
         };
         btn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
@@ -586,6 +589,8 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         btn.SetBinding(ToggleButton.IsCheckedProperty, new Binding(vmProperty) { Source = _vm, Mode = BindingMode.TwoWay });
         return btn;
     }
+
+    private static readonly FontFamily Mdl2 = new("Segoe MDL2 Assets");
 
     private static System.Windows.Shapes.Rectangle MakeToolbarSeparator()
     {
@@ -838,13 +843,14 @@ public sealed class StringExtractionPanel : UserControl, IDisposable
         _tblNameLabel = new TextBlock { FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0), Visibility = Visibility.Collapsed };
         _tblNameLabel.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
 
+        var tblClearIcon = new TextBlock { Text = "", FontFamily = Mdl2, FontSize = 9 };
+        tblClearIcon.SetResourceReference(TextBlock.ForegroundProperty, "Panel_ToolbarForegroundBrush");
         _tblClearBtn = new Button
         {
-            Content = "",
+            Content = tblClearIcon,
             Width = 16, Height = 16, Padding = new Thickness(0), BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
-            FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            FontSize = 9, VerticalAlignment = VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed, FocusVisualStyle = null,
         };
         _tblClearBtn.SetResourceReference(ForegroundProperty, "Panel_ToolbarForegroundBrush");
