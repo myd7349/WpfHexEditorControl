@@ -359,8 +359,15 @@ internal sealed class StringTimelineView : FrameworkElement
         var cts = _rebuildCts;
 
         // Capture inputs on the UI thread before handing off to the ThreadPool.
-        var snapshot     = _vm?.GetAllRunsSnapshot() ?? [];
+        var fullSnapshot = _vm?.GetAllRunsSnapshot() ?? [];
         var bufferLength = _vm?.LastBufferLength ?? 0;
+
+        // Cap the render budget: beyond 50k runs the row-packer saturates MaxRows anyway.
+        // Stride-sample so spatial distribution is preserved across the full file.
+        const int RenderBudget = 50_000;
+        var snapshot = fullSnapshot.Length <= RenderBudget
+            ? fullSnapshot
+            : SampleStride(fullSnapshot, RenderBudget);
 
         if (snapshot.Length == 0 || bufferLength <= 0)
         {
@@ -411,8 +418,10 @@ internal sealed class StringTimelineView : FrameworkElement
 
     private void OnSizeChanged(object _, SizeChangedEventArgs e)
     {
+        // Coordinates are normalized — size change only affects pixel rendering, not layout.
+        // A simple InvalidateVisual is sufficient; no rebuild needed.
         if (e.WidthChanged && e.NewSize.Width > 0)
-            Refresh();
+            InvalidateVisual();
     }
 
     public void Refresh()
@@ -708,6 +717,16 @@ internal sealed class StringTimelineView : FrameworkElement
             }
         }
         return best;
+    }
+
+    // Stride-samples arr down to maxCount elements, preserving spatial distribution.
+    private static StringRun[] SampleStride(StringRun[] arr, int maxCount)
+    {
+        var result = new StringRun[maxCount];
+        double step = (double)(arr.Length - 1) / (maxCount - 1);
+        for (int i = 0; i < maxCount; i++)
+            result[i] = arr[(int)Math.Round(i * step)];
+        return result;
     }
 
     private static string TruncateValue(string s, int max) =>
