@@ -5,14 +5,15 @@
 //               Colors: encoding palette fallback; Kind overrides when Kind != None.
 //               Opacity: proportional to string length (longer = more opaque).
 //               Density heatmap overlay drawn below runs.
-//               Viewport-culled per paint — binary search on offset-sorted _rowMap.
+//               Viewport-culled per paint — binary search on offset-sorted _drawList.
 // Architecture: Pure DrawingContext render; zoom via Slider; scroll via ScrollViewer wrapping this element.
 //
 // Perf contract:
-//   RebuildLayout — O(n log n), runs ONLY when data changes (scan complete / size change).
-//   Zoom          — O(1), only InvalidateMeasure+InvalidateVisual. No rebuild, no allocs.
-//   _rowMap stores normalized coords (offset/bufferLength, length/bufferLength) so zoom
-//   does not require a layout rebuild — pixel coords are computed at render time.
+//   RebuildLayout — O(n log n), runs ONLY when data changes.
+//   Zoom/Scroll   — O(1): only InvalidateMeasure/Visual. No rebuild, no allocs.
+//   _rowMap stores normalized coords; pixel coords computed at render time.
+//   _drawList merges adjacent/overlapping runs with the same brush into single rects,
+//   reducing DrawRectangle calls from O(runs) to O(distinct color bands) per frame.
 
 using System.Windows;
 using System.Windows.Controls;
@@ -32,7 +33,7 @@ internal sealed class StringTimelineView : FrameworkElement
     private static readonly Typeface        RulerTypeface  = new("Consolas");
     private static readonly Pen             RulerPen       = FreezePen(new Pen(RulerTextBrush, 0.5));
 
-    // Pre-built heatmap brush pool keyed by quantized alpha — avoids PushOpacity/Pop per bucket.
+    // Pre-built heatmap brush pool keyed by quantized alpha.
     private const byte HeatMaxAlpha    = 0x72;
     private const int  HeatAlphaLevels = 64;
     private static readonly SolidColorBrush[] HeatBrushes = BuildHeatBrushes();
@@ -47,20 +48,81 @@ internal sealed class StringTimelineView : FrameworkElement
         return arr;
     }
 
+    // Brush palette indexed by small integer for fast lookup in draw list.
+    // Indices 0..N match EncodingPalette entries; index N+1..M match KindBrushes.
+    private static readonly SolidColorBrush[] BrushById;
+    private static readonly int FallbackBrushId;
+    static StringTimelineView()
+    {
+        var list = new List<SolidColorBrush>();
+        // Encoding brushes (indices 0+)
+        foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
+            if (EncodingPalette.Brushes.TryGetValue(enc, out var b)) list.Add(b);
+        // Kind brushes follow
+        foreach (StringKind kind in Enum.GetValues<StringKind>())
+            if (kind != StringKind.None && EncodingPalette.KindBrushes.TryGetValue(kind, out var b)) list.Add(b);
+        FallbackBrushId = list.Count;
+        list.Add(EncodingPalette.FallbackBrush);
+        BrushById = [.. list];
+    }
+
+    // Maps (encoding, kind) → brush index — computed once at startup.
+    private static readonly Dictionary<(StringEncoding, StringKind), int> BrushIndex = BuildBrushIndex();
+    private static Dictionary<(StringEncoding, StringKind), int> BuildBrushIndex()
+    {
+        var d   = new Dictionary<(StringEncoding, StringKind), int>();
+        var idx = 0;
+        foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
+        {
+            if (!EncodingPalette.Brushes.ContainsKey(enc)) continue;
+            foreach (StringKind kind in Enum.GetValues<StringKind>())
+            {
+                if (kind != StringKind.None && EncodingPalette.KindBrushes.ContainsKey(kind))
+                {
+                    // Kind overrides encoding — find the kind brush index
+                    int ki = BrushById.Length - 1; // fallback default
+                    int search = 0;
+                    foreach (StringKind k2 in Enum.GetValues<StringKind>())
+                    {
+                        if (k2 == StringKind.None) continue;
+                        if (!EncodingPalette.KindBrushes.ContainsKey(k2)) continue;
+                        if (k2 == kind) { ki = search + CountEncodingBrushes(); break; }
+                        search++;
+                    }
+                    d.TryAdd((enc, kind), ki);
+                }
+                else
+                {
+                    d.TryAdd((enc, kind), idx);
+                }
+            }
+            idx++;
+        }
+        return d;
+    }
+    private static int CountEncodingBrushes()
+    {
+        int c = 0;
+        foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
+            if (EncodingPalette.Brushes.ContainsKey(enc)) c++;
+        return c;
+    }
+
     private static SolidColorBrush FreezeB(SolidColorBrush b) { b.Freeze(); return b; }
     private static Pen FreezePen(Pen p) { p.Freeze(); return p; }
 
-    private const double RowHeight    = 12.0;
-    private const double RulerHeight  = 18.0;
-    private const int    HeatBuckets  = 512;
-    private const double MinOpacity   = 0.35;  // opacity floor: shortest strings (≤4 chars)
-    private const double OpacityRange = 0.65;  // ramp over chars 4–60
-    private const double MinRunNorm   = 0.0008; // minimum normalized run width (~1px at zoom=1 for 500k-byte file)
-    private const int    MaxRows      = 120;    // hard cap on row count — prevents infinite MeasureOverride height
+    private const double RowHeight   = 12.0;
+    private const double RulerHeight = 18.0;
+    private const int    HeatBuckets = 512;
+    private const double MinOpacity  = 0.35;
+    private const double OpacityRange = 0.65;
+    private const double MinRunNorm  = 0.0008;
+    private const int    MaxRows     = 120;
+    private const double MinRunPx    = 2.0;
+    // Merge gap: adjacent runs within this normalized distance get merged into one rect.
+    private const double MergeGapNorm = 0.0005;
 
     // ── Zoom ─────────────────────────────────────────────────────────────────────
-    // Zoom is purely visual: pixel width = baseWidth * _zoom.
-    // RebuildLayout is NOT called on zoom change — _rowMap stores normalized coords.
 
     private double _zoom = 1.0;
     public double Zoom
@@ -69,33 +131,31 @@ internal sealed class StringTimelineView : FrameworkElement
         set
         {
             _zoom = Math.Clamp(value, 1.0, 200.0);
-            // Zoom only needs a layout + render pass; no data rebuild required.
             _zoomDebounce.Stop();
             _zoomDebounce.Start();
         }
     }
 
     private readonly System.Windows.Threading.DispatcherTimer _zoomDebounce;
-    // Coalesces TotalCount-triggered refreshes during streaming scan — avoids O(n²) rebuild per run found.
     private readonly System.Windows.Threading.DispatcherTimer _refreshDebounce;
 
-    // Set by StringTimelinePanel on scroll change — enables X-axis culling in OnRender.
     internal double ViewportOffsetX { get; set; }
     internal double ViewportWidth   { get; set; } = double.MaxValue;
 
     private StringExtractionViewModel? _vm;
     private long _bufferLength;
 
-    // _rowMap stores (run, row, xNorm, rwNorm) where xNorm = Offset/bufferLength, rwNorm = Length/bufferLength.
-    // Pixel coords: x = xNorm * ActualWidth * _zoom, rw = max(minPx, rwNorm * ActualWidth * _zoom).
-    // This decouples layout from zoom — no rebuild needed when zoom changes.
+    // Normalized layout cache: xNorm/rwNorm in [0,1].
     private readonly List<(StringRun run, int row, double xNorm, double rwNorm)> _rowMap = [];
     private int _rowCount;
 
-    // Density heatmap: one float per bucket = run-count density, normalized to [0,1].
+    // Merged draw list: sorted by (row, brushId, xNorm) then merged.
+    // Each entry: (row, brushId, x1Norm, x2Norm, opacity).
+    // DrawRuns iterates this instead of _rowMap — far fewer DrawRectangle calls.
+    private readonly List<(int row, int brushId, double x1, double x2, float opacity)> _drawList = [];
+
     private float[] _densityMap = [];
 
-    // WPF ToolTip — _hoveredOffset guards against redundant string-format per mouse-move pixel.
     private readonly ToolTip _tooltip;
     private long _hoveredOffset = long.MinValue;
 
@@ -106,7 +166,7 @@ internal sealed class StringTimelineView : FrameworkElement
     public StringTimelineView()
     {
         _zoomDebounce = new System.Windows.Threading.DispatcherTimer
-            { Interval = TimeSpan.FromMilliseconds(30) };
+            { Interval = TimeSpan.FromMilliseconds(16) };  // one frame — smooth without double-render
         _zoomDebounce.Tick += (_, _) =>
         {
             _zoomDebounce.Stop();
@@ -146,7 +206,6 @@ internal sealed class StringTimelineView : FrameworkElement
     {
         if (e.PropertyName is nameof(StringExtractionViewModel.TotalCount))
         {
-            // TotalCount fires on every run found during scan — debounce to avoid O(n²) rebuilds.
             _refreshDebounce.Stop();
             _refreshDebounce.Start();
         }
@@ -164,18 +223,17 @@ internal sealed class StringTimelineView : FrameworkElement
         DoRebuildAndRender();
     }
 
-    // ── Layout: O(n log n), normalized coords — zoom-invariant ───────────────────
+    // ── RebuildLayout: O(n log n) — normalized coords, merged draw list ───────────
 
     private void RebuildLayout(IEnumerable<StringRun>? runs)
     {
         _rowMap.Clear();
+        _drawList.Clear();
         _rowCount = 0;
         _densityMap = [];
         if (runs is null || _bufferLength <= 0) return;
 
-        // Normalized scale: 1.0 = full buffer width. Pixel conversion at render time.
         double invBuffer = 1.0 / _bufferLength;
-
         var pq      = new PriorityQueue<int, double>();
         int nextRow = 0;
         var density = new float[HeatBuckets];
@@ -186,7 +244,6 @@ internal sealed class StringTimelineView : FrameworkElement
             double rwNorm = Math.Max(MinRunNorm, run.Length * invBuffer);
             double xEnd   = xNorm + rwNorm;
 
-            // Stop adding rows once MaxRows is reached — remaining runs still packed into existing rows.
             int row;
             if (pq.Count > 0 && pq.TryPeek(out int r, out double end) && end <= xNorm)
             {
@@ -199,44 +256,87 @@ internal sealed class StringTimelineView : FrameworkElement
             }
             else
             {
-                // Overflow: assign to the row whose end is earliest (top of heap).
                 pq.TryDequeue(out row, out _);
             }
             pq.Enqueue(row, xEnd);
             _rowMap.Add((run, row, xNorm, rwNorm));
 
-            int bucket = Math.Clamp((int)(xNorm * HeatBuckets), 0, HeatBuckets - 1);
-            density[bucket] += 1f;
+            density[Math.Clamp((int)(xNorm * HeatBuckets), 0, HeatBuckets - 1)] += 1f;
         }
 
         _rowCount = Math.Max(1, Math.Min(nextRow, MaxRows));
 
-        float max = 0f;
-        foreach (var v in density) if (v > max) max = v;
-        if (max > 0f)
+        float dmax = 0f;
+        foreach (var v in density) if (v > dmax) dmax = v;
+        if (dmax > 0f)
         {
             _densityMap = density;
-            for (int i = 0; i < _densityMap.Length; i++) _densityMap[i] /= max;
+            for (int i = 0; i < _densityMap.Length; i++) _densityMap[i] /= dmax;
         }
+
+        BuildDrawList();
     }
 
-    // ── Layout override ───────────────────────────────────────────────────────────
+    // Merges _rowMap entries into _drawList by sorting (row, brushId, xNorm) then
+    // merging overlapping/adjacent runs with the same brush into single draw rects.
+    // This reduces draw calls from O(runs) to O(distinct color bands).
+    private void BuildDrawList()
+    {
+        if (_rowMap.Count == 0) return;
+
+        // Temp list with brush pre-resolved.
+        var tmp = new List<(int row, int brushId, double x1, double x2, float opacity)>(_rowMap.Count);
+        foreach (var (run, row, xNorm, rwNorm) in _rowMap)
+        {
+            int brushId = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
+            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
+            tmp.Add((row, brushId, xNorm, xNorm + rwNorm, opacity));
+        }
+
+        // Sort by (row, brushId, x1) for efficient merge sweep.
+        tmp.Sort(static (a, b) =>
+        {
+            int c = a.row.CompareTo(b.row);
+            if (c != 0) return c;
+            c = a.brushId.CompareTo(b.brushId);
+            if (c != 0) return c;
+            return a.x1.CompareTo(b.x1);
+        });
+
+        // Merge adjacent/overlapping same-brush, same-row spans.
+        var cur = tmp[0];
+        for (int i = 1; i < tmp.Count; i++)
+        {
+            var next = tmp[i];
+            if (next.row == cur.row && next.brushId == cur.brushId && next.x1 <= cur.x2 + MergeGapNorm)
+            {
+                // Extend current span; take the higher opacity of the two.
+                cur = cur with { x2 = Math.Max(cur.x2, next.x2), opacity = Math.Max(cur.opacity, next.opacity) };
+            }
+            else
+            {
+                _drawList.Add(cur);
+                cur = next;
+            }
+        }
+        _drawList.Add(cur);
+    }
+
+    // ── Layout ───────────────────────────────────────────────────────────────────
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        // availableSize.Width is PositiveInfinity inside a ScrollViewer with Auto horizontal scroll.
         double baseW = double.IsInfinity(availableSize.Width) || double.IsNaN(availableSize.Width)
             ? (ActualWidth > 0 ? ActualWidth : 200)
             : availableSize.Width;
         double w = Math.Max(baseW, 1) * _zoom;
         double h = RulerHeight + _rowCount * RowHeight;
-        // Guard: MeasureOverride must never return Infinity — cap both dimensions.
-        w = double.IsInfinity(w) || double.IsNaN(w) ? baseW : w;
-        h = double.IsInfinity(h) || double.IsNaN(h) ? RulerHeight + MaxRows * RowHeight : h;
+        if (double.IsInfinity(w) || double.IsNaN(w)) w = baseW;
+        if (double.IsInfinity(h) || double.IsNaN(h)) h = RulerHeight + MaxRows * RowHeight;
         return new Size(w, h);
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────────
+    // ── Render ───────────────────────────────────────────────────────────────────
 
     protected override void OnRender(DrawingContext dc)
     {
@@ -244,85 +344,81 @@ internal sealed class StringTimelineView : FrameworkElement
         double w = ActualWidth;
         double h = ActualHeight;
         dc.DrawRectangle(BackBrush, null, new Rect(0, 0, w, h));
+        if (_drawList.Count == 0 || _bufferLength <= 0 || w <= 0) return;
 
-        if (_rowMap.Count == 0 || _bufferLength <= 0 || w <= 0) return;
-
-        // Pixel scale for this render: converts normalized [0,1] coord to pixel X.
         double pixelW = w * _zoom;
         DrawRuler(dc, w, pixelW, pixelsPerDip);
-        DrawDensityHeatmap(dc, w, h, pixelW);
-        DrawRuns(dc, w, h, pixelW);
+        DrawDensityHeatmap(dc, h, pixelW);
+        DrawRuns(dc, h, pixelW);
     }
 
-    private void DrawDensityHeatmap(DrawingContext dc, double w, double h, double pixelW)
+    private void DrawDensityHeatmap(DrawingContext dc, double h, double pixelW)
     {
         if (_densityMap.Length == 0) return;
         double bucketW  = pixelW / HeatBuckets;
         double contentH = h - RulerHeight;
+        double vpEnd    = ViewportOffsetX + ViewportWidth;
         for (int i = 0; i < _densityMap.Length; i++)
         {
             float v = _densityMap[i];
             if (v < 0.05f) continue;
             double bx = i * bucketW;
-            if (bx + bucketW < ViewportOffsetX || bx > ViewportOffsetX + ViewportWidth) continue;
+            if (bx + bucketW < ViewportOffsetX || bx > vpEnd) continue;
             int brushIdx = (int)Math.Clamp(v * (HeatAlphaLevels - 1), 0, HeatAlphaLevels - 1);
             dc.DrawRectangle(HeatBrushes[brushIdx], null, new Rect(bx, RulerHeight, bucketW, contentH));
         }
     }
 
-    // Minimum run pixel width at current zoom level — 2px regardless of zoom.
-    private const double MinRunPx = 2.0;
-
-    private void DrawRuns(DrawingContext dc, double w, double h, double pixelW)
+    private void DrawRuns(DrawingContext dc, double h, double pixelW)
     {
-        int startIdx = BinarySearchVisibleStart(pixelW);
+        // _drawList is sorted by (row, brushId, x1Norm) — binary search for first visible entry.
+        int startIdx = BinarySearchDrawStart(pixelW);
+        double vpEnd = ViewportOffsetX + ViewportWidth;
 
-        for (int i = startIdx; i < _rowMap.Count; i++)
+        for (int i = startIdx; i < _drawList.Count; i++)
         {
-            var (run, row, xNorm, rwNorm) = _rowMap[i];
-            double x  = xNorm  * pixelW;
-            double rw = Math.Max(MinRunPx, rwNorm * pixelW);
+            var (row, brushId, x1n, x2n, opacity) = _drawList[i];
+            double x  = x1n * pixelW;
+            double x2 = Math.Max(x + MinRunPx, x2n * pixelW);
 
-            if (x > ViewportOffsetX + ViewportWidth) break;
-            if (x + rw < ViewportOffsetX) continue;
+            // _drawList is sorted by x1 within each (row,brush) group but rows interleave.
+            // Can only break early within a contiguous run of same-row entries — skip if past viewport.
+            if (x > vpEnd) continue;   // not break: next entry might be in a different row/brush
+            if (x2 < ViewportOffsetX) continue;
 
             double y = RulerHeight + row * RowHeight;
             if (y > h) continue;
 
-            SolidColorBrush brush;
-            if (run.Kind != StringKind.None && EncodingPalette.KindBrushes.TryGetValue(run.Kind, out var kb))
-                brush = kb;
-            else if (EncodingPalette.Brushes.TryGetValue(run.Encoding, out var eb))
-                brush = eb;
-            else
-                brush = EncodingPalette.FallbackBrush;
+            var brush = (uint)brushId < (uint)BrushById.Length ? BrushById[brushId] : EncodingPalette.FallbackBrush;
 
-            double opacity = MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0);
-            if (opacity >= 1.0)
+            if (opacity >= 1f)
             {
-                dc.DrawRectangle(brush, null, new Rect(x, y + 1, rw, RowHeight - 2));
+                dc.DrawRectangle(brush, null, new Rect(x, y + 1, x2 - x, RowHeight - 2));
             }
             else
             {
                 dc.PushOpacity(opacity);
-                dc.DrawRectangle(brush, null, new Rect(x, y + 1, rw, RowHeight - 2));
+                dc.DrawRectangle(brush, null, new Rect(x, y + 1, x2 - x, RowHeight - 2));
                 dc.Pop();
             }
         }
     }
 
-    private int BinarySearchVisibleStart(double pixelW)
+    // Binary search on _drawList by x1Norm (approximate — list is sorted within (row,brush) groups).
+    // Falls back to 0 on miss — viewport culling in DrawRuns handles the rest.
+    private int BinarySearchDrawStart(double pixelW)
     {
-        if (_rowMap.Count == 0 || pixelW <= 0) return 0;
+        if (_drawList.Count == 0 || pixelW <= 0) return 0;
         double targetNorm = (ViewportOffsetX - MinRunPx) / pixelW;
-        int lo = 0, hi = _rowMap.Count - 1;
+        // Search by x1 only — entries are sorted by (row, brushId, x1) so this under-estimates.
+        int lo = 0, hi = _drawList.Count - 1;
         while (lo < hi)
         {
             int mid = (lo + hi) / 2;
-            if (_rowMap[mid].xNorm < targetNorm) lo = mid + 1;
+            if (_drawList[mid].x1 < targetNorm - 0.05) lo = mid + 1;
             else hi = mid;
         }
-        return Math.Max(0, lo - 1);
+        return Math.Max(0, lo - 4);  // small backstep to avoid missing cross-brush entries
     }
 
     private const int MaxRulerTicks = 200;
@@ -333,17 +429,19 @@ internal sealed class StringTimelineView : FrameworkElement
         if (_bufferLength <= 0) return;
 
         double scale = pixelW / _bufferLength;
-        long tickStep = (long)Math.Pow(2, Math.Ceiling(Math.Log2(Math.Max(1, 100.0 / scale))));
+        if (scale <= 0) return;
+        long tickStep = (long)Math.Pow(2, Math.Ceiling(Math.Log2(Math.Max(1.0, 100.0 / scale))));
         tickStep = Math.Max(1, tickStep);
 
-        long estimatedTicks = scale > 0 ? (long)(pixelW / (tickStep * scale)) + 1 : 0;
+        long estimatedTicks = (long)(pixelW / (tickStep * scale)) + 1;
         if (estimatedTicks > MaxRulerTicks)
             tickStep = (long)Math.Ceiling(pixelW / (MaxRulerTicks * scale));
 
+        double vpEnd = ViewportOffsetX + ViewportWidth;
         for (long off = 0; off * scale <= pixelW; off += tickStep)
         {
             double x = off * scale;
-            if (x + 60 < ViewportOffsetX || x > ViewportOffsetX + ViewportWidth) continue;
+            if (x + 60 < ViewportOffsetX || x > vpEnd) continue;
             dc.DrawLine(RulerPen, new Point(x, 0), new Point(x, RulerHeight));
             var ft = new FormattedText($"0x{off:X}",
                 System.Globalization.CultureInfo.InvariantCulture,
@@ -407,7 +505,7 @@ internal sealed class StringTimelineView : FrameworkElement
             else hi = mid;
         }
 
-        for (int i = lo; i < _rowMap.Count; i++)
+        for (int i = Math.Max(0, lo - 1); i < _rowMap.Count; i++)
         {
             var (run, _, xNorm, rwNorm) = _rowMap[i];
             double x  = xNorm  * pixelW;
@@ -482,7 +580,7 @@ internal sealed class StringTimelineLegend : FrameworkElement
 
 // ── Host panel ────────────────────────────────────────────────────────────────────
 
-/// <summary>Host panel for the timeline: wraps the canvas in a ScrollViewer + zoom slider + legend.</summary>
+/// <summary>Host panel for the timeline: wraps canvas in ScrollViewer + zoom slider + legend.</summary>
 internal sealed class StringTimelinePanel : Border
 {
     private readonly StringTimelineView   _view   = new() { UseLayoutRounding = true };
@@ -554,14 +652,13 @@ internal sealed class StringTimelinePanel : Border
     }
 
     private void OnZoomSliderChanged(object _, RoutedPropertyChangedEventArgs<double> e)
-    {
-        _view.Zoom = e.NewValue;
-    }
+        => _view.Zoom = e.NewValue;
 
     private void OnScrollChanged(object _, ScrollChangedEventArgs _2)
     {
-        if (_view.ViewportOffsetX == _scroll.HorizontalOffset &&
-            _view.ViewportWidth   == _scroll.ViewportWidth) return;
+        const double Eps = 0.5;
+        if (Math.Abs(_view.ViewportOffsetX - _scroll.HorizontalOffset) < Eps &&
+            Math.Abs(_view.ViewportWidth   - _scroll.ViewportWidth)    < Eps) return;
         _view.ViewportOffsetX = _scroll.HorizontalOffset;
         _view.ViewportWidth   = _scroll.ViewportWidth;
         _view.InvalidateVisual();
@@ -577,7 +674,6 @@ internal sealed class StringTimelinePanel : Border
 
         _zoomSlider.Value = Math.Clamp(_zoomSlider.Value + e.Delta / 120.0 * 2, 1, 100);
 
-        // After debounce fires and element re-measures, restore scroll to keep anchor stationary.
         _view.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
         {
             double targetX = anchorRatio * _scroll.ExtentWidth - _scroll.ViewportWidth / 2;
