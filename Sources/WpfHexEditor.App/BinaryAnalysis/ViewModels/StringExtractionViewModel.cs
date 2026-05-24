@@ -899,6 +899,12 @@ public sealed class StringExtractionViewModel : ViewModelBase, IDisposable
 
     public IEnumerable<StringRun> GetAllRuns() => _allResults;
 
+    /// <summary>
+    /// Returns the stable frozen snapshot array set atomically at end of scan.
+    /// Safe to read from background threads — no lock required.
+    /// </summary>
+    public StringRun[] GetAllRunsSnapshot() => _allResultsSnapshot;
+
     /// <summary>Last scanned buffer — used by the panel to render context bytes without re-reading disk.</summary>
     public byte[]? LastBuffer => _lastBuffer;
 

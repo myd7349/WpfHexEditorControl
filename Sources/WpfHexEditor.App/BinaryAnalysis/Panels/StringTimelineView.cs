@@ -9,9 +9,9 @@
 // Architecture: Pure DrawingContext render; zoom via Slider; scroll via ScrollViewer wrapping this element.
 //
 // Perf contract:
-//   RebuildLayout — O(n log n), runs ONLY when data changes.
+//   RebuildLayout — O(n log n), runs on ThreadPool (Task.Run); UI thread never blocked.
 //   Zoom/Scroll   — O(1): only InvalidateMeasure/Visual. No rebuild, no allocs.
-//   _rowMap stores normalized coords; pixel coords computed at render time.
+//   _hitMap/_drawList are frozen arrays swapped atomically on the UI thread after each rebuild.
 //   _drawList merges adjacent/overlapping runs with the same brush into single rects,
 //   reducing DrawRectangle calls from O(runs) to O(distinct color bands) per frame.
 
@@ -148,16 +148,14 @@ internal sealed class StringTimelineView : FrameworkElement
     private StringExtractionViewModel? _vm;
     private long _bufferLength;
 
-    // Normalized layout cache: xNorm/rwNorm in [0,1].
-    private readonly List<(StringRun run, int row, double xNorm, double rwNorm)> _rowMap = [];
+    // Frozen arrays swapped atomically on the UI thread after each background rebuild.
+    private (StringRun run, double xNorm, double rwNorm)[] _hitMap  = [];
+    private (int row, int brushId, double x1, double x2, float opacity)[] _drawList = [];
+    private float[] _densityMap = [];
     private int _rowCount;
 
-    // Merged draw list: sorted by (row, brushId, xNorm) then merged.
-    // Each entry: (row, brushId, x1Norm, x2Norm, opacity).
-    // DrawRuns iterates this instead of _rowMap — far fewer DrawRectangle calls.
-    private readonly List<(int row, int brushId, double x1, double x2, float opacity)> _drawList = [];
-
-    private float[] _densityMap = [];
+    // Cancellation token for the most recent in-flight rebuild — cancelled when a newer one starts.
+    private CancellationTokenSource _rebuildCts = new();
 
     private readonly ToolTip _tooltip;
     private long _hoveredOffset = long.MinValue;
@@ -169,7 +167,7 @@ internal sealed class StringTimelineView : FrameworkElement
     public StringTimelineView()
     {
         _zoomDebounce = new System.Windows.Threading.DispatcherTimer
-            { Interval = TimeSpan.FromMilliseconds(16) };  // one frame — smooth without double-render
+            { Interval = TimeSpan.FromMilliseconds(16) };
         _zoomDebounce.Tick += (_, _) =>
         {
             _zoomDebounce.Stop();
@@ -179,21 +177,13 @@ internal sealed class StringTimelineView : FrameworkElement
 
         _refreshDebounce = new System.Windows.Threading.DispatcherTimer
             { Interval = TimeSpan.FromMilliseconds(250) };
-        _refreshDebounce.Tick += (_, _) => { _refreshDebounce.Stop(); DoRebuildAndRender(); };
+        _refreshDebounce.Tick += (_, _) => { _refreshDebounce.Stop(); ScheduleRebuild(); };
 
         _tooltip = new ToolTip { Placement = PlacementMode.Mouse, HasDropShadow = true };
         ToolTip = _tooltip;
     }
 
     // ── Attach / Refresh ─────────────────────────────────────────────────────────
-
-    private void DoRebuildAndRender()
-    {
-        _bufferLength = _vm?.LastBufferLength ?? 0;
-        RebuildLayout(_vm?.GetAllRuns());
-        InvalidateMeasure();
-        InvalidateVisual();
-    }
 
     public void Attach(StringExtractionViewModel vm)
     {
@@ -223,26 +213,83 @@ internal sealed class StringTimelineView : FrameworkElement
     public void Refresh()
     {
         _refreshDebounce.Stop();
-        DoRebuildAndRender();
+        ScheduleRebuild();
     }
 
-    // ── RebuildLayout: O(n log n) — normalized coords, merged draw list ───────────
+    // ── Background rebuild ───────────────────────────────────────────────────────
+    // Captures snapshot + bufferLength on UI thread, then offloads heavy work to ThreadPool.
+    // Result arrays are swapped atomically on the UI thread via Dispatcher.InvokeAsync.
 
-    private void RebuildLayout(IEnumerable<StringRun>? runs)
+    private void ScheduleRebuild()
     {
-        _rowMap.Clear();
-        _drawList.Clear();
-        _rowCount = 0;
-        _densityMap = [];
-        if (runs is null || _bufferLength <= 0) return;
+        // Cancel any in-flight rebuild — its result is now stale.
+        _rebuildCts.Cancel();
+        _rebuildCts = new CancellationTokenSource();
+        var cts = _rebuildCts;
 
-        double invBuffer = 1.0 / _bufferLength;
+        var snapshot     = _vm?.GetAllRunsSnapshot() ?? [];
+        var bufferLength = _vm?.LastBufferLength ?? 0;
+
+        if (snapshot.Length == 0 || bufferLength <= 0)
+        {
+            _bufferLength = bufferLength;
+            _hitMap       = [];
+            _drawList     = [];
+            _densityMap   = [];
+            _rowCount     = 0;
+            InvalidateMeasure();
+            InvalidateVisual();
+            return;
+        }
+
+        _bufferLength = bufferLength;
+
+        Task.Run(() => BuildLayout(snapshot, bufferLength, cts.Token), cts.Token)
+            .ContinueWith(t =>
+            {
+                if (t.IsCanceled || t.IsFaulted || cts.IsCancellationRequested) return;
+                var result = t.Result;
+                Dispatcher.InvokeAsync(() =>
+                {
+                    if (cts.IsCancellationRequested) return;
+                    _hitMap     = result.HitMap;
+                    _drawList   = result.DrawList;
+                    _densityMap = result.DensityMap;
+                    _rowCount   = result.RowCount;
+                    InvalidateMeasure();
+                    InvalidateVisual();
+                }, System.Windows.Threading.DispatcherPriority.Render);
+            }, TaskScheduler.Default);
+    }
+
+    // Immutable result returned from background thread to UI thread.
+    private sealed class LayoutResult(
+        (StringRun run, double xNorm, double rwNorm)[] hitMap,
+        (int row, int brushId, double x1, double x2, float opacity)[] drawList,
+        float[] densityMap,
+        int rowCount)
+    {
+        public (StringRun run, double xNorm, double rwNorm)[]                   HitMap     { get; } = hitMap;
+        public (int row, int brushId, double x1, double x2, float opacity)[]   DrawList   { get; } = drawList;
+        public float[]                                                           DensityMap { get; } = densityMap;
+        public int                                                               RowCount   { get; } = rowCount;
+    }
+
+    // Pure layout function — no WPF types, safe on ThreadPool.
+    private static LayoutResult BuildLayout(StringRun[] runs, long bufferLength, CancellationToken ct)
+    {
+        double invBuffer = 1.0 / bufferLength;
         var pq      = new PriorityQueue<int, double>();
         int nextRow = 0;
         var density = new float[HeatBuckets];
 
+        var hitList  = new List<(StringRun run, double xNorm, double rwNorm)>(runs.Length);
+        var tmpDraw  = new List<(int row, int brushId, double x1, double x2, float opacity)>(runs.Length);
+
         foreach (var run in runs)
         {
+            if (ct.IsCancellationRequested) return new LayoutResult([], [], [], 0);
+
             double xNorm  = run.Offset * invBuffer;
             double rwNorm = Math.Max(MinRunNorm, run.Length * invBuffer);
             double xEnd   = xNorm + rwNorm;
@@ -262,42 +309,24 @@ internal sealed class StringTimelineView : FrameworkElement
                 pq.TryDequeue(out row, out _);
             }
             pq.Enqueue(row, xEnd);
-            _rowMap.Add((run, row, xNorm, rwNorm));
+            hitList.Add((run, xNorm, rwNorm));
+
+            int brushId = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
+            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
+            tmpDraw.Add((row, brushId, xNorm, xNorm + rwNorm, opacity));
 
             density[Math.Clamp((int)(xNorm * HeatBuckets), 0, HeatBuckets - 1)] += 1f;
         }
 
-        _rowCount = Math.Max(1, Math.Min(nextRow, MaxRows));
+        int rowCount = Math.Max(1, Math.Min(nextRow, MaxRows));
 
         float dmax = 0f;
         foreach (var v in density) if (v > dmax) dmax = v;
         if (dmax > 0f)
-        {
-            _densityMap = density;
-            for (int i = 0; i < _densityMap.Length; i++) _densityMap[i] /= dmax;
-        }
+            for (int i = 0; i < density.Length; i++) density[i] /= dmax;
 
-        BuildDrawList();
-    }
-
-    // Merges _rowMap entries into _drawList by sorting (row, brushId, xNorm) then
-    // merging overlapping/adjacent runs with the same brush into single draw rects.
-    // This reduces draw calls from O(runs) to O(distinct color bands).
-    private void BuildDrawList()
-    {
-        if (_rowMap.Count == 0) return;
-
-        // Temp list with brush pre-resolved.
-        var tmp = new List<(int row, int brushId, double x1, double x2, float opacity)>(_rowMap.Count);
-        foreach (var (run, row, xNorm, rwNorm) in _rowMap)
-        {
-            int brushId = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
-            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
-            tmp.Add((row, brushId, xNorm, xNorm + rwNorm, opacity));
-        }
-
-        // Sort by (row, brushId, x1) for efficient merge sweep.
-        tmp.Sort(static (a, b) =>
+        // Sort by (row, brushId, x1) for merge sweep.
+        tmpDraw.Sort(static (a, b) =>
         {
             int c = a.row.CompareTo(b.row);
             if (c != 0) return c;
@@ -307,22 +336,18 @@ internal sealed class StringTimelineView : FrameworkElement
         });
 
         // Merge adjacent/overlapping same-brush, same-row spans.
-        var cur = tmp[0];
-        for (int i = 1; i < tmp.Count; i++)
+        var drawList = new List<(int row, int brushId, double x1, double x2, float opacity)>(tmpDraw.Count);
+        var cur = tmpDraw[0];
+        for (int i = 1; i < tmpDraw.Count; i++)
         {
-            var next = tmp[i];
+            var next = tmpDraw[i];
             if (next.row == cur.row && next.brushId == cur.brushId && next.x1 <= cur.x2 + MergeGapNorm)
-            {
-                // Extend current span; take the higher opacity of the two.
                 cur = cur with { x2 = Math.Max(cur.x2, next.x2), opacity = Math.Max(cur.opacity, next.opacity) };
-            }
-            else
-            {
-                _drawList.Add(cur);
-                cur = next;
-            }
+            else { drawList.Add(cur); cur = next; }
         }
-        _drawList.Add(cur);
+        drawList.Add(cur);
+
+        return new LayoutResult([.. hitList], [.. drawList], density, rowCount);
     }
 
     // ── Layout ───────────────────────────────────────────────────────────────────
@@ -347,7 +372,7 @@ internal sealed class StringTimelineView : FrameworkElement
         double w = ActualWidth;
         double h = ActualHeight;
         dc.DrawRectangle(BackBrush, null, new Rect(0, 0, w, h));
-        if (_drawList.Count == 0 || _bufferLength <= 0 || w <= 0) return;
+        if (_drawList.Length == 0 || _bufferLength <= 0 || w <= 0) return;
 
         double pixelW = w * _zoom;
         DrawRuler(dc, w, pixelW, pixelsPerDip);
@@ -374,13 +399,14 @@ internal sealed class StringTimelineView : FrameworkElement
 
     private void DrawRuns(DrawingContext dc, double h, double pixelW)
     {
-        // _drawList is sorted by (row, brushId, x1Norm) — binary search for first visible entry.
-        int startIdx = BinarySearchDrawStart(pixelW);
+        var drawList = _drawList;
+        // drawList is sorted by (row, brushId, x1Norm) — binary search for first visible entry.
+        int startIdx = BinarySearchDrawStart(pixelW, drawList);
         double vpEnd = ViewportOffsetX + ViewportWidth;
 
-        for (int i = startIdx; i < _drawList.Count; i++)
+        for (int i = startIdx; i < drawList.Length; i++)
         {
-            var (row, brushId, x1n, x2n, opacity) = _drawList[i];
+            var (row, brushId, x1n, x2n, opacity) = drawList[i];
             double x  = x1n * pixelW;
             double x2 = Math.Max(x + MinRunPx, x2n * pixelW);
 
@@ -407,18 +433,17 @@ internal sealed class StringTimelineView : FrameworkElement
         }
     }
 
-    // Binary search on _drawList by x1Norm (approximate — list is sorted within (row,brush) groups).
+    // Binary search on drawList by x1Norm (approximate — list is sorted within (row,brush) groups).
     // Falls back to 0 on miss — viewport culling in DrawRuns handles the rest.
-    private int BinarySearchDrawStart(double pixelW)
+    private int BinarySearchDrawStart(double pixelW, (int row, int brushId, double x1, double x2, float opacity)[] drawList)
     {
-        if (_drawList.Count == 0 || pixelW <= 0) return 0;
+        if (drawList.Length == 0 || pixelW <= 0) return 0;
         double targetNorm = (ViewportOffsetX - MinRunPx) / pixelW;
-        // Search by x1 only — entries are sorted by (row, brushId, x1) so this under-estimates.
-        int lo = 0, hi = _drawList.Count - 1;
+        int lo = 0, hi = drawList.Length - 1;
         while (lo < hi)
         {
             int mid = (lo + hi) / 2;
-            if (_drawList[mid].x1 < targetNorm - 0.05) lo = mid + 1;
+            if (drawList[mid].x1 < targetNorm - 0.05) lo = mid + 1;
             else hi = mid;
         }
         return Math.Max(0, lo - 4);  // small backstep to avoid missing cross-brush entries
@@ -492,7 +517,8 @@ internal sealed class StringTimelineView : FrameworkElement
 
     private StringRun? HitTestRun(Point pos)
     {
-        if (_bufferLength <= 0 || ActualWidth <= 0 || _rowMap.Count == 0) return null;
+        var hitMap = _hitMap;
+        if (_bufferLength <= 0 || ActualWidth <= 0 || hitMap.Length == 0) return null;
         if (pos.Y < RulerHeight) return null;
 
         double pixelW     = ActualWidth * _zoom;
@@ -500,17 +526,17 @@ internal sealed class StringTimelineView : FrameworkElement
         StringRun? best   = null;
         double bestDist   = double.MaxValue;
 
-        int lo = 0, hi = _rowMap.Count - 1;
+        int lo = 0, hi = hitMap.Length - 1;
         while (lo < hi)
         {
             int mid = (lo + hi) / 2;
-            if (_rowMap[mid].xNorm < targetNorm - 200.0 / pixelW) lo = mid + 1;
+            if (hitMap[mid].xNorm < targetNorm - 200.0 / pixelW) lo = mid + 1;
             else hi = mid;
         }
 
-        for (int i = Math.Max(0, lo - 1); i < _rowMap.Count; i++)
+        for (int i = Math.Max(0, lo - 1); i < hitMap.Length; i++)
         {
-            var (run, _, xNorm, rwNorm) = _rowMap[i];
+            var (run, xNorm, rwNorm) = hitMap[i];
             double x  = xNorm  * pixelW;
             double rw = Math.Max(MinRunPx, rwNorm * pixelW);
             if (x > pos.X + 4) break;
