@@ -33,7 +33,28 @@ internal sealed class StringTimelineView : FrameworkElement
     public double Zoom
     {
         get => _zoom;
-        set { _zoom = Math.Clamp(value, 1.0, 200.0); InvalidateMeasure(); InvalidateVisual(); }
+        set
+        {
+            _zoom = Math.Clamp(value, 1.0, 200.0);
+            // Debounce: coalesce rapid slider drags into a single layout+render pass.
+            _zoomDebounce.Stop();
+            _zoomDebounce.Start();
+        }
+    }
+
+    // Single timer instance — Tick wired in constructor (needs `this`).
+    private readonly System.Windows.Threading.DispatcherTimer _zoomDebounce;
+
+    public StringTimelineView()
+    {
+        _zoomDebounce = new System.Windows.Threading.DispatcherTimer
+            { Interval = TimeSpan.FromMilliseconds(30) };
+        _zoomDebounce.Tick += (_, _) =>
+        {
+            _zoomDebounce.Stop();
+            InvalidateMeasure();
+            InvalidateVisual();
+        };
     }
 
     private StringExtractionViewModel? _vm;
@@ -46,6 +67,9 @@ internal sealed class StringTimelineView : FrameworkElement
     // Ruler pen — cached to avoid allocation per render.
     private static readonly Pen RulerPen = FreezePen(new Pen(RulerTextBrush, 0.5));
     private static Pen FreezePen(Pen p) { p.Freeze(); return p; }
+
+    // PixelsPerDip cached after first render — stable for the lifetime of the element.
+    private double _pixelsPerDip = 1.0;
 
     // Hover state for tooltip
     private StringRun? _hovered;
@@ -129,6 +153,9 @@ internal sealed class StringTimelineView : FrameworkElement
 
     protected override void OnRender(DrawingContext dc)
     {
+        // Cache once per render pass — DPI is stable for the lifetime of the element.
+        _pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
         double w = ActualWidth;
         double h = ActualHeight;
         dc.DrawRectangle(BackBrush, null, new Rect(0, 0, w, h));
@@ -138,11 +165,10 @@ internal sealed class StringTimelineView : FrameworkElement
         double scale = w / _bufferLength;
         DrawRuler(dc, w, scale);
 
-        foreach (var (run, row, x, rw) in _rowMap)
+        foreach (var (run, row, _, _) in _rowMap)
         {
             double y = RulerHeight + row * RowHeight;
             if (y > h) continue;
-            // Rescale x/rw from cached layout width to current ActualWidth
             double cx  = run.Offset * scale;
             double crw = Math.Max(MinRunWidth, run.Length * scale);
             var brush = EncodingPalette.Brushes.TryGetValue(run.Encoding, out var b) ? b : EncodingPalette.FallbackBrush;
@@ -155,7 +181,7 @@ internal sealed class StringTimelineView : FrameworkElement
                 $"0x{_hovered.Offset:X8}  [{_hovered.Encoding}]  {TruncateValue(_hovered.Value, 60)}",
                 System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, RulerTypeface, 10, RulerTextBrush,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                _pixelsPerDip);
             double tx = Math.Min(_hoveredPos.X + 4, w - text.Width - 4);
             double ty = Math.Max(RulerHeight, _hoveredPos.Y - 16);
             dc.DrawRectangle(RulerBrush, null, new Rect(tx - 2, ty - 1, text.Width + 4, text.Height + 2));
@@ -163,18 +189,26 @@ internal sealed class StringTimelineView : FrameworkElement
         }
     }
 
+    private const int MaxRulerTicks = 200;
+
     private void DrawRuler(DrawingContext dc, double w, double scale)
     {
         dc.DrawRectangle(RulerBrush, null, new Rect(0, 0, w, RulerHeight));
         long tickStep = (long)Math.Pow(2, Math.Ceiling(Math.Log2(100.0 / scale)));
         tickStep = Math.Max(1, tickStep);
+
+        // Guard against degenerate scale values producing millions of ticks.
+        long estimatedTicks = scale > 0 ? (long)(w / (tickStep * scale)) + 1 : 0;
+        if (estimatedTicks > MaxRulerTicks)
+            tickStep = (long)Math.Ceiling(w / (MaxRulerTicks * scale));
+
         for (long off = 0; off * scale <= w; off += tickStep)
         {
             double x = off * scale;
             dc.DrawLine(RulerPen, new Point(x, 0), new Point(x, RulerHeight));
             var ft = new FormattedText($"0x{off:X}", System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, RulerTypeface, 8, RulerTextBrush,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                _pixelsPerDip);
             dc.DrawText(ft, new Point(x + 2, 3));
         }
     }
