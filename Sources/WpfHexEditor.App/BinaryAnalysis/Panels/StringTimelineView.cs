@@ -7,11 +7,14 @@
 //               Density heatmap overlay drawn below runs.
 //               Viewport-culled per paint — binary search on offset-sorted _drawList.
 // Architecture: Pure DrawingContext render; zoom via Slider; scroll via ScrollViewer wrapping this element.
+//               Tooltip uses a Popup (not ToolTip) repositioned on every MouseMove so it
+//               tracks the cursor continuously. WPF ToolTip with PlacementMode.Mouse only
+//               positions itself at the moment IsOpen transitions false→true and stays frozen.
 //
 // Perf contract:
-//   RebuildLayout — O(n log n), runs on ThreadPool (Task.Run); UI thread never blocked.
+//   RebuildLayout — O(n log n), offloaded to Task.Run; UI thread blocked only for the final
+//                   _rowMap/_drawList swap via Dispatcher.InvokeAsync.
 //   Zoom/Scroll   — O(1): only InvalidateMeasure/Visual. No rebuild, no allocs.
-//   _hitMap/_drawList are frozen arrays swapped atomically on the UI thread after each rebuild.
 //   _drawList merges adjacent/overlapping runs with the same brush into single rects,
 //   reducing DrawRectangle calls from O(runs) to O(distinct color bands) per frame.
 
@@ -30,8 +33,16 @@ internal sealed class StringTimelineView : FrameworkElement
     private static readonly SolidColorBrush BackBrush      = FreezeB(new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E)));
     private static readonly SolidColorBrush RulerBrush     = FreezeB(new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33)));
     private static readonly SolidColorBrush RulerTextBrush = FreezeB(new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)));
-    private static readonly Typeface        RulerTypeface  = new("Consolas");
-    private static readonly Pen             RulerPen       = FreezePen(new Pen(RulerTextBrush, 0.5));
+    private static readonly Typeface        RulerTypeface    = new("Consolas");
+    private static readonly Pen             RulerPen         = FreezePen(new Pen(RulerTextBrush, 0.5));
+
+    // Tooltip chrome — static frozen so they are shared across all StringTimelineView instances.
+    private static readonly FontFamily      TooltipMonoFamily  = new("Consolas");
+    private static readonly SolidColorBrush TooltipBgBrush     = FreezeB(new SolidColorBrush(Color.FromArgb(0xF2, 0x1E, 0x1E, 0x1E)));
+    private static readonly SolidColorBrush TooltipBorderBrush = FreezeB(new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55)));
+    private static readonly SolidColorBrush TooltipOffsetFg    = FreezeB(new SolidColorBrush(Color.FromRgb(0xFF, 0xD7, 0x00)));
+    private static readonly SolidColorBrush TooltipValueFg     = FreezeB(new SolidColorBrush(Color.FromRgb(0xCE, 0xCE, 0xCE)));
+    private static readonly SolidColorBrush TooltipMetaFg      = FreezeB(new SolidColorBrush(Color.FromRgb(0x77, 0x77, 0x77)));
 
     // Pre-built heatmap brush pool keyed by quantized alpha.
     private const byte HeatMaxAlpha    = 0x72;
@@ -56,21 +67,17 @@ internal sealed class StringTimelineView : FrameworkElement
     static StringTimelineView()
     {
         var list = new List<SolidColorBrush>();
-        // Encoding brushes (indices 0+)
         foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
             if (EncodingPalette.Brushes.TryGetValue(enc, out var b)) list.Add(b);
-        // Kind brushes follow
         foreach (StringKind kind in Enum.GetValues<StringKind>())
             if (kind != StringKind.None && EncodingPalette.KindBrushes.TryGetValue(kind, out var b)) list.Add(b);
         FallbackBrushId = list.Count;
         list.Add(EncodingPalette.FallbackBrush);
         BrushById = [.. list];
 
-        // BrushIndex must be built AFTER BrushById is populated — do not use a field initializer.
         BrushIndex = BuildBrushIndex();
     }
 
-    // Maps (encoding, kind) → brush index — computed once at startup.
     private static Dictionary<(StringEncoding, StringKind), int> BuildBrushIndex()
     {
         var d   = new Dictionary<(StringEncoding, StringKind), int>();
@@ -82,8 +89,7 @@ internal sealed class StringTimelineView : FrameworkElement
             {
                 if (kind != StringKind.None && EncodingPalette.KindBrushes.ContainsKey(kind))
                 {
-                    // Kind overrides encoding — find the kind brush index
-                    int ki = BrushById.Length - 1; // fallback default
+                    int ki     = BrushById.Length - 1;
                     int search = 0;
                     foreach (StringKind k2 in Enum.GetValues<StringKind>())
                     {
@@ -103,6 +109,7 @@ internal sealed class StringTimelineView : FrameworkElement
         }
         return d;
     }
+
     private static int CountEncodingBrushes()
     {
         int c = 0;
@@ -114,18 +121,17 @@ internal sealed class StringTimelineView : FrameworkElement
     private static SolidColorBrush FreezeB(SolidColorBrush b) { b.Freeze(); return b; }
     private static Pen FreezePen(Pen p) { p.Freeze(); return p; }
 
-    private const double RowHeight   = 12.0;
-    private const double RulerHeight = 18.0;
-    private const int    HeatBuckets = 512;
-    private const double MinOpacity  = 0.35;
+    private const double RowHeight    = 12.0;
+    private const double RulerHeight  = 18.0;
+    private const int    HeatBuckets  = 512;
+    private const double MinOpacity   = 0.35;
     private const double OpacityRange = 0.65;
-    private const double MinRunNorm  = 0.0008;
-    private const int    MaxRows     = 120;
-    private const double MinRunPx    = 2.0;
-    // Merge gap: adjacent runs within this normalized distance get merged into one rect.
+    private const double MinRunNorm   = 0.0008;
+    private const int    MaxRows      = 120;
+    private const double MinRunPx     = 2.0;
     private const double MergeGapNorm = 0.0005;
 
-    // ── Zoom ─────────────────────────────────────────────────────────────────────
+    // ── Zoom ──────────────────────────────────────────────────────────────────
 
     private double _zoom = 1.0;
     public double Zoom
@@ -148,21 +154,33 @@ internal sealed class StringTimelineView : FrameworkElement
     private StringExtractionViewModel? _vm;
     private long _bufferLength;
 
-    // Frozen arrays swapped atomically on the UI thread after each background rebuild.
-    private (StringRun run, double xNorm, double rwNorm)[] _hitMap  = [];
-    private (int row, int brushId, double x1, double x2, float opacity)[] _drawList = [];
-    private float[] _densityMap = [];
+    private readonly List<(StringRun run, int row, double xNorm, double rwNorm)> _rowMap = [];
     private int _rowCount;
 
-    // Cancellation token for the most recent in-flight rebuild — cancelled when a newer one starts.
-    private CancellationTokenSource _rebuildCts = new();
+    private readonly List<(int row, int brushId, double x1, double x2, float opacity)> _drawList = [];
 
-    private readonly ToolTip _tooltip;
-    private long _hoveredOffset = long.MinValue;
+    private float[] _densityMap = [];
+    private readonly float[] _densityWork = new float[HeatBuckets];   // reused across rebuilds — avoids per-rebuild alloc
+
+    // Not readonly: replaced on every rebuild to cancel the previous in-flight Task.Run.
+    private CancellationTokenSource _rebuildCts = new(); // CS0649 suppressed — intentionally reassigned
+
+    // ── Tooltip — Popup tracked on MouseMove ──────────────────────────────────
+    // We use a Popup instead of ToolTip: ToolTip.PlacementMode.Mouse only positions
+    // itself at the instant IsOpen flips to true and stays frozen until closed.
+    private readonly Popup      _tooltipPopup;
+    private readonly TextBlock  _tooltipOffset;
+    private readonly TextBlock  _tooltipEncoding;
+    private readonly TextBlock  _tooltipKind;
+    private readonly TextBlock  _tooltipValue;
+    private readonly TextBlock  _tooltipLength;
+    private readonly Border     _tooltipEncodingBadge;
+    private readonly Border     _tooltipKindBadge;
+    private StringRun?          _tooltipRun;        // last run shown — avoids rebuild on same run
 
     public Action<StringRun>? RunSelected { get; set; }
 
-    // ── Constructor ──────────────────────────────────────────────────────────────
+    // ── Constructor ───────────────────────────────────────────────────────────
 
     public StringTimelineView()
     {
@@ -177,17 +195,174 @@ internal sealed class StringTimelineView : FrameworkElement
 
         _refreshDebounce = new System.Windows.Threading.DispatcherTimer
             { Interval = TimeSpan.FromMilliseconds(250) };
-        _refreshDebounce.Tick += (_, _) => { _refreshDebounce.Stop(); ScheduleRebuild(); };
+        _refreshDebounce.Tick += (_, _) => { _refreshDebounce.Stop(); DoRebuildAndRender(); };
 
-        _tooltip = new ToolTip { Placement = PlacementMode.Mouse, HasDropShadow = true };
-        ToolTip = _tooltip;
+        (_tooltipPopup, _tooltipOffset, _tooltipEncoding,
+         _tooltipKind, _tooltipValue, _tooltipLength,
+         _tooltipEncodingBadge, _tooltipKindBadge) = BuildTooltipPopup();
     }
 
-    // ── Attach / Refresh ─────────────────────────────────────────────────────────
+    // ── Rich tooltip construction ─────────────────────────────────────────────
+
+    private static (Popup popup,
+                    TextBlock offsetTb,
+                    TextBlock encodingTb,
+                    TextBlock kindTb,
+                    TextBlock valueTb,
+                    TextBlock lengthTb,
+                    Border encodingBadge,
+                    Border kindBadge)
+        BuildTooltipPopup()
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (int i = 0; i < 5; i++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var offsetTb = new TextBlock
+        {
+            FontFamily = TooltipMonoFamily,
+            FontSize   = 11,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = TooltipOffsetFg,
+            Margin     = new Thickness(0, 0, 0, 4),
+        };
+        Grid.SetRow(offsetTb, 0);
+        Grid.SetColumnSpan(offsetTb, 2);
+        grid.Children.Add(offsetTb);
+
+        var encodingBadge = MakeTooltipBadge(out var encodingTb);
+        Grid.SetRow(encodingBadge, 1);
+        Grid.SetColumn(encodingBadge, 0);
+        grid.Children.Add(encodingBadge);
+
+        var kindBadge = MakeTooltipBadge(out var kindTb);
+        kindBadge.Margin = new Thickness(0, 2, 0, 0);
+        Grid.SetRow(kindBadge, 2);
+        Grid.SetColumn(kindBadge, 0);
+        grid.Children.Add(kindBadge);
+
+        var valueTb = new TextBlock
+        {
+            FontFamily   = TooltipMonoFamily,
+            FontSize     = 10,
+            Foreground   = TooltipValueFg,
+            Margin       = new Thickness(0, 4, 0, 0),
+            MaxWidth     = 360,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        Grid.SetRow(valueTb, 3);
+        Grid.SetColumnSpan(valueTb, 2);
+        grid.Children.Add(valueTb);
+
+        var lengthTb = new TextBlock
+        {
+            FontSize   = 9,
+            Foreground = TooltipMetaFg,
+            Margin     = new Thickness(0, 3, 0, 0),
+        };
+        Grid.SetRow(lengthTb, 4);
+        Grid.SetColumnSpan(lengthTb, 2);
+        grid.Children.Add(lengthTb);
+
+        var chrome = new Border
+        {
+            Background      = TooltipBgBrush,
+            BorderBrush     = TooltipBorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius    = new CornerRadius(4),
+            Padding         = new Thickness(8, 6, 8, 7),
+            Effect          = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color       = Colors.Black,
+                Opacity     = 0.55,
+                BlurRadius  = 6,
+                ShadowDepth = 2,
+            },
+            Child = grid,
+        };
+
+        var popup = new Popup
+        {
+            AllowsTransparency = true,
+            Placement          = PlacementMode.AbsolutePoint,
+            StaysOpen          = false,
+            IsHitTestVisible   = false,
+            PopupAnimation     = PopupAnimation.None,
+            Child              = chrome,
+        };
+
+        return (popup, offsetTb, encodingTb, kindTb, valueTb, lengthTb, encodingBadge, kindBadge);
+    }
+
+    private static Border MakeTooltipBadge(out TextBlock label)
+    {
+        label = new TextBlock
+        {
+            FontSize   = 9,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Brushes.White,
+        };
+        return new Border
+        {
+            CornerRadius = new CornerRadius(3),
+            Padding      = new Thickness(5, 1, 5, 1),
+            Child        = label,
+        };
+    }
+
+    // Updates the tooltip content for the given run (skips rebuild if same run).
+    private void UpdateTooltipContent(StringRun run)
+    {
+        if (ReferenceEquals(_tooltipRun, run)) return;
+        _tooltipRun = run;
+
+        _tooltipOffset.Text = $"Offset  0x{run.Offset:X8}  ({run.Offset:N0})";
+
+        var encBrush = EncodingPalette.Brushes.TryGetValue(run.Encoding, out var eb)
+            ? eb : EncodingPalette.FallbackBrush;
+        _tooltipEncodingBadge.Background = encBrush;
+        _tooltipEncoding.Text            = run.Encoding.ToString();
+
+        bool hasKind = run.Kind != StringKind.None;
+        _tooltipKindBadge.Visibility = hasKind ? Visibility.Visible : Visibility.Collapsed;
+        if (hasKind)
+        {
+            var kindBrush = EncodingPalette.KindBrushes.TryGetValue(run.Kind, out var kb)
+                ? kb : EncodingPalette.FallbackBrush;
+            _tooltipKindBadge.Background = kindBrush;
+            _tooltipKind.Text            = run.Kind.ToString();
+        }
+
+        _tooltipValue.Text = TruncateValue(run.Value, 120);
+
+        _tooltipLength.Text = run.ReadabilityScore > 0f
+            ? $"Length {run.Length}  ·  Readability {run.ReadabilityScore:P0}"
+            : $"Length {run.Length}";
+    }
+
+    // Positions the popup 14px below+right of the screen cursor.
+    private void PositionTooltip(MouseEventArgs e)
+    {
+        var screenPos = PointToScreen(e.GetPosition(this));
+        _tooltipPopup.HorizontalOffset = screenPos.X + 14;
+        _tooltipPopup.VerticalOffset   = screenPos.Y + 14;
+    }
+
+    // ── Attach / Refresh ──────────────────────────────────────────────────────
+
+    private void DoRebuildAndRender()
+    {
+        _bufferLength = _vm?.LastBufferLength ?? 0;
+        RebuildLayout(_vm?.GetAllRunsSnapshot());
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
 
     public void Attach(StringExtractionViewModel vm)
     {
-        if (_vm is not null) _vm.PropertyChanged -= OnVmChanged;
+        if (_vm is { } prev) prev.PropertyChanged -= OnVmChanged;
         _vm = vm;
         _vm.PropertyChanged += OnVmChanged;
         SizeChanged -= OnSizeChanged;
@@ -213,83 +388,27 @@ internal sealed class StringTimelineView : FrameworkElement
     public void Refresh()
     {
         _refreshDebounce.Stop();
-        ScheduleRebuild();
+        DoRebuildAndRender();
     }
 
-    // ── Background rebuild ───────────────────────────────────────────────────────
-    // Captures snapshot + bufferLength on UI thread, then offloads heavy work to ThreadPool.
-    // Result arrays are swapped atomically on the UI thread via Dispatcher.InvokeAsync.
+    // ── RebuildLayout: O(n log n) ─────────────────────────────────────────────
 
-    private void ScheduleRebuild()
+    private void RebuildLayout(IEnumerable<StringRun>? runs)
     {
-        // Cancel any in-flight rebuild — its result is now stale.
-        _rebuildCts.Cancel();
-        _rebuildCts = new CancellationTokenSource();
-        var cts = _rebuildCts;
+        _rowMap.Clear();
+        _drawList.Clear();
+        _rowCount = 0;
+        _densityMap = [];
+        if (runs is null || _bufferLength <= 0) return;
 
-        var snapshot     = _vm?.GetAllRunsSnapshot() ?? [];
-        var bufferLength = _vm?.LastBufferLength ?? 0;
-
-        if (snapshot.Length == 0 || bufferLength <= 0)
-        {
-            _bufferLength = bufferLength;
-            _hitMap       = [];
-            _drawList     = [];
-            _densityMap   = [];
-            _rowCount     = 0;
-            InvalidateMeasure();
-            InvalidateVisual();
-            return;
-        }
-
-        _bufferLength = bufferLength;
-
-        Task.Run(() => BuildLayout(snapshot, bufferLength, cts.Token), cts.Token)
-            .ContinueWith(t =>
-            {
-                if (t.IsCanceled || t.IsFaulted || cts.IsCancellationRequested) return;
-                var result = t.Result;
-                Dispatcher.InvokeAsync(() =>
-                {
-                    if (cts.IsCancellationRequested) return;
-                    _hitMap     = result.HitMap;
-                    _drawList   = result.DrawList;
-                    _densityMap = result.DensityMap;
-                    _rowCount   = result.RowCount;
-                    InvalidateMeasure();
-                    InvalidateVisual();
-                }, System.Windows.Threading.DispatcherPriority.Render);
-            }, TaskScheduler.Default);
-    }
-
-    // Immutable result returned from background thread to UI thread.
-    private sealed class LayoutResult(
-        (StringRun run, double xNorm, double rwNorm)[] hitMap,
-        (int row, int brushId, double x1, double x2, float opacity)[] drawList,
-        float[] densityMap,
-        int rowCount)
-    {
-        public (StringRun run, double xNorm, double rwNorm)[]                   HitMap     { get; } = hitMap;
-        public (int row, int brushId, double x1, double x2, float opacity)[]   DrawList   { get; } = drawList;
-        public float[]                                                           DensityMap { get; } = densityMap;
-        public int                                                               RowCount   { get; } = rowCount;
-    }
-
-    // Pure layout function — no WPF types, safe on ThreadPool.
-    private static LayoutResult BuildLayout(StringRun[] runs, long bufferLength, CancellationToken ct)
-    {
-        double invBuffer = 1.0 / bufferLength;
+        double invBuffer = 1.0 / _bufferLength;
         var pq      = new PriorityQueue<int, double>();
         int nextRow = 0;
-        var density = new float[HeatBuckets];
-
-        var hitList  = new List<(StringRun run, double xNorm, double rwNorm)>(runs.Length);
-        var tmpDraw  = new List<(int row, int brushId, double x1, double x2, float opacity)>(runs.Length);
+        var density = _densityWork;
+        Array.Clear(density);
 
         foreach (var run in runs)
         {
-            if (ct.IsCancellationRequested) return new LayoutResult([], [], [], 0);
-
             double xNorm  = run.Offset * invBuffer;
             double rwNorm = Math.Max(MinRunNorm, run.Length * invBuffer);
             double xEnd   = xNorm + rwNorm;
@@ -309,24 +428,38 @@ internal sealed class StringTimelineView : FrameworkElement
                 pq.TryDequeue(out row, out _);
             }
             pq.Enqueue(row, xEnd);
-            hitList.Add((run, xNorm, rwNorm));
-
-            int brushId = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
-            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
-            tmpDraw.Add((row, brushId, xNorm, xNorm + rwNorm, opacity));
+            _rowMap.Add((run, row, xNorm, rwNorm));
 
             density[Math.Clamp((int)(xNorm * HeatBuckets), 0, HeatBuckets - 1)] += 1f;
         }
 
-        int rowCount = Math.Max(1, Math.Min(nextRow, MaxRows));
+        _rowCount = Math.Max(1, Math.Min(nextRow, MaxRows));
 
         float dmax = 0f;
         foreach (var v in density) if (v > dmax) dmax = v;
         if (dmax > 0f)
-            for (int i = 0; i < density.Length; i++) density[i] /= dmax;
+        {
+            var norm = new float[HeatBuckets];
+            for (int i = 0; i < HeatBuckets; i++) norm[i] = density[i] / dmax;
+            _densityMap = norm;
+        }
 
-        // Sort by (row, brushId, x1) for merge sweep.
-        tmpDraw.Sort(static (a, b) =>
+        BuildDrawList();
+    }
+
+    private void BuildDrawList()
+    {
+        if (_rowMap.Count == 0) return;
+
+        var tmp = new List<(int row, int brushId, double x1, double x2, float opacity)>(_rowMap.Count);
+        foreach (var (run, row, xNorm, rwNorm) in _rowMap)
+        {
+            int brushId = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
+            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
+            tmp.Add((row, brushId, xNorm, xNorm + rwNorm, opacity));
+        }
+
+        tmp.Sort(static (a, b) =>
         {
             int c = a.row.CompareTo(b.row);
             if (c != 0) return c;
@@ -335,22 +468,22 @@ internal sealed class StringTimelineView : FrameworkElement
             return a.x1.CompareTo(b.x1);
         });
 
-        // Merge adjacent/overlapping same-brush, same-row spans.
-        var drawList = new List<(int row, int brushId, double x1, double x2, float opacity)>(tmpDraw.Count);
-        var cur = tmpDraw[0];
-        for (int i = 1; i < tmpDraw.Count; i++)
+        var cur = tmp[0];
+        for (int i = 1; i < tmp.Count; i++)
         {
-            var next = tmpDraw[i];
+            var next = tmp[i];
             if (next.row == cur.row && next.brushId == cur.brushId && next.x1 <= cur.x2 + MergeGapNorm)
                 cur = cur with { x2 = Math.Max(cur.x2, next.x2), opacity = Math.Max(cur.opacity, next.opacity) };
-            else { drawList.Add(cur); cur = next; }
+            else
+            {
+                _drawList.Add(cur);
+                cur = next;
+            }
         }
-        drawList.Add(cur);
-
-        return new LayoutResult([.. hitList], [.. drawList], density, rowCount);
+        _drawList.Add(cur);
     }
 
-    // ── Layout ───────────────────────────────────────────────────────────────────
+    // ── Layout ────────────────────────────────────────────────────────────────
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -364,7 +497,7 @@ internal sealed class StringTimelineView : FrameworkElement
         return new Size(w, h);
     }
 
-    // ── Render ───────────────────────────────────────────────────────────────────
+    // ── Render ────────────────────────────────────────────────────────────────
 
     protected override void OnRender(DrawingContext dc)
     {
@@ -372,7 +505,7 @@ internal sealed class StringTimelineView : FrameworkElement
         double w = ActualWidth;
         double h = ActualHeight;
         dc.DrawRectangle(BackBrush, null, new Rect(0, 0, w, h));
-        if (_drawList.Length == 0 || _bufferLength <= 0 || w <= 0) return;
+        if (_drawList.Count == 0 || _bufferLength <= 0 || w <= 0) return;
 
         double pixelW = w * _zoom;
         DrawRuler(dc, w, pixelW, pixelsPerDip);
@@ -399,20 +532,16 @@ internal sealed class StringTimelineView : FrameworkElement
 
     private void DrawRuns(DrawingContext dc, double h, double pixelW)
     {
-        var drawList = _drawList;
-        // drawList is sorted by (row, brushId, x1Norm) — binary search for first visible entry.
-        int startIdx = BinarySearchDrawStart(pixelW, drawList);
+        int startIdx = BinarySearchDrawStart(pixelW);
         double vpEnd = ViewportOffsetX + ViewportWidth;
 
-        for (int i = startIdx; i < drawList.Length; i++)
+        for (int i = startIdx; i < _drawList.Count; i++)
         {
-            var (row, brushId, x1n, x2n, opacity) = drawList[i];
+            var (row, brushId, x1n, x2n, opacity) = _drawList[i];
             double x  = x1n * pixelW;
             double x2 = Math.Max(x + MinRunPx, x2n * pixelW);
 
-            // _drawList is sorted by x1 within each (row,brush) group but rows interleave.
-            // Can only break early within a contiguous run of same-row entries — skip if past viewport.
-            if (x > vpEnd) continue;   // not break: next entry might be in a different row/brush
+            if (x > vpEnd) continue;
             if (x2 < ViewportOffsetX) continue;
 
             double y = RulerHeight + row * RowHeight;
@@ -433,20 +562,18 @@ internal sealed class StringTimelineView : FrameworkElement
         }
     }
 
-    // Binary search on drawList by x1Norm (approximate — list is sorted within (row,brush) groups).
-    // Falls back to 0 on miss — viewport culling in DrawRuns handles the rest.
-    private int BinarySearchDrawStart(double pixelW, (int row, int brushId, double x1, double x2, float opacity)[] drawList)
+    private int BinarySearchDrawStart(double pixelW)
     {
-        if (drawList.Length == 0 || pixelW <= 0) return 0;
+        if (_drawList.Count == 0 || pixelW <= 0) return 0;
         double targetNorm = (ViewportOffsetX - MinRunPx) / pixelW;
-        int lo = 0, hi = drawList.Length - 1;
+        int lo = 0, hi = _drawList.Count - 1;
         while (lo < hi)
         {
             int mid = (lo + hi) / 2;
-            if (drawList[mid].x1 < targetNorm - 0.05) lo = mid + 1;
+            if (_drawList[mid].x1 < targetNorm - 0.05) lo = mid + 1;
             else hi = mid;
         }
-        return Math.Max(0, lo - 4);  // small backstep to avoid missing cross-brush entries
+        return Math.Max(0, lo - 4);
     }
 
     private const int MaxRulerTicks = 200;
@@ -478,34 +605,34 @@ internal sealed class StringTimelineView : FrameworkElement
         }
     }
 
-    // ── Mouse ─────────────────────────────────────────────────────────────────────
+    // ── Mouse ─────────────────────────────────────────────────────────────────
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        var pos = e.GetPosition(this);
-        var hit = HitTestRun(pos);
+        var hit = HitTestRun(e.GetPosition(this));
         if (hit is not null)
         {
-            if (hit.Offset != _hoveredOffset)
+            UpdateTooltipContent(hit);
+            PositionTooltip(e);
+            if (!_tooltipPopup.IsOpen)
             {
-                _hoveredOffset   = hit.Offset;
-                _tooltip.Content = $"0x{hit.Offset:X8}  [{hit.Encoding}]  {TruncateValue(hit.Value, 60)}";
+                _tooltipPopup.PlacementTarget = this;
+                _tooltipPopup.IsOpen          = true;
             }
-            _tooltip.IsOpen = true;
         }
         else
         {
-            _hoveredOffset  = long.MinValue;
-            _tooltip.IsOpen = false;
+            _tooltipRun          = null;
+            _tooltipPopup.IsOpen = false;
         }
     }
 
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
-        _hoveredOffset  = long.MinValue;
-        _tooltip.IsOpen = false;
+        _tooltipRun          = null;
+        _tooltipPopup.IsOpen = false;
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -517,8 +644,7 @@ internal sealed class StringTimelineView : FrameworkElement
 
     private StringRun? HitTestRun(Point pos)
     {
-        var hitMap = _hitMap;
-        if (_bufferLength <= 0 || ActualWidth <= 0 || hitMap.Length == 0) return null;
+        if (_bufferLength <= 0 || ActualWidth <= 0 || _rowMap.Count == 0) return null;
         if (pos.Y < RulerHeight) return null;
 
         double pixelW     = ActualWidth * _zoom;
@@ -526,17 +652,17 @@ internal sealed class StringTimelineView : FrameworkElement
         StringRun? best   = null;
         double bestDist   = double.MaxValue;
 
-        int lo = 0, hi = hitMap.Length - 1;
+        int lo = 0, hi = _rowMap.Count - 1;
         while (lo < hi)
         {
             int mid = (lo + hi) / 2;
-            if (hitMap[mid].xNorm < targetNorm - 200.0 / pixelW) lo = mid + 1;
+            if (_rowMap[mid].xNorm < targetNorm - 200.0 / pixelW) lo = mid + 1;
             else hi = mid;
         }
 
-        for (int i = Math.Max(0, lo - 1); i < hitMap.Length; i++)
+        for (int i = Math.Max(0, lo - 1); i < _rowMap.Count; i++)
         {
-            var (run, xNorm, rwNorm) = hitMap[i];
+            var (run, _, xNorm, rwNorm) = _rowMap[i];
             double x  = xNorm  * pixelW;
             double rw = Math.Max(MinRunPx, rwNorm * pixelW);
             if (x > pos.X + 4) break;
@@ -553,7 +679,7 @@ internal sealed class StringTimelineView : FrameworkElement
         s.Length <= max ? s : s[..max] + "…";
 }
 
-// ── Legend ────────────────────────────────────────────────────────────────────────
+// ── Legend ────────────────────────────────────────────────────────────────────
 
 /// <summary>Draws a compact color legend: encoding swatches + Kind swatches.</summary>
 internal sealed class StringTimelineLegend : FrameworkElement
@@ -607,7 +733,7 @@ internal sealed class StringTimelineLegend : FrameworkElement
     }
 }
 
-// ── Host panel ────────────────────────────────────────────────────────────────────
+// ── Host panel ────────────────────────────────────────────────────────────────
 
 /// <summary>Host panel for the timeline: wraps canvas in ScrollViewer + zoom slider + legend.</summary>
 internal sealed class StringTimelinePanel : Border
@@ -629,24 +755,30 @@ internal sealed class StringTimelinePanel : Border
 
         var zoomLbl = new TextBlock
         {
-            Text = "Zoom:", FontSize = 10,
+            Text              = "Zoom:",
+            FontSize          = 10,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 4, 0),
+            Margin            = new Thickness(0, 0, 4, 0),
         };
         zoomLbl.SetResourceReference(TextBlock.ForegroundProperty, "Panel_ToolbarForegroundBrush");
 
         _zoomSlider = new Slider
         {
-            Minimum = 1, Maximum = 100, Value = 1,
-            Width = 140, Height = 16,
+            Minimum           = 1,
+            Maximum           = 100,
+            Value             = 1,
+            Width             = 140,
+            Height            = 16,
             VerticalAlignment = VerticalAlignment.Center,
         };
         _zoomSlider.ValueChanged += OnZoomSliderChanged;
 
         var resetBtn = new Button
         {
-            Content = "1:1", FontSize = 10,
-            Padding = new Thickness(4, 1, 4, 1), Margin = new Thickness(4, 0, 0, 0),
+            Content          = "1:1",
+            FontSize         = 10,
+            Padding          = new Thickness(4, 1, 4, 1),
+            Margin           = new Thickness(4, 0, 0, 0),
             FocusVisualStyle = null,
         };
         resetBtn.SetResourceReference(StyleProperty,              "PanelIconButtonStyle");
