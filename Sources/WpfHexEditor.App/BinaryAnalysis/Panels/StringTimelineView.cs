@@ -1,22 +1,18 @@
 // Project     : WpfHexEditor.App
 // File        : StringTimelineView.cs
 // Description : Custom FrameworkElement rendering string runs as horizontal offset bands.
-//               X-axis = file offset; each run = colored rectangle proportional to its length.
-//               Colors: encoding palette fallback; Kind overrides when Kind != None.
-//               Opacity: proportional to string length (longer = more opaque).
-//               Density heatmap overlay drawn below runs.
-//               Viewport-culled per paint — binary search on offset-sorted _drawList.
-// Architecture: Pure DrawingContext render; zoom via Slider; scroll via ScrollViewer wrapping this element.
-//               Tooltip uses a Popup (not ToolTip) repositioned on every MouseMove so it
-//               tracks the cursor continuously. WPF ToolTip with PlacementMode.Mouse only
-//               positions itself at the moment IsOpen transitions false→true and stays frozen.
+//               X-axis = file offset; each run maps to a (row, col) cell in a fixed
+//               MaxRows×GridCols grid. Colors: encoding palette; Kind overrides.
+//               Opacity: proportional to string length. Density heatmap underlay.
+// Architecture: Pure DrawingContext render; zoom via Slider; scroll via ScrollViewer.
+//               Tooltip: Popup(PlacementMode.Relative, StaysOpen=true) — offsets are
+//               element-local logical px; updating them on an open popup repositions
+//               it without close/reopen (no flash, no DPI math).
 //
 // Perf contract:
-//   RebuildLayout — O(n log n), offloaded to Task.Run; UI thread blocked only for the final
-//                   _rowMap/_drawList swap via Dispatcher.InvokeAsync.
-//   Zoom/Scroll   — O(1): only InvalidateMeasure/Visual. No rebuild, no allocs.
-//   _drawList merges adjacent/overlapping runs with the same brush into single rects,
-//   reducing DrawRectangle calls from O(runs) to O(distinct color bands) per frame.
+//   BuildGrid  — O(n) scatter into GridCell[MaxRows×GridCols]; offloaded to Task.Run.
+//   OnRender   — O(MaxRows×GridCols) = O(61 440) fixed, independent of run count.
+//   Zoom/Scroll — O(1): only InvalidateMeasure/Visual, no rebuild.
 
 using System.Windows;
 using System.Windows.Controls;
@@ -66,56 +62,34 @@ internal sealed class StringTimelineView : FrameworkElement
     private static readonly Dictionary<(StringEncoding, StringKind), int> BrushIndex;
     static StringTimelineView()
     {
-        var list = new List<SolidColorBrush>();
-        foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
-            if (EncodingPalette.Brushes.TryGetValue(enc, out var b)) list.Add(b);
-        foreach (StringKind kind in Enum.GetValues<StringKind>())
-            if (kind != StringKind.None && EncodingPalette.KindBrushes.TryGetValue(kind, out var b)) list.Add(b);
-        FallbackBrushId = list.Count;
-        list.Add(EncodingPalette.FallbackBrush);
-        BrushById = [.. list];
+        var list  = new List<SolidColorBrush>();
+        var index = new Dictionary<(StringEncoding, StringKind), int>();
 
-        BrushIndex = BuildBrushIndex();
-    }
-
-    private static Dictionary<(StringEncoding, StringKind), int> BuildBrushIndex()
-    {
-        var d   = new Dictionary<(StringEncoding, StringKind), int>();
-        var idx = 0;
+        // Phase 1: one entry per encoding; any (enc, kind) without a Kind override maps here.
         foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
         {
-            if (!EncodingPalette.Brushes.ContainsKey(enc)) continue;
+            if (!EncodingPalette.Brushes.TryGetValue(enc, out var b)) continue;
+            int id = list.Count;
+            list.Add(b);
             foreach (StringKind kind in Enum.GetValues<StringKind>())
-            {
-                if (kind != StringKind.None && EncodingPalette.KindBrushes.ContainsKey(kind))
-                {
-                    int ki     = BrushById.Length - 1;
-                    int search = 0;
-                    foreach (StringKind k2 in Enum.GetValues<StringKind>())
-                    {
-                        if (k2 == StringKind.None) continue;
-                        if (!EncodingPalette.KindBrushes.ContainsKey(k2)) continue;
-                        if (k2 == kind) { ki = search + CountEncodingBrushes(); break; }
-                        search++;
-                    }
-                    d.TryAdd((enc, kind), ki);
-                }
-                else
-                {
-                    d.TryAdd((enc, kind), idx);
-                }
-            }
-            idx++;
+                index.TryAdd((enc, kind), id);
         }
-        return d;
-    }
 
-    private static int CountEncodingBrushes()
-    {
-        int c = 0;
-        foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
-            if (EncodingPalette.Brushes.ContainsKey(enc)) c++;
-        return c;
+        // Phase 2: Kind overrides win — overwrite the encoding default for matching pairs.
+        foreach (StringKind kind in Enum.GetValues<StringKind>())
+        {
+            if (kind == StringKind.None) continue;
+            if (!EncodingPalette.KindBrushes.TryGetValue(kind, out var b)) continue;
+            int id = list.Count;
+            list.Add(b);
+            foreach (StringEncoding enc in Enum.GetValues<StringEncoding>())
+                index[(enc, kind)] = id;
+        }
+
+        FallbackBrushId = list.Count;
+        list.Add(EncodingPalette.FallbackBrush);
+        BrushById  = [.. list];
+        BrushIndex = index;
     }
 
     private static SolidColorBrush FreezeB(SolidColorBrush b) { b.Freeze(); return b; }
@@ -129,7 +103,19 @@ internal sealed class StringTimelineView : FrameworkElement
     private const double MinRunNorm   = 0.0008;
     private const int    MaxRows      = 120;
     private const double MinRunPx     = 2.0;
-    private const double MergeGapNorm = 0.0005;
+
+    // ── Grid constants for O(n) low-cost layout ───────────────────────────────
+    // Grid is MaxRows × GridCols cells. Each cell stores the dominant brushId and
+    // max opacity of all runs that map to it. Rebuild = O(n) scatter; render =
+    // O(MaxRows × GridCols) = O(61 440) fixed regardless of run count.
+    private const int GridCols = 512;   // same as HeatBuckets — one cell per heat bucket per row
+
+    private static GridCell[] InitGrid()
+    {
+        var g = new GridCell[MaxRows * GridCols];
+        Array.Fill(g, GridCell.Empty);
+        return g;
+    }
 
     // ── Zoom ──────────────────────────────────────────────────────────────────
 
@@ -151,17 +137,38 @@ internal sealed class StringTimelineView : FrameworkElement
     internal double ViewportOffsetX { get; set; }
     internal double ViewportWidth   { get; set; } = double.MaxValue;
 
+    // The unzoomed viewport width, set by StringTimelinePanel.OnScrollChanged.
+    // MeasureOverride uses this as the stable base so zoom = 1 ↔ one screen width.
+    // Never multiplied by _zoom — avoids the ActualWidth feedback loop.
+    internal double ViewportBaseWidth { get; set; } = 200;
+
     private StringExtractionViewModel? _vm;
     private long _bufferLength;
 
-    // Not readonly: swapped atomically from Dispatcher.InvokeAsync after each background rebuild.
-    private List<(StringRun run, int row, double xNorm, double rwNorm)> _rowMap  = [];
-    private List<(int row, int brushId, double x1, double x2, float opacity)>    _drawList = [];
-    private float[] _densityMap = [];
-    private int _rowCount;
+    // ── Grid cell: dominant brush + max opacity for one (row, col) slot ─────────
+    // Empty sentinel: BrushId = -1 (default int = 0 is valid brush index 0, so we
+    // cannot rely on zero-init; Array.Fill with Empty is required after allocation).
+    private readonly struct GridCell
+    {
+        public static readonly GridCell Empty = new(-1, 0f);
+        public int   BrushId { get; }
+        public float Opacity { get; }
+        public bool  HasRun  => BrushId >= 0;
+        public GridCell(int brushId, float opacity) { BrushId = brushId; Opacity = opacity; }
+    }
+
+    // Swapped atomically from Dispatcher.InvokeAsync after each background rebuild.
+    // Grid is flat [row * GridCols + col] for cache-friendly row-major access.
+    private GridCell[]  _grid       = InitGrid();
+    private float[]     _densityMap = [];
+    private int         _rowCount;
+    // Sparse hit-map: col index → list of runs that landed in that column.
+    // Used for click/hover hit-testing (O(MaxRows) per column, not O(n)).
+    private List<(StringRun run, int row, double xNorm, double rwNorm)>[] _hitCols
+        = new List<(StringRun, int, double, double)>[GridCols];
 
     // Not readonly: replaced on every rebuild to cancel the previous in-flight Task.Run.
-    private CancellationTokenSource _rebuildCts = new(); // CS0649 suppressed — intentionally reassigned
+    private CancellationTokenSource _rebuildCts = new();
 
     // ── Tooltip — Popup tracked on MouseMove ──────────────────────────────────
     // We use a Popup instead of ToolTip: ToolTip.PlacementMode.Mouse only positions
@@ -202,14 +209,14 @@ internal sealed class StringTimelineView : FrameworkElement
 
     // ── Rich tooltip construction ─────────────────────────────────────────────
 
-    private static (Popup popup,
-                    TextBlock offsetTb,
-                    TextBlock encodingTb,
-                    TextBlock kindTb,
-                    TextBlock valueTb,
-                    TextBlock lengthTb,
-                    Border encodingBadge,
-                    Border kindBadge)
+    private (Popup popup,
+             TextBlock offsetTb,
+             TextBlock encodingTb,
+             TextBlock kindTb,
+             TextBlock valueTb,
+             TextBlock lengthTb,
+             Border encodingBadge,
+             Border kindBadge)
         BuildTooltipPopup()
     {
         var grid = new Grid();
@@ -284,8 +291,8 @@ internal sealed class StringTimelineView : FrameworkElement
         var popup = new Popup
         {
             AllowsTransparency = true,
-            Placement          = PlacementMode.AbsolutePoint,
-            StaysOpen          = false,
+            Placement          = PlacementMode.Relative,  // offsets are element-local logical px; no DPI math needed
+            StaysOpen          = true,                     // OnMouseLeave closes; StaysOpen=false flashes with IsHitTestVisible=false
             IsHitTestVisible   = false,
             PopupAnimation     = PopupAnimation.None,
             Child              = chrome,
@@ -340,42 +347,35 @@ internal sealed class StringTimelineView : FrameworkElement
             : $"Length {run.Length}";
     }
 
-    // Positions the popup 14px below+right of the screen cursor.
+    // Positions the popup relative to the element's top-left corner (PlacementMode.Relative).
+    // Changing HorizontalOffset/VerticalOffset on an already-open Relative popup repositions
+    // it immediately without closing/reopening — no flash, no DPI math needed.
     private void PositionTooltip(MouseEventArgs e)
     {
-        var screenPos = PointToScreen(e.GetPosition(this));
-        _tooltipPopup.HorizontalOffset = screenPos.X + 14;
-        _tooltipPopup.VerticalOffset   = screenPos.Y + 14;
+        var pos = e.GetPosition(this);
+        _tooltipPopup.HorizontalOffset = pos.X + 14;
+        _tooltipPopup.VerticalOffset   = pos.Y + 14;
     }
 
     // ── Attach / Refresh ──────────────────────────────────────────────────────
 
     private void DoRebuildAndRender()
     {
-        // Cancel any in-flight rebuild — its result would be stale.
         _rebuildCts.Cancel();
         _rebuildCts.Dispose();
         _rebuildCts = new CancellationTokenSource();
         var cts = _rebuildCts;
 
-        // Capture inputs on the UI thread before handing off to the ThreadPool.
-        var fullSnapshot = _vm?.GetAllRunsSnapshot() ?? [];
+        var snapshot     = _vm?.GetAllRunsSnapshot() ?? [];
         var bufferLength = _vm?.LastBufferLength ?? 0;
-
-        // Cap the render budget: beyond 50k runs the row-packer saturates MaxRows anyway.
-        // Stride-sample so spatial distribution is preserved across the full file.
-        const int RenderBudget = 50_000;
-        var snapshot = fullSnapshot.Length <= RenderBudget
-            ? fullSnapshot
-            : SampleStride(fullSnapshot, RenderBudget);
 
         if (snapshot.Length == 0 || bufferLength <= 0)
         {
             _bufferLength = bufferLength;
-            _rowMap.Clear();
-            _drawList.Clear();
+            Array.Fill(_grid, GridCell.Empty);
             _densityMap = [];
             _rowCount   = 0;
+            Array.Clear(_hitCols);
             InvalidateMeasure();
             InvalidateVisual();
             return;
@@ -383,14 +383,18 @@ internal sealed class StringTimelineView : FrameworkElement
 
         _bufferLength = bufferLength;
 
-        Task.Run(() => RebuildLayout(snapshot, bufferLength, cts.Token), cts.Token)
+        Task.Run(() => BuildGrid(snapshot, bufferLength, cts.Token), cts.Token)
             .ContinueWith(t =>
             {
                 if (t.IsCanceled || t.IsFaulted || cts.IsCancellationRequested) return;
                 Dispatcher.InvokeAsync(() =>
                 {
                     if (cts.IsCancellationRequested) return;
-                    (_rowMap, _drawList, _densityMap, _rowCount) = t.Result;
+                    var r = t.Result;
+                    _grid       = r.Grid;
+                    _densityMap = r.DensityMap;
+                    _rowCount   = r.RowCount;
+                    _hitCols    = r.HitCols;
                     InvalidateMeasure();
                     InvalidateVisual();
                 }, System.Windows.Threading.DispatcherPriority.Render);
@@ -404,7 +408,18 @@ internal sealed class StringTimelineView : FrameworkElement
         _vm.PropertyChanged += OnVmChanged;
         SizeChanged -= OnSizeChanged;
         SizeChanged += OnSizeChanged;
+        IsVisibleChanged -= OnVisibleChanged;
+        IsVisibleChanged += OnVisibleChanged;
         Refresh();
+    }
+
+    // When the timeline tab becomes visible (user switches to it), the element may have
+    // missed an InvalidateVisual that fired while it was hidden (ActualWidth=0 at that time).
+    // Force a redraw so the latest grid data is always shown on first activation.
+    private void OnVisibleChanged(object _, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true && _rowCount > 0)
+            InvalidateVisual();
     }
 
     private void OnVmChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -430,49 +445,65 @@ internal sealed class StringTimelineView : FrameworkElement
         DoRebuildAndRender();
     }
 
-    // ── RebuildLayout: O(n log n), pure — safe on ThreadPool ──────────────────
+    // ── BuildGrid: O(n) scatter — pure, safe on ThreadPool ───────────────────
+    // Each run maps to exactly one (row, col) cell via deterministic hash.
+    // Row  = brushId % MaxRows  — spreads encoding/kind types across rows.
+    // Col  = (int)(xNorm * GridCols) clamped — x position bucket.
+    // Cell stores dominant brush (last write wins for speed) + max opacity.
+    // Total rebuild cost: O(n) scatter + O(MaxRows×GridCols) density norm.
+    // OnRender cost: O(MaxRows×GridCols) = O(61 440) fixed, independent of n.
 
-    private static (List<(StringRun run, int row, double xNorm, double rwNorm)> rowMap,
-                    List<(int row, int brushId, double x1, double x2, float opacity)> drawList,
-                    float[] densityMap,
-                    int rowCount)
-        RebuildLayout(StringRun[] runs, long bufferLength, CancellationToken ct)
+    private sealed class GridResult(
+        GridCell[] grid,
+        float[] densityMap,
+        int rowCount,
+        List<(StringRun run, int row, double xNorm, double rwNorm)>[] hitCols)
     {
-        var rowMap  = new List<(StringRun run, int row, double xNorm, double rwNorm)>(runs.Length);
+        public GridCell[]  Grid       { get; } = grid;
+        public float[]     DensityMap { get; } = densityMap;
+        public int         RowCount   { get; } = rowCount;
+        public List<(StringRun run, int row, double xNorm, double rwNorm)>[] HitCols { get; } = hitCols;
+    }
+
+    private static GridResult BuildGrid(StringRun[] runs, long bufferLength, CancellationToken ct)
+    {
+        var grid    = new GridCell[MaxRows * GridCols];
+        Array.Fill(grid, GridCell.Empty);
         var density = new float[HeatBuckets];
+        var hitCols = new List<(StringRun, int, double, double)>[GridCols];
 
         double invBuffer = 1.0 / bufferLength;
-        var pq      = new PriorityQueue<int, double>();
-        int nextRow = 0;
+        int usedRows = 0;
 
         foreach (var run in runs)
         {
-            if (ct.IsCancellationRequested) return ([], [], [], 0);
+            if (ct.IsCancellationRequested)
+                return new GridResult(grid, [], 0, hitCols);
 
             double xNorm  = run.Offset * invBuffer;
             double rwNorm = Math.Max(MinRunNorm, run.Length * invBuffer);
-            double xEnd   = xNorm + rwNorm;
 
-            int row;
-            if (pq.Count > 0 && pq.TryPeek(out int r, out double end) && end <= xNorm)
-            {
-                pq.Dequeue();
-                row = r;
-            }
-            else if (nextRow < MaxRows)
-            {
-                row = nextRow++;
-            }
-            else
-            {
-                pq.TryDequeue(out row, out _);
-            }
-            pq.Enqueue(row, xEnd);
-            rowMap.Add((run, row, xNorm, rwNorm));
-            density[Math.Clamp((int)(xNorm * HeatBuckets), 0, HeatBuckets - 1)] += 1f;
+            int brushId = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
+            // Spread rows by brush so different encodings/kinds land on different rows.
+            int row = brushId % MaxRows;
+            int col = Math.Clamp((int)(xNorm * GridCols), 0, GridCols - 1);
+
+            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
+
+            ref var cell = ref grid[row * GridCols + col];
+            // Brush: last writer wins (most recent run per cell). Opacity: keep max.
+            cell = new GridCell(brushId, Math.Max(cell.Opacity, opacity));
+
+            density[col % HeatBuckets] += 1f;
+
+            // Hit-map: store in column bucket for fast hover lookup.
+            (hitCols[col] ??= new List<(StringRun, int, double, double)>(4))
+                .Add((run, row, xNorm, rwNorm));
+
+            if (row >= usedRows) usedRows = row + 1;
         }
 
-        int rowCount = Math.Max(1, Math.Min(nextRow, MaxRows));
+        int rowCount = Math.Min(usedRows, MaxRows);
 
         float dmax = 0f;
         foreach (var v in density) if (v > dmax) dmax = v;
@@ -483,60 +514,19 @@ internal sealed class StringTimelineView : FrameworkElement
             for (int i = 0; i < HeatBuckets; i++) densityMap[i] = density[i] / dmax;
         }
 
-        var drawList = BuildDrawList(rowMap, ct);
-        return (rowMap, drawList, densityMap, rowCount);
-    }
-
-    private static List<(int row, int brushId, double x1, double x2, float opacity)>
-        BuildDrawList(List<(StringRun run, int row, double xNorm, double rwNorm)> rowMap, CancellationToken ct)
-    {
-        var result = new List<(int row, int brushId, double x1, double x2, float opacity)>(rowMap.Count);
-        if (rowMap.Count == 0) return result;
-
-        var tmp = new List<(int row, int brushId, double x1, double x2, float opacity)>(rowMap.Count);
-        foreach (var (run, row, xNorm, rwNorm) in rowMap)
-        {
-            int brushId   = BrushIndex.TryGetValue((run.Encoding, run.Kind), out var bi) ? bi : FallbackBrushId;
-            float opacity = (float)(MinOpacity + OpacityRange * Math.Clamp((run.Length - 4) / 56.0, 0.0, 1.0));
-            tmp.Add((row, brushId, xNorm, xNorm + rwNorm, opacity));
-        }
-
-        tmp.Sort(static (a, b) =>
-        {
-            int c = a.row.CompareTo(b.row);
-            if (c != 0) return c;
-            c = a.brushId.CompareTo(b.brushId);
-            if (c != 0) return c;
-            return a.x1.CompareTo(b.x1);
-        });
-
-        var cur = tmp[0];
-        for (int i = 1; i < tmp.Count; i++)
-        {
-            if (ct.IsCancellationRequested) return [];
-            var next = tmp[i];
-            if (next.row == cur.row && next.brushId == cur.brushId && next.x1 <= cur.x2 + MergeGapNorm)
-                cur = cur with { x2 = Math.Max(cur.x2, next.x2), opacity = Math.Max(cur.opacity, next.opacity) };
-            else
-            {
-                result.Add(cur);
-                cur = next;
-            }
-        }
-        result.Add(cur);
-        return result;
+        return new GridResult(grid, densityMap, rowCount, hitCols);
     }
 
     // ── Layout ────────────────────────────────────────────────────────────────
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        double baseW = double.IsInfinity(availableSize.Width) || double.IsNaN(availableSize.Width)
-            ? (ActualWidth > 0 ? ActualWidth : 200)
-            : availableSize.Width;
-        double w = Math.Max(baseW, 1) * _zoom;
-        double h = RulerHeight + _rowCount * RowHeight;
-        if (double.IsInfinity(w) || double.IsNaN(w)) w = baseW;
+        // Use the stable viewport base width (set by ScrollViewer's ViewportWidth on
+        // each ScrollChanged), never ActualWidth — ActualWidth = baseW * zoom and would
+        // cause MeasureOverride to apply zoom a second time (zoom²) on the next pass.
+        double baseW = ViewportBaseWidth > 0 ? ViewportBaseWidth : 200;
+        double w     = Math.Max(baseW, 1) * _zoom;
+        double h     = RulerHeight + _rowCount * RowHeight;
         if (double.IsInfinity(h) || double.IsNaN(h)) h = RulerHeight + MaxRows * RowHeight;
         return new Size(w, h);
     }
@@ -549,12 +539,14 @@ internal sealed class StringTimelineView : FrameworkElement
         double w = ActualWidth;
         double h = ActualHeight;
         dc.DrawRectangle(BackBrush, null, new Rect(0, 0, w, h));
-        if (_drawList.Count == 0 || _bufferLength <= 0 || w <= 0) return;
+        if (_rowCount == 0 || _bufferLength <= 0 || w <= 0) return;
 
-        double pixelW = w * _zoom;
+        // ActualWidth already reflects the zoom factor (MeasureOverride returns baseW * _zoom).
+        // Drawing coordinates are element-local, so pixelW == ActualWidth — no second zoom multiply.
+        double pixelW = w;
         DrawRuler(dc, w, pixelW, pixelsPerDip);
         DrawDensityHeatmap(dc, h, pixelW);
-        DrawRuns(dc, h, pixelW);
+        DrawGrid(dc, h, pixelW);
     }
 
     private void DrawDensityHeatmap(DrawingContext dc, double h, double pixelW)
@@ -574,50 +566,42 @@ internal sealed class StringTimelineView : FrameworkElement
         }
     }
 
-    private void DrawRuns(DrawingContext dc, double h, double pixelW)
+    // O(MaxRows × GridCols) = O(61 440) — fixed cost regardless of run count.
+    // Viewport-culled by column: skip cols outside [ViewportOffsetX, vpEnd].
+    private void DrawGrid(DrawingContext dc, double h, double pixelW)
     {
-        int startIdx = BinarySearchDrawStart(pixelW);
-        double vpEnd = ViewportOffsetX + ViewportWidth;
+        double cellW  = pixelW / GridCols;
+        double rw     = Math.Max(MinRunPx, cellW);   // constant for this frame
+        double vpEnd  = ViewportOffsetX + ViewportWidth;
+        int    colMin = Math.Max(0,          (int)((ViewportOffsetX - cellW) / cellW));
+        int    colMax = Math.Min(GridCols - 1, (int)((vpEnd + cellW)         / cellW));
+        var    grid   = _grid;   // local snapshot — safe on UI thread after atomic swap
 
-        for (int i = startIdx; i < _drawList.Count; i++)
+        for (int row = 0; row < _rowCount; row++)
         {
-            var (row, brushId, x1n, x2n, opacity) = _drawList[i];
-            double x  = x1n * pixelW;
-            double x2 = Math.Max(x + MinRunPx, x2n * pixelW);
+            double y     = RulerHeight + row * RowHeight + 1;
+            double rectH = RowHeight - 2;
+            int    rowOff = row * GridCols;
 
-            if (x > vpEnd) continue;
-            if (x2 < ViewportOffsetX) continue;
-
-            double y = RulerHeight + row * RowHeight;
-            if (y > h) continue;
-
-            var brush = (uint)brushId < (uint)BrushById.Length ? BrushById[brushId] : EncodingPalette.FallbackBrush;
-
-            if (opacity >= 1f)
+            for (int col = colMin; col <= colMax; col++)
             {
-                dc.DrawRectangle(brush, null, new Rect(x, y + 1, x2 - x, RowHeight - 2));
-            }
-            else
-            {
-                dc.PushOpacity(opacity);
-                dc.DrawRectangle(brush, null, new Rect(x, y + 1, x2 - x, RowHeight - 2));
-                dc.Pop();
+                ref readonly var cell = ref grid[rowOff + col];
+                if (!cell.HasRun) continue;
+
+                double x = col * cellW;
+                var brush = (uint)cell.BrushId < (uint)BrushById.Length
+                    ? BrushById[cell.BrushId] : EncodingPalette.FallbackBrush;
+
+                if (cell.Opacity >= 1f)
+                    dc.DrawRectangle(brush, null, new Rect(x, y, rw, rectH));
+                else
+                {
+                    dc.PushOpacity(cell.Opacity);
+                    dc.DrawRectangle(brush, null, new Rect(x, y, rw, rectH));
+                    dc.Pop();
+                }
             }
         }
-    }
-
-    private int BinarySearchDrawStart(double pixelW)
-    {
-        if (_drawList.Count == 0 || pixelW <= 0) return 0;
-        double targetNorm = (ViewportOffsetX - MinRunPx) / pixelW;
-        int lo = 0, hi = _drawList.Count - 1;
-        while (lo < hi)
-        {
-            int mid = (lo + hi) / 2;
-            if (_drawList[mid].x1 < targetNorm - 0.05) lo = mid + 1;
-            else hi = mid;
-        }
-        return Math.Max(0, lo - 4);
     }
 
     private const int MaxRulerTicks = 200;
@@ -688,45 +672,34 @@ internal sealed class StringTimelineView : FrameworkElement
 
     private StringRun? HitTestRun(Point pos)
     {
-        if (_bufferLength <= 0 || ActualWidth <= 0 || _rowMap.Count == 0) return null;
+        if (_bufferLength <= 0 || ActualWidth <= 0 || _rowCount == 0) return null;
         if (pos.Y < RulerHeight) return null;
 
-        double pixelW     = ActualWidth * _zoom;
-        double targetNorm = pos.X / pixelW;
-        StringRun? best   = null;
-        double bestDist   = double.MaxValue;
+        double pixelW  = ActualWidth * _zoom;
+        double cellW   = pixelW / GridCols;
+        // Check the clicked column and its immediate neighbours for tolerance.
+        int    colHit  = Math.Clamp((int)(pos.X / cellW), 0, GridCols - 1);
 
-        int lo = 0, hi = _rowMap.Count - 1;
-        while (lo < hi)
-        {
-            int mid = (lo + hi) / 2;
-            if (_rowMap[mid].xNorm < targetNorm - 200.0 / pixelW) lo = mid + 1;
-            else hi = mid;
-        }
+        StringRun? best     = null;
+        double     bestDist = double.MaxValue;
+        var        hitCols  = _hitCols;
 
-        for (int i = Math.Max(0, lo - 1); i < _rowMap.Count; i++)
+        for (int col = Math.Max(0, colHit - 1); col <= Math.Min(GridCols - 1, colHit + 1); col++)
         {
-            var (run, _, xNorm, rwNorm) = _rowMap[i];
-            double x  = xNorm  * pixelW;
-            double rw = Math.Max(MinRunPx, rwNorm * pixelW);
-            if (x > pos.X + 4) break;
-            if (pos.X >= x && pos.X <= x + rw)
+            var list = hitCols[col];
+            if (list is null) continue;
+            foreach (var (run, _, xNorm, rwNorm) in list)
             {
-                double dist = Math.Abs(pos.X - (x + rw / 2));
-                if (dist < bestDist) { best = run; bestDist = dist; }
+                double x  = xNorm * pixelW;
+                double rw = Math.Max(MinRunPx, rwNorm * pixelW);
+                if (pos.X >= x - 2 && pos.X <= x + rw + 2)
+                {
+                    double dist = Math.Abs(pos.X - (x + rw / 2));
+                    if (dist < bestDist) { best = run; bestDist = dist; }
+                }
             }
         }
         return best;
-    }
-
-    // Stride-samples arr down to maxCount elements, preserving spatial distribution.
-    private static StringRun[] SampleStride(StringRun[] arr, int maxCount)
-    {
-        var result = new StringRun[maxCount];
-        double step = (double)(arr.Length - 1) / (maxCount - 1);
-        for (int i = 0; i < maxCount; i++)
-            result[i] = arr[(int)Math.Round(i * step)];
-        return result;
     }
 
     private static string TruncateValue(string s, int max) =>
@@ -799,6 +772,13 @@ internal sealed class StringTimelinePanel : Border
 
     public StringTimelinePanel()
     {
+        Loaded += (_, _) =>
+        {
+            // Bootstrap ViewportBaseWidth before the first ScrollChanged fires.
+            if (_scroll.ViewportWidth > 0)
+                _view.ViewportBaseWidth = _scroll.ViewportWidth;
+        };
+
         var root = new Grid();
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -869,13 +849,21 @@ internal sealed class StringTimelinePanel : Border
     private void OnZoomSliderChanged(object _, RoutedPropertyChangedEventArgs<double> e)
         => _view.Zoom = e.NewValue;
 
-    private void OnScrollChanged(object _, ScrollChangedEventArgs _2)
+    private void OnScrollChanged(object _, ScrollChangedEventArgs e)
     {
         const double Eps = 0.5;
         if (Math.Abs(_view.ViewportOffsetX - _scroll.HorizontalOffset) < Eps &&
             Math.Abs(_view.ViewportWidth   - _scroll.ViewportWidth)    < Eps) return;
+
         _view.ViewportOffsetX = _scroll.HorizontalOffset;
         _view.ViewportWidth   = _scroll.ViewportWidth;
+
+        // ViewportBaseWidth is the unzoomed reference width for MeasureOverride.
+        // Update it only when the viewport physically resizes (not on horizontal scroll),
+        // so the base stays stable while the user pans across the zoomed content.
+        if (_scroll.ViewportWidth > 0 && Math.Abs(e.ViewportWidthChange) > Eps)
+            _view.ViewportBaseWidth = _scroll.ViewportWidth;
+
         _view.InvalidateVisual();
     }
 
@@ -883,15 +871,22 @@ internal sealed class StringTimelinePanel : Border
     {
         if (Keyboard.Modifiers != ModifierKeys.Control) return;
 
-        double anchorRatio = _view.ActualWidth > 0
-            ? ((MouseWheelEventArgs)e).GetPosition(_view).X / _view.ActualWidth
+        double cursorX = e.GetPosition(_view).X;
+
+        // Anchor: normalised [0,1] position within the current content (not pixel).
+        double anchorNorm = _view.ViewportBaseWidth > 0 && _view.Zoom > 0
+            ? (_scroll.HorizontalOffset + cursorX) / (_view.ViewportBaseWidth * _view.Zoom)
             : 0.0;
 
         _zoomSlider.Value = Math.Clamp(_zoomSlider.Value + e.Delta / 120.0 * 2, 1, 100);
 
-        _view.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
+        // After the slider sets the new zoom, the measure hasn't run yet.
+        // Compute the target scroll from the known new zoom so the cursor stays fixed.
+        double newZoom = _view.Zoom;   // already clamped by the Zoom setter
+        _view.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
         {
-            double targetX = anchorRatio * _scroll.ExtentWidth - _scroll.ViewportWidth / 2;
+            double newExtent = _view.ViewportBaseWidth * newZoom;
+            double targetX   = anchorNorm * newExtent - cursorX;
             _scroll.ScrollToHorizontalOffset(Math.Max(0, targetX));
         });
 

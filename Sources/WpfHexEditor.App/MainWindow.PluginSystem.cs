@@ -520,19 +520,44 @@ public partial class MainWindow
             {
                 Dispatcher.InvokeAsync(() =>
                 {
-                    var hex = ActiveHexEditor;
+                    // Prefer the file-path lookup so navigation works even when a tool panel
+                    // (e.g. BinaryAnalysis/StringExtraction) holds focus and ActiveHexEditor is null.
+                    WpfHexEditor.HexEditor.HexEditor? hex = null;
+                    string?                           targetContentId = null;
+
+                    if (!string.IsNullOrEmpty(e.FilePath))
+                    {
+                        foreach (var kv in _contentCache)
+                        {
+                            var candidate = UnwrapEditor(kv.Value) as WpfHexEditor.HexEditor.HexEditor;
+                            if (candidate is null) continue;
+                            if (string.Equals(candidate.FileName, e.FilePath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                hex             = candidate;
+                                targetContentId = kv.Key;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Fall back to ActiveHexEditor when no FilePath was provided or matched.
+                    hex ??= ActiveHexEditor;
+
                     if (hex is null) return;
                     if (e.Offset < 0 || e.Offset >= hex.Length) return;
 
                     hex.SetPosition(e.Offset);
 
-                    // Bring the document tab to the foreground so the user sees the result
-                    // even when focus was on a tool panel (e.g. BinaryAnalysis/StringExtraction).
-                    var contentId = _contentCache.FirstOrDefault(kv => ReferenceEquals(kv.Value, hex)).Key;
-                    if (contentId is not null)
+                    // Bring the document tab to the foreground so the user sees the result.
+                    targetContentId ??= _contentCache.FirstOrDefault(kv => ReferenceEquals(UnwrapEditor(kv.Value), hex)).Key;
+                    if (targetContentId is not null)
                     {
-                        var item = _layout?.FindItemByContentId(contentId);
-                        if (item?.Owner is { } owner) owner.ActiveItem = item;
+                        var item = _layout?.FindItemByContentId(targetContentId);
+                        if (item?.Owner is { } owner)
+                        {
+                            owner.ActiveItem = item;
+                            DockHost.RebuildVisualTree();
+                        }
                     }
                 });
             });
