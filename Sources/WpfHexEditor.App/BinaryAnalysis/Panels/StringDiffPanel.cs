@@ -422,9 +422,12 @@ internal sealed class StringDiffPanel : UserControl
         VirtualizingPanel.SetIsVirtualizing(grid, true);
         VirtualizingPanel.SetVirtualizationMode(grid, VirtualizationMode.Recycling);
         _grid = grid;
-        grid.SetResourceReference(BackgroundProperty, "TE_Background");
-        grid.SetResourceReference(ForegroundProperty, "TE_Foreground");
+        grid.SetResourceReference(BackgroundProperty,                        "TE_Background");
+        grid.SetResourceReference(ForegroundProperty,                        "TE_Foreground");
+        grid.SetResourceReference(DataGrid.RowBackgroundProperty,            "TE_Background");
+        grid.SetResourceReference(DataGrid.AlternatingRowBackgroundProperty, "Panel_ToolbarBrush");
         grid.ColumnHeaderStyle = BuildHeaderStyle();
+        grid.CellStyle         = BuildCellStyle();
         grid.RowStyle          = BuildRowStyle();
 
         grid.Columns.Add(MakeStatusColumn());
@@ -448,6 +451,16 @@ internal sealed class StringDiffPanel : UserControl
         s.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(0, 0, 1, 1)));
         s.Setters.Add(new Setter(PaddingProperty,         new Thickness(6, 3, 6, 3)));
         s.Setters.Add(new Setter(FontSizeProperty,        11d));
+        return s;
+    }
+
+    private static Style BuildCellStyle()
+    {
+        var s = new Style(typeof(DataGridCell));
+        // Transparent so the row-level background (TE_Background / tint) shows through.
+        s.Setters.Add(new Setter(BackgroundProperty, Brushes.Transparent));
+        s.Setters.Add(new Setter(BorderThicknessProperty, new Thickness(0)));
+        s.Setters.Add(new Setter(ForegroundProperty, new DynamicResourceExtension("TE_Foreground")));
         return s;
     }
 
