@@ -41,7 +41,11 @@ public sealed class EmbeddedSyntaxHighlighter : ISyntaxHighlighter
     private readonly Func<LanguageDefinition, ISyntaxHighlighter>   _factory;
 
     // Cached line-offset lookup: lineIndex → character offset of line start in full text.
+    // _lineOffsets[i+1] - _lineOffsets[i] = line-i span INCLUDING its line ending (\n or \r\n).
+    // Using full-text coordinates throughout avoids \r\n vs \n skew between lineText.Length and
+    // the offsets stored in EmbeddedRange (which are built from the raw full text).
     private int[]? _lineOffsets;
+    private int    _fullTextLength;
 
     /// <summary>
     /// Initialises the embedded highlighter.
@@ -90,7 +94,8 @@ public sealed class EmbeddedSyntaxHighlighter : ISyntaxHighlighter
             if (fullText[i] == '\n' && i + 1 < fullText.Length)
                 offsets.Add(i + 1);
         }
-        _lineOffsets = offsets.ToArray();
+        _lineOffsets   = offsets.ToArray();
+        _fullTextLength = fullText.Length;
 
         // Pre-classify ranges for the new text.
         _cachedRanges = EmbeddedRangeClassifier.ClassifyRanges(fullText, _zones);
@@ -110,7 +115,12 @@ public sealed class EmbeddedSyntaxHighlighter : ISyntaxHighlighter
             return _host.Highlight(lineText, lineIndex);
 
         int lineStart = _lineOffsets[lineIndex];
-        int lineEnd   = lineStart + lineText.Length;
+        // Use full-text coordinates for lineEnd so the comparison against EmbeddedRange
+        // offsets (also in full-text coords) is consistent regardless of \r\n vs \n endings.
+        // The line span in the full text extends to the start of the next line (or EOF).
+        int lineEnd = lineIndex + 1 < _lineOffsets.Length
+            ? _lineOffsets[lineIndex + 1]
+            : _fullTextLength;
 
         // Find ranges that overlap this line.
         var overlapping = FindOverlapping(lineStart, lineEnd);
