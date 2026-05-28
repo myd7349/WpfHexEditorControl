@@ -97,6 +97,31 @@ public sealed class CodeEditorFactory : IEditorFactory
 
     internal static ISyntaxHighlighter BuildHighlighter(LanguageDefinition language)
     {
+        var hostHighlighter = BuildBaseHighlighter(language);
+
+        // If the language declares embedded zones with resolved sub-languages,
+        // wrap in EmbeddedSyntaxHighlighter so <script>/<style>/etc. are
+        // dispatched to their own sub-language highlighter.
+        var resolved = language.EmbeddedLanguages
+            .Where(z => z.ResolvedLanguage is not null)
+            .ToList();
+
+        if (resolved.Count == 0) return hostHighlighter;
+
+        return new EmbeddedSyntaxHighlighter(
+            hostHighlighter,
+            BuildBaseHighlighter(language), // separate UI-thread host — no shared _inBlockComment state
+            resolved,
+            BuildBaseHighlighter);
+    }
+
+    /// <summary>
+    /// Builds a plain (non-embedded) <see cref="SyntaxRuleHighlighter"/> for
+    /// <paramref name="language"/>. Used both for the host language and as the
+    /// factory for embedded sub-language highlighters.
+    /// </summary>
+    private static ISyntaxHighlighter BuildBaseHighlighter(LanguageDefinition language)
+    {
         var rules = language.SyntaxRules.Select(rule => new RegexHighlightRule(
             rule.Pattern,
             TokenKindToBrush(rule.Kind),

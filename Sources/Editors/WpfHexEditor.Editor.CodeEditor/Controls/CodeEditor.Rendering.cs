@@ -1145,6 +1145,20 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 _lastHighlightFirst = _firstVisibleLine;
                 _lastHighlightLast  = _lastVisibleLine;
+
+                // When the active highlighter supports embedded language zones,
+                // refresh its full-text cache so zone boundaries reflect edits.
+                // Guard: GetText() is O(n) — only call SetFullText when content actually changed.
+                if (hasDirty && ExternalHighlighter is Helpers.EmbeddedSyntaxHighlighter embHighlighter)
+                {
+                    var currentText = GetText();
+                    if (!ReferenceEquals(currentText, _embeddedTextCache) && currentText != _embeddedTextCache)
+                    {
+                        _embeddedTextCache = currentText;
+                        embHighlighter.SetFullText(currentText);
+                    }
+                }
+
                 _highlightPipeline.ScheduleAsync(
                     _document.Lines,
                     _firstVisibleLine,
@@ -2478,7 +2492,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double dpi       = VisualTreeHelper.GetDpi(this).PixelsPerDip;
             var    defaultFg = (Brush?)TryFindResource("CE_Foreground") ?? Brushes.White;
 
-            ExternalHighlighter?.Reset();
+            if (ExternalHighlighter is Helpers.EmbeddedSyntaxHighlighter embUI) embUI.ResetForUiThread();
+            else ExternalHighlighter?.Reset();
 
             // Cache fresh tokens for the current logical line so continuation sub-rows
             // reuse the same UI-thread-resolved brushes instead of the pipeline-cached ones.
@@ -2502,7 +2517,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 // brushes are resolved correctly and the block-comment state advances once.
                 if (ExternalHighlighter is { } ext && (subRow == 0 || logLine != lastCachedLine))
                 {
-                    lineTokensCache = ext.Highlight(lineText, logLine)
+                    var rawUi = ext is Helpers.EmbeddedSyntaxHighlighter embUiLine
+                        ? embUiLine.HighlightForUiThread(lineText, logLine)
+                        : ext.Highlight(lineText, logLine);
+                    lineTokensCache = rawUi
                         .Select(t => t with { Foreground = ResolveBrushForKind(t.Kind) ?? t.Foreground })
                         .ToList();
                     lastCachedLine = logLine;
@@ -2515,19 +2533,36 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     ? y + _glyphRenderer.Baseline
                     : y + _charHeight * 0.8;
 
-                // Base pass: paint the sub-line in the default foreground so characters not
-                // covered by any token remain visible — mirrors the non-wrap base pass.
+                // Base pass: draw only character gaps (spans NOT covered by any syntax token)
+                // in defaultFg. Drawing covered spans twice (base + token overdraw) causes
+                // ClearType sub-pixel blurring on long string literals in embedded zones.
                 if (ExternalHighlighter is not null && endCol > startCol)
                 {
-                    var subLine   = lineText.Substring(startCol, endCol - startCol);
-                    var baseToken = new Helpers.SyntaxHighlightToken(startCol, endCol - startCol, subLine, defaultFg);
-                    if (_glyphRenderer != null)
-                        _glyphRenderer.RenderToken(dc, baseToken, x, y, baselineY);
-                    else
+                    int wgCursor = startCol;
+                    foreach (var tok in rawTokens.OrderBy(t => t.StartColumn))
                     {
-                        var ftBase = new FormattedText(subLine, System.Globalization.CultureInfo.CurrentCulture,
-                            FlowDirection.LeftToRight, _typeface, _fontSize, defaultFg, dpi);
-                        dc.DrawText(ftBase, new Point(x, y));
+                        int ts = Math.Max(startCol, tok.StartColumn);
+                        int te = Math.Min(endCol, tok.StartColumn + tok.Length);
+                        if (te <= ts) continue;
+                        if (ts > wgCursor)
+                        {
+                            var gap  = lineText.Substring(wgCursor, ts - wgCursor);
+                            double gx = _glyphRenderer?.SnapToPixelPublic(x + (wgCursor - startCol) * _charWidth)
+                                        ?? x + (wgCursor - startCol) * _charWidth;
+                            var gapTk = new Helpers.SyntaxHighlightToken(wgCursor, gap.Length, gap, defaultFg);
+                            if (_glyphRenderer != null) _glyphRenderer.RenderToken(dc, gapTk, gx, y, baselineY);
+                            else dc.DrawText(new FormattedText(gap, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, _fontSize, defaultFg, dpi), new Point(gx, y));
+                        }
+                        wgCursor = Math.Max(wgCursor, te);
+                    }
+                    if (wgCursor < endCol)
+                    {
+                        var tail = lineText.Substring(wgCursor, endCol - wgCursor);
+                        double tx = _glyphRenderer?.SnapToPixelPublic(x + (wgCursor - startCol) * _charWidth)
+                                    ?? x + (wgCursor - startCol) * _charWidth;
+                        var tailTk = new Helpers.SyntaxHighlightToken(wgCursor, tail.Length, tail, defaultFg);
+                        if (_glyphRenderer != null) _glyphRenderer.RenderToken(dc, tailTk, tx, y, baselineY);
+                        else dc.DrawText(new FormattedText(tail, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, _fontSize, defaultFg, dpi), new Point(tx, y));
                     }
                 }
 
@@ -2596,8 +2631,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
             var urlPen = _cachedUrlPen;
 
-            // Reset external highlighter state before a full render pass.
-            ExternalHighlighter?.Reset();
+            // Reset external highlighter state before a full render pass (UI-thread path).
+            if (ExternalHighlighter is Helpers.EmbeddedSyntaxHighlighter embReset) embReset.ResetForUiThread();
+            else ExternalHighlighter?.Reset();
 
             // Word wrap: delegate to dedicated method that iterates visual sub-rows.
             if (IsWordWrapEnabled && _charsPerVisualLine > 0 && _visLinePositions.Count > 0)
@@ -2684,7 +2720,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         // Advance stateful highlighter even when using the glyph cache,
                         // so block-comment tracking (_inBlockComment) stays correct for
                         // subsequent lines that may not be cached.
-                        ExternalHighlighter?.Highlight(line.Text, i);
+                        if (ExternalHighlighter is Helpers.EmbeddedSyntaxHighlighter embAdv)
+                            embAdv.HighlightForUiThread(line.Text, i);
+                        else ExternalHighlighter?.Highlight(line.Text, i);
 
                         continue; // skip slow path
                     }
@@ -2711,7 +2749,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                         // Advance stateful block-comment tracking even when using stale cache
                         // so subsequent (non-cached) lines in the same frame have correct state.
-                        ExternalHighlighter?.Highlight(line.Text, i);
+                        if (ExternalHighlighter is Helpers.EmbeddedSyntaxHighlighter embAdv)
+                            embAdv.HighlightForUiThread(line.Text, i);
+                        else ExternalHighlighter?.Highlight(line.Text, i);
                         RenderFoldCollapseLabel(dc, i, x, y);
                         continue;
                     }
@@ -2724,14 +2764,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                     if (ExternalHighlighter is { } ext)
                     {
+                        // Route all UI-thread Highlight() calls through the UI-thread-exclusive path
+                        // (_uiHost) so _inBlockComment never races with the pipeline bg thread (_host).
+                        var extUi = ext as Helpers.EmbeddedSyntaxHighlighter;
+
                         // OPT-A Fast path C: background pipeline has refreshed this line
                         // (IsCacheDirty=false) and fresh tokens are cached.  Use them directly
                         // instead of re-running the regex highlighter on the UI thread.
-                        // ext.Highlight() is still called (result discarded) to keep the stateful
-                        // block-comment tracker in sync for subsequent lines in this frame.
                         if (!line.IsCacheDirty && line.TokensCache is { Count: > 0 } freshTokens)
                         {
-                            ext.Highlight(line.Text, i); // state tracking only — result discarded
+                            // Advance UI-thread state tracker so subsequent lines are correct.
+                            if (extUi != null) extUi.HighlightForUiThread(line.Text, i);
+                            else ext.Highlight(line.Text, i);
                             rawTokens = freshTokens.Select(t => t with
                             {
                                 Foreground = ResolveBrushForKind(t.Kind) ?? t.Foreground
@@ -2740,9 +2784,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         else
                         {
                             // Resolve brushes at render time from live CodeEditor DPs (CE_* keys).
-                            // This ensures correct colors even when the theme changes after file open,
-                            // and avoids the timing issue of baking brushes at file-open time.
-                            rawTokens = ext.Highlight(line.Text, i)
+                            rawTokens = (extUi != null
+                                ? extUi.HighlightForUiThread(line.Text, i)
+                                : ext.Highlight(line.Text, i))
                                 .Select(t => t with
                                 {
                                     Foreground = ResolveBrushForKind(t.Kind) ?? t.Foreground
@@ -2778,26 +2822,39 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         ? y + _glyphRenderer.Baseline
                         : y + _charHeight * 0.8;
 
-                    // Base pass (external highlighter only): draw the entire line in EditorForeground
-                    // so unmatched spans (identifiers, punctuation not covered by any regex rule)
-                    // remain visible in the default text color instead of being invisible.
-                    if (hasExternalHighlighter)
+                    // Build the final ordered token list for this line.
+                    // For lines with an external highlighter, inject EditorForeground gap tokens
+                    // for any character spans not covered by syntax tokens so every character is
+                    // rendered exactly once through the same code path.  This avoids the ClearType
+                    // blur that results from drawing base-pass fragments and syntax tokens at
+                    // independently-snapped x positions for the same character.
+                    IReadOnlyList<Helpers.SyntaxHighlightToken> orderedTokens;
+                    if (hasExternalHighlighter && renderTokens.Count > 0)
                     {
-                        var baseToken = new Helpers.SyntaxHighlightToken(
-                            0, line.Text.Length, line.Text, EditorForeground);
-                        if (_glyphRenderer != null)
-                            _glyphRenderer.RenderToken(dc, baseToken, x, y, baselineY);
-                        else
+                        var filled = new List<Helpers.SyntaxHighlightToken>(renderTokens.Count + 4);
+                        int gc = 0;
+                        foreach (var tok in renderTokens.OrderBy(t => t.StartColumn))
                         {
-                            var ft = new FormattedText(
-                                line.Text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                                _typeface, _fontSize, EditorForeground,
-                                VisualTreeHelper.GetDpi(this).PixelsPerDip);
-                            dc.DrawText(ft, new Point(x, y));
+                            int ts = Math.Max(0, tok.StartColumn);
+                            int te = Math.Min(line.Text.Length, tok.StartColumn + tok.Length);
+                            if (ts > gc)
+                                filled.Add(new Helpers.SyntaxHighlightToken(gc, ts - gc,
+                                    line.Text.Substring(gc, ts - gc), EditorForeground));
+                            if (te > ts)
+                                filled.Add(tok);
+                            gc = Math.Max(gc, te);
                         }
+                        if (gc < line.Text.Length)
+                            filled.Add(new Helpers.SyntaxHighlightToken(gc, line.Text.Length - gc,
+                                line.Text[gc..], EditorForeground));
+                        orderedTokens = filled;
+                    }
+                    else
+                    {
+                        orderedTokens = renderTokens;
                     }
 
-                    foreach (var token in renderTokens)
+                    foreach (var token in orderedTokens)
                     {
                         // Use tab-aware X so tokens on tab-indented lines are not shifted left.
                         // Snap to physical pixel: fractional charWidth × column accumulates sub-pixel
@@ -2840,17 +2897,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     }
 
                     // ── P1-CE-05: Build GlyphRun cache after first render ─────────────
-                    // Cache for the base-pass token too when using external highlighter.
+                    // orderedTokens already contains gap-fill tokens, so use it directly
+                    // for the cache build — every character is covered exactly once.
                     if (_glyphRenderer != null)
                     {
-                        var allCacheTokens = hasExternalHighlighter
-                            ? Enumerable.Concat(
-                                new[] { new Helpers.SyntaxHighlightToken(
-                                    0, line.Text.Length, line.Text, EditorForeground) },
-                                renderTokens)
-                            : (IEnumerable<Helpers.SyntaxHighlightToken>)renderTokens;
-
-                        line.GlyphRunCache     = _glyphRenderer.BuildLineGlyphRuns(allCacheTokens, SyntaxUrlColor, line.Text);
+                        line.GlyphRunCache     = _glyphRenderer.BuildLineGlyphRuns(orderedTokens, SyntaxUrlColor, line.Text);
                         line.IsGlyphCacheDirty = false;
 
                         // Cache link zones for GlyphRun-hit renders (no re-run of OverlayUrlTokens).
