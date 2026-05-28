@@ -1,0 +1,265 @@
+{
+  "$schema": "https://wpfhexeditor.dev/schemas/whfmt/v3.1",
+  "diffMode": "text",
+  "formatName": "Markdown Document",
+  "formatId": "MARKDOWN",
+  "version": "1.0",
+  "extensions": [
+    ".md",
+    ".markdown"
+  ],
+  "description": "Markdown lightweight markup language for documentation and README files.",
+  "category": "Programming",
+  "author": "WPFHexaEditor Team",
+  "preferredEditor": "code-editor",
+  "detection": {
+    "isTextFormat": true,
+    "required": false
+  },
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-05-27",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "MimeTypes": [
+    "text/markdown",
+    "text/x-markdown"
+  ],
+  "Software": [
+    "VS Code",
+    "Obsidian",
+    "Typora"
+  ],
+  "UseCases": [
+    "Documentation",
+    "README files",
+    "Technical writing"
+  ],
+  "syntaxDefinition": {
+    "diagnosticPrefix": "MD",
+    "id": "markdown",
+    "name": "Markdown",
+    "extensions": [
+      ".md",
+      ".markdown",
+      ".mdown",
+      ".mkd"
+    ],
+    "blockCommentStart": "<!--",
+    "blockCommentEnd": "-->",
+    "rules": [
+      {
+        "type": "Comment",
+        "pattern": "<!--[\\s\\S]*?-->",
+        "colorKey": "TE_Comment"
+      },
+      {
+        "type": "FencedCode",
+        "pattern": "^```[\\w]*$",
+        "colorKey": "TE_Directive"
+      },
+      {
+        "type": "Heading",
+        "pattern": "^#{1,6}\\s+.+$",
+        "colorKey": "TE_Keyword"
+      },
+      {
+        "type": "Bold",
+        "pattern": "(\\*\\*|__)[^\\s*][\\s\\S]*?\\1",
+        "colorKey": "TE_Type"
+      },
+      {
+        "type": "Italic",
+        "pattern": "(\\*|_)[^\\s*][^*_]*\\1",
+        "colorKey": "TE_Register"
+      },
+      {
+        "type": "InlineCode",
+        "pattern": "`[^`\\n]+`",
+        "colorKey": "TE_String"
+      },
+      {
+        "type": "Link",
+        "pattern": "\\[([^\\]]+)\\]\\(([^)]+)\\)",
+        "colorKey": "TE_Label"
+      },
+      {
+        "type": "Image",
+        "pattern": "!\\[([^\\]]*)\\]\\(([^)]+)\\)",
+        "colorKey": "TE_Label"
+      },
+      {
+        "type": "LinkRef",
+        "pattern": "^\\[([^\\]]+)\\]:\\s*.+$",
+        "colorKey": "TE_Label"
+      },
+      {
+        "type": "Blockquote",
+        "pattern": "^\\s*>+\\s?",
+        "colorKey": "TE_Comment"
+      },
+      {
+        "type": "HorizontalRule",
+        "pattern": "^\\s*[-*_]{3,}\\s*$",
+        "colorKey": "TE_Operator"
+      },
+      {
+        "type": "ListMarker",
+        "pattern": "^\\s*[-*+]\\s|^\\s*\\d+\\.\\s",
+        "colorKey": "TE_Number"
+      },
+      {
+        "type": "StrikeThrough",
+        "pattern": "~~[^~\\n]+~~",
+        "colorKey": "TE_Comment"
+      }
+    ],
+    "foldingRules": {
+      "tagBased": false,
+      "endOfBlockHint": {
+        "enabled": false,
+        "maxContextLines": 1,
+        "triggerBrace": false,
+        "triggerDirective": false
+      }
+    },
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "spaceAfterComma": false,
+      "maxLineLength": 120,
+      "supportedRules": ["trimTrailingWhitespace", "insertFinalNewline"]
+    },
+    "embeddedLanguages": [
+      {
+        "open": "```javascript",
+        "close": "```",
+        "languageId": "javascript"
+      },
+      {
+        "open": "```js",
+        "close": "```",
+        "languageId": "javascript"
+      },
+      {
+        "open": "```typescript",
+        "close": "```",
+        "languageId": "javascript"
+      },
+      {
+        "open": "```ts",
+        "close": "```",
+        "languageId": "javascript"
+      },
+      {
+        "open": "```css",
+        "close": "```",
+        "languageId": "css"
+      },
+      {
+        "open": "```scss",
+        "close": "```",
+        "languageId": "css"
+      },
+      {
+        "open": "```python",
+        "close": "```",
+        "languageId": "python"
+      },
+      {
+        "open": "```py",
+        "close": "```",
+        "languageId": "python"
+      },
+      {
+        "open": "```csharp",
+        "close": "```",
+        "languageId": "csharp"
+      },
+      {
+        "open": "```cs",
+        "close": "```",
+        "languageId": "csharp"
+      },
+      {
+        "open": "```php",
+        "close": "```",
+        "languageId": "php"
+      },
+      {
+        "open": "```html",
+        "close": "```",
+        "languageId": "html"
+      },
+      {
+        "open": "```xml",
+        "close": "```",
+        "languageId": "html"
+      },
+      {
+        "open": "```json",
+        "close": "```",
+        "languageId": "json"
+      },
+      {
+        "open": "```sql",
+        "close": "```",
+        "languageId": "sql"
+      },
+      {
+        "open": "```bash",
+        "close": "```",
+        "languageId": "shell"
+      },
+      {
+        "open": "```sh",
+        "close": "```",
+        "languageId": "shell"
+      },
+      {
+        "open": "```powershell",
+        "close": "```",
+        "languageId": "powershell"
+      },
+      {
+        "open": "```ps1",
+        "close": "```",
+        "languageId": "powershell"
+      }
+    ],
+    "previewSnippet": "# Heading\n\nSome **bold** and *italic* text.\n\n```js\nconst x = 1;\n```\n\n- Item 1\n- Item 2",
+    "ideMetadata": {
+      "isSourceFile": false,
+      "isStructuredDataFile": false,
+      "aliases": [
+        "markdown",
+        "md"
+      ],
+      "iconGlyph": "",
+      "diffMode": "text"
+    }
+  },
+  "forensic": {
+    "category": "other",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Markdown lightweight markup language for documentation and README files.",
+    "suggestedInspections": [
+      "Check heading hierarchy and structure",
+      "Verify all links and image references",
+      "Inspect code fence language identifiers"
+    ]
+  }
+}

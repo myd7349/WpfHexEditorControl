@@ -1,9 +1,9 @@
 {
-  "$schema": "https://wpfhexeditor.dev/schemas/whfmt/v2.0",
+  "$schema": "https://wpfhexeditor.dev/schemas/whfmt/v3.1",
   "diffMode": "text",
   "formatName": "PHP Source File",
   "formatId": "PHP",
-  "version": "2.13",
+  "version": "3.0",
   "extensions": [
     ".php",
     ".phtml"
@@ -190,6 +190,18 @@
         "after": "}\n"
       }
     },
+    "embeddedLanguages": [
+      {
+        "open": "?>",
+        "close": "<?php",
+        "languageId": "html"
+      },
+      {
+        "open": "?>",
+        "close": "<?=",
+        "languageId": "html"
+      }
+    ],
     "ideMetadata": {
       "isSourceFile": true,
       "aliases": [
