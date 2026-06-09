@@ -423,6 +423,10 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             _historyPanel.ViewModel.JumpRequested += OnHistoryJumpRequested;
         }
 
+        // Wire toolbox context-menu "Add" actions → active host.
+        if (_toolboxPanel is not null)
+            _toolboxPanel.AddEntryRequested += OnToolboxAddEntryRequested;
+
         // Wire search panel result selection → canvas selection.
         if (_searchPanel is not null)
             _searchPanel.ViewModel.ResultSelected += OnSearchResultSelected;
@@ -460,6 +464,9 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             _historyPanel.ViewModel.JumpRequested -= OnHistoryJumpRequested;
             _historyPanel.ViewModel.SetManager(null!); // Clear to avoid stale reference.
         }
+
+        if (_toolboxPanel is not null)
+            _toolboxPanel.AddEntryRequested -= OnToolboxAddEntryRequested;
 
         if (_searchPanel is not null)
             _searchPanel.ViewModel.ResultSelected -= OnSearchResultSelected;
@@ -605,6 +612,11 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                 Application.Current.Dispatcher.BeginInvoke(
                     () => _context?.Output.Warning($"[Class Diagram] Rename failed for '{e.Node.Name}'."));
         });
+    }
+
+    private void OnToolboxAddEntryRequested(object? sender, (WpfHexEditor.Editor.ClassDiagram.Services.ToolboxEntry Entry, bool AtCenter) args)
+    {
+        _wiredHost?.AddNodeFromToolboxEntry(args.Entry, args.AtCenter);
     }
 
     private void OnSearchResultSelected(object? sender, SearchResultItem? result)

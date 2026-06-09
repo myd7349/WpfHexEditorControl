@@ -217,6 +217,22 @@ public class ZoomPanCanvas : Canvas
     }
 
     // ---------------------------------------------------------------------------
+    // FitToContent / viewport helpers
+    // ---------------------------------------------------------------------------
+
+    /// <summary>
+    /// Returns the center of the visible viewport in diagram (canvas-local) coordinates.
+    /// Used to place newly added nodes at a visible position.
+    /// </summary>
+    public Point GetViewportCenter()
+    {
+        double availableWidth  = ActualWidth  > 0 ? ActualWidth  : 800;
+        double availableHeight = ActualHeight > 0 ? ActualHeight : 600;
+        double cx = (availableWidth  / 2 - OffsetX) / ZoomFactor;
+        double cy = (availableHeight / 2 - OffsetY) / ZoomFactor;
+        return new Point(Math.Max(0, cx), Math.Max(0, cy));
+    }
+
     // FitToContent
     // ---------------------------------------------------------------------------
 

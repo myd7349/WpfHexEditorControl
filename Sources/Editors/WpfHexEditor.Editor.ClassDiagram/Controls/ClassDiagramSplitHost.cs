@@ -584,6 +584,36 @@ public sealed class ClassDiagramSplitHost : Grid,
     /// <summary>Forces a full re-render of all nodes and arrows.</summary>
     public void InvalidateAndRender() => _canvas.InvalidateAndRender();
 
+    /// <summary>
+    /// Adds a node from a toolbox entry template.
+    /// When <paramref name="atCenter"/> is true the node lands at the viewport center;
+    /// otherwise it is placed at a default top-left offset.
+    /// </summary>
+    public void AddNodeFromToolboxEntry(ToolboxEntry entry, bool atCenter)
+    {
+        if (_document is null) return;
+        var doc = _document;
+
+        Point center = atCenter ? _zoomPan.GetViewportCenter() : new Point(40, 40);
+        var node = new ClassNode
+        {
+            Id      = Guid.NewGuid().ToString("N"),
+            Name    = entry.Name,
+            Kind    = entry.Kind,
+            X       = Math.Max(0, center.X - 80),
+            Y       = Math.Max(0, center.Y - 20),
+            Width   = 160,
+            Members = entry.DefaultMembers.ToList()
+        };
+        doc.Classes.Add(node);
+        _canvas.InvalidateAndRender();
+        _undoManager.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Add {node.Name}",
+            UndoAction: () => { doc.Classes.Remove(node); _canvas.InvalidateAndRender(); },
+            RedoAction: () => { doc.Classes.Add(node);    _canvas.InvalidateAndRender(); }));
+        _canvas.SelectNodeById(node.Id);
+    }
+
     /// <summary>Forwarded from DiagramCanvas — fires when Ctrl+Click on a member.</summary>
     public event EventHandler<(ClassNode Node, ClassMember Member)>? NavigateToMemberRequested
     {

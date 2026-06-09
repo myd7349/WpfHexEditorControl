@@ -20,6 +20,7 @@
 // ==========================================================
 
 using System.Linq;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -840,7 +841,7 @@ public sealed class DiagramCanvas : Canvas
         Point pt   = e.GetPosition(this);
         var   node = _layer.HitTestNode(pt);
 
-        // Double-click on any node → toggle collapse
+        // Double-click on any node → toggle collapse; on empty canvas → Add Class
         if (e.ClickCount == 2 && _doc is not null)
         {
             var dblNode = _layer.HitTestNode(pt);
@@ -849,6 +850,15 @@ public sealed class DiagramCanvas : Canvas
                 _layer.ToggleCollapsed(dblNode.Id);
                 _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
                 UpdateSelectAdornerPosition();
+                e.Handled = true;
+                return;
+            }
+
+            // Empty canvas double-click → add a Class node at cursor position
+            if (_layer.HitTestArrow(pt) is null)
+            {
+                _lastMenuPoint = pt;
+                AddNodeAtMenuPoint(ClassKind.Class);
                 e.Handled = true;
                 return;
             }
@@ -1331,10 +1341,49 @@ public sealed class DiagramCanvas : Canvas
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+
         if (e.Key == Key.Escape)
         {
-            CancelRubberBand();   // Cancel in-progress lasso first
+            CancelRubberBand();
             ClearSelection();
+            e.Handled = true;
+            return;
+        }
+
+        // Arrow-key nudge on selected nodes (1px, Shift = 8px)
+        if (_doc is not null && _selectedIds.Count > 0 &&
+            e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+        {
+            double step = (Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? 8 : 1;
+            double dx = e.Key switch { Key.Left => -step, Key.Right => step, _ => 0 };
+            double dy = e.Key switch { Key.Up   => -step, Key.Down  => step, _ => 0 };
+
+            var affected = _doc.Classes.Where(n => _selectedIds.Contains(n.Id)).ToList();
+            var before   = affected.ToDictionary(n => n.Id, n => new Point(n.X, n.Y));
+
+            foreach (var n in affected)
+            {
+                n.X = Math.Max(0, n.X + dx);
+                n.Y = Math.Max(0, n.Y + dy);
+            }
+
+            ApplyPatch(affected.Select(n => n.Id), refreshArrows: true);
+
+            var after = affected.ToDictionary(n => n.Id, n => new Point(n.X, n.Y));
+            _undoManager?.Push(new SingleClassDiagramUndoEntry(
+                Description: "Nudge node(s)",
+                UndoAction: () =>
+                {
+                    foreach (var n in affected) { var p = before[n.Id]; n.X = p.X; n.Y = p.Y; }
+                    ApplyPatch(affected.Select(n => n.Id), refreshArrows: true);
+                },
+                RedoAction: () =>
+                {
+                    foreach (var n in affected) { var p = after[n.Id]; n.X = p.X; n.Y = p.Y; }
+                    ApplyPatch(affected.Select(n => n.Id), refreshArrows: true);
+                }));
+
+            UpdateSelectAdornerPosition();
             e.Handled = true;
         }
     }
@@ -1436,24 +1485,92 @@ public sealed class DiagramCanvas : Canvas
         }
     }
 
-    // ── Keyboard (Ctrl+F → filter bar) ───────────────────────────────────────
+    // ── Clipboard format tag ──────────────────────────────────────────────────
+    private const string ClipboardFormat = "ClassDiagramNodes";
+
+    // ── Keyboard (Ctrl+F → filter bar, Ctrl+C/V → clipboard) ─────────────────
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        var ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+
+        if (ctrl && e.Key == Key.F)
         {
             if (_filterVisible) HideFilterBar();
             else ShowFilterBar();
             e.Handled = true;
             return;
         }
-        if (e.Key == Key.M && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        if (ctrl && e.Key == Key.M)
         {
             IsMinimapVisible = !IsMinimapVisible;
             e.Handled = true;
             return;
         }
+        if (ctrl && e.Key == Key.C)
+        {
+            CopySelectedNodes();
+            e.Handled = true;
+            return;
+        }
+        if (ctrl && e.Key == Key.V)
+        {
+            PasteNodes();
+            e.Handled = true;
+            return;
+        }
         base.OnPreviewKeyDown(e);
+    }
+
+    private void CopySelectedNodes()
+    {
+        if (_doc is null || _selectedIds.Count == 0) return;
+        var nodes = _doc.Classes.Where(n => _selectedIds.Contains(n.Id)).ToList();
+        try
+        {
+            var json = JsonSerializer.Serialize(nodes);
+            Clipboard.SetData(ClipboardFormat, json);
+        }
+        catch { /* clipboard unavailable */ }
+    }
+
+    private void PasteNodes()
+    {
+        if (_doc is null) return;
+        if (!Clipboard.ContainsData(ClipboardFormat)) return;
+        try
+        {
+            var json = Clipboard.GetData(ClipboardFormat) as string;
+            if (string.IsNullOrEmpty(json)) return;
+            var nodes = JsonSerializer.Deserialize<List<ClassNode>>(json);
+            if (nodes is null || nodes.Count == 0) return;
+
+            var doc    = _doc;
+            var copies = nodes.Select(n =>
+            {
+                var c  = n.DeepClone();
+                c.Id   = Guid.NewGuid().ToString();
+                c.X   += 20;
+                c.Y   += 20;
+                return c;
+            }).ToList();
+
+            foreach (var c in copies) doc.Classes.Add(c);
+            _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+
+            _undoManager?.Push(new SingleClassDiagramUndoEntry(
+                Description: $"Paste {copies.Count} node(s)",
+                UndoAction: () => { foreach (var c in copies) doc.Classes.Remove(c); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+                RedoAction: () => { foreach (var c in copies) doc.Classes.Add(c);    _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
+
+            // Select pasted nodes
+            _selectedIds.Clear();
+            foreach (var c in copies) _selectedIds.Add(c.Id);
+            _primarySelected = copies[^1];
+            _layer.UpdateSelection(_primarySelected.Id, _hoveredNode?.Id);
+            UpdateSelectAdornerPosition();
+        }
+        catch { /* malformed clipboard data */ }
     }
 
     // ── Context menus ─────────────────────────────────────────────────────────
