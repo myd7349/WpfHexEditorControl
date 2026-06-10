@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Apple File System (APFS)",
   "formatId": "APFS",
@@ -466,4 +466,5 @@
     "note": "Inferred fuzz strategies for APFS. Hand-tune weights/rates per format if needed."
   }
 }
+
 

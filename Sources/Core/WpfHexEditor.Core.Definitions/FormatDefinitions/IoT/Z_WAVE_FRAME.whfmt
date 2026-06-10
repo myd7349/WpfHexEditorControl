@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "Z-Wave Radio Frame",
   "formatId": "Z_WAVE_FRAME",
   "version": "1.1",
@@ -117,4 +117,5 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 

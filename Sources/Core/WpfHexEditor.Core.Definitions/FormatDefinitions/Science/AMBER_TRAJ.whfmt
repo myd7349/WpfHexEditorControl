@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "text",
   "formatName": "AMBER Molecular Dynamics Trajectory",
   "formatId": "AMBER_TRAJ",
@@ -218,5 +218,6 @@
     "netcdfConvention": "AMBER convention v1.0"
   }
 }
+
 
 

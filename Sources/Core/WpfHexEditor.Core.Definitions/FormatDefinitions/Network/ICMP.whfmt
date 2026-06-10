@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "ICMP Packet",
   "formatId": "ICMP",
   "version": "1.0.0",
@@ -267,5 +267,6 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 
 

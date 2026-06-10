@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "HTTP/2 Frame",
   "formatId": "HTTP2_FRAME",
   "version": "1.0.0",
@@ -275,5 +275,6 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 
 

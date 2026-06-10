@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "text",
   "formatName": "Perl Script",
   "formatId": "Perl",
@@ -189,5 +189,6 @@
     ]
   }
 }
+
 
 

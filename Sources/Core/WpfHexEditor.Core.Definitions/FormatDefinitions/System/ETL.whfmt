@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Event Trace Log (ETW)",
   "formatId": "ETL",
@@ -379,5 +379,6 @@
     "note": "Inferred fuzz strategies for ETL. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "formatName": "Debian Package",
   "formatId": "DEB",
   "version": "1.0.1",
@@ -155,5 +155,6 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 
 

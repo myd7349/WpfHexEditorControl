@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Nintendo DS ROM",
   "formatId": "ROM_NDS",
@@ -675,4 +675,5 @@
     }
   ]
 }
+
 

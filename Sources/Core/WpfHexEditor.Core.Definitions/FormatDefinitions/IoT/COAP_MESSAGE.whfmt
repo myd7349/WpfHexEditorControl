@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "CoAP Message",
   "formatId": "COAP_MESSAGE",
   "version": "1.0",
@@ -277,4 +277,5 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 

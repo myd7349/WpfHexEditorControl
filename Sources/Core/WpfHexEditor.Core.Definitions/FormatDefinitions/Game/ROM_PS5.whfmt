@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "PlayStation 5 Package",
   "formatId": "ROM_PS5",
@@ -318,5 +318,6 @@
     "note": "Inferred fuzz strategies for ROM_PS5. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

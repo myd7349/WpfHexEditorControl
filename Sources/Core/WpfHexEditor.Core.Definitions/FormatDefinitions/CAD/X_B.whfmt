@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Parasolid Binary",
   "formatId": "X_B",
@@ -164,5 +164,6 @@
     "Note": "NOT OLE2 — D0CF11E0 magic is incorrect; X_B uses proprietary binary header"
   }
 }
+
 
 

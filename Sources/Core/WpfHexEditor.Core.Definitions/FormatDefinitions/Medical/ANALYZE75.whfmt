@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Analyze 7.5 Brain Scan",
   "formatId": "ANALYZE75",
@@ -297,5 +297,6 @@
     "note": "Inferred fuzz strategies for ANALYZE75. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

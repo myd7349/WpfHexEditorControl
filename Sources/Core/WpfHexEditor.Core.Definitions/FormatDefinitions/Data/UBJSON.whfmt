@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "Universal Binary JSON (UBJSON)",
   "formatId": "UBJSON",
@@ -208,4 +208,5 @@
     "notes": "No fixed magic header — detection relies on extension and first byte being a valid type marker"
   }
 }
+
 

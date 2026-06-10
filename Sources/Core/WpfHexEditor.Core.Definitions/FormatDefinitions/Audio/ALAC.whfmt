@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Apple Lossless Audio Codec",
   "formatId": "ALAC",
@@ -270,5 +270,6 @@
     "note": "Inferred fuzz strategies for ALAC. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

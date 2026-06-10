@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "ROOT Data File",
   "formatId": "ROOT",
@@ -264,5 +264,6 @@
     "note": "Inferred fuzz strategies for ROOT. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

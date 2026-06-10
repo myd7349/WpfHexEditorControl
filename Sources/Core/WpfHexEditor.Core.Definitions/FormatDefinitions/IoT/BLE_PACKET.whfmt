@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "BLE Packet",
   "formatId": "BLE_PACKET",
   "version": "1.0.1",
@@ -266,4 +266,5 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 

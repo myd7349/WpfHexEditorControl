@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "BGP Update Message",
   "formatId": "BGP_UPDATE",
@@ -311,5 +311,6 @@
     "note": "Inferred fuzz strategies for BGP_UPDATE. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

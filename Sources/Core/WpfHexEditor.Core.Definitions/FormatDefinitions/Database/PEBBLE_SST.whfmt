@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Pebble SSTable",
   "formatId": "PEBBLE_SST",
@@ -234,4 +234,5 @@
     "notes": "Footer magic is at end of file, not beginning. Detection relies on extension and footer scan."
   }
 }
+
 

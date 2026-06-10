@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Parasolid XB (Binary Transmit)",
   "formatId": "PARASOLID_XB",
@@ -194,4 +194,5 @@
     "GeometryEntities": ["plane", "cylinder", "cone", "sphere", "torus", "bspline_surface", "line", "circle", "bspline_curve"]
   }
 }
+
 

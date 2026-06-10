@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.1",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.1.json",
   "diffMode": "semantic",
   "formatName": "HTML Source File",
   "formatId": "HTML",
@@ -179,5 +179,6 @@
     ]
   }
 }
+
 
 

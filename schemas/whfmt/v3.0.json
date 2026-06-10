@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.0",
+  "$id": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.0.json",
   "schemaVersion": "3.0",
   "title": "WpfHexEditor Format Definition (.whfmt)",
   "description": "Schema for .whfmt v3.2 — adds protocolDefinition (transport/port/layerStack/messageTypes/stateTransitions + iotProfile for IoT protocols) and serializationProfile (schemaLanguage/compression/streamable) for Network, IoT, and Data format categories. Fully additive over v3.1 — all new fields are optional, existing consumers unaffected (ADR-040). PascalCase legacy keys remain accepted at load time via WhfmtVersionMigrator (ADR-038 D2 — zero deletions, ABI preserved). See Sources/Docs/whfmt-v3/ for the architecture and usage guide.",
@@ -1209,5 +1209,6 @@
     }
   }
 }
+
 
 

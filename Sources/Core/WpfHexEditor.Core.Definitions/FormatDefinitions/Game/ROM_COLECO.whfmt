@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "ColecoVision ROM",
   "formatId": "ROM_COLECO",
@@ -202,5 +202,6 @@
     "note": "Inferred fuzz strategies for ROM_COLECO. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 

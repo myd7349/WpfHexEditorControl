@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "ASN.1 DER Encoding",
   "formatId": "ASN1_DER",
@@ -233,5 +233,6 @@
     ]
   }
 }
+
 
 

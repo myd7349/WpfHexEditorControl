@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "Microsoft Access Database",
   "formatId": "MDB",
@@ -255,4 +255,5 @@
     "note": "Inferred fuzz strategies for MDB. Hand-tune weights/rates per format if needed."
   }
 }
+
 

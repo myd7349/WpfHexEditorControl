@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "Ruby Marshal",
   "formatId": "MARSHAL",
@@ -212,5 +212,6 @@
     ]
   }
 }
+
 
 

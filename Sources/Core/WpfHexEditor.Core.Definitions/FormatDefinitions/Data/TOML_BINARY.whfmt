@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "TOML Binary (Experimental)",
   "formatId": "TOML_BINARY",
@@ -177,4 +177,5 @@
     "notes": "No formal specification exists. This is a placeholder definition for binary TOML implementations. Verify against specific implementation documentation."
   }
 }
+
 

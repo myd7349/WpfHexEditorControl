@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "VASP POSCAR",
   "formatId": "VASP",
@@ -182,5 +182,6 @@
     "VASPVersions": "VASP 4.x (no element line), VASP 5.x+ (element symbols on line 6)"
   }
 }
+
 
 

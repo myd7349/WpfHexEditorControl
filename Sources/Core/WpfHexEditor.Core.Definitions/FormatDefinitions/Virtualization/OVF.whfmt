@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "text",
   "formatName": "Open Virtualization Format (OVF)",
   "formatId": "OVF",
@@ -175,5 +175,6 @@
     "namespaces": "http://schemas.dmtf.org/ovf/envelope/1 or /2"
   }
 }
+
 
 

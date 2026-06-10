@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "3GPP Timed Text",
   "formatId": "TX3G",
@@ -220,4 +220,5 @@
     "Standard": "ISO/IEC 14496-17, 3GPP TS 26.245"
   }
 }
+
 

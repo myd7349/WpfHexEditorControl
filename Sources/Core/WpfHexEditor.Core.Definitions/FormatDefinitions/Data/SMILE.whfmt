@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "Smile Binary JSON",
   "formatId": "SMILE",
@@ -220,4 +220,5 @@
     "notes": "Version must be 0. Feature byte bits: 0=shared string values, 1=shared property names, 2=raw binary allowed."
   }
 }
+
 

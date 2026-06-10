@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "AMQP Frame",
   "formatId": "AMQP_FRAME",
   "version": "1.0.0",
@@ -243,5 +243,6 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 
 

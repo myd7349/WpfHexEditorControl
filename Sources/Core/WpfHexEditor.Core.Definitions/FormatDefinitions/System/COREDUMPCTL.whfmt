@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "formatName": "systemd-coredump (zstd-wrapped)",
   "formatId": "COREDUMPCTL",
   "version": "1.0.1",
@@ -236,4 +236,5 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 

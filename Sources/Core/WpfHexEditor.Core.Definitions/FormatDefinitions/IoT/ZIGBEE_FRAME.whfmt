@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "formatName": "ZigBee Frame",
   "formatId": "ZIGBEE_FRAME",
   "version": "1.0.1",
@@ -264,4 +264,5 @@
     "ReviewedBy": "WPFHexaEditor Team"
   }
 }
+
 

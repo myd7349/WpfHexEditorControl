@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v2.0.json",
   "diffMode": "binary",
   "formatName": "XFS Filesystem",
   "formatId": "XFS",
@@ -150,5 +150,6 @@
   "TechnicalDetails": { "MagicValue": "'XFSB' = 0x58465342", "Endianness": "Big-endian" },
   "functions": { "readUInt32LE": "Read file header", "formatFileSize(var:fileSize)": "Format fileSize as readable size" }
 }
+
 
 

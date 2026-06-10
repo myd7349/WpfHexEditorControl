@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2",
+  "$schema": "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/schemas/whfmt/v3.2.json",
   "diffMode": "binary",
   "formatName": "HP-UX nettl Trace",
   "formatId": "NETTL",
@@ -258,5 +258,6 @@
     "note": "Inferred fuzz strategies for NETTL. Hand-tune weights/rates per format if needed."
   }
 }
+
 
 
